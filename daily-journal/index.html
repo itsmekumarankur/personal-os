@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Journal</title>
+<style>
+:root {
+  --bg: #0D0D10;
+  --surface: #16161C;
+  --raised: #1E1E28;
+  --border: #26263A;
+  --text: #EAE6D9;
+  --muted: #8A8499;
+  --accent: #C9A84C;
+  --accent-a: rgba(201,168,76,0.12);
+  --radius: 6px;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #F6F2E8; --surface: #FDFAF2; --raised: #EFEADC;
+    --border: #DBD5BF; --text: #1C1812; --muted: #7A7260;
+    --accent: #8B6A1E; --accent-a: rgba(139,106,30,0.09);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D0D10; --surface: #16161C; --raised: #1E1E28;
+  --border: #26263A; --text: #EAE6D9; --muted: #8A8499;
+  --accent: #C9A84C; --accent-a: rgba(201,168,76,0.12);
+}
+:root[data-theme="light"] {
+  --bg: #F6F2E8; --surface: #FDFAF2; --raised: #EFEADC;
+  --border: #DBD5BF; --text: #1C1812; --muted: #7A7260;
+  --accent: #8B6A1E; --accent-a: rgba(139,106,30,0.09);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+  padding: 0 16px 80px;
+}
+
+.wrap { max-width: 660px; margin: 0 auto; }
+
+/* Header */
+header { padding: 40px 0 28px; border-bottom: 1px solid var(--border); }
+.date-row { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+.weekday {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 32px; font-weight: normal; letter-spacing: -0.5px; text-wrap: balance;
+}
+.date-badge {
+  font-size: 12px; letter-spacing: 0.09em; text-transform: uppercase;
+  color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.save-path {
+  font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+  font-size: 12px; color: var(--muted); margin-top: 4px;
+}
+
+/* Tabs */
+.tabs { display: flex; border-bottom: 1px solid var(--border); }
+.tab-btn {
+  padding: 13px 18px; background: none; border: none;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  color: var(--muted); font: 12px/1 system-ui, sans-serif;
+  letter-spacing: 0.07em; text-transform: uppercase; cursor: pointer;
+  transition: color .14s, border-color .14s;
+}
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-btn:hover:not(.active) { color: var(--text); }
+.tab-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.tab-pane { display: none; padding-top: 30px; }
+.tab-pane.active { display: block; }
+
+/* Sections */
+.section { margin-bottom: 30px; }
+.sec-head {
+  display: flex; align-items: center; gap: 9px;
+  margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
+}
+.sec-icon { font-size: 17px; }
+.sec-title { font-family: Georgia, 'Times New Roman', serif; font-size: 16px; font-weight: normal; }
+
+/* Callout */
+.callout {
+  background: var(--accent-a); border-left: 2px solid var(--accent);
+  padding: 9px 13px; border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: 13px; color: var(--muted); margin-bottom: 26px;
+}
+.callout strong { color: var(--accent); font-weight: 500; }
+
+/* Fields */
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.field:last-child { margin-bottom: 0; }
+.field label {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--muted);
+}
+.field input[type="text"], .field textarea {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  color: var(--text); font: 15px/1.5 system-ui, sans-serif; padding: 10px 12px;
+  outline: none; width: 100%; transition: border-color .14s, box-shadow .14s;
+}
+.field input[type="text"]::placeholder, .field textarea::placeholder { color: var(--muted); opacity: 0.5; }
+.field input[type="text"]:focus, .field textarea:focus {
+  border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-a);
+}
+.field textarea { resize: vertical; min-height: 80px; }
+
+.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.row-2 .field { margin-bottom: 0; }
+
+/* Rating */
+.rating-wrap { display: flex; gap: 8px; }
+.r-btn {
+  width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--border);
+  background: var(--surface); color: var(--muted); font: 13px/1 system-ui, sans-serif;
+  font-variant-numeric: tabular-nums; cursor: pointer; transition: all .14s;
+}
+.r-btn:hover { border-color: var(--accent); color: var(--accent); }
+.r-btn.on { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 600; }
+.r-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Checkbox */
+.check-row {
+  display: flex; align-items: center; gap: 9px; cursor: pointer;
+  user-select: none; margin-bottom: 14px;
+}
+.check-row input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer; }
+.check-row span { font-size: 14px; color: var(--text); }
+
+/* Focus tags */
+.tags-row { display: flex; flex-wrap: wrap; gap: 7px; }
+.f-tag {
+  padding: 5px 11px; border-radius: 20px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--muted); font: 12px/1 system-ui, sans-serif;
+  letter-spacing: 0.03em; cursor: pointer; transition: all .14s;
+}
+.f-tag:hover { border-color: var(--accent); color: var(--text); }
+.f-tag.on { background: var(--accent-a); border-color: var(--accent); color: var(--accent); }
+.f-tag:focus-visible { outline: 2px solid var(--accent); }
+
+/* Buttons */
+.actions {
+  display: flex; gap: 10px; margin-top: 30px;
+  padding-top: 22px; border-top: 1px solid var(--border); flex-wrap: wrap;
+}
+.btn-p {
+  padding: 11px 22px; background: var(--accent); color: var(--bg); border: none;
+  border-radius: var(--radius); font: 13px/1 system-ui, sans-serif;
+  font-weight: 600; letter-spacing: 0.04em; cursor: pointer; transition: opacity .14s;
+}
+.btn-p:hover { opacity: 0.82; }
+.btn-p:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn-s {
+  padding: 11px 22px; background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  font: 13px/1 system-ui, sans-serif; cursor: pointer; transition: border-color .14s;
+}
+.btn-s:hover { border-color: var(--accent); }
+.btn-s:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn-sm {
+  padding: 7px 14px; font-size: 12px; background: var(--surface); color: var(--muted);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  font-family: system-ui, sans-serif; cursor: pointer; transition: all .14s;
+}
+.btn-sm:hover { border-color: var(--accent); color: var(--text); }
+
+/* Preview */
+.preview-code {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 18px; font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+  font-size: 12.5px; line-height: 1.75; color: var(--text); white-space: pre;
+  overflow-x: auto; max-height: 460px; overflow-y: auto; tab-size: 2;
+}
+
+/* History */
+.hist-status { font-size: 13px; color: var(--muted); padding: 6px 0 16px; }
+
+.hist-item {
+  border: 1px solid var(--border); border-radius: var(--radius);
+  margin-bottom: 8px; overflow: hidden;
+}
+.hist-toggle {
+  width: 100%; display: flex; justify-content: space-between; align-items: center;
+  padding: 13px 16px; background: var(--surface); border: none; color: var(--text);
+  cursor: pointer; text-align: left; gap: 12px; transition: background .14s;
+}
+.hist-toggle:hover, .hist-toggle.open { background: var(--raised); }
+.hist-toggle:focus-visible { outline: 2px solid var(--accent); }
+
+.hist-meta { display: flex; align-items: baseline; gap: 10px; }
+.hist-day { font-family: Georgia, serif; font-size: 16px; font-weight: normal; }
+.hist-date { font-size: 12px; color: var(--muted); letter-spacing: 0.05em; font-variant-numeric: tabular-nums; }
+
+.hist-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.hist-badge {
+  font-size: 11px; padding: 3px 8px; border-radius: 12px;
+  background: var(--accent-a); color: var(--accent); letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.hist-src {
+  font-size: 10px; padding: 2px 7px; border-radius: 10px;
+  background: var(--raised); color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase;
+}
+.chevron {
+  color: var(--muted); font-size: 18px; line-height: 1;
+  transition: transform .2s; display: inline-block;
+}
+.hist-toggle.open .chevron { transform: rotate(90deg); }
+
+.hist-body { padding: 0 16px 16px; background: var(--surface); border-top: 1px solid var(--border); }
+.hist-actions { display: flex; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+
+/* Markdown render */
+.md-render { padding: 16px 0 4px; }
+.md-render h1 {
+  font-family: Georgia, serif; font-size: 17px; font-weight: normal;
+  margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
+}
+.md-render h2 {
+  font-family: Georgia, serif; font-size: 13px; font-weight: normal;
+  color: var(--accent); margin: 18px 0 8px; padding-bottom: 5px;
+  border-bottom: 1px solid var(--border); letter-spacing: 0.04em; text-transform: uppercase;
+}
+.md-render hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+.md-render .bq {
+  padding: 5px 12px; border-left: 2px solid var(--accent);
+  color: var(--muted); font-style: italic; margin: 6px 0; font-size: 14px;
+}
+.md-render .task {
+  display: flex; gap: 8px; align-items: flex-start;
+  font-size: 14px; padding: 2px 0; color: var(--text);
+}
+.md-render .task .cb { color: var(--muted); font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+.md-render .task.done { color: var(--muted); }
+.md-render .task.done .cb { color: var(--accent); }
+.md-render .ref-label {
+  font-size: 13px; color: var(--accent); font-weight: 500;
+  margin: 14px 0 3px; letter-spacing: 0.01em;
+}
+.md-render .para { font-size: 14px; color: var(--text); line-height: 1.65; padding: 1px 0; }
+.md-render .gap { height: 6px; }
+.md-render strong { font-weight: 600; }
+
+/* Toast */
+#toast {
+  position: fixed; bottom: 22px; right: 22px;
+  background: var(--accent); color: var(--bg); padding: 9px 16px;
+  border-radius: var(--radius); font-size: 13px; font-weight: 500;
+  opacity: 0; transform: translateY(6px); transition: opacity .18s, transform .18s;
+  pointer-events: none; z-index: 100;
+}
+#toast.show { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 500px) {
+  .row-2 { grid-template-columns: 1fr; }
+  .weekday { font-size: 26px; }
+  .hist-badge { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header>
+    <div class="date-row">
+      <span class="weekday" id="js-weekday"></span>
+      <span class="date-badge" id="js-date"></span>
+    </div>
+    <div class="save-path" id="js-path"></div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab-btn active" role="tab" data-tab="morning" aria-selected="true">Morning</button>
+    <button class="tab-btn" role="tab" data-tab="evening" aria-selected="false">Evening</button>
+    <button class="tab-btn" role="tab" data-tab="preview" aria-selected="false">Preview</button>
+    <button class="tab-btn" role="tab" data-tab="history" aria-selected="false">History</button>
+  </nav>
+
+  <!-- MORNING -->
+  <div id="pane-morning" class="tab-pane active" role="tabpanel">
+    <div class="callout">Set your intentions for the day — fill this in before you start.</div>
+
+    <div class="section">
+      <div class="sec-head"><span class="sec-icon">☀️</span><span class="sec-title">Morning Vitals</span></div>
+      <div class="row-2">
+        <div class="field">
+          <label>Mood</label>
+          <div class="rating-wrap" data-field="mood_morning">
+            <button class="r-btn" data-val="1">1</button><button class="r-btn" data-val="2">2</button>
+            <button class="r-btn" data-val="3">3</button><button class="r-btn" data-val="4">4</button>
+            <button class="r-btn" data-val="5">5</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Energy</label>
+          <div class="rating-wrap" data-field="energy_morning">
+            <button class="r-btn" data-val="1">1</button><button class="r-btn" data-val="2">2</button>
+            <button class="r-btn" data-val="3">3</button><button class="r-btn" data-val="4">4</button>
+            <button class="r-btn" data-val="5">5</button>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Focus Tag</label>
+        <div class="tags-row">
+          <button class="f-tag" data-val="optimus">optimus</button>
+          <button class="f-tag" data-val="lamf">lamf</button>
+          <button class="f-tag" data-val="policybazaar">policybazaar</button>
+          <button class="f-tag" data-val="youtube">youtube</button>
+          <button class="f-tag" data-val="learning-lab">learning-lab</button>
+          <button class="f-tag" data-val="meta-quest3">meta-quest3</button>
+          <button class="f-tag" data-val="family">family</button>
+          <button class="f-tag" data-val="rest">rest</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sec-head"><span class="sec-icon">🙏</span><span class="sec-title">Sadhana</span></div>
+      <label class="check-row">
+        <input type="checkbox" id="sadhana_done">
+        <span>Sadhana done / planned for today</span>
+      </label>
+      <div class="row-2">
+        <div class="field">
+          <label>Practice</label>
+          <input type="text" id="sadhana_practice" placeholder="Shambhavi / pranayam…">
+        </div>
+        <div class="field">
+          <label>Duration (min)</label>
+          <input type="text" id="sadhana_duration" placeholder="45">
+        </div>
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label>Time of Day</label>
+          <input type="text" id="sadhana_time" placeholder="6 am">
+        </div>
+        <div class="field">
+          <label>Intention going in</label>
+          <input type="text" id="sadhana_intention" placeholder="One line…">
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sec-head"><span class="sec-icon">🧠</span><span class="sec-title">Learning</span></div>
+      <div class="row-2">
+        <div class="field"><label>Topic 1</label><input type="text" id="learning_t1"></div>
+        <div class="field"><label>Topic 2</label><input type="text" id="learning_t2"></div>
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label>Source</label>
+          <input type="text" id="learning_source" placeholder="article / video / course">
+        </div>
+        <div class="field">
+          <label>Why this, why today</label>
+          <input type="text" id="learning_why">
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sec-head"><span class="sec-icon">🛠️</span><span class="sec-title">Work / Build</span></div>
+      <div class="field">
+        <label>Top Priority</label>
+        <input type="text" id="work_top" placeholder="Wealth platform / Optimus / PolicyBazaar…">
+      </div>
+      <div class="field"><label>Secondary</label><input type="text" id="work_sec"></div>
+      <div class="field">
+        <label>One thing I will NOT let eat my day</label>
+        <input type="text" id="work_avoid">
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sec-head"><span class="sec-icon">🎯</span><span class="sec-title">Sankalp</span></div>
+      <div class="field">
+        <label>One-line intention for the whole day</label>
+        <input type="text" id="sankalp">
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-p" onclick="saveAndGo('evening')">Save Morning &amp; Continue →</button>
+      <button class="btn-s" onclick="doSave()">Save</button>
+      <button class="btn-s" onclick="doClear()">Clear today</button>
+    </div>
+  </div>
+
+  <!-- EVENING -->
+  <div id="pane-evening" class="tab-pane" role="tabpanel">
+    <div class="callout">Close the day — fill this in before you wind down.</div>
+
+    <div class="section">
+      <div class="sec-head"><span class="sec-icon">🌙</span><span class="sec-title">Evening Vitals</span></div>
+      <div class="row-2">
+        <div class="field">
+          <label>Mood</label>
+          <div class="rating-wrap" data-field="mood_evening">
+            <button class="r-btn" data-val="1">1</button><button class="r-btn" data-val="2">2</button>
+            <button class="r-btn" data-val="3">3</button><button class="r-btn" data-val="4">4</button>
+            <button class="r-btn" data-val="5">5</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Energy</label>
+          <div class="rating-wrap" data-field="energy_evening">
+            <button class="r-btn" data-val="1">1</button><button class="r-btn" data-val="2">2</button>
+            <button class="r-btn" data-val="3">3</button><button class="r-btn" data-val="4">4</button>
+            <button class="r-btn" data-val="5">5</button>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Self-rating for the day</label>
+        <div class="rating-wrap" data-field="self_rating">
+          <button class="r-btn" data-val="1">1</button><button class="r-btn" data-val="2">2</button>
+          <button class="r-btn" data-val="3">3</button><button class="r-btn" data-val="4">4</button>
+          <button class="r-btn" data-val="5">5</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sec-head"><span class="sec-icon">🪞</span><span class="sec-title">Evening Reflection</span></div>
+      <div class="field">
+        <label>Sadhana — did it happen? How did it feel?</label>
+        <textarea id="ref_sadhana"></textarea>
+      </div>
+      <div class="field">
+        <label>Learning — what actually got learned?</label>
+        <textarea id="ref_learning"></textarea>
+      </div>
+      <div class="field">
+        <label>Work — what shipped / moved / got stuck?</label>
+        <textarea id="ref_work"></textarea>
+      </div>
+      <div class="field">
+        <label>Gratitude — one thing</label>
+        <textarea id="ref_gratitude" style="min-height:60px"></textarea>
+      </div>
+      <div class="field">
+        <label>Friction — what pulled me off-plan?</label>
+        <textarea id="ref_friction"></textarea>
+      </div>
+      <div class="field">
+        <label>Tomorrow's first move</label>
+        <input type="text" id="ref_tomorrow" placeholder="Before checking phone / Slack…">
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sec-head"><span class="sec-icon">🔗</span><span class="sec-title">Links</span></div>
+      <div class="field">
+        <label>Learning post</label>
+        <input type="text" id="link_post" placeholder="_posts/YYYY-MM-DD-title.md or URL">
+      </div>
+      <div class="field">
+        <label>Domain ref</label>
+        <input type="text" id="link_domain" placeholder="mf-notes / demat-notes / las-notes…">
+      </div>
+      <div class="field">
+        <label>YouTube idea</label>
+        <input type="text" id="link_yt" placeholder="one seed line for future content">
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-p" onclick="genAndGo()">Generate Markdown →</button>
+      <button class="btn-s" onclick="doSave()">Save Progress</button>
+    </div>
+  </div>
+
+  <!-- PREVIEW -->
+  <div id="pane-preview" class="tab-pane" role="tabpanel">
+    <div class="callout">Save to: <strong id="prev-path"></strong></div>
+    <div style="overflow-x:auto">
+      <pre class="preview-code" id="prev-code"></pre>
+    </div>
+    <div class="actions">
+      <button class="btn-p" onclick="doDownload()">Download .md file</button>
+      <button class="btn-s" onclick="doCopy()">Copy to clipboard</button>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div id="pane-history" class="tab-pane" role="tabpanel">
+    <div class="callout">
+      Entries are loaded from the <strong>server</strong> (your <code>entries/</code> folder) and from
+      <strong>this browser's local storage</strong>.
+    </div>
+    <div id="hist-status" class="hist-status"></div>
+    <div id="history-list"></div>
+  </div>
+
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ── Date ── */
+  const now = new Date();
+  const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const yyyy = now.getFullYear();
+  const mm   = String(now.getMonth()+1).padStart(2,'0');
+  const dd   = String(now.getDate()).padStart(2,'0');
+  const KEY  = `${yyyy}-${mm}-${dd}`;
+  const DAY  = DAYS[now.getDay()];
+
+  document.getElementById('js-weekday').textContent = DAY;
+  document.getElementById('js-date').textContent = `${dd} ${MONTHS[now.getMonth()]} ${yyyy}`;
+  document.getElementById('js-path').textContent = `entries/${yyyy}/${mm}/${KEY}.md`;
+
+  /* ── Tabs ── */
+  const tabBtns  = document.querySelectorAll('.tab-btn');
+  const tabPanes = document.querySelectorAll('.tab-pane');
+  let histLoaded = false;
+
+  function switchTab(name) {
+    tabBtns.forEach(b => {
+      const on = b.dataset.tab === name;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-selected', on);
+    });
+    tabPanes.forEach(p => p.classList.toggle('active', p.id === `pane-${name}`));
+  }
+
+  tabBtns.forEach(btn => btn.addEventListener('click', () => {
+    const t = btn.dataset.tab;
+    if (t === 'preview') buildPreview();
+    if (t === 'history' && !histLoaded) { histLoaded = true; loadHistory(); }
+    switchTab(t);
+  }));
+
+  /* ── Rating buttons ── */
+  document.querySelectorAll('.rating-wrap').forEach(wrap => {
+    wrap.querySelectorAll('.r-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        wrap.querySelectorAll('.r-btn').forEach(b => b.classList.remove('on'));
+        btn.classList.add('on');
+        doSave();
+      });
+    });
+  });
+
+  /* ── Focus tags ── */
+  document.querySelectorAll('.f-tag').forEach(tag => {
+    tag.addEventListener('click', () => {
+      const wasOn = tag.classList.contains('on');
+      document.querySelectorAll('.f-tag').forEach(t => t.classList.remove('on'));
+      if (!wasOn) tag.classList.add('on');
+      doSave();
+    });
+  });
+
+  /* ── Auto-save ── */
+  document.querySelectorAll('input[type="text"], textarea, input[type="checkbox"]').forEach(el => {
+    el.addEventListener('input', doSave);
+    el.addEventListener('change', doSave);
+  });
+
+  /* ── Form collect ── */
+  function collect() {
+    return {
+      mood_morning:      rating('mood_morning'),
+      energy_morning:    rating('energy_morning'),
+      focus_tag:         focusTag(),
+      sadhana_done:      document.getElementById('sadhana_done').checked,
+      sadhana_practice:  val('sadhana_practice'),
+      sadhana_duration:  val('sadhana_duration'),
+      sadhana_time:      val('sadhana_time'),
+      sadhana_intention: val('sadhana_intention'),
+      learning_t1:       val('learning_t1'),
+      learning_t2:       val('learning_t2'),
+      learning_source:   val('learning_source'),
+      learning_why:      val('learning_why'),
+      work_top:          val('work_top'),
+      work_sec:          val('work_sec'),
+      work_avoid:        val('work_avoid'),
+      sankalp:           val('sankalp'),
+      mood_evening:      rating('mood_evening'),
+      energy_evening:    rating('energy_evening'),
+      self_rating:       rating('self_rating'),
+      ref_sadhana:       val('ref_sadhana'),
+      ref_learning:      val('ref_learning'),
+      ref_work:          val('ref_work'),
+      ref_gratitude:     val('ref_gratitude'),
+      ref_friction:      val('ref_friction'),
+      ref_tomorrow:      val('ref_tomorrow'),
+      link_post:         val('link_post'),
+      link_domain:       val('link_domain'),
+      link_yt:           val('link_yt'),
+    };
+  }
+
+  function rating(field) {
+    const b = document.querySelector(`.rating-wrap[data-field="${field}"] .r-btn.on`);
+    return b ? b.dataset.val : '';
+  }
+  function focusTag() {
+    const t = document.querySelector('.f-tag.on');
+    return t ? t.dataset.val : '';
+  }
+  function val(id) {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : '';
+  }
+
+  /* ── Save / Load ── */
+  function doSave() {
+    try { localStorage.setItem(`dj_${KEY}`, JSON.stringify(collect())); } catch(e) {}
+  }
+  window.doSave = doSave;
+
+  function loadSaved() {
+    let raw;
+    try { raw = localStorage.getItem(`dj_${KEY}`); } catch(e) {}
+    if (!raw) return;
+    const d = JSON.parse(raw);
+
+    ['mood_morning','energy_morning','mood_evening','energy_evening','self_rating'].forEach(f => {
+      if (d[f]) {
+        const b = document.querySelector(`.rating-wrap[data-field="${f}"] .r-btn[data-val="${d[f]}"]`);
+        if (b) b.classList.add('on');
+      }
+    });
+    if (d.focus_tag) {
+      const t = document.querySelector(`.f-tag[data-val="${d.focus_tag}"]`);
+      if (t) t.classList.add('on');
+    }
+    ['sadhana_practice','sadhana_duration','sadhana_time','sadhana_intention',
+     'learning_t1','learning_t2','learning_source','learning_why',
+     'work_top','work_sec','work_avoid','sankalp',
+     'ref_sadhana','ref_learning','ref_work','ref_gratitude','ref_friction','ref_tomorrow',
+     'link_post','link_domain','link_yt'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && d[id] !== undefined) el.value = d[id];
+    });
+    if (d.sadhana_done !== undefined)
+      document.getElementById('sadhana_done').checked = !!d.sadhana_done;
+  }
+
+  /* ── Markdown generation ── */
+  function buildMarkdown(d, dateKey, dayName) {
+    d = d || collect();
+    dateKey = dateKey || KEY;
+    dayName = dayName || DAY;
+    const p = d.sadhana_practice || '___';
+    const dur = d.sadhana_duration || '___';
+    return `---
+date: ${dateKey}
+day: ${dayName}
+mood_morning: ${d.mood_morning}
+energy_morning: ${d.energy_morning}
+sadhana_done: ${d.sadhana_done}
+focus_tag: ${d.focus_tag}
+mood_evening: ${d.mood_evening}
+energy_evening: ${d.energy_evening}
+self_rating: ${d.self_rating}
+links:
+  learning_post: ${d.link_post}
+  domain_ref: ${d.link_domain}
+  youtube_idea: ${d.link_yt}
+---
+
+# ${dateKey} — ${dayName}
+
+## 🙏 Sadhana — Plan for Today
+- [ ] Practice: ${p} — duration: ${dur}
+- [ ] Time of day: ${d.sadhana_time}
+- [ ] Intention going in (one line): ${d.sadhana_intention}
+
+## 🧠 Learning — Plan for Today
+- [ ] Topic 1: ${d.learning_t1}
+- [ ] Topic 2: ${d.learning_t2}
+- [ ] Source (article / video / course): ${d.learning_source}
+- [ ] Why this, why today: ${d.learning_why}
+
+## 🛠️ Work / Build — Plan for Today
+- [ ] Top priority: ${d.work_top}
+- [ ] Secondary: ${d.work_sec}
+- [ ] One thing I will NOT let eat my day: ${d.work_avoid}
+
+## 🎯 Sankalp (one-line intention for the whole day)
+> ${d.sankalp}
+
+---
+
+## 🌙 Evening Reflection
+
+**Sadhana** — did it happen? How did it feel?
+${d.ref_sadhana}
+
+**Learning** — what actually got learned (even if different from the plan)?
+${d.ref_learning}
+
+**Work** — what shipped / moved / got stuck?
+${d.ref_work}
+
+**Gratitude** — one thing:
+${d.ref_gratitude}
+
+**Friction** — what pulled me off-plan today?
+${d.ref_friction}
+
+**Tomorrow's first move** — the one thing I'll do before checking phone/Slack:
+${d.ref_tomorrow}
+
+**Self-rating (1–5):** ${d.self_rating}
+`;
+  }
+
+  /* ── Save markdown to localStorage ── */
+  function saveMd(md, dateKey) {
+    try { localStorage.setItem(`dj_md_${dateKey || KEY}`, md); } catch(e) {}
+  }
+
+  let lastMd = '';
+
+  function buildPreview() {
+    lastMd = buildMarkdown();
+    saveMd(lastMd);
+    document.getElementById('prev-code').textContent = lastMd;
+    document.getElementById('prev-path').textContent = `entries/${yyyy}/${mm}/${KEY}.md`;
+  }
+
+  /* ── Actions ── */
+  window.saveAndGo = function(tab) { doSave(); toast('Saved'); switchTab(tab); };
+
+  window.genAndGo = function() {
+    doSave();
+    buildPreview();
+    switchTab('preview');
+  };
+
+  window.doDownload = function(mdStr, filename) {
+    const content = mdStr || (lastMd || buildMarkdown());
+    const fname   = filename || `${KEY}.md`;
+    if (!mdStr) saveMd(content);
+    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = fname;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    toast('Downloaded');
+  };
+
+  window.doCopy = function(mdStr) {
+    navigator.clipboard.writeText(mdStr || lastMd || buildMarkdown())
+      .then(() => toast('Copied to clipboard'));
+  };
+
+  window.doClear = function() {
+    if (!window.confirm('Clear all saved data for today?')) return;
+    try { localStorage.removeItem(`dj_${KEY}`); localStorage.removeItem(`dj_md_${KEY}`); } catch(e) {}
+    location.reload();
+  };
+
+  /* ── History ── */
+
+  function dateToDisplay(dateKey) {
+    const [y, m, d] = dateKey.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
+    return {
+      weekday: DAYS[dt.getDay()],
+      display: `${String(d).padStart(2,'0')} ${MONTHS[m-1]} ${y}`,
+    };
+  }
+
+  function parseFrontmatter(md) {
+    const m = md.match(/^---\s*\n([\s\S]*?)\n---/);
+    if (!m) return {};
+    const out = {};
+    m[1].split('\n').forEach(line => {
+      const colon = line.indexOf(':');
+      if (colon < 0) return;
+      const k = line.slice(0, colon).trim();
+      const v = line.slice(colon + 1).trim();
+      if (k && v) out[k] = v;
+    });
+    return out;
+  }
+
+  function esc(s) {
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+
+  function inlineFmt(s) {
+    return esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  }
+
+  function renderMarkdown(md) {
+    const body = md.replace(/^---[\s\S]*?---\s*\n/, '');
+    const lines = body.split('\n');
+    const out = [];
+    for (const line of lines) {
+      if      (/^## /.test(line))    out.push(`<h2>${inlineFmt(line.slice(3))}</h2>`);
+      else if (/^# /.test(line))     out.push(`<h1>${inlineFmt(line.slice(2))}</h1>`);
+      else if (line === '---')        out.push('<hr>');
+      else if (/^> /.test(line))     out.push(`<div class="bq">${inlineFmt(line.slice(2))}</div>`);
+      else if (/^- \[x\] /.test(line)) out.push(`<div class="task done"><span class="cb">✓</span>${inlineFmt(line.slice(6))}</div>`);
+      else if (/^- \[ \] /.test(line)) out.push(`<div class="task"><span class="cb">○</span>${inlineFmt(line.slice(6))}</div>`);
+      else if (/^\*\*/.test(line) && /\*\*/.test(line.slice(2))) out.push(`<div class="ref-label">${inlineFmt(line)}</div>`);
+      else if (line === '')           out.push('<div class="gap"></div>');
+      else                            out.push(`<div class="para">${inlineFmt(line)}</div>`);
+    }
+    return out.join('');
+  }
+
+  function createEntryEl(dateKey, md, source) {
+    const { weekday, display } = dateToDisplay(dateKey);
+    const fm = parseFrontmatter(md);
+    const filename = `${dateKey}.md`;
+
+    const badges = [];
+    if (fm.mood_morning)  badges.push(`mood ${fm.mood_morning}↑`);
+    if (fm.self_rating)   badges.push(`★ ${fm.self_rating}`);
+    if (fm.focus_tag)     badges.push(fm.focus_tag);
+
+    const item = document.createElement('div');
+    item.className = 'hist-item';
+    item.innerHTML = `
+      <button class="hist-toggle" aria-expanded="false">
+        <div class="hist-meta">
+          <span class="hist-day">${esc(weekday)}</span>
+          <span class="hist-date">${esc(display)}</span>
+        </div>
+        <div class="hist-right">
+          ${badges.map(b => `<span class="hist-badge">${esc(b)}</span>`).join('')}
+          <span class="hist-src">${source}</span>
+          <span class="chevron">›</span>
+        </div>
+      </button>
+      <div class="hist-body" hidden>
+        <div class="md-render">${renderMarkdown(md)}</div>
+        <div class="hist-actions">
+          <button class="btn-sm" data-dl>Download ${esc(filename)}</button>
+          <button class="btn-sm" data-cp>Copy</button>
+        </div>
+      </div>`;
+
+    const toggle = item.querySelector('.hist-toggle');
+    const body   = item.querySelector('.hist-body');
+    toggle.addEventListener('click', () => {
+      const open = !body.hidden;
+      body.hidden = open;
+      toggle.classList.toggle('open', !open);
+      toggle.setAttribute('aria-expanded', !open);
+    });
+    item.querySelector('[data-dl]').addEventListener('click', () => window.doDownload(md, filename));
+    item.querySelector('[data-cp]').addEventListener('click', () => window.doCopy(md));
+    return item;
+  }
+
+  async function loadHistory() {
+    const list   = document.getElementById('history-list');
+    const status = document.getElementById('hist-status');
+    list.innerHTML = '';
+    status.textContent = 'Loading…';
+
+    const entries = new Map(); // dateKey → { md, source }
+
+    /* 1. Scan localStorage for saved markdown (generated through UI) */
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k || !k.startsWith('dj_md_')) continue;
+        const dateKey = k.slice(6); // strip 'dj_md_'
+        const md = localStorage.getItem(k);
+        if (md) entries.set(dateKey, { md, source: 'local' });
+      }
+    } catch(e) {}
+
+    /* 2. Scan localStorage for form data not yet generated */
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k || !k.startsWith('dj_') || k.startsWith('dj_md_')) continue;
+        const dateKey = k.slice(3);
+        if (entries.has(dateKey)) continue; // already have generated md
+        try {
+          const d = JSON.parse(localStorage.getItem(k));
+          if (!d) continue;
+          const [y, m] = dateKey.split('-');
+          const dt = new Date(Number(y), Number(m)-1, Number(dateKey.slice(8)));
+          const md = buildMarkdown(d, dateKey, DAYS[dt.getDay()]);
+          entries.set(dateKey, { md, source: 'local' });
+        } catch(e) {}
+      }
+    } catch(e) {}
+
+    /* 3. Fetch from server for the last 120 days */
+    const localKeys = new Set(entries.keys());
+    const fetchTasks = [];
+    for (let i = 0; i < 120; i++) {
+      const dt = new Date(now);
+      dt.setDate(dt.getDate() - i);
+      const y = dt.getFullYear();
+      const m = String(dt.getMonth()+1).padStart(2,'0');
+      const d = String(dt.getDate()).padStart(2,'0');
+      const dateKey = `${y}-${m}-${d}`;
+      if (localKeys.has(dateKey)) continue;
+      fetchTasks.push(
+        fetch(`entries/${y}/${m}/${dateKey}.md`, { cache: 'no-cache' })
+          .then(r => r.ok ? r.text().then(text => ({ dateKey, md: text })) : null)
+          .catch(() => null)
+      );
+    }
+
+    const fetched = await Promise.all(fetchTasks);
+    fetched.forEach(r => {
+      if (r && r.md.trim()) entries.set(r.dateKey, { md: r.md, source: 'server' });
+    });
+
+    /* Render */
+    const sorted = [...entries.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+
+    if (sorted.length === 0) {
+      status.textContent = 'No entries found.';
+      return;
+    }
+
+    status.textContent = `${sorted.length} entr${sorted.length === 1 ? 'y' : 'ies'} found`;
+    sorted.forEach(([dateKey, { md, source }]) => {
+      list.appendChild(createEntryEl(dateKey, md, source));
+    });
+  }
+
+  /* ── Toast ── */
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove('show'), 2000);
+  }
+
+  loadSaved();
+})();
+</script>
+
+</body>
+</html>
