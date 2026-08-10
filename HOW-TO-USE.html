@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How to Use Your Personal OS</title>
+<style>
+/* ── Tokens ──────────────────────────────────────────────── */
+:root {
+  --bg:          #F8F4EC;
+  --bg-surface:  #F0EAE0;
+  --bg-code:     #EAE3D7;
+  --text:        #1C1712;
+  --text-sec:    #7A6D5E;
+  --text-faint:  #A89C8E;
+  --accent:      #B07030;
+  --accent-soft: rgba(176,112,48,0.12);
+  --border:      rgba(176,112,48,0.22);
+  --border-soft: rgba(176,112,48,0.10);
+  --green:       #2E7D52;
+  --green-bg:    rgba(46,125,82,0.09);
+  --red:         #B94040;
+  --red-bg:      rgba(185,64,64,0.09);
+  --blue:        #2B5EA7;
+  --blue-bg:     rgba(43,94,167,0.09);
+  --font-serif:  Georgia, 'Times New Roman', serif;
+  --font-sans:   -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono:   'Menlo', 'Fira Code', 'Courier New', monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:          #13100B;
+    --bg-surface:  #1C1812;
+    --bg-code:     #231F17;
+    --text:        #E6DDD0;
+    --text-sec:    #8A7E70;
+    --text-faint:  #5E5448;
+    --accent:      #CF9048;
+    --accent-soft: rgba(207,144,72,0.13);
+    --border:      rgba(207,144,72,0.20);
+    --border-soft: rgba(207,144,72,0.09);
+    --green:       #4EA87A;
+    --green-bg:    rgba(78,168,122,0.11);
+    --red:         #D46060;
+    --red-bg:      rgba(212,96,96,0.10);
+    --blue:        #6A9FD8;
+    --blue-bg:     rgba(106,159,216,0.10);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg:          #13100B;
+  --bg-surface:  #1C1812;
+  --bg-code:     #231F17;
+  --text:        #E6DDD0;
+  --text-sec:    #8A7E70;
+  --text-faint:  #5E5448;
+  --accent:      #CF9048;
+  --accent-soft: rgba(207,144,72,0.13);
+  --border:      rgba(207,144,72,0.20);
+  --border-soft: rgba(207,144,72,0.09);
+  --green:       #4EA87A;
+  --green-bg:    rgba(78,168,122,0.11);
+  --red:         #D46060;
+  --red-bg:      rgba(212,96,96,0.10);
+  --blue:        #6A9FD8;
+  --blue-bg:     rgba(106,159,216,0.10);
+}
+
+/* ── Reset ───────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Page layout ─────────────────────────────────────────── */
+.page-header {
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  padding: 2rem 2.5rem;
+}
+.page-header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+.page-title {
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  font-weight: normal;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.page-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+}
+
+.layout {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 0;
+  padding: 0 2.5rem 4rem;
+  align-items: start;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────── */
+.sidebar {
+  position: sticky;
+  top: 2rem;
+  padding: 2.5rem 2rem 2rem 0;
+  border-right: 1px solid var(--border-soft);
+  min-height: 60vh;
+}
+.toc-label {
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  color: var(--text-faint);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+.toc-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.toc-list a {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--text-sec);
+  text-decoration: none;
+  padding: 0.28rem 0.6rem;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+  line-height: 1.4;
+}
+.toc-list a:hover { color: var(--text); background: var(--accent-soft); }
+.toc-list a.active { color: var(--accent); font-weight: 500; background: var(--accent-soft); }
+.toc-divider { height: 1px; background: var(--border-soft); margin: 0.5rem 0.6rem; }
+.toc-group-label {
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  color: var(--text-faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.6rem 0.6rem 0.1rem;
+}
+
+/* ── Content ─────────────────────────────────────────────── */
+.content {
+  padding: 2.5rem 0 0 2.5rem;
+  max-width: 700px;
+}
+
+/* ── Section ─────────────────────────────────────────────── */
+.section {
+  padding-bottom: 3.5rem;
+  border-bottom: 1px solid var(--border-soft);
+  margin-bottom: 3.5rem;
+}
+.section:last-child { border-bottom: none; }
+
+.section-tag {
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  color: var(--accent);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 0.6rem;
+  display: block;
+}
+h2 {
+  font-family: var(--font-serif);
+  font-size: 1.55rem;
+  font-weight: normal;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  text-wrap: balance;
+  margin-bottom: 1.2rem;
+  color: var(--text);
+}
+h3 {
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--text-sec);
+  margin: 2rem 0 0.8rem;
+}
+p {
+  margin-bottom: 1rem;
+  color: var(--text);
+  max-width: 62ch;
+}
+p:last-child { margin-bottom: 0; }
+
+/* ── Code inline ─────────────────────────────────────────── */
+code {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  background: var(--bg-code);
+  color: var(--accent);
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+/* ── Command block ───────────────────────────────────────── */
+.cmd-block {
+  background: var(--bg-surface);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+  padding: 1.1rem 1.3rem;
+  margin: 1.2rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--text);
+  overflow-x: auto;
+}
+.cmd-block .cmd-name { color: var(--accent); font-weight: 600; }
+.cmd-block .comment { color: var(--text-faint); font-style: italic; }
+
+/* ── Command card ────────────────────────────────────────── */
+.cmd-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin: 1.2rem 0;
+  overflow: hidden;
+}
+.cmd-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.85rem 1.1rem;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-soft);
+}
+.cmd-tag {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.cmd-badge {
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  padding: 0.15em 0.55em;
+  border-radius: 99px;
+  font-weight: 500;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.badge-daily { background: var(--blue-bg); color: var(--blue); }
+.badge-ondemand { background: var(--accent-soft); color: var(--accent); }
+.badge-weekly { background: var(--green-bg); color: var(--green); }
+.badge-setup { background: var(--red-bg); color: var(--red); }
+
+.cmd-card-body {
+  padding: 0.9rem 1.1rem;
+}
+.cmd-card-body p {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+.cmd-card-body .cmd-example {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  color: var(--text-sec);
+  margin-top: 0.4rem;
+}
+.cmd-card-body .cmd-when {
+  font-size: 0.78rem;
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+/* ── Folder tree ─────────────────────────────────────────── */
+.folder-tree {
+  background: var(--bg-code);
+  border-radius: 8px;
+  padding: 1.2rem 1.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 2;
+  overflow-x: auto;
+}
+.folder-tree .folder { color: var(--accent); font-weight: 600; }
+.folder-tree .file { color: var(--text); }
+.folder-tree .note { color: var(--text-faint); font-style: italic; }
+
+/* ── Can / Cannot ────────────────────────────────────────── */
+.can-cannot-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2rem;
+  margin-top: 1rem;
+}
+.can-block, .cannot-block {
+  border-radius: 8px;
+  padding: 1.2rem 1.3rem;
+}
+.can-block { background: var(--green-bg); border: 1px solid rgba(46,125,82,0.18); }
+.cannot-block { background: var(--red-bg); border: 1px solid rgba(185,64,64,0.18); }
+.can-block h4 { color: var(--green); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.8rem; font-family: var(--font-mono); }
+.cannot-block h4 { color: var(--red); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.8rem; font-family: var(--font-mono); }
+.can-list, .cannot-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.can-list li, .cannot-list li {
+  font-size: 0.86rem;
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  line-height: 1.45;
+}
+.can-list li::before { content: "✓"; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 0.05em; }
+.cannot-list li::before { content: "✗"; color: var(--red); font-weight: 700; flex-shrink: 0; margin-top: 0.05em; }
+
+/* ── Steps ───────────────────────────────────────────────── */
+.steps {
+  list-style: none;
+  counter-reset: step;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  margin: 1.2rem 0;
+}
+.steps li {
+  counter-increment: step;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+.steps li::before {
+  content: counter(step);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: var(--accent);
+  color: var(--bg);
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+.steps li > div { font-size: 0.92rem; }
+.steps li > div strong { display: block; margin-bottom: 0.2rem; }
+
+/* ── Workflow cards ──────────────────────────────────────── */
+.workflow-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin: 1.2rem 0;
+}
+.workflow-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.1rem;
+  background: var(--bg-surface);
+}
+.workflow-time {
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+}
+.workflow-card p { font-size: 0.86rem; margin: 0; }
+.workflow-card .wf-cmd { display: block; font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent); margin-top: 0.4rem; }
+
+/* ── Project table ───────────────────────────────────────── */
+.proj-table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.86rem; }
+.proj-table th {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+  border-bottom: 1px solid var(--border);
+  padding: 0.5rem 0.8rem;
+  font-weight: 500;
+}
+.proj-table td { padding: 0.75rem 0.8rem; border-bottom: 1px solid var(--border-soft); vertical-align: top; }
+.proj-table tr:last-child td { border-bottom: none; }
+.proj-table td:first-child { font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent); white-space: nowrap; }
+.proj-table td:nth-child(2) { font-size: 0.8rem; color: var(--text-faint); white-space: nowrap; }
+.proj-table td:nth-child(3) { color: var(--text); }
+
+/* ── Quick ref table ─────────────────────────────────────── */
+.ref-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; overflow: hidden; border-radius: 8px; border: 1px solid var(--border); }
+.ref-table th {
+  background: var(--bg-surface);
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+  padding: 0.6rem 1rem;
+  font-weight: 500;
+}
+.ref-table td { padding: 0.6rem 1rem; border-top: 1px solid var(--border-soft); vertical-align: top; }
+.ref-table td:first-child { font-family: var(--font-mono); font-size: 0.8rem; color: var(--accent); white-space: nowrap; }
+.ref-table td:nth-child(2) { color: var(--text-sec); }
+.ref-table td:nth-child(3) { font-size: 0.78rem; color: var(--text-faint); }
+.ref-table-wrap { overflow-x: auto; border-radius: 8px; }
+
+/* ── Callout ─────────────────────────────────────────────── */
+.callout {
+  background: var(--accent-soft);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+  padding: 0.9rem 1.2rem;
+  margin: 1.2rem 0;
+  font-size: 0.88rem;
+}
+.callout p { margin: 0; max-width: none; }
+.callout strong { color: var(--accent); }
+
+/* ── Theme toggle ────────────────────────────────────────── */
+.theme-toggle {
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  color: var(--text-sec);
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  padding: 0.3rem 0.7rem;
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.theme-toggle:hover { color: var(--text); border-color: var(--accent); }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 780px) {
+  .layout { grid-template-columns: 1fr; padding: 0 1.2rem 3rem; }
+  .sidebar { position: static; border-right: none; border-bottom: 1px solid var(--border-soft); padding: 1.5rem 0 1.2rem; }
+  .content { padding: 1.5rem 0 0; max-width: 100%; }
+  .can-cannot-grid { grid-template-columns: 1fr; }
+  .page-header { padding: 1.5rem 1.2rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+</style>
+</head>
+<body>
+
+<header class="page-header">
+  <div class="page-header-inner">
+    <h1 class="page-title">Your Personal OS — How It All Works</h1>
+    <div style="display:flex;align-items:center;gap:1rem;">
+      <span class="page-subtitle">personal-os/</span>
+      <button class="theme-toggle" onclick="toggleTheme()">toggle theme</button>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ── Sidebar TOC ── -->
+  <nav class="sidebar" aria-label="Table of contents">
+    <div class="toc-label">Contents</div>
+    <ul class="toc-list" id="toc">
+      <li><a href="#big-idea">The Big Idea</a></li>
+      <li><a href="#folder-map">Folder Map</a></li>
+      <li><a href="#first-time">First Time Setup</a></li>
+      <div class="toc-divider"></div>
+      <div class="toc-group-label">Commands</div>
+      <li><a href="#daily-commands">Daily Commands</a></li>
+      <li><a href="#learning-commands">Learning Commands</a></li>
+      <li><a href="#practice-commands">Practice & Review</a></li>
+      <li><a href="#system-commands">System Commands</a></li>
+      <div class="toc-divider"></div>
+      <li><a href="#your-projects">Your Projects</a></li>
+      <li><a href="#the-vault">The Vault</a></li>
+      <li><a href="#the-inbox">The Inbox</a></li>
+      <li><a href="#daily-workflows">Daily Workflows</a></li>
+      <div class="toc-divider"></div>
+      <li><a href="#can-cannot">What It Can / Cannot Do</a></li>
+      <li><a href="#quick-ref">Quick Reference</a></li>
+    </ul>
+  </nav>
+
+  <!-- ── Main content ── -->
+  <main class="content">
+
+    <!-- BIG IDEA -->
+    <section class="section" id="big-idea">
+      <span class="section-tag">Overview</span>
+      <h2>What is this, in plain English?</h2>
+      <p>This is your personal AI operating system. Think of it as a second brain that runs on Claude Code. You talk to it, it remembers things, processes what you learn, and helps you think.</p>
+      <p>It has two core parts:</p>
+      <p><strong>The Vault</strong> — a wiki that grows every time you learn something. Every concept you study, every course you finish, every insight from your journal ends up as a page in the vault, cross-linked to related ideas. Open it in Obsidian and you see a graph of your own knowledge.</p>
+      <p><strong>The Commands</strong> — slash commands you type in Claude Code that do specific jobs: run your morning brief, process a course, practice a system design, journal your evening. Each command reads your vault, does its job, then writes back what it found.</p>
+      <p>The vault gets richer the more you use it. That's the whole point — compounding knowledge over time.</p>
+
+      <div class="callout">
+        <p><strong>One thing to understand:</strong> this system lives on your machine. Nothing is in the cloud by default. The vault is just markdown files in the <code>vault/</code> folder. You can read, edit, and open them in Obsidian anytime without touching Claude Code.</p>
+      </div>
+    </section>
+
+    <!-- FOLDER MAP -->
+    <section class="section" id="folder-map">
+      <span class="section-tag">Structure</span>
+      <h2>What's in each folder?</h2>
+      <p>Here's every folder and what it actually does:</p>
+
+      <div class="folder-tree">
+        <span class="folder">personal-os/</span><br>
+        ├── <span class="file">CLAUDE.md</span>         <span class="note">← the brain. tells Claude how to behave</span><br>
+        ├── <span class="file">soul.md</span>            <span class="note">← your identity. your voice. fill via /setup</span><br>
+        ├── <span class="file">GETTING-STARTED.md</span> <span class="note">← quick start guide</span><br>
+        ├── <span class="file">HOW-TO-USE.html</span>   <span class="note">← this file</span><br>
+        ├── <span class="file">index.html</span>         <span class="note">← your shivmarg.in website (root)</span><br>
+        │<br>
+        ├── <span class="folder">inbox/</span>           <span class="note">← drop articles, PDFs, notes here to process</span><br>
+        ├── <span class="folder">outputs/</span>         <span class="note">← reports and deliverables land here</span><br>
+        │   ├── study-briefs/               <span class="note">← daily briefs</span><br>
+        │   ├── design-reviews/             <span class="note">← /design-lab session outputs</span><br>
+        │   └── learning-reports/           <span class="note">← weekly reports, career radar</span><br>
+        ├── <span class="folder">scheduler/</span>       <span class="note">← schedule.md configures what runs automatically</span><br>
+        │<br>
+        ├── <span class="folder">vault/</span>           <span class="note">← your knowledge wiki ← open this in Obsidian</span><br>
+        │   ├── index.md                    <span class="note">← master catalog. Claude reads this first</span><br>
+        │   ├── log.md                      <span class="note">← activity log. never delete entries</span><br>
+        │   ├── me/                         <span class="note">← role, goals, preferences, daily journal</span><br>
+        │   ├── learning/                   <span class="note">← concept pages by domain</span><br>
+        │   │   ├── ai-llms/               <br>
+        │   │   ├── system-design/         <br>
+        │   │   ├── fintech/               <br>
+        │   │   ├── leadership/            <br>
+        │   │   ├── software-engineering/  <br>
+        │   │   ├── business-strategy/     <br>
+        │   │   └── career/               <br>
+        │   ├── courses/                    <span class="note">← course progress tracker</span><br>
+        │   ├── projects/                   <span class="note">← status page for each project</span><br>
+        │   ├── spirituality/               <span class="note">← practice notes and insights</span><br>
+        │   ├── people/                     <span class="note">← authors, teachers, mentors you encounter</span><br>
+        │   ├── ideas/                      <span class="note">← raw ideas, experiments</span><br>
+        │   ├── sources/                    <span class="note">← archive of raw sources. never modified</span><br>
+        │   └── research/                   <span class="note">← research outputs</span><br>
+        │<br>
+        └── <span class="folder">projects/</span>        <span class="note">← all your live projects</span><br>
+            ├── architect-kit/              <span class="note">← system design study lab</span><br>
+            ├── leadership-kit/             <span class="note">← 100-day shift + domain notes + journal</span><br>
+            ├── antarmukh/                  <span class="note">← antarmukh.shivmarg.in</span><br>
+            ├── shunya-hub/                 <span class="note">← shivawithin.in</span><br>
+            └── sankalp-site/               <span class="note">← placeholder</span>
+      </div>
+
+      <div class="callout">
+        <p><strong>The rule:</strong> <code>vault/</code> is where knowledge lives. <code>projects/</code> is where code and content live. The vault references projects but never overwrites them. <code>vault/sources/</code> is read-only once a file is archived there.</p>
+      </div>
+    </section>
+
+    <!-- FIRST TIME -->
+    <section class="section" id="first-time">
+      <span class="section-tag">Getting Started</span>
+      <h2>First time — what to actually do</h2>
+      <ol class="steps">
+        <li>
+          <div>
+            <strong>Open Claude Code in this folder</strong>
+            <div class="cmd-block"><span class="cmd-name">cd</span> /home/isha/Desktop/CODE/personal-os<br><span class="cmd-name">claude</span></div>
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>Run /setup</strong>
+            <p style="font-size:0.9rem;">It will ask you questions about yourself, your writing style, and what kind of agent you want. Answer honestly. This fills in <code>soul.md</code> — the file that makes the agent sound like something, not someone generic.</p>
+            <div class="cmd-block"><span class="cmd-name">/setup</span></div>
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>Open the vault in Obsidian</strong>
+            <p style="font-size:0.9rem;">Download Obsidian (free). "Open folder as vault." Navigate to <code>personal-os/vault/</code>. You'll see your wiki pages and the graph of how they connect.</p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>Run your first /study-brief</strong>
+            <p style="font-size:0.9rem;">This is the morning command. From now on, this is how you start learning days.</p>
+            <div class="cmd-block"><span class="cmd-name">/study-brief</span></div>
+          </div>
+        </li>
+      </ol>
+
+      <p>That's it. After those 4 steps the system is live. Everything else you learn on the way.</p>
+    </section>
+
+    <!-- DAILY COMMANDS -->
+    <section class="section" id="daily-commands">
+      <span class="section-tag">Commands</span>
+      <h2>Daily commands — the ones you'll use every day</h2>
+
+      <div class="cmd-card">
+        <div class="cmd-card-header">
+          <span class="cmd-tag">/study-brief</span>
+          <span class="cmd-badge badge-daily">Daily · Morning</span>
+        </div>
+        <div class="cmd-card-body">
+          <p>Your morning brief. Tells you: what you studied yesterday, what to focus on today, which concepts from 1-2 weeks ago you should review (spaced repetition, manual version), and what's open and unresolved.</p>
+          <p class="cmd-when">Run it before you open any course or Slack. Takes 2 minutes to read, saves you from starting the day aimlessly.</p>
+          <p class="cmd-example">Also suggests today's 10-minute 100-Day Shift micro-habit based on what you're currently working on.</p>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-card-header">
+          <span class="cmd-tag">/reflect</span>
+          <span class="cmd-badge badge-daily">Daily · Evening</span>
+        </div>
+        <div class="cmd-card-body">
+          <p>Evening journaling companion. Works alongside your existing daily journal in <code>projects/leadership-kit/daily-journal/</code>. You tell it what happened — sadhana, learning, work, what was hard — and it listens, asks 1-2 good follow-up questions, then saves what's worth keeping to the vault.</p>
+          <p class="cmd-when">Not a form to fill. A conversation. Keeps it short — usually 5-10 minutes.</p>
+          <p class="cmd-example">Saves insights to <code>vault/me/journal/YYYY-MM-DD.md</code>, updates course progress, flags connections to other vault pages.</p>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- LEARNING COMMANDS -->
+    <section class="section" id="learning-commands">
+      <span class="section-tag">Commands</span>
+      <h2>Learning commands — when you're actively studying</h2>
+
+      <div class="cmd-card">
+        <div class="cmd-card-header">
+          <span class="cmd-tag">/learn</span>
+          <span class="cmd-badge badge-ondemand">On-demand</span>
+        </div>
+        <div class="cmd-card-body">
+          <p>The deep-process command. Takes a specific piece of content — a Udemy module, an article, a chapter — and really works it into the vault. Creates wiki pages for every key concept, links them together, updates the course tracker, and asks you one synthesis question at the end to check if it actually landed.</p>
+          <p class="cmd-when">Use this when you finish a meaningful chunk of learning, not just as a quick dump.</p>
+          <p class="cmd-example">Give it a file path, a URL, or paste text directly: <code>/learn projects/architect-kit/AI/deploy_ai/day1-notes.html</code></p>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-card-header">
+          <span class="cmd-tag">/ingest</span>
+          <span class="cmd-badge badge-ondemand">On-demand</span>
+        </div>
+        <div class="cmd-card-body">
+          <p>Bulk processing. Drop anything in the <code>inbox/</code> folder and run <code>/ingest</code>. It reads every unprocessed file, creates or updates vault pages, archives the source to <code>vault/sources/</code>, and logs what happened. Supports PDF, DOCX, HTML, MD, TXT, even audio (transcribes first).</p>
+          <p class="cmd-when">Use for batch dumps: 5 articles you saved, a folder of notes, downloaded course PDFs.</p>
+          <p class="cmd-example">
+            Interactive mode: <code>/ingest</code> (discusses each file with you)<br>
+            Batch mode: <code>/ingest --batch</code> (processes everything silently)<br>
+            Specific file: <code>/ingest projects/architect-kit/AI/</code>
+          </p>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-card-header">
+          <span class="cmd-tag">/course-tracker</span>
+          <span class="cmd-badge badge-ondemand">On-demand</span>
+        </div>
+        <div class="cmd-card-body">
+          <p>Shows you where every active course stands, when you last touched it, and what's queued next. Also has a <code>/course-tracker next</code> mode that recommends what to study next based on your current goals.</p>
+          <p class="cmd-when">Run when you're deciding what to study, or to update progress after finishing a section.</p>
+          <p class="cmd-example">
+            <code>/course-tracker</code> — view the board<br>
+            <code>/course-tracker update</code> — report what you finished<br>
+            <code>/course-tracker next</code> — what should I study next?
+          </p>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- PRACTICE COMMANDS -->
+    <section class="section" id="practice-commands">
+      <span class="section-tag">Commands</span>
+      <h2>Practice & review commands</h2>
+
+      <div class="cmd-card">
+        <div class="cmd-card-header">
+          <span class="cmd-tag">/design-lab</span>
+          <span class="cmd-badge badge-ondemand">On-demand</span>
+        </div>
+        <div class="cmd-card-body">
+          <p>System design practice. Get a real problem (not a toy — real scale, real constraints), work through it out loud, get structured feedback: what you did well, what you missed, what to study next. Keeps a practice log in the vault.</p>
+          <p class="cmd-when">Use 2-3 times a week if system design is a priority. Builds the muscle. Reading about distributed systems is different from designing under pressure.</p>
+          <p class="cmd-example">
+            <code>/design-lab</code> — random problem at current level<br>
+            <code>/design-lab kafka</code> — problem in a specific area<br>
+            <code>/design-lab review</code> — review a design you already wrote
+          </p>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-card-header">
+          <span class="cmd-tag">/weekly-report</span>
+          <span class="cmd-badge badge-weekly">Weekly · Friday</span>
+        </div>
+        <div class="cmd-card-body">
+          <p>Friday synthesis. Reads everything from the past week: log entries, journal pages, course progress. Tells you what you actually studied (not what you planned), what concepts clicked, what connected across domains, and what to focus on next week. Saves to <code>outputs/learning-reports/</code>.</p>
+          <p class="cmd-when">Friday afternoon or evening. Takes 10-15 minutes including the conversation.</p>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-card-header">
+          <span class="cmd-tag">/career-radar</span>
+          <span class="cmd-badge badge-weekly">Monthly</span>
+        </div>
+        <div class="cmd-card-body">
+          <p>Career audit. Updates your skill inventory, runs a gap analysis against your goals, gives 3 concrete recommendations: what to study next, what to build to demonstrate a skill, how to think about your positioning over the next 6-12 months. Optional: searches for market signals in what's in demand.</p>
+          <p class="cmd-when">Once a month. Not more — it takes real reflection to be useful.</p>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- SYSTEM COMMANDS -->
+    <section class="section" id="system-commands">
+      <span class="section-tag">Commands</span>
+      <h2>System commands — keeping things healthy</h2>
+
+      <div class="cmd-card">
+        <div class="cmd-card-header">
+          <span class="cmd-tag">/status</span>
+          <span class="cmd-badge badge-ondemand">On-demand</span>
+        </div>
+        <div class="cmd-card-body">
+          <p>Quick health check. Shows the last few things learned, active courses, anything unprocessed in <code>inbox/</code>, and upcoming scheduled tasks. Under 10 lines.</p>
+          <p class="cmd-example"><code>/status</code> for the snapshot. <code>/status full</code> for a complete system audit.</p>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-card-header">
+          <span class="cmd-tag">/lint</span>
+          <span class="cmd-badge badge-ondemand">Monthly</span>
+        </div>
+        <div class="cmd-card-body">
+          <p>Vault health check. Finds: orphan pages (nothing links to them), stubs (pages with almost no content), broken wiki links, pages missing from the index, stale pages untouched for 90+ days. Reports what it found and auto-fixes what it can.</p>
+          <p class="cmd-when">Run after a big ingest session, or when the vault feels messy. Otherwise monthly is fine.</p>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-card-header">
+          <span class="cmd-tag">/new</span>
+          <span class="cmd-badge badge-ondemand">On-demand</span>
+        </div>
+        <div class="cmd-card-body">
+          <p>Build a new automation. Describe what you want, and Claude scaffolds the command file, the vault status page, and updates the routing table. Examples: a spaced-repetition reviewer, a book processor, a podcast transcriber, a note linker.</p>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-card-header">
+          <span class="cmd-tag">/cron-setup</span>
+          <span class="cmd-badge badge-setup">One-time setup</span>
+        </div>
+        <div class="cmd-card-body">
+          <p>Schedules commands to run automatically using systemd (Linux). Once set up, <code>/study-brief</code> can run every weekday morning at 7:30, <code>/reflect</code> every evening at 9pm, <code>/weekly-report</code> every Friday. Each one runs Claude Code in the background and saves output to the vault.</p>
+          <p class="cmd-when">Set up once after /setup is done. Schedules are in <code>scheduler/schedule.md</code>.</p>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-card-header">
+          <span class="cmd-tag">/setup</span>
+          <span class="cmd-badge badge-setup">First-run only</span>
+        </div>
+        <div class="cmd-card-body">
+          <p>First-run onboarding. Fills in <code>soul.md</code> (your agent's identity and voice), seeds the vault from your existing notes, checks what tools are connected. Run this once. After that, all other commands work.</p>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- YOUR PROJECTS -->
+    <section class="section" id="your-projects">
+      <span class="section-tag">Projects</span>
+      <h2>Your projects — what each one is</h2>
+      <p>All live in <code>projects/</code>. The vault has a status page for each at <code>vault/projects/{name}/status.md</code>.</p>
+
+      <div style="overflow-x:auto;">
+        <table class="proj-table">
+          <thead>
+            <tr>
+              <th>Folder</th>
+              <th>Domain</th>
+              <th>What it is</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>architect-kit/</td>
+              <td>Study lab</td>
+              <td>Your system design and AI study tool. Interactive HTML pages covering distributed transactions, Kafka, load balancers, databases, distributed tracing, logical designs, and AI courses. Audio-sync module for note-taking. Deployed as a GitHub Pages site.</td>
+            </tr>
+            <tr>
+              <td>leadership-kit/</td>
+              <td>Leadership + Fintech</td>
+              <td>Two things in one: (1) your 100-Day Shift — the structured leadership transformation program, your daily journal, leadership phrases, communication skills. (2) your fintech domain notes — MF, demat, G-Sec, insurance, LAMF. Professional reference. Deployed at leadership-kit.shivawithin.in.</td>
+            </tr>
+            <tr>
+              <td>antarmukh/</td>
+              <td>Spiritual</td>
+              <td>Your inward-facing spiritual web presence. Study materials on Mandukya Upanishad and Yoga Sutras of Patanjali. Deployed at antarmukh.shivmarg.in.</td>
+            </tr>
+            <tr>
+              <td>shunya-hub/</td>
+              <td>Hub</td>
+              <td>The Shiva Within hub — "सर्वं शिवमयं". Deployed at shivawithin.in.</td>
+            </tr>
+            <tr>
+              <td>sankalp-site/</td>
+              <td>Placeholder</td>
+              <td>Old empty git repo. Placeholder. The actual Sankalp site is the root index.html (shivmarg.in).</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout">
+        <p><strong>Never run /ingest on these folders to "archive" them.</strong> That command moves source files to <code>vault/sources/</code> — you don't want your architect-kit HTML files moved there. Instead use <code>/ingest projects/architect-kit/AI/</code> to read and process content from those folders into the vault, without touching the originals.</p>
+      </div>
+    </section>
+
+    <!-- THE VAULT -->
+    <section class="section" id="the-vault">
+      <span class="section-tag">Core Concept</span>
+      <h2>The Vault — how your knowledge actually works</h2>
+      <p>The vault is just a folder of markdown files. But the way they connect is what makes it useful.</p>
+
+      <h3>The key files</h3>
+      <p><code>vault/index.md</code> — the master catalog. Claude reads this first before answering any question, to know what pages exist. It's like a table of contents for your entire brain.</p>
+      <p><code>vault/log.md</code> — the activity log. Append-only. Every command appends a line here. This is how <code>/study-brief</code> knows what you did yesterday and how <code>/weekly-report</code> knows what happened this week.</p>
+
+      <h3>Wiki links</h3>
+      <p>Every page has <code>[[wiki links]]</code> pointing to other pages. When you learn about Kafka consumer groups, that page links to <code>[[learning/system-design/distributed-systems]]</code> and <code>[[courses/advanced-architects-lab]]</code>. In Obsidian, these become edges in the graph. Over time the graph shows you which concepts are deeply connected and which are isolated.</p>
+
+      <h3>What automatically gets added</h3>
+      <p>Whenever you interact with Claude Code in this folder, it updates the vault without you asking. It learns you encountered a new author — creates <code>vault/people/{name}.md</code>. You mention a new concept — creates <code>vault/learning/{domain}/{concept}.md</code>. You complete a course section — updates <code>vault/courses/tracker.md</code>. You don't have to manage this manually.</p>
+
+      <h3>Sources are immutable</h3>
+      <p>When <code>/ingest</code> processes a file, it moves it to <code>vault/sources/</code> and never touches it again. The original is preserved exactly. This is intentional — you can always trace a vault page back to the raw source it came from.</p>
+    </section>
+
+    <!-- THE INBOX -->
+    <section class="section" id="the-inbox">
+      <span class="section-tag">Workflow</span>
+      <h2>The Inbox — how to feed the system</h2>
+      <p>The <code>inbox/</code> folder is the input queue. Drop anything there and process it later.</p>
+
+      <h3>What you can drop in inbox/</h3>
+      <p>PDF articles, DOCX documents, markdown notes, HTML pages, plain text, even audio files (MP3, M4A — it transcribes them first). Anything you want to learn from or reference.</p>
+
+      <h3>Two ways to process</h3>
+      <p><code>/learn</code> — for content you want to deeply absorb. Interactive, asks you questions, builds concept pages. Use for Udemy modules and things you want to actually remember.</p>
+      <p><code>/ingest --batch</code> — for bulk dumps. Processes everything in inbox/ silently and efficiently. Use when you've accumulated a bunch of saved articles or notes.</p>
+
+      <h3>You can also give it a URL</h3>
+      <p>Paste a URL in chat and it fetches the content, saves it to inbox/, and processes it. No need to download and drop manually.</p>
+
+      <div class="callout">
+        <p><strong>Shortcut:</strong> You don't have to use inbox/ at all. You can paste text directly in chat and say "learn this" or "add this to the vault". Claude will save it to inbox/ then process it.</p>
+      </div>
+    </section>
+
+    <!-- DAILY WORKFLOWS -->
+    <section class="section" id="daily-workflows">
+      <span class="section-tag">Usage</span>
+      <h2>How an actual day looks</h2>
+
+      <div class="workflow-grid">
+        <div class="workflow-card">
+          <div class="workflow-time">Morning</div>
+          <p>Open Claude Code, run the brief. See what's on today's plate and what to review.</p>
+          <span class="wf-cmd">/study-brief</span>
+        </div>
+        <div class="workflow-card">
+          <div class="workflow-time">During study</div>
+          <p>Finish a Udemy module. Process it deep into the vault while it's fresh.</p>
+          <span class="wf-cmd">/learn</span>
+        </div>
+        <div class="workflow-card">
+          <div class="workflow-time">Practice session</div>
+          <p>Run a 35-minute system design session. Get the problem, work it, get feedback.</p>
+          <span class="wf-cmd">/design-lab</span>
+        </div>
+        <div class="workflow-card">
+          <div class="workflow-time">Evening</div>
+          <p>Talk through the day — what happened with sadhana, work, learning. Let the insights get saved.</p>
+          <span class="wf-cmd">/reflect</span>
+        </div>
+        <div class="workflow-card">
+          <div class="workflow-time">Friday</div>
+          <p>Synthesize the week. What clicked, what connected, what's next week's focus.</p>
+          <span class="wf-cmd">/weekly-report</span>
+        </div>
+        <div class="workflow-card">
+          <div class="workflow-time">Monthly</div>
+          <p>Skill audit. Where am I, where am I going, what's the market saying.</p>
+          <span class="wf-cmd">/career-radar</span>
+        </div>
+      </div>
+
+      <h3>The 100-Day Shift integration</h3>
+      <p>Every <code>/study-brief</code> includes a specific micro-habit suggestion for the day's 10-minute diagramming practice. Every <code>/reflect</code> asks about meeting moments relevant to the shift. The system knows you're running Phase 1 (Meeting Clarifier & Visualizer) and tracks it in <code>vault/projects/leadership-kit/status.md</code>.</p>
+
+      <h3>Sadhana tracking</h3>
+      <p>Your daily journal in <code>projects/leadership-kit/daily-journal/</code> tracks whether sadhana happened. <code>/reflect</code> reads that entry and asks about practice. <code>/weekly-report</code> surfaces the sadhana pattern over the week. You can also just tell Claude "sadhana happened today" and it will note it in the vault.</p>
+    </section>
+
+    <!-- CAN / CANNOT -->
+    <section class="section" id="can-cannot">
+      <span class="section-tag">Honest Assessment</span>
+      <h2>What it can do, and what it cannot</h2>
+
+      <div class="can-cannot-grid">
+        <div class="can-block">
+          <h4>It can do</h4>
+          <ul class="can-list">
+            <li>Turn anything you drop in inbox/ into structured wiki pages</li>
+            <li>Run your morning brief from your actual study history</li>
+            <li>Practice system design with you and give real feedback</li>
+            <li>Deep-process a Udemy module into 10-15 linked concept pages</li>
+            <li>Be your evening journaling companion and save insights</li>
+            <li>Track progress across all your courses in one place</li>
+            <li>Synthesize a week of learning into a useful Friday report</li>
+            <li>Keep a skill inventory and flag growth gaps</li>
+            <li>Cross-link everything — Kafka connects to architect-kit connects to AI leadership</li>
+            <li>Run automatically on a schedule via systemd cron</li>
+            <li>Read PDFs, HTML, audio transcripts, markdown, DOCX</li>
+            <li>Search your vault to answer questions from your own notes</li>
+            <li>Notice patterns across journal entries (e.g., the "observation/rush" theme)</li>
+            <li>Build new automations when you need them</li>
+          </ul>
+        </div>
+        <div class="cannot-block">
+          <h4>It cannot do</h4>
+          <ul class="cannot-list">
+            <li>Remember things between sessions without writing to the vault (it resets each session — the vault is the memory)</li>
+            <li>Proactively ping you — you have to open Claude Code</li>
+            <li>Watch your calendar or email without MCP tools connected</li>
+            <li>Sync directly to Notion without the Notion MCP connected</li>
+            <li>Run without internet (Claude API requires a connection)</li>
+            <li>Replace your actual daily journal — it complements it</li>
+            <li>Know what happened in your architect-kit or leadership-kit unless you tell it or /ingest those folders</li>
+            <li>Track what you learned in Udemy automatically — you have to tell it via /learn or /course-tracker update</li>
+            <li>Make design decisions for shivmarg.in or antarmukh — those are separate projects</li>
+            <li>Access the internet in every command — some outputs are purely from your vault</li>
+            <li>Guarantee perfect recall across very long sessions (context limits exist — it re-reads the vault to compensate)</li>
+            <li>Predict your future goals — you have to update vault/me/goals.md when priorities shift</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout" style="margin-top:1.4rem;">
+        <p><strong>The most important "cannot":</strong> The system is only as good as what you put into it. If you study a Udemy module but don't run <code>/learn</code>, it doesn't know you studied it. The vault is your explicit memory — it doesn't read your mind. The habit of telling the system what you did is the habit that makes it useful.</p>
+      </div>
+    </section>
+
+    <!-- QUICK REF -->
+    <section class="section" id="quick-ref">
+      <span class="section-tag">Reference</span>
+      <h2>Quick reference — all commands</h2>
+
+      <div class="ref-table-wrap">
+        <table class="ref-table">
+          <thead>
+            <tr>
+              <th>Command</th>
+              <th>What it does</th>
+              <th>When</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>/setup</td><td>Fill soul.md, onboard the agent, seed vault</td><td>Once, first run</td></tr>
+            <tr><td>/study-brief</td><td>Morning brief: today's plan, yesterday's recap, review queue</td><td>Every morning</td></tr>
+            <tr><td>/reflect</td><td>Evening journaling and knowledge consolidation</td><td>Every evening</td></tr>
+            <tr><td>/learn</td><td>Deep-process one piece of content into the vault</td><td>After studying something</td></tr>
+            <tr><td>/ingest</td><td>Batch-process everything in inbox/</td><td>Whenever inbox has files</td></tr>
+            <tr><td>/course-tracker</td><td>View and update progress across all courses</td><td>When choosing what to study</td></tr>
+            <tr><td>/design-lab</td><td>System design practice with feedback</td><td>2-3x per week</td></tr>
+            <tr><td>/weekly-report</td><td>Friday synthesis of week's learning</td><td>Fridays</td></tr>
+            <tr><td>/career-radar</td><td>Skill inventory, gap analysis, market signals</td><td>Monthly</td></tr>
+            <tr><td>/status</td><td>Quick system health snapshot</td><td>Any time</td></tr>
+            <tr><td>/lint</td><td>Vault health check — orphans, stubs, gaps</td><td>Monthly or after big ingests</td></tr>
+            <tr><td>/new</td><td>Build a new automation</td><td>When you want a new command</td></tr>
+            <tr><td>/cron-setup</td><td>Schedule commands to run automatically</td><td>After /setup, once</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Opening this in different ways</h3>
+      <div class="cmd-block">
+        <span class="comment"># From terminal:</span><br>
+        <span class="cmd-name">cd</span> /home/isha/Desktop/CODE/personal-os &amp;&amp; <span class="cmd-name">claude</span><br><br>
+        <span class="comment"># The vault in Obsidian:</span><br>
+        <span class="comment"># Open Obsidian → Open folder as vault → select personal-os/vault/</span><br><br>
+        <span class="comment"># This guide:</span><br>
+        <span class="comment"># Open personal-os/HOW-TO-USE.html in any browser</span>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+// ── Theme toggle ──
+function toggleTheme() {
+  const root = document.documentElement;
+  const current = root.getAttribute('data-theme');
+  if (current === 'dark') root.setAttribute('data-theme', 'light');
+  else if (current === 'light') root.removeAttribute('data-theme');
+  else root.setAttribute('data-theme', 'dark');
+}
+
+// ── Scroll-spy TOC ──
+const sections = document.querySelectorAll('.section');
+const tocLinks = document.querySelectorAll('#toc a');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.id;
+      tocLinks.forEach(link => {
+        link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+      });
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+
+sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>
