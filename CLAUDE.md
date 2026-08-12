@@ -106,6 +106,9 @@ These are the domains that matter. Every piece of learning maps into one of thes
 | 5 | /reflect | Daily | Evening journaling + knowledge consolidation |
 | 6 | /career-radar | Weekly | Skill tracking, gap analysis, opportunities |
 | 7 | /weekly-report | Weekly | Synthesis of week's learning |
+| 8 | /sprint-tracker | Daily | Standup from Notion board: Done/In Progress/To Do + velocity |
+| 9 | /morning-brief | Daily | Gmail + Calendar + Notion context filtered through priorities |
+| 10 | /market-pulse | Daily | Competitor scraping + news for Optimus rivals, tagged Action/FYI |
 
 ## Scheduling
 

@@ -58,6 +58,9 @@ Last updated: 2026-08-08
 
 ## Projects
 
+- [[projects/sprint-tracker/status]] — Daily standup from Notion board, velocity tracking across 10 automations
+- [[projects/morning-brief/status]] — Daily Gmail + Calendar + Notion brief, filtered through soul.md priorities
+- [[projects/market-pulse/status]] — Daily competitor intelligence: 8 Optimus rivals, Chrome scraping + web search
 - [[projects/architect-kit/status]] — Advanced Architects Lab: interactive system design study tool
 - [[projects/leadership-kit/status]] — 100-Day Shift + domain notes (MF, demat, G-Sec, insurance, LAMF)
 - [[projects/antarmukh/status]] — Spiritual web presence (Mandukya, Yoga Sutras)
@@ -76,7 +79,7 @@ Last updated: 2026-08-08
 
 ## People
 
-<!-- Agent adds entries here as people are encountered in learning and work -->
+- [[people/ashok-kumar]] — LinkedIn connection, accepted 2026-08-10
 
 ---
 
