@@ -1,0 +1,2312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multi-LLM Master Notes — Compare, Call, Build · Architects Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#070a11; --panel:#0e131d; --panel-2:#131a27; --panel-3:#18202f;
+  --line:#212b3e; --line-soft:#1a2231;
+  --text:#dae1ee; --text-dim:#98a4bb; --text-faint:#6b7893;
+  --beam:#5b8cff; --amber:#ffa63d; --violet:#c07bff; --mint:#3ecf9a; --rose:#ff6b81;
+  --display:"Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --body:"Newsreader", Georgia, serif;
+  --mono:"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  H0%;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:100px}
+body{
+  margin:0; background:var(--ink); color:var(--text);
+  font-family:var(--body); font-size:17.5px; line-height:1.72; -webkit-font-smoothing:antialiased;
+  background-image:
+    radial-gradient(1100px 520px at 12% -8%, rgba(91,140,255,.10), transparent 62%),
+    radial-gradient(900px 460px at 94% 3%, rgba(192,123,255,.07), transparent 60%);
+  background-attachment:fixed;
+}
+h1,h2,h3,h4{font-family:var(--display); font-weight:600; line-height:1.2; letter-spacing:-.015em; margin:0}
+p{margin:0 0 1.05em}
+a{color:var(--beam); text-underline-offset:3px}
+code,kbd{font-family:var(--mono); font-size:.86em; color:#b9c6de}
+::selection{background:rgba(91,140,255,.32)}
+.wrap{max-width:var(--maxw); margin:0 auto; padding:0 26px}
+.eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:var(--text-faint); margin:0 0 10px; display:flex; align-items:center; gap:10px}
+.eyebrow::after{content:""; flex:1; height:1px; background:linear-gradient(90deg,var(--line),transparent)}
+
+/* topbar */
+.topbar{position:fixed; top:0; left:0; right:0; z-index:60; background:rgba(7,10,17,.88); backdrop-filter:blur(14px); border-bottom:1px solid var(--line-soft)}
+.topbar-in{display:flex; align-items:center; gap:16px; padding:10px 26px; max-width:var(--maxw); margin:0 auto}
+.brand{font-family:var(--mono); font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:var(--text-dim); white-space:nowrap}
+.brand b{color:var(--beam); font-weight:500}
+.navchips{display:flex; gap:5px; overflow-x:auto; scrollbar-width:none; flex:1}
+.navchips::-webkit-scrollbar{display:none}
+.navchips a{font-family:var(--mono); font-size:10.5px; letter-spacing:.06em; color:var(--text-faint); text-decoration:none; padding:5px 8px; border:1px solid transparent; border-radius:4px; white-space:nowrap; transition:.18s}
+.navchips a:hover{color:var(--text); border-color:var(--line); background:var(--panel)}
+.navchips a.on{color:var(--beam); border-color:rgba(91,140,255,.4); background:rgba(91,140,255,.08)}
+#scrollbar{position:absolute; bottom:-1px; left:0; height:2px; width:0; background:linear-gradient(90deg,var(--beam),var(--violet))}
+
+/* hero */
+.hero{padding:150px 0 54px; border-bottom:1px solid var(--line-soft)}
+.hero h1{font-size:clamp(36px,6vw,66px); font-weight:700; letter-spacing:-.03em; max-width:17ch}
+.hero h1 em{font-style:normal; color:var(--beam)}
+.lede{font-size:clamp(17.5px,2.1vw,20.5px); color:var(--text-dim); max-width:64ch; margin-top:20px; font-weight:300}
+.readout{margin-top:36px; border:1px solid var(--line); border-radius:8px; background:var(--panel); display:grid; grid-template-columns:repeat(4,1fr); overflow:hidden}
+.readout div{padding:15px 18px; border-right:1px solid var(--line-soft)}
+.readout div:last-child{border-right:0}
+.readout .k{font-family:var(--mono); font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--text-faint)}
+.readout .v{font-family:var(--display); font-size:23px; font-weight:600; margin-top:5px; letter-spacing:-.02em}
+.readout .v small{font-size:11.5px; color:var(--text-dim); font-weight:400; margin-left:5px; font-family:var(--mono)}
+
+/* part divider */
+.part{padding:54px 0 10px}
+.part .bar{display:flex; align-items:center; gap:18px}
+.part .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:.24em; text-transform:uppercase; color:var(--violet); border:1px solid rgba(192,123,255,.35); background:rgba(192,123,255,.07); padding:5px 11px; border-radius:4px; white-space:nowrap}
+.part h2{font-size:clamp(24px,3.4vw,34px); color:#eef2fb}
+.part .bar::after{content:""; flex:1; height:1px; background:linear-gradient(90deg,rgba(192,123,255,.4),transparent)}
+.part p{color:var(--text-dim); max-width:70ch; margin-top:12px; font-size:16.5px}
+
+/* sections */
+.sec{padding:44px 0; border-bottom:1px solid var(--line-soft)}
+.sec-head{display:flex; gap:20px; align-items:baseline; margin-bottom:22px}
+.sec-num{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--beam); border:1px solid rgba(91,140,255,.35); border-radius:4px; padding:4px 8px; flex:none; background:rgba(91,140,255,.07)}
+.sec h2{font-size:clamp(24px,3.2vw,33px)}
+.sec h3{font-size:19px; margin:30px 0 11px; color:#eaeffa}
+.sec h3::before{content:"▸ "; color:var(--beam); font-size:13px}
+.sec p{max-width:76ch}
+ul.tight,ol.tight{max-width:76ch; padding-left:20px; margin:0 0 1.1em}
+ul.tight li,ol.tight li{margin:.4em 0}
+ul.tight li::marker,ol.tight li::marker{color:var(--beam)}
+strong{color:#f0f4fc; font-weight:500}
+.term{color:var(--violet); font-weight:500}
+
+/* ascii */
+.ascii{
+  margin:22px 0; border:1px solid var(--line); border-radius:8px; background:#080c14; overflow:hidden;
+}
+.ascii .cap{padding:8px 14px; background:var(--panel-2); border-bottom:1px solid var(--line); font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--text-faint)}
+.ascii pre{margin:0; padding:18px; overflow-x:auto; font-family:var(--mono); font-size:12.5px; line-height:1.5; color:#8fa6c9; white-space:pre}
+.ascii pre b{color:var(--beam); font-weight:400}
+.ascii pre i{color:var(--mint); font-style:normal}
+.ascii pre u{color:var(--amber); text-decoration:none}
+.ascii pre s{color:var(--violet); text-decoration:none}
+
+/* cards */
+.grid{display:grid; gap:14px; margin:22px 0}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:repeat(3,1fr)}
+.card{border:1px solid var(--line); background:var(--panel); border-radius:8px; padding:17px 19px; transition:border-color .2s}
+.card:hover{border-color:#2d3a52}
+.card h4{font-size:15px; margin-bottom:8px}
+.card p{font-size:15.5px; color:var(--text-dim); margin:0; line-height:1.6}
+.card .tag{font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--text-faint); display:block; margin-bottom:8px}
+
+/* notes */
+.note{border-left:2px solid var(--beam); background:linear-gradient(90deg,rgba(91,140,255,.07),transparent); padding:14px 18px; margin:20px 0; border-radius:0 6px 6px 0}
+.note.warn{border-color:var(--amber); background:linear-gradient(90deg,rgba(255,166,61,.08),transparent)}
+.note.trap{border-color:var(--rose); background:linear-gradient(90deg,rgba(255,107,129,.08),transparent)}
+.note.good{border-color:var(--mint); background:linear-gradient(90deg,rgba(62,207,154,.08),transparent)}
+.note.phi{border-color:var(--violet); background:linear-gradient(90deg,rgba(192,123,255,.08),transparent)}
+.note p{margin:0 0 .6em; font-size:16px; max-width:80ch}
+.note p:last-child{margin:0}
+.note .lbl{font-family:var(--mono); font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--amber); display:block; margin-bottom:6px}
+.note .lbl.b{color:var(--beam)} .note .lbl.r{color:var(--rose)} .note .lbl.m{color:var(--mint)} .note .lbl.v{color:var(--violet)}
+
+/* tables */
+.tablewrap{overflow-x:auto; border:1px solid var(--line); border-radius:8px; margin:20px 0; background:var(--panel)}
+table{border-collapse:collapse; width:100%; font-family:var(--mono); font-size:12.5px}
+th{text-align:left; padding:11px 14px; font-weight:500; font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--text-faint); border-bottom:1px solid var(--line); background:var(--panel-2); white-space:nowrap}
+td{padding:10px 14px; border-bottom:1px solid var(--line-soft); color:var(--text-dim); vertical-align:top}
+tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:rgba(91,140,255,.04); color:var(--text)}
+td.n{color:var(--text); font-weight:500}
+td .win{color:var(--mint)}
+
+/* code */
+.codeblock{position:relative; margin:20px 0; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:#080c14}
+.codehead{display:flex; justify-content:space-between; align-items:center; padding:8px 14px; background:var(--panel-2); border-bottom:1px solid var(--line); font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--text-faint)}
+.copy{font-family:var(--mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; background:transparent; border:1px solid var(--line); color:var(--text-faint); padding:3px 9px; border-radius:4px; cursor:pointer; transition:.18s}
+.copy:hover{color:var(--beam); border-color:rgba(91,140,255,.5)}
+pre.code{margin:0; padding:16px 18px; overflow-x:auto; font-family:var(--mono); font-size:12.8px; line-height:1.65; color:#c6d0e4}
+.c-kw{color:#c07bff} .c-str{color:#3ecf9a} .c-com{color:#5a6780; font-style:italic} .c-fn{color:#5b8cff} .c-num{color:#ffa63d}
+
+/* recall */
+.recall{margin:26px 0 0; border:1px dashed #2a3752; border-radius:8px; background:rgba(19,26,39,.55); overflow:hidden}
+.recall summary{list-style:none; cursor:pointer; padding:14px 18px; display:flex; gap:12px; align-items:flex-start; font-family:var(--display); font-size:16px; color:#e6ecf8}
+.recall summary::-webkit-details-marker{display:none}
+.recall summary::before{content:"RECALL"; font-family:var(--mono); font-size:9.5px; letter-spacing:.18em; color:var(--mint); border:1px solid rgba(62,207,154,.35); padding:3px 7px; border-radius:3px; flex:none; margin-top:2px}
+.recall summary::after{content:"+"; margin-left:auto; color:var(--text-faint); font-family:var(--mono); font-size:18px; line-height:1}
+.recall[open] summary::after{content:"–"}
+.recall .ans{padding:14px 18px 16px; border-top:1px solid var(--line-soft); color:var(--text-dim); font-size:16px}
+.recall .ans p{margin:0 0 .7em; max-width:78ch}
+.recall .ans p:last-child{margin:0}
+
+/* bench */
+.bench{border:1px solid var(--line); border-radius:10px; background:linear-gradient(180deg,var(--panel-2),var(--panel)); overflow:hidden; margin:24px 0}
+.bench-top{padding:15px 20px; border-bottom:1px solid var(--line); display:flex; gap:13px; align-items:center; flex-wrap:wrap}
+.bench-top .ttl{font-family:var(--mono); font-size:10.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--text-faint); margin-right:auto}
+select,input[type=text],textarea{font-family:var(--mono); font-size:12px; background:var(--panel-3); color:var(--text); border:1px solid var(--line); border-radius:5px; padding:8px 10px}
+select{cursor:pointer; min-width:168px}
+select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--beam); outline-offset:2px}
+.vs{font-family:var(--display); font-size:12px; color:var(--text-faint); letter-spacing:.1em}
+.bench-body{padding:6px 20px 20px}
+.metric{padding:13px 0; border-bottom:1px solid var(--line-soft)}
+.metric:last-child{border-bottom:0}
+.metric-h{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; gap:12px}
+.metric-h .name{font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--text-faint)}
+.metric-h .hint{font-size:13px; color:var(--text-faint); font-style:italic}
+.bar-row{display:grid; grid-template-columns:1fr 96px; align-items:center; gap:12px; margin:5px 0}
+.track{height:9px; background:#0b101a; border:1px solid var(--line-soft); border-radius:5px; overflow:hidden}
+.fill{height:100%; width:0; border-radius:4px; transition:width .75s cubic-bezier(.2,.8,.25,1)}
+.fill.a{background:linear-gradient(90deg,rgba(91,140,255,.45),var(--beam))}
+.fill.b{background:linear-gradient(90deg,rgba(192,123,255,.4),var(--violet))}
+.val{font-family:var(--mono); font-size:12.5px; text-align:right; color:var(--text)}
+.val.none{color:var(--text-faint)}
+.legend{display:flex; gap:20px; padding:12px 20px; border-top:1px solid var(--line); font-family:var(--mono); font-size:11px; color:var(--text-faint); flex-wrap:wrap}
+.dot{display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:7px; vertical-align:middle}
+.dot.a{background:var(--beam)} .dot.b{background:var(--violet)}
+
+/* prompt builder */
+.builder{border:1px solid var(--line); border-radius:10px; background:linear-gradient(180deg,var(--panel-2),var(--panel)); overflow:hidden; margin:24px 0}
+.builder-head{padding:15px 20px; border-bottom:1px solid var(--line); font-family:var(--mono); font-size:10.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--text-faint)}
+.builder-body{display:grid; grid-template-columns:340px 1fr; gap:0}
+.bl{padding:18px 20px; border-right:1px solid var(--line)}
+.br{padding:18px 20px; min-width:0}
+.fld{margin-bottom:14px}
+.fld label{display:block; font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--text-faint); margin-bottom:6px}
+.fld input[type=text],.fld textarea{width:100%; font-size:12.5px; line-height:1.5}
+.fld textarea{resize:vertical; min-height:76px; font-family:var(--mono)}
+.checks{display:grid; gap:6px; margin-top:4px}
+.checks label{display:flex; gap:9px; align-items:center; font-family:var(--body); font-size:15px; color:var(--text-dim); text-transform:none; letter-spacing:0; cursor:pointer; margin:0}
+.checks input{accent-color:var(--beam); width:15px; height:15px; cursor:pointer}
+#promptOut{width:100%; min-height:330px; font-family:var(--mono); font-size:12.3px; line-height:1.6; background:#080c14; color:#a9bcd8; resize:vertical}
+.brhead{display:flex; justify-content:space-between; align-items:center; margin-bottom:9px}
+.brhead span{font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--text-faint)}
+
+/* checklist */
+.tasks{border:1px solid var(--line); border-radius:9px; background:var(--panel); overflow:hidden; margin:22px 0}
+.task{display:flex; gap:13px; align-items:flex-start; padding:12px 18px; border-bottom:1px solid var(--line-soft); cursor:pointer}
+.task:last-child{border-bottom:0}
+.task:hover{background:rgba(91,140,255,.04)}
+.task input{accent-color:var(--mint); width:16px; height:16px; margin-top:4px; cursor:pointer; flex:none}
+.task .t{font-size:16px; color:var(--text-dim)}
+.task .t b{color:#eef2fb; font-weight:500; font-family:var(--display); font-size:15px; display:block; margin-bottom:2px}
+.task.done .t{opacity:.45; text-decoration:line-through}
+.taskbar{padding:12px 18px; border-top:1px solid var(--line); background:var(--panel-2); font-family:var(--mono); font-size:11.5px; color:var(--text-dim); display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap}
+
+/* quiz */
+.quiz{border:1px solid var(--line); border-radius:10px; background:var(--panel); padding:4px 22px 20px; margin:22px 0}
+.q{padding:19px 0; border-bottom:1px solid var(--line-soft)}
+.q:last-of-type{border-bottom:0}
+.q .qt{font-family:var(--display); font-size:16.5px; margin-bottom:12px; display:flex; gap:11px}
+.q .qt span{font-family:var(--mono); font-size:12px; color:var(--beam); flex:none}
+.opts{display:grid; gap:7px}
+.opt{text-align:left; font-family:var(--body); font-size:15.5px; color:var(--text-dim); background:var(--panel-2); border:1px solid var(--line); border-radius:6px; padding:9px 14px; cursor:pointer; transition:.15s}
+.opt:hover:not(:disabled){border-color:#33425e; color:var(--text)}
+.opt:disabled{cursor:default}
+.opt.right{border-color:rgba(62,207,154,.6); background:rgba(62,207,154,.1); color:#c9f3e2}
+.opt.wrong{border-color:rgba(255,107,129,.55); background:rgba(255,107,129,.09); color:#ffc9d1}
+.why{margin-top:10px; font-size:15px; color:var(--text-faint); border-left:2px solid var(--line); padding-left:13px; display:none}
+.why.show{display:block}
+.score{margin-top:18px; padding:14px 18px; border:1px solid var(--line); border-radius:8px; background:var(--panel-2); font-family:var(--mono); font-size:13px; color:var(--text-dim); display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap}
+.score b{color:var(--beam); font-size:19px; font-weight:700}
+.btn{font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; background:transparent; border:1px solid var(--line); color:var(--text-dim); padding:7px 13px; border-radius:5px; cursor:pointer; transition:.18s}
+.btn:hover{color:var(--beam); border-color:rgba(91,140,255,.5)}
+
+/* glossary */
+.gloss{display:grid; grid-template-columns:repeat(auto-fill,minmax(272px,1fr)); gap:11px; margin:20px 0}
+.gitem{border:1px solid var(--line-soft); border-radius:7px; padding:12px 15px; background:var(--panel)}
+.gitem dt{font-family:var(--mono); font-size:12px; color:var(--beam); letter-spacing:.05em; margin-bottom:5px}
+.gitem dd{margin:0; font-size:15px; color:var(--text-dim); line-height:1.55}
+
+footer{padding:44px 0 66px; color:var(--text-faint); font-size:14.5px}
+footer .wrap{display:flex; justify-content:space-between; gap:20px; flex-wrap:wrap; align-items:center}
+footer .mono{font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase}
+
+/* ---------- collapsible ---------- */
+.toggle{
+  margin-left:auto; align-self:center; flex:none;
+  font-family:var(--mono); font-size:15px; line-height:1; font-weight:400;
+  width:28px; height:28px; display:grid; place-items:center;
+  border:1px solid var(--line); border-radius:6px;
+  color:var(--text-faint); background:var(--panel); cursor:pointer; transition:.18s;
+}
+.sec-head:hover .toggle,.part .bar:hover .toggle{color:var(--beam); border-color:rgba(91,140,255,.5); background:rgba(91,140,255,.08)}
+.sec-head{cursor:pointer; user-select:none}
+.sec-head:hover h2{color:#fff}
+.sec-head:focus-visible,.cap:focus-visible,.tabhead:focus-visible,.part .bar:focus-visible{outline:2px solid var(--beam); outline-offset:4px; border-radius:4px}
+.sec.collapsed .sec-body{display:none}
+.sec.collapsed{padding:15px 0}
+.sec.collapsed .sec-head{margin-bottom:0}
+.sec.collapsed h2{font-size:20px}
+.part.collapsed{padding:34px 0 6px}
+.sec-body{animation:drop .28s ease}
+@keyframes drop{from{opacity:0; transform:translateY(-5px)} to{opacity:1; transform:none}}
+
+.mini{
+  font-family:var(--mono); font-size:12px; line-height:1;
+  width:22px; height:20px; display:grid; place-items:center;
+  background:transparent; border:1px solid var(--line); color:var(--text-faint);
+  border-radius:4px; cursor:pointer; transition:.18s; flex:none;
+}
+.mini:hover{color:var(--beam); border-color:rgba(91,140,255,.5)}
+.codehead{gap:10px}
+.codehead .grp{display:flex; gap:7px; align-items:center; flex:none}
+.codehead .lbl-txt{cursor:pointer; user-select:none; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.codehead .lbl-txt:hover{color:var(--beam)}
+.codeblock.collapsed pre.code{display:none}
+
+.ascii .cap{display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none}
+.ascii .cap:hover{color:var(--beam)}
+.ascii .cap span{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.ascii.collapsed pre{display:none}
+
+.tabhead{
+  display:flex; align-items:center; gap:10px; padding:8px 14px;
+  background:var(--panel-2); border-bottom:1px solid var(--line);
+  font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--text-faint); cursor:pointer; user-select:none;
+}
+.tabhead:hover{color:var(--beam)}
+.tabhead span{flex:1}
+.tabhead{position:sticky; left:0}
+.part .bar .toggle{margin-left:0; order:3}
+.tablewrap.collapsed table{display:none}
+.tablewrap.collapsed .tabhead{border-bottom:0}
+
+.part .bar{cursor:pointer; user-select:none}
+.part .bar::after{margin-right:8px}
+.part.collapsed p{display:none}
+
+.allctl{display:flex; gap:6px; flex:none}
+.allctl button{
+  font-family:var(--mono); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase;
+  background:transparent; border:1px solid var(--line); color:var(--text-faint);
+  padding:5px 8px; border-radius:4px; cursor:pointer; transition:.18s; white-space:nowrap;
+}
+.allctl button:hover{color:var(--beam); border-color:rgba(91,140,255,.5); background:rgba(91,140,255,.07)}
+
+.reveal{opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s ease}
+.reveal.in{opacity:1; transform:none}
+
+@media (max-width:900px){
+  body{font-size:16.5px}
+  .readout{grid-template-columns:1fr 1fr}
+  .readout div:nth-child(2){border-right:0}
+  .readout div:nth-child(-n+2){border-bottom:1px solid var(--line-soft)}
+  .g2,.g3{grid-template-columns:1fr}
+  .builder-body{grid-template-columns:1fr}
+  .bl{border-right:0; border-bottom:1px solid var(--line)}
+  .hero{padding:126px 0 42px}
+  .brand{display:none}
+  .ascii pre{font-size:10.5px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important; transition:none !important}
+  html{scroll-behavior:auto}
+  .reveal{opacity:1; transform:none}
+}
+  /* notes width expansion - matches learning plan box */
+  .wrap,.container,main,header.hero,header.masthead,nav.toc,section.block,footer{max-width:100%!important;padding-left:24px!important;padding-right:24px!important;}
+</style>
+</head>
+<body>
+<!-- LEARNING PLAN -->
+<div style="margin:24px;background:#0f1520;border:1px solid #1e2836;border-left:4px solid #e0a030;border-radius:8px;padding:24px 28px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;">
+  <div style="color:#e0a030;font-size:13px;font-weight:700;letter-spacing:.08em;margin-bottom:14px;">&#9670; LEARNING PLAN — 2.5 HOURS DAILY</div>
+  <div style="overflow-x:auto;">
+  <table style="width:100%;border-collapse:collapse;font-size:13px;color:#c8d3e0;margin-bottom:18px;white-space:nowrap;">
+    <thead><tr style="color:#7c8ba0;border-bottom:1px solid #1e2836;">
+      <th style="padding:6px 10px;text-align:left;width:48px;">Step</th>
+      <th style="padding:6px 10px;text-align:left;">Activity</th>
+      <th style="padding:6px 10px;text-align:left;">Outcome</th>
+    </tr></thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">1</td><td style="padding:7px 10px;"><b>Complete the Udemy Course</b> — watch videos, understand concepts, don't rush</td><td style="padding:7px 10px;color:#5fbf7f;">Build strong fundamentals</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">2</td><td style="padding:7px 10px;"><b>Practice Everything</b> — complete exercises, assignments, and source code</td><td style="padding:7px 10px;color:#5fbf7f;">Gain hands-on experience</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">3</td><td style="padding:7px 10px;"><b>Revise with these notes</b></td><td style="padding:7px 10px;color:#5fbf7f;">Reinforce concepts and fill knowledge gaps</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">4</td><td style="padding:7px 10px;"><b>Earn the Udemy Certificate</b></td><td style="padding:7px 10px;color:#5fbf7f;">Ensure the course is completed end-to-end</td></tr>
+      <tr><td style="padding:7px 10px;color:#e0a030;font-weight:700;">5</td><td style="padding:7px 10px;"><b>Practise real world tough scenario</b> — scenario-based questions &amp; interview problems</td><td style="padding:7px 10px;color:#5fbf7f;">Develop practical and interview-ready skills</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">1.5 HRS</div>
+      <div style="font-size:12px;color:#c8d3e0;">Udemy Videos + Exercises + Source Code</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Notes Revision</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Scenario-Based Questions &amp; Practical Problems</div>
+    </div>
+  </div>
+  <div style="color:#f0f4f8;font-size:12px;font-weight:600;letter-spacing:.04em;">GOAL: <span style="color:#e0a030;">Learn &#8594; Practice &#8594; Revise &#8594; Complete &#8594; Apply</span></div>
+</div>
+<!-- END LEARNING PLAN -->
+<a href="https://ai.shivawithin.in" id="home-return-btn" title="Back to Home" style="position:fixed;bottom:24px;right:24px;z-index:99999;display:inline-flex;align-items:center;gap:6px;background:#0d1b2a;color:#3fb6ff;border:1px solid #3fb6ff;padding:9px 15px;border-radius:8px;text-decoration:none;font-family:system-ui,-apple-system,sans-serif;font-size:13px;font-weight:600;box-shadow:0 2px 16px rgba(0,0,0,0.5);transition:background 0.2s,box-shadow 0.2s;" onmouseover="this.style.background='#1a2f47';this.style.boxShadow='0 4px 20px rgba(63,182,255,0.25)'" onmouseout="this.style.background='#0d1b2a';this.style.boxShadow='0 2px 16px rgba(0,0,0,0.5)'">&#8592; Home</a>
+
+<div class="topbar">
+  <div class="topbar-in">
+    <div class="brand">Architects <b>Lab</b></div>
+    <nav class="navchips" id="nav">
+      <a href="#s1">01 Big picture</a>
+      <a href="#s2">02 Open/closed</a>
+      <a href="#s3">03 The 9 numbers</a>
+      <a href="#s4">04 Benchmarks</a>
+      <a href="#s5">05 Vellum</a>
+      <a href="#s6">06 Arena</a>
+      <a href="#s7">07 Bench</a>
+      <a href="#s8">08 Keys</a>
+      <a href="#s9">09 Three SDKs</a>
+      <a href="#s10">10 Probes</a>
+      <a href="#s11">11 Prompt anatomy</a>
+      <a href="#s12">12 Builder</a>
+      <a href="#s13">13 Pipeline</a>
+      <a href="#s14">14 Results</a>
+      <a href="#s15">15 Iterate</a>
+      <a href="#s16">16 Gotchas</a>
+      <a href="#s17">17 Full script</a>
+      <a href="#tasks">Checklist</a>
+      <a href="#quiz">Quiz</a>
+      <a href="#cheat">Cheat sheet</a>
+      <a href="#gloss">Glossary</a>
+    </nav>
+    <div class="allctl">
+      <button id="expandAll" title="Expand everything">Expand all</button>
+      <button id="collapseAll" title="Collapse everything into an index">Collapse all</button>
+    </div>
+  </div>
+  <div id="scrollbar"></div>
+</div>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Project 4</p>
+    <h1>Compare the models. Call the models. <em>Build the page.</em></h1>
+    <p class="lede">How to judge an AI model before you use it, how to wire up three providers, and how to describe a website in English and get working HTML back — all in one place, in plain language.</p>
+    <div class="readout">
+      <div><div class="k">Providers</div><div class="v">3 <small>OpenAI · Google · Anthropic</small></div></div>
+      <div><div class="k">Leaderboards</div><div class="v">2 <small>Vellum · LMArena</small></div></div>
+      <div><div class="k">ASCII sketches</div><div class="v">10 <small>the mental models</small></div></div>
+      <div><div class="k">Live tools here</div><div class="v">3 <small>bench · builder · quiz</small></div></div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ PART ONE ============ -->
+<div class="part reveal">
+  <div class="wrap">
+    <div class="bar"><span class="tag">Part one</span><h2>Know the field</h2></div>
+    <p>Before you call any model, you need to be able to read a spec sheet. This part is the vocabulary: what the numbers mean, which exams the scores come from, and which two websites to check.</p>
+  </div>
+</div>
+
+<!-- 01 -->
+<section class="sec reveal" id="s1">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">01</span><h2>The big picture</h2></div>
+
+    <p>The core idea is one simple experiment repeated carefully. You write <strong>one prompt</strong>. You send it to <strong>three different AI models</strong>. You save what each one gives you and compare.</p>
+
+    <div class="ascii">
+      <div class="cap">Sketch 1 · What you are actually building</div>
+<pre>
+                    <b>ONE PROMPT</b>
+        "You are a front-end web developer.
+         Build a landing page for {startup}.
+         Concept: {concept}. Sections: hero,
+         features, pricing, testimonials..."
+                         |
+        +----------------+----------------+
+        |                |                |
+        v                v                v
+   <i>OpenAI API</i>      <i>Google API</i>      <i>Anthropic API</i>
+   (gpt-4o)         (gemini)         (claude)
+        |                |                |
+        v                v                v
+    raw text         raw text         raw text
+        |                |                |
+        +-- strip ```html fences ---------+
+        |                |                |
+        v                v                v
+  openai_page.html  gemini_page.html  claude_page.html
+        |                |                |
+        +----------------+----------------+
+                         |
+                         v
+              <u>Open all 3 in a browser.
+               Compare. Pick a winner.</u>
+</pre>
+    </div>
+
+    <p>That is it. Everything else — leaderboards, benchmarks, latency, cost — exists to help you answer one question before you even start: <strong>which model should I send this to?</strong></p>
+
+    <h3>Two things you learn at the same time</h3>
+    <div class="grid g2">
+      <div class="card"><span class="tag">Skill A</span><h4>Judging models</h4><p>Reading leaderboards, understanding what a benchmark actually tests, knowing which numbers matter for your job and which are noise.</p></div>
+      <div class="card"><span class="tag">Skill B</span><h4>Driving models</h4><p>Writing a structured prompt, calling three different SDKs, cleaning the output, saving it, and improving it in plain English.</p></div>
+    </div>
+
+    <div class="note">
+      <span class="lbl b">Why bother with three providers</span>
+      <p><strong>Different models are good at different things.</strong> The one that writes the cleanest maths is often not the one that writes the nicest HTML. Also: one provider means one point of failure for outages, price hikes and rate limits. Wiring up a second one turns an emergency into a config change.</p>
+    </div>
+
+    <div class="note phi">
+      <span class="lbl v">Architect angle</span>
+      <p>The multi-provider pattern is the AI equivalent of not running a single database. The moment you have two providers wired and tested, you have <strong>options</strong>. Options are leverage — against outages, price hikes, and the inevitable deprecations that arrive on the vendor's schedule, not yours. A system that talks to exactly one provider is not an AI platform; it is a dependency with a chat interface.</p>
+    </div>
+
+    <details class="recall">
+      <summary>Your manager asks: "we already use one AI provider, why add another?" Give three answers.</summary>
+      <div class="ans">
+        <p><strong>1. Right tool per job.</strong> Route coding to the best coder, cheap bulk work to the cheap fast model, hard reasoning to the frontier model.</p>
+        <p><strong>2. Cost.</strong> Similar quality models can differ many times over in price per million tokens. You can't use that unless you're connected to both.</p>
+        <p><strong>3. Risk.</strong> Outages, rate limits, deprecations and price changes happen on the vendor's schedule, not yours. A tested second path means you migrate in a day, not a quarter.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- 02 -->
+<section class="sec reveal" id="s2">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">02</span><h2>Open models vs closed models</h2></div>
+
+    <p>First fork in the road. This is not about which is smarter. It's about <strong>what you are allowed to hold in your hands</strong>.</p>
+
+    <div class="ascii">
+      <div class="cap">Sketch 2 · Where the brain lives</div>
+<pre>
+  <i>CLOSED</i>  (GPT-4o, Claude, Gemini)     <s>OPEN WEIGHTS</s>  (Llama, Gemma, DeepSeek)
+
+   your code                                 your code
+      |                                          |
+      | HTTPS request                            | local call
+      v                                          v
+  +---------------+                        +------------------+
+  | VENDOR CLOUD  |                        | YOUR SERVER/GPU  |
+  |  +---------+  |                        |  +------------+  |
+  |  | weights |  |  <-- you can never     |  |  weights   |  | <-- you downloaded
+  |  |  (secret)| |      see or copy       |  | (on disk)  |  |     these yourself
+  |  +---------+  |                        |  +------------+  |
+  +---------------+                        +------------------+
+      |                                          |
+   pay per token                            pay for hardware
+   zero ops                                 you own all the ops
+   data leaves your network                 data never leaves
+</pre>
+    </div>
+
+    <div class="grid g2">
+      <div class="card">
+        <span class="tag">Closed · you rent an endpoint</span>
+        <h4>Easy, strong, not yours</h4>
+        <p>You get frontier quality with zero infrastructure. Someone else handles scaling and upgrades. But you pay per token, you can't inspect the model, and your data goes to their servers.</p>
+      </div>
+      <div class="card">
+        <span class="tag">Open weights · you own a copy</span>
+        <h4>Free-ish, private, your problem</h4>
+        <p>Download from Hugging Face, run it on your own machine, fine-tune it on your own data, keep everything inside your network. In exchange you own the GPUs, the serving, the scaling and the upgrades.</p>
+      </div>
+    </div>
+
+    <div class="note warn">
+      <span class="lbl">One word that matters</span>
+      <p><strong>"Open weights" is not "open source."</strong> Most open models publish only the trained numbers, under a licence the vendor wrote. The training data and training code usually stay private, and some licences restrict commercial use. So you can run it and fine-tune it — you generally can't rebuild it. In a bank or any regulated shop, read the licence before you read the benchmark scores. Browse available open models at <a href="https://huggingface.co/models" target="_blank" rel="noopener">Hugging Face ↗</a>.</p>
+    </div>
+
+    <div class="note phi">
+      <span class="lbl v">AI Philosophy</span>
+      <p>The open-vs-closed decision is ultimately a <strong>sovereignty question</strong>: who controls your capability stack? Closed models hand that control to a vendor — frontier quality, zero ops, but capability changes, data policy, and pricing are all decided elsewhere. Open weights trade ops burden for independence. There is no universally correct answer; there is only your threat model, your compliance posture, and your team's ability to own the infrastructure that comes with the choice.</p>
+    </div>
+
+    <details class="recall">
+      <summary>When is an open-weight model the only option, regardless of score?</summary>
+      <div class="ans">
+        <p>When the data cannot legally leave your network. If customer PII, medical records or regulated financial data can't be sent to a third-party API, self-hosting is the only path — and any benchmark gap becomes a constraint you design around, not a reason to reject it.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- 03 -->
+<section class="sec reveal" id="s3">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">03</span><h2>The nine numbers that separate models</h2></div>
+
+    <p>These are the columns you'll be sorting on any leaderboard. Learn them once and every spec sheet becomes readable.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Number</th><th>In plain words</th><th>Why it matters</th></tr></thead>
+        <tbody>
+          <tr><td class="n">Context window</td><td>How much text fits in one call (prompt + answer together)</td><td>Decides how big a document you can feed in one go</td></tr>
+          <tr><td class="n">Max output tokens</td><td>How long the answer is allowed to be</td><td>A huge context is useless if the reply caps at a page</td></tr>
+          <tr><td class="n">Knowledge cutoff</td><td>Last date it saw during training</td><td>Anything newer must come from search or your own documents</td></tr>
+          <tr><td class="n">Release date</td><td>When it shipped</td><td>Rough guide to how modern it is and how long it'll be supported</td></tr>
+          <tr><td class="n">Parameters</td><td>Size of the brain (GPT-3 = 175B)</td><td>More capacity, but also more cost and slower. Bigger ≠ better</td></tr>
+          <tr><td class="n">Training tokens</td><td>How much text it read while learning</td><td>Broader language understanding</td></tr>
+          <tr><td class="n">Latency (TTFT)</td><td>Seconds until the <em>first</em> word appears</td><td>What a user feels as "is this thing frozen?"</td></tr>
+          <tr><td class="n">Throughput</td><td>Words per second once it starts typing</td><td>Decides total time for a long answer</td></tr>
+          <tr><td class="n">Cost</td><td>$ per 1M input tokens and $ per 1M output tokens</td><td>Output is usually much pricier than input. Chatty models cost double</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Token maths you should do in your head</h3>
+    <p>A <span class="term">token</span> is a chunk of text. Roughly <strong>¾ of an English word</strong>, or about 4 characters.</p>
+
+    <div class="ascii">
+      <div class="cap">Sketch 3 · The token ruler</div>
+<pre>
+  text:     "Comparing"   "large"   "language"   "models"   "is"   "fun"
+  tokens:   [Compar][ing]  [large]  [lang][uage]  [models]  [is]  [fun]
+              1     2         3       4     5        6       7     8
+
+  RULE OF THUMB
+  ---------------------------------------------------------------
+  1 token   ~= 0.75 word   ~= 4 characters
+  1,000 tok ~= 750 words   ~= 1.5 pages
+  1,000,000 tok ~= 750,000 words ~= 8-10 full novels in ONE prompt
+
+  SPEED EXAMPLE
+  2,500 tokens/sec  ->  ~1,875 words/sec  ->  a full essay every second
+</pre>
+    </div>
+
+    <h3>Context window vs max output — the confusion that costs you a day</h3>
+
+    <div class="ascii">
+      <div class="cap">Sketch 4 · Two different limits</div>
+<pre>
+  +====================== CONTEXT WINDOW (e.g. 1,000,000) ======================+
+  |                                                                            |
+  |  [ system prompt ][ your documents ][ chat history ][ your question ]       |
+  |                                                     +--------------------+  |
+  |                                                     |  MAX OUTPUT 8,000  |  |
+  |                                                     |  the answer fits   |  |
+  |                                                     |  in HERE only      |  |
+  |                                                     +--------------------+  |
+  +============================================================================+
+
+  So a "1M context / 8K output" model is a <u>brilliant reader</u> and a <u>short writer</u>.
+  Feed it a whole book, get back a few pages. Never more.
+</pre>
+    </div>
+
+    <h3>Latency vs speed — also two different things</h3>
+
+    <div class="ascii">
+      <div class="cap">Sketch 5 · What the user actually feels</div>
+<pre>
+  FAST-START MODEL (chat feel)
+  press enter |--0.3s--| w o r d s   s t r e a m i n g . . . . done
+              ^ latency ^ <----------- throughput ----------->
+
+  REASONING MODEL (thinks first)
+  press enter |----------- 30s thinking -----------| words words done
+              ^ ------- latency (TTFT) ----------- ^
+
+  For a CHAT UI      -> latency wins. Users abandon a frozen screen.
+  For a BATCH JOB    -> latency is irrelevant. Only throughput + cost matter.
+  Slow first token is often a <i>feature</i>: the model is reasoning, not stuck.
+</pre>
+    </div>
+
+    <details class="recall">
+      <summary>A model advertises a 1,000,000-token context. Name two things that number does NOT tell you.</summary>
+      <div class="ans">
+        <p><strong>1. How much it can write back.</strong> Max output is a separate, far smaller limit.</p>
+        <p><strong>2. How well it uses the middle.</strong> A big window is a hard cap, not a promise of perfect recall — models often miss detail buried in the middle of a giant prompt. And every extra token you stuff in costs money and adds latency.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- 04 -->
+<section class="sec reveal" id="s4">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">04</span><h2>Benchmarks in plain words</h2></div>
+
+    <p>Leaderboard columns are acronyms. Each one is a specific exam with a specific blind spot. Know what the exam tests, or you're just being sold a number.</p>
+
+    <div class="grid g2">
+      <div class="card"><span class="tag">Reasoning</span><h4>GPQA Diamond</h4><p><strong>"Google-proof" science questions</strong> in biology, physics and chemistry, at PhD level. Searching the web doesn't save you. Leaders around <strong>84–85%</strong> (Grok ≈ 84.6, Gemini 2.5 Pro ≈ 84).</p></div>
+      <div class="card"><span class="tag">Maths</span><h4>AIME / MATH-500</h4><p><strong>Competition-level maths.</strong> Not arithmetic — multi-step problems. Leaders reached the <strong>low 90s</strong> (o4-mini ≈ 93.4%). Remember these same models were terrible at maths in 2022.</p></div>
+      <div class="card"><span class="tag">Coding</span><h4>SWE-bench</h4><p><strong>Real GitHub bugs.</strong> The model must write a patch that makes the test suite pass. Closest public proxy for <em>agentic</em> coding, not snippet writing. Claude 3.7 Sonnet led at <strong>≈ 70.3%</strong>.</p></div>
+      <div class="card"><span class="tag">The ceiling</span><h4>Humanity's Last Exam</h4><p><strong>~2,500 brutally hard expert questions</strong>, designed so nobody aces them soon. Scores were still low (o3 ≈ 20.3%), which is exactly why it's useful — it still has room to grow.</p></div>
+    </div>
+
+    <div class="ascii">
+      <div class="cap">Sketch 6 · Which exam predicts which job</div>
+<pre>
+  YOUR TASK                        LOOK AT THIS COLUMN
+  --------------------------------------------------------------
+  "fix the failing test in repo"   ->  SWE-bench
+  "check this actuarial formula"   ->  MATH-500 / AIME
+  "explain this research paper"    ->  GPQA Diamond
+  "will it survive weird edge Qs"  ->  Humanity's Last Exam
+  "will users enjoy the answer"    ->  <i>none of these</i> -> LMArena (sec 06)
+  "will it work on MY data"        ->  <i>none of these</i> -> your own eval set
+</pre>
+    </div>
+
+    <div class="note trap">
+      <span class="lbl r">Four ways a benchmark number lies to you</span>
+      <p><strong>Contamination</strong> — the test questions may have leaked into training data.<br>
+      <strong>Saturation</strong> — once everyone scores 92–94%, you're measuring noise, not skill.<br>
+      <strong>Scaffold sensitivity</strong> — agent scores depend heavily on the wrapper around the model, so two numbers may not measure the same system.<br>
+      <strong>Self-reporting</strong> — vendor numbers use vendor-chosen settings.</p>
+      <p>Use leaderboards to build a <strong>shortlist of 3</strong>. Never to declare a winner.</p>
+    </div>
+
+    <div class="note phi">
+      <span class="lbl v">Architect angle</span>
+      <p>The dangerous leader is one who picks a vendor based on a benchmark headline. The dangerous architecture is one that assumes today's leader stays the leader. <strong>Benchmarks measure models as they were trained; your private eval set measures models as they perform for you.</strong> Treating a public leaderboard as a procurement decision is outsourcing your judgment to whoever designed the exam — and to whoever leaked questions into the training data. A 20-prompt eval set built from real tasks is worth more than any published score because it is about your problem and yours alone.</p>
+    </div>
+
+    <details class="recall">
+      <summary>Two models are 1.2 points apart on a benchmark where the leader scores 93%. What do you conclude?</summary>
+      <div class="ans">
+        <p>Almost nothing. That's <strong>saturation</strong> — the gap is inside the noise created by prompt formatting, temperature, harness differences and leftover contamination. Decide on the axes that still separate them: cost, latency, context, output ceiling, tool reliability, and your own test set.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- 05 -->
+<section class="sec reveal" id="s5">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">05</span><h2>Vellum Leaderboard — the spec-sheet view</h2></div>
+
+    <p><a href="https://www.vellum.ai/llm-leaderboard" target="_blank" rel="noopener">Vellum LLM Leaderboard ↗</a> collects published benchmark scores for models released after April 2024, <strong>plus the operational numbers most benchmark sites skip</strong>: latency, speed, price, context, cutoff.</p>
+
+    <h3>How to actually use it</h3>
+    <ol class="tight">
+      <li><strong>Top cards</strong> — best in reasoning (GPQA), best in high-school maths, best in agentic coding (SWE-bench). Hover any card to read what the benchmark means instead of guessing from the acronym.</li>
+      <li><strong>Independent evals</strong> — extra metrics including Humanity's Last Exam. Useful because the headline benchmarks are saturated.</li>
+      <li><strong>Speed &amp; cost tabs</strong> — fastest by tokens/second, lowest latency by seconds-to-first-token, cheapest by input and output price. This is half the decision and most leaderboards ignore it.</li>
+      <li><strong>Two-model compare</strong> — pick any two, read context, cutoff, I/O cost, max output, latency and speed side by side. <em>(That's what the bench in section 07 recreates.)</em></li>
+      <li><strong>The big sortable table</strong> — the real tool. Sort by MATH-500 for the best mathematician, SWE-bench for the best coder, GPQA for the best scientist. <strong>Different sort, different winner, every time.</strong></li>
+    </ol>
+
+    <div class="note warn">
+      <span class="lbl">Expect blank cells</span>
+      <p>Not every vendor publishes every score — Gemini's maths row, for instance, was simply empty in one snapshot. A blank is <strong>not a zero</strong>. It means "not reported." Never rank on a column full of holes without saying so out loud.</p>
+    </div>
+
+    <details class="recall">
+      <summary>What does Vellum give you that a pure capability leaderboard doesn't?</summary>
+      <div class="ans">
+        <p>The <strong>operational</strong> columns — latency, throughput, input/output price, context window, max output and cutoff — sitting next to the benchmark scores. Those decide whether a model is <em>deployable</em> at your volume and your response-time budget, which is a completely separate question from whether it's smart.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- 06 -->
+<section class="sec reveal" id="s6">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">06</span><h2>Chatbot Arena — the human view</h2></div>
+
+    <p>Benchmarks check if an answer is <em>correct</em>. They don't check if a human <em>likes</em> it. <a href="https://lmarena.ai" target="_blank" rel="noopener">Chatbot Arena (LMArena) ↗</a>, built by UC Berkeley researchers, fills that gap with blind voting — over a million votes and growing.</p>
+
+    <div class="ascii">
+      <div class="cap">Sketch 7 · How a blind battle works</div>
+<pre>
+   you type ONE prompt
+   "assume you are a grumpy teacher, explain how EVs work"
+              |
+      +-------+-------+
+      v               v
+  +---------+     +---------+
+  | Model ? |     | Model ? |     <-- names HIDDEN on purpose
+  +---------+     +---------+
+      |               |
+      v               v
+  [ answer A ]    [ answer B ]
+      |               |
+      +------+--------+
+             v
+     you vote:  A better / B better / tie / both bad
+             |
+             v
+     NAMES REVEALED  ->  vote feeds an Elo-style Arena Score
+</pre>
+    </div>
+
+    <p>The grumpy-teacher prompt is a good template: the persona brings out tone and personality differences, while the technical content still lets you check the facts.</p>
+
+    <h3>The chart worth more than the ranking</h3>
+
+    <div class="ascii">
+      <div class="cap">Sketch 8 · Price vs Arena Score — find the sweet spot</div>
+<pre>
+  arena
+  score
+    ^
+1400|                                    o GPT-4.5
+    |          o Gemma        o Llama 4        (great, but $$$)
+1350|      <i>*BEST VALUE ZONE*</i>
+    |     cheap AND liked
+1300|   o
+    |
+1250| o
+    +--------------------------------------------------> cost ($/1M tok)
+      low                                            high
+
+  You want the <u>TOP-LEFT</u>: high score, low price.
+  The models on the upper-left edge form the "Pareto frontier" -
+  the only sensible choices. Everything below/right of them is
+  dominated by something cheaper or better.
+</pre>
+    </div>
+
+    <div class="note trap">
+      <span class="lbl r">Where human voting misleads</span>
+      <p><strong>Style bias:</strong> longer, prettier, more confident answers win votes even when they're less correct.<br>
+      <strong>Prompt mix:</strong> casual chat prompts dominate the vote pool, so the ranking reflects chat quality, not domain work.<br>
+      <strong>Fact-checking:</strong> a voter can't catch an error about something they don't know.</p>
+      <p>Read Arena as <em>"which model do people enjoy reading"</em> and Vellum as <em>"which model gets it right."</em> You need both.</p>
+    </div>
+
+    <div class="note phi">
+      <span class="lbl v">AI Philosophy</span>
+      <p>The Pareto frontier idea generalises beyond model selection — it is the right mental frame for any technology procurement. <strong>Every option that sits below-and-right of the frontier is dominated</strong>: something exists that is both better quality and cheaper. You don't need to justify ignoring dominated options; the burden of proof falls on anyone who argues for them. Learn to draw this chart mentally for any vendor or build-vs-buy decision, not just AI. The CTO who can point to the frontier and explain why a given choice sits on it — or doesn't — is doing strategy. Everyone else is doing preference.</p>
+    </div>
+
+    <details class="recall">
+      <summary>Vellum ranks A above B. The Arena ranks B above A. Who's wrong?</summary>
+      <div class="ans">
+        <p>Neither — they measure different things. Vellum = benchmarked correctness on structured exams. Arena = human preference on open-ended everyday prompts, where tone and formatting weigh heavily. A model can be more accurate and less pleasant, or the reverse.</p>
+        <p>The disagreement is <strong>information</strong>: it tells you the two models fail in different places, and that you should build your own domain test set to break the tie.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- 07 -->
+<section class="sec reveal" id="s7">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">07</span><h2>The bench — read two models against each other</h2></div>
+
+    <p>A worked pairing — Gemini 2.5 Pro vs DeepSeek R1 — using observed benchmark numbers as a reference point. Pick any two and watch which axes actually separate them.</p>
+
+    <div class="bench">
+      <div class="bench-top">
+        <span class="ttl">Comparison bench</span>
+        <select id="mA" aria-label="First model"></select>
+        <span class="vs">vs</span>
+        <select id="mB" aria-label="Second model"></select>
+      </div>
+      <div class="bench-body" id="benchBody"></div>
+      <div class="legend">
+        <span><span class="dot a"></span><span id="lgA">Model A</span></span>
+        <span><span class="dot b"></span><span id="lgB">Model B</span></span>
+        <span style="margin-left:auto">Bars scale within each row · "not published" = vendor didn't report it</span>
+      </div>
+    </div>
+
+    <div class="note warn">
+      <span class="lbl">Snapshot, not scripture</span>
+      <p>These are <strong>point-in-time snapshot numbers</strong>. New models ship weekly and prices change. Use them to learn the <em>shape</em> of a comparison — pull live values from <a href="https://www.vellum.ai/llm-leaderboard" target="_blank" rel="noopener">Vellum ↗</a> before any real decision.</p>
+    </div>
+
+    <h3>What this pairing teaches</h3>
+    <ul class="tight">
+      <li><strong>Context isn't a tiebreaker, it's a category.</strong> 1M vs 128K isn't "better" — it's the difference between being able to attempt whole-corpus tasks and not.</li>
+      <li><strong>Output ceiling is the hidden trap.</strong> 65K vs 8K max output decides whether long-form generation is even possible.</li>
+      <li><strong>Cheaper and faster can lose on skill and still win the job.</strong> DeepSeek trails on SWE-bench and GPQA but costs about half and starts answering far sooner.</li>
+      <li><strong>Slow latency here means thinking, not weakness.</strong> Deliberation costs seconds and buys accuracy.</li>
+    </ul>
+
+    <div class="ascii">
+      <div class="cap">Sketch 9 · The routing decision tree (print this one)</div>
+<pre>
+                     START: what is the task?
+                              |
+        +---------------------+---------------------+
+        |                     |                     |
+   data can't leave      user is waiting        batch / offline
+   the network           on screen              overnight job
+        |                     |                     |
+        v                     v                     v
+   open-weight,          <b>low latency</b> model     <b>cheap + high</b>
+   self-hosted           (fast first token)     <b>throughput</b> model
+        |                     |                     |
+        +---------------------+---------------------+
+                              |
+                    is the task HARD?
+                    (multi-step reasoning,
+                     tricky code, edge cases)
+                       |             |
+                     YES            NO
+                       |             |
+                       v             v
+               frontier model    small/mini model
+               (o-series,        (mini, flash, haiku,
+                2.5 Pro,          gemma) - often 10-50x
+                Sonnet/Opus)      cheaper for the same result
+                       |
+                       v
+             <u>ALWAYS: verify on your own
+              20-30 prompt eval set
+              before you commit.</u>
+</pre>
+    </div>
+
+    <div class="note phi">
+      <span class="lbl v">Architect angle</span>
+      <p><strong>Routing is the central pattern of an AI platform.</strong> Everything else — evaluation pipelines, SDK abstraction layers, cost dashboards — exists in service of routing well. A system that sends every request to the same model regardless of task, urgency, or cost constraint isn't an AI platform; it's a chatbot with a billing account. The decision tree above is the seed of your AI layer's intelligence: when you can articulate why each task goes where it does, you have an architecture, not just an integration.</p>
+    </div>
+
+    <details class="recall">
+      <summary>You must summarise 400-page regulatory PDFs overnight, in bulk. Which axes decide it? Which are noise?</summary>
+      <div class="ans">
+        <p><strong>Decisive:</strong> context window (does the doc fit, or must you chunk it?), max output (how long can the summary be?), input price per 1M tokens (you're pushing enormous prompts, so input cost dominates the bill), throughput.</p>
+        <p><strong>Noise:</strong> time-to-first-token. It's an overnight batch — nobody is watching the cursor. Paying extra for responsiveness you'll never perceive is pure waste.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ============ PART TWO ============ -->
+<div class="part reveal">
+  <div class="wrap">
+    <div class="bar"><span class="tag">Part two</span><h2>Wire up three providers</h2></div>
+    <p>Keys, environment files, and the three SDK shapes. The concept is identical everywhere — only the method names and the reply structure change.</p>
+  </div>
+</div>
+
+<!-- 08 -->
+<section class="sec reveal" id="s8">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">08</span><h2>Keys, .env, and not getting a shock bill</h2></div>
+
+    <p>Three providers, three consoles, three keys. Each one is generated once in a developer console and usually shown only once. Copy it straight into your <code>.env</code> file. Consoles: <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">OpenAI ↗</a> · <a href="https://aistudio.google.com" target="_blank" rel="noopener">Google AI Studio ↗</a> · <a href="https://console.anthropic.com" target="_blank" rel="noopener">Anthropic ↗</a>.</p>
+
+    <div class="codeblock">
+      <div class="codehead"><span>.env — never commit this</span><button class="copy">Copy</button></div>
+<pre class="code"><span class="c-com"># Add .env to .gitignore BEFORE you create it.</span>
+OPENAI_API_KEY=sk-...
+GOOGLE_API_KEY=AIza...
+ANTHROPIC_API_KEY=sk-ant-...</pre>
+    </div>
+
+    <div class="grid g3">
+      <div class="card"><span class="tag">Rule 1</span><h4>Never in the notebook</h4><p>Keys live in <code>.env</code> or a vault. Not in a cell, not in a commit, not in a screenshot of your terminal. A leaked key is someone else's compute on your invoice.</p></div>
+      <div class="card"><span class="tag">Rule 2</span><h4>Cap the damage</h4><p>Set hard spend limits and usage alerts in every console on day one. Use a separate key per project so one can be killed without breaking the rest.</p></div>
+      <div class="card"><span class="tag">Rule 3</span><h4>Check, don't print</h4><p>To confirm a key loaded, print the first 5 characters and the length. That proves it resolved without writing the secret into your output cells and logs.</p></div>
+    </div>
+
+    <div class="codeblock">
+      <div class="codehead"><span>Load and sanity-check all three</span><button class="copy">Copy</button></div>
+<pre class="code"><span class="c-kw">import</span> os
+<span class="c-kw">from</span> dotenv <span class="c-kw">import</span> load_dotenv
+
+load_dotenv(override=<span class="c-kw">True</span>)
+
+keys = {
+    <span class="c-str">"OpenAI"</span>:    os.getenv(<span class="c-str">"OPENAI_API_KEY"</span>),
+    <span class="c-str">"Google"</span>:    os.getenv(<span class="c-str">"GOOGLE_API_KEY"</span>),
+    <span class="c-str">"Anthropic"</span>: os.getenv(<span class="c-str">"ANTHROPIC_API_KEY"</span>),
+}
+
+<span class="c-kw">for</span> name, k <span class="c-kw">in</span> keys.items():
+    <span class="c-kw">if</span> <span class="c-kw">not</span> k:
+        <span class="c-fn">print</span>(f<span class="c-str">"{name}: MISSING"</span>)              <span class="c-com"># fail loudly, early</span>
+    <span class="c-kw">else</span>:
+        <span class="c-fn">print</span>(f<span class="c-str">"{name}: {k[:5]}… ({len(k)} chars)"</span>)</pre>
+    </div>
+
+    <div class="note trap">
+      <span class="lbl r">The expensive mistake</span>
+      <p>A key pushed to a public repo is typically scraped and used within <strong>minutes</strong> — bots watch GitHub's event stream. If it happens: <strong>revoke first, investigate second.</strong> Rotating a key takes thirty seconds. Disputing a bill does not.</p>
+    </div>
+
+    <details class="recall">
+      <summary>Why print only the first five characters of a key?</summary>
+      <div class="ans">
+        <p>Because the question is "did the environment variable load?" — not "what is my secret?" Prefix plus length proves it worked. Printing the whole thing writes the secret into notebook outputs, terminal scrollback and log aggregators, all of which outlive your session and get shared.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- 09 -->
+<section class="sec reveal" id="s9">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">09</span><h2>Three SDKs, one pattern</h2></div>
+
+    <p>The shapes differ; the idea doesn't. Every call is <strong>model + message + settings → text out</strong>. Learn the three differences and you can port a prompt in under a minute.</p>
+
+    <div class="ascii">
+      <div class="cap">Sketch 10 · Same journey, three doors</div>
+<pre>
+  prompt ──┬─► openai.chat.completions.create(model, messages, temperature)
+           │        └─► .choices[0].message.content          ──► text
+           │
+           ├─► gemini.models.generate_content(model, contents)
+           │        └─► .text                                ──► text
+           │
+           └─► anthropic.messages.create(model, <u>max_tokens</u>, messages)
+                    └─► .content[0].text                     ──► text
+                                    ▲
+                    <u>max_tokens is REQUIRED here and only here</u>
+</pre>
+    </div>
+
+    <div class="codeblock">
+      <div class="codehead"><span>Install everything</span><button class="copy">Copy</button></div>
+<pre class="code">pip install openai anthropic google-genai gradio python-dotenv</pre>
+    </div>
+
+    <h3>OpenAI</h3>
+    <div class="codeblock">
+      <div class="codehead"><span>Python</span><button class="copy">Copy</button></div>
+<pre class="code"><span class="c-kw">from</span> openai <span class="c-kw">import</span> OpenAI
+client = OpenAI()                     <span class="c-com"># reads OPENAI_API_KEY</span>
+
+r = client.chat.completions.create(
+    model=<span class="c-str">"gpt-4o"</span>,
+    messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: prompt}],
+    temperature=<span class="c-num">0.5</span>,
+)
+<span class="c-fn">print</span>(r.choices[<span class="c-num">0</span>].message.content)</pre>
+    </div>
+
+    <h3>Google Gemini</h3>
+    <div class="codeblock">
+      <div class="codehead"><span>Python</span><button class="copy">Copy</button></div>
+<pre class="code"><span class="c-kw">from</span> google <span class="c-kw">import</span> genai
+client = genai.Client()               <span class="c-com"># reads GOOGLE_API_KEY</span>
+
+r = client.models.generate_content(
+    model=<span class="c-str">"gemini-2.5-pro"</span>,
+    contents=prompt,
+)
+<span class="c-fn">print</span>(r.text)</pre>
+    </div>
+
+    <div class="note warn">
+      <span class="lbl">SDK drift — read this before debugging</span>
+      <p>The course uses the older <code>google-generativeai</code> package with <code>genai.configure()</code> and <code>GenerativeModel(...)</code>. Google has since moved to the <code>google-genai</code> SDK shown above. Both patterns are all over the internet. <strong>Check which package a snippet imports before you assume it's broken.</strong> Provider SDKs change faster than the models do.</p>
+    </div>
+
+    <h3>Anthropic Claude</h3>
+    <div class="codeblock">
+      <div class="codehead"><span>Python</span><button class="copy">Copy</button></div>
+<pre class="code"><span class="c-kw">import</span> anthropic
+client = anthropic.Anthropic()        <span class="c-com"># reads ANTHROPIC_API_KEY</span>
+
+r = client.messages.create(
+    model=<span class="c-str">"claude-sonnet-4-5"</span>,
+    max_tokens=<span class="c-num">20000</span>,             <span class="c-com"># REQUIRED. Big, because a full HTML page is long.</span>
+    messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: prompt}],
+)
+<span class="c-fn">print</span>(r.content[<span class="c-num">0</span>].text)</pre>
+    </div>
+
+    <h3>The differences, in one table</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th></th><th>OpenAI</th><th>Gemini</th><th>Anthropic</th></tr></thead>
+        <tbody>
+          <tr><td class="n">Method</td><td>chat.completions.create</td><td>models.generate_content</td><td>messages.create</td></tr>
+          <tr><td class="n">Prompt goes in</td><td>messages list</td><td>contents</td><td>messages list</td></tr>
+          <tr><td class="n">System prompt</td><td>role "system" in messages</td><td>system_instruction in config</td><td>top-level <code>system=</code></td></tr>
+          <tr><td class="n">max_tokens</td><td>optional</td><td>optional</td><td class="win">required</td></tr>
+          <tr><td class="n">Get the text</td><td>.choices[0].message.content</td><td>.text</td><td>.content[0].text</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Wrap it once, use it forever</h3>
+    <p>After writing those three calls, the obvious next step is one function that hides the difference. This is what makes routing, A/B testing and failover possible later.</p>
+
+    <div class="codeblock">
+      <div class="codehead"><span>A minimal router</span><button class="copy">Copy</button></div>
+<pre class="code"><span class="c-kw">def</span> <span class="c-fn">ask</span>(provider, prompt, **kw):
+    <span class="c-str">"""One signature, three back-ends. Always returns plain text."""</span>
+    <span class="c-kw">if</span> provider == <span class="c-str">"openai"</span>:
+        r = oai.chat.completions.create(
+            model=kw.get(<span class="c-str">"model"</span>, <span class="c-str">"gpt-4o"</span>),
+            temperature=kw.get(<span class="c-str">"temperature"</span>, <span class="c-num">0.5</span>),
+            messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: prompt}])
+        <span class="c-kw">return</span> r.choices[<span class="c-num">0</span>].message.content
+
+    <span class="c-kw">if</span> provider == <span class="c-str">"gemini"</span>:
+        r = gem.models.generate_content(
+            model=kw.get(<span class="c-str">"model"</span>, <span class="c-str">"gemini-2.5-pro"</span>), contents=prompt)
+        <span class="c-kw">return</span> r.text
+
+    <span class="c-kw">if</span> provider == <span class="c-str">"claude"</span>:
+        r = ant.messages.create(
+            model=kw.get(<span class="c-str">"model"</span>, <span class="c-str">"claude-sonnet-4-5"</span>),
+            max_tokens=kw.get(<span class="c-str">"max_tokens"</span>, <span class="c-num">20000</span>),
+            messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: prompt}])
+        <span class="c-kw">return</span> r.content[<span class="c-num">0</span>].text
+
+    <span class="c-kw">raise</span> ValueError(f<span class="c-str">"unknown provider: {provider}"</span>)</pre>
+    </div>
+
+    <div class="note phi">
+      <span class="lbl v">AI Philosophy</span>
+      <p>The abstraction layer you write on day one is what makes <strong>vendor switching possible on day one hundred</strong>. If every callsite in your codebase knows it's talking to OpenAI, switching requires touching every callsite. If every callsite knows only <code>ask(provider, prompt)</code>, switching is a config change. This is the dependency-inversion principle applied to foundation models — not an AI-specific idea, but one where the payoff arrives unusually fast, because providers rename models, reprice APIs, and deprecate endpoints on timescales of months, not years. Build the seam early.</p>
+    </div>
+
+    <details class="recall">
+      <summary>You port a working prompt from OpenAI to Anthropic and it errors before reaching the model. First thing to check?</summary>
+      <div class="ans">
+        <p><code>max_tokens</code>. Anthropic requires it — there's no default. It's the single most common porting error. Second most common: reaching for <code>.choices[0].message.content</code> on a reply whose text actually lives at <code>.content[0].text</code>.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="sec reveal" id="s10">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">10</span><h2>Three probe prompts to test any model in five minutes</h2></div>
+
+    <p>Three deliberately different prompts. Each catches a different failure. Run them on any new model before trusting it.</p>
+
+    <h3>Probe 1 — maths (one right answer)</h3>
+    <p><em>"A father is 36 and his son is 6. In how many years will the father be exactly five times as old as his son?"</em></p>
+    <div class="ascii">
+      <div class="cap">The answer, so you can mark it instantly</div>
+<pre>
+  36 + n = 5 x (6 + n)
+  36 + n = 30 + 5n
+       6 = 4n
+       <i>n = 1.5 years</i>
+
+  check:  father 37.5,  son 7.5,  37.5 / 7.5 = 5  <i>✓</i>
+</pre>
+    </div>
+    <div class="note good">
+      <span class="lbl m">Why the answer being 1.5 is the whole point</span>
+      <p>It's <strong>not a whole number</strong>. Models that pattern-match toward "clean" answers get caught. Models that silently round get caught. A probe whose correct answer looks slightly wrong is worth ten probes whose answer looks right.</p>
+    </div>
+
+    <h3>Probe 2 — creativity (no right answer)</h3>
+    <p><em>"Write a funny poem for my niece Rose, who is turning one."</em> You're judging tone control, whether all three constraints (name, age, humour) are honoured, and whether it reaches for cliché. This is exactly where human preference beats any benchmark.</p>
+
+    <h3>Probe 3 — code</h3>
+    <p><em>"Write a Python function that calculates BMI, letting the user pick metric or imperial units."</em> Look past whether it runs:</p>
+    <ul class="tight">
+      <li>Does it handle the unit switch cleanly, or bolt it on?</li>
+      <li>Does it raise an error on an unknown unit, or return something wrong and silent?</li>
+      <li>Docstring and edge cases — or a wall of scaffolding you didn't ask for? <strong>More code is not better code.</strong></li>
+    </ul>
+
+    <h3>A rubric you can actually score</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Criterion</th><th>Ask yourself</th><th>Tested by</th></tr></thead>
+        <tbody>
+          <tr><td class="n">Correctness</td><td>Is it right — and right again on a retry?</td><td>Probe 1 &amp; 3</td></tr>
+          <tr><td class="n">Legible reasoning</td><td>Can you follow and audit the working?</td><td>Probe 1</td></tr>
+          <tr><td class="n">Instruction fidelity</td><td>Were all stated constraints honoured?</td><td>All three</td></tr>
+          <tr><td class="n">Concision</td><td>Is the length proportional to the task?</td><td>Probe 2 &amp; 3</td></tr>
+          <tr><td class="n">Format discipline</td><td>Clean, or noisy stray markdown?</td><td>All three</td></tr>
+          <tr><td class="n">Felt latency</td><td>How long until the first word?</td><td>All three</td></tr>
+          <tr><td class="n">Cost per run</td><td>Tokens in + out at that model's rate</td><td>All three</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <span class="lbl b">The habit that actually pays</span>
+      <p>Three generic probes tell you nothing about <em>your</em> work. Build a fixed set of <strong>20–30 prompts from real tasks in your domain</strong>, with known-good answers where possible, and run every candidate model against it. That private set is the only leaderboard about your problem — and it stays useful as models change, which no public score does.</p>
+    </div>
+
+    <details class="recall">
+      <summary>Model A answers correctly in one dense paragraph. Model B answers correctly with the equations laid out. Same cost, same speed. Which do you ship?</summary>
+      <div class="ans">
+        <p>Depends who reads it — and that <em>is</em> the answer. If a human must audit the working (a compliance calculation, a customer explanation), B's legibility is the product. If code parses the output and only the final number matters, A is cheaper and easier to extract from, and B's working is noise you'd strip.</p>
+        <p>General lesson: <strong>"which model is better" has no answer. "Better for this reader, this task, this budget" always does.</strong></p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ============ PART THREE ============ -->
+<div class="part reveal">
+  <div class="wrap">
+    <div class="bar"><span class="tag">Part three</span><h2>Build the landing page</h2></div>
+    <p>Now the fun part. You describe a website in plain English, three models write the HTML, and you compare. This is the section people call "vibe coding" — but it works far better when the prompt has a real structure.</p>
+  </div>
+</div>
+
+<!-- 11 -->
+<section class="sec reveal" id="s11">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">11</span><h2>Anatomy of the prompt</h2></div>
+
+    <p>The same prompt goes to all three models, so it has to be complete on its own. A good prompt has three parts.</p>
+
+    <div class="ascii">
+      <div class="cap">Sketch 11 · The three-part prompt skeleton</div>
+<pre>
+  +--------------------------------------------------------------+
+  | <b>1. CONTEXT</b>   — who should the AI pretend to be?              |
+  |    "You are a helpful AI assistant acting as a               |
+  |     front-end web developer."                                |
+  +--------------------------------------------------------------+
+  | <b>2. INSTRUCTION</b> — what exactly do you want done?             |
+  |    "Generate the complete HTML for a clean, professional     |
+  |     landing page for {startup_name}. Concept: {concept}."    |
+  |    + the list of sections you want                           |
+  +--------------------------------------------------------------+
+  | <b>3. OUTPUT INDICATOR</b> — what shape must the answer be?        |
+  |    "Return ONLY raw HTML, starting with &lt;!DOCTYPE html&gt;      |
+  |     and ending with &lt;/html&gt;. Inline CSS. No images.          |
+  |     No explanation, no markdown fences."                     |
+  +--------------------------------------------------------------+
+
+  Miss part 3 and you get: "Sure! Here's a landing page for you:"
+  followed by ```html ... ``` — which breaks your saved file.
+</pre>
+    </div>
+
+    <h3>Why each rule in the prompt exists</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Instruction</th><th>Reason it's there</th></tr></thead>
+        <tbody>
+          <tr><td class="n">"acting as a front-end web developer"</td><td>Sets the role. Pushes the model toward developer conventions instead of generic prose.</td></tr>
+          <tr><td class="n">"start with &lt;!DOCTYPE html&gt;, end with &lt;/html&gt;"</td><td>Gives an exact, checkable shape for the output. Easy to validate in code.</td></tr>
+          <tr><td class="n">"don't include images"</td><td>Models invent image URLs that don't exist, so you get broken icons everywhere. Removing images removes the problem.</td></tr>
+          <tr><td class="n">"raw HTML with inline CSS"</td><td>Everything lands in one file. No separate stylesheet to wire up. Open it and it just works.</td></tr>
+          <tr><td class="n">Explicit section list</td><td>Without it, each model invents a different page structure and you can't compare them fairly.</td></tr>
+          <tr><td class="n">"no explanation"</td><td>Stops the model wrapping the code in chatty commentary you'd have to strip out.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>The page you're asking for</h3>
+
+    <div class="ascii">
+      <div class="cap">Sketch 12 · The landing-page wireframe you describe in words</div>
+<pre>
+  +----------------------------------------------------------+
+  |  LOGO / STARTUP NAME (bold)          nav nav nav          |  <- header
+  +----------------------------------------------------------+
+  |                                                          |
+  |            BIG HEADLINE + TAGLINE                        |  <- hero
+  |            [ Get started free ]                          |
+  |                                                          |
+  +----------------------------------------------------------+
+  |   [ feature 1 ]   [ feature 2 ]   [ feature 3 ]          |  <- features
+  |    benefit         benefit         benefit               |     (3-4 of them)
+  +----------------------------------------------------------+
+  |   1 -> 2 -> 3   "How it works"                           |  <- process
+  +----------------------------------------------------------+
+  |   " quote "     " quote "     " quote "                  |  <- testimonials
+  |    - Name        - Name        - Name                    |     (fictional!)
+  +----------------------------------------------------------+
+  |   [ Free ]      [ Pro ]      [ Enterprise ]              |  <- pricing
+  +----------------------------------------------------------+
+  |   Name | Email | Message   [ SEND ]  (red button)        |  <- contact form
+  +----------------------------------------------------------+
+  |   links · links · social icons · copyright               |  <- footer
+  +----------------------------------------------------------+
+</pre>
+    </div>
+
+    <div class="note trap">
+      <span class="lbl r">Real-world caution about those testimonials</span>
+      <p>Asking for <em>fictional customer quotes</em> is fine for a learning exercise. <strong>Never ship AI-invented testimonials on a live product page.</strong> Fake endorsements are treated as deceptive advertising in most jurisdictions, including under India's consumer-protection and ASCI rules. Replace them with real quotes or a placeholder before anything goes public.</p>
+    </div>
+
+    <details class="recall">
+      <summary>Why does the prompt say "don't include images"?</summary>
+      <div class="ans">
+        <p>Because the model can't upload files — it can only write image tags pointing at URLs it invents. Those URLs almost never exist, so you get a page full of broken-image icons. Banning images gives you a page that looks finished on first open. (Later you can allow inline SVG or emoji, which need no external file — that's part of why some models' pages looked richer.)</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- 12 -->
+<section class="sec reveal" id="s12">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">12</span><h2>Variables + the live prompt builder</h2></div>
+
+    <p>Key pattern: <strong>don't hard-code the startup into the prompt.</strong> Keep the name and concept as separate variables and drop them in with an f-string. Then changing the whole project is a two-line edit, not a rewrite.</p>
+
+    <div class="codeblock">
+      <div class="codehead"><span>Variables first, prompt second</span><button class="copy">Copy</button></div>
+<pre class="code">startup_name = <span class="c-str">"ConnectGenius"</span>
+startup_concept = (
+    <span class="c-str">"An intelligent CRM that uses AI to analyse customer interactions, "</span>
+    <span class="c-str">"predict needs and automate personalised follow-ups. Focus on customer "</span>
+    <span class="c-str">"retention and sales efficiency for businesses of all sizes."</span>
+)
+
+<span class="c-com"># swap these two lines and the entire project changes:</span>
+<span class="c-com"># startup_name    = "Quantum Leap Computing"</span>
+<span class="c-com"># startup_concept = "A cloud platform giving researchers affordable access to</span>
+<span class="c-com">#                    quantum computing, with a friendly UI and learning material."</span>
+
+html_prompt = f<span class="c-str">"""You are a helpful AI assistant acting as a front-end web developer.
+
+Generate the complete HTML for a simple, clean, professional landing page
+for <span class="c-num">{startup_name}</span>.
+
+Concept: <span class="c-num">{startup_concept}</span>
+
+Sections required:
+- A sleek header with the startup name in a bold modern font, plus a tagline
+- A hero section with a strong headline and a call-to-action button
+- A features section with 3-4 key benefits
+- A "How it works" section
+- A testimonials section with fictional customer quotes
+- A pricing section
+- A professional footer with navigation links and social icons
+
+Rules:
+- Return ONLY raw HTML, starting with &lt;!DOCTYPE html&gt; and ending with &lt;/html&gt;
+- Use inline CSS for all styling
+- Do not include any images
+- Do not add explanation or markdown code fences
+"""</span></pre>
+    </div>
+
+    <div class="note good">
+      <span class="lbl m">Why this matters more than it looks</span>
+      <p>Once the prompt is a template with slots, it becomes <strong>reusable infrastructure</strong>. Same template, hundreds of startups. Same template, A/B tested against three models. Same template, checked into git and versioned. This is the difference between playing with an AI and building with one.</p>
+    </div>
+
+    <div class="note phi">
+      <span class="lbl v">Architect angle</span>
+      <p>Treat prompts the way you treat database queries: <strong>parameterise them, version them, test them.</strong> A prompt hard-coded into a notebook is technical debt with a natural-language interface. A prompt as a versioned template in your repo is infrastructure. The question "which model gave the best output?" is only answerable if the prompt is held constant — which means it needs to be a controlled artefact you can check in, diff, and roll back, not a string retyped from memory. In larger systems, prompt versioning becomes as important as schema versioning.</p>
+    </div>
+
+    <h3>Build your own prompt right here</h3>
+    <p>Fill this in, tick the sections you want, and copy the result straight into your notebook.</p>
+
+    <div class="builder">
+      <div class="builder-head">Live prompt builder</div>
+      <div class="builder-body">
+        <div class="bl">
+          <div class="fld">
+            <label for="bName">Startup name</label>
+            <input type="text" id="bName" value="ConnectGenius">
+          </div>
+          <div class="fld">
+            <label for="bConcept">Concept (one or two sentences)</label>
+            <textarea id="bConcept">An intelligent CRM that uses AI to analyse customer interactions, predict needs and automate personalised follow-ups. Focus on customer retention and sales efficiency for businesses of all sizes.</textarea>
+          </div>
+          <div class="fld">
+            <label for="bColour">Colour direction</label>
+            <input type="text" id="bColour" value="deep navy background with a warm amber accent">
+          </div>
+          <div class="fld">
+            <label>Sections to include</label>
+            <div class="checks" id="bSections"></div>
+          </div>
+          <div class="fld">
+            <label>Extra quality rules</label>
+            <div class="checks" id="bRules"></div>
+          </div>
+        </div>
+        <div class="br">
+          <div class="brhead">
+            <span>Generated prompt</span>
+            <button class="btn" id="copyPrompt">Copy prompt</button>
+          </div>
+          <textarea id="promptOut" readonly></textarea>
+        </div>
+      </div>
+    </div>
+
+    <details class="recall">
+      <summary>What's the advantage of f-string variables over editing the prompt text each time?</summary>
+      <div class="ans">
+        <p>The prompt becomes a <strong>reusable template</strong>. You change two variables instead of hunting through a paragraph, so you can't accidentally leave the old startup name in one place. It also makes the prompt loopable — you can run twenty startups through it, or the same startup through three models, without touching the prompt text at all.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- 13 -->
+<section class="sec reveal" id="s13">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">13</span><h2>The generation pipeline</h2></div>
+
+    <p>Getting text back is only step one. There are three more steps before you have a page you can open, and the middle one is where everybody trips.</p>
+
+    <div class="ascii">
+      <div class="cap">Sketch 13 · From prompt to browser</div>
+<pre>
+   [1] CALL                [2] CLEAN            [3] SAVE        [4] VIEW
+  +-----------+          +------------+       +----------+    +---------+
+  |  send the |  text    | strip the  | html  | write to |    | open in |
+  |  prompt   | -------> | ```html    | ----> | .html    | -> | browser |
+  |  to model |          | fences     |       | file     |    |         |
+  +-----------+          +------------+       +----------+    +---------+
+                              ^
+                              |
+                    <u>THE STEP EVERYONE SKIPS</u>
+
+  What the model often returns:        What you need on disk:
+  ------------------------------       ------------------------
+  Sure! Here's your page:              &lt;!DOCTYPE html&gt;
+  ```html                              &lt;html&gt;
+  &lt;!DOCTYPE html&gt;              ---->     ...
+  ...                                  &lt;/html&gt;
+  &lt;/html&gt;
+  ```
+  Hope this helps!
+
+  If you skip cleaning, the browser shows literal ``` characters
+  at the top of your page and the first tag may not parse.
+</pre>
+    </div>
+
+    <div class="codeblock">
+      <div class="codehead"><span>The clean + save helper (write once, use for all three)</span><button class="copy">Copy</button></div>
+<pre class="code"><span class="c-kw">import</span> re, pathlib
+<span class="c-kw">from</span> IPython.display <span class="c-kw">import</span> display, HTML, Markdown
+
+<span class="c-kw">def</span> <span class="c-fn">clean_html</span>(raw: <span class="c-kw">str</span>) -> <span class="c-kw">str</span>:
+    <span class="c-str">"""Remove markdown fences and any chat before/after the HTML."""</span>
+    txt = raw.strip()
+    txt = re.sub(<span class="c-str">r"^```(?:html)?\s*"</span>, <span class="c-str">""</span>, txt)   <span class="c-com"># leading  ```html</span>
+    txt = re.sub(<span class="c-str">r"\s*```$"</span>, <span class="c-str">""</span>, txt)            <span class="c-com"># trailing ```</span>
+    start = txt.find(<span class="c-str">"&lt;!DOCTYPE"</span>)
+    <span class="c-kw">if</span> start == -<span class="c-num">1</span>:
+        start = txt.find(<span class="c-str">"&lt;html"</span>)
+    end = txt.rfind(<span class="c-str">"&lt;/html&gt;"</span>)
+    <span class="c-kw">if</span> start != -<span class="c-num">1</span> <span class="c-kw">and</span> end != -<span class="c-num">1</span>:
+        txt = txt[start:end + <span class="c-num">7</span>]                <span class="c-com"># keep only the page</span>
+    <span class="c-kw">return</span> txt.strip()
+
+
+<span class="c-kw">def</span> <span class="c-fn">save_and_show</span>(raw: <span class="c-kw">str</span>, filename: <span class="c-kw">str</span>, preview=<span class="c-kw">True</span>):
+    html = <span class="c-fn">clean_html</span>(raw)
+    path = pathlib.Path(filename)
+    path.write_text(html, encoding=<span class="c-str">"utf-8"</span>)
+    <span class="c-fn">print</span>(f<span class="c-str">"saved -> {path.resolve()}  ({len(html):,} chars)"</span>)
+    <span class="c-kw">if</span> preview:
+        display(HTML(html))
+    <span class="c-kw">return</span> html</pre>
+    </div>
+
+    <h3>Now run all three, with timing and cost visible</h3>
+    <div class="codeblock">
+      <div class="codehead"><span>The comparison loop — this is the whole project</span><button class="copy">Copy</button></div>
+<pre class="code"><span class="c-kw">import</span> time
+
+runs = [
+    (<span class="c-str">"openai"</span>, <span class="c-str">"gpt-4o"</span>,           <span class="c-str">"openai_landing_page.html"</span>),
+    (<span class="c-str">"gemini"</span>, <span class="c-str">"gemini-2.5-pro"</span>,   <span class="c-str">"gemini_landing_page.html"</span>),
+    (<span class="c-str">"claude"</span>, <span class="c-str">"claude-sonnet-4-5"</span>,<span class="c-str">"claude_landing_page.html"</span>),
+]
+
+results = []
+<span class="c-kw">for</span> provider, model, filename <span class="c-kw">in</span> runs:
+    <span class="c-fn">print</span>(f<span class="c-str">"\n=== calling {provider} ({model}) ==="</span>)
+    t0 = time.time()
+    <span class="c-kw">try</span>:
+        raw = <span class="c-fn">ask</span>(provider, html_prompt, model=model)
+        elapsed = time.time() - t0
+        html = <span class="c-fn">save_and_show</span>(raw, filename, preview=<span class="c-kw">False</span>)
+        results.append({<span class="c-str">"provider"</span>: provider, <span class="c-str">"model"</span>: model,
+                        <span class="c-str">"seconds"</span>: <span class="c-fn">round</span>(elapsed, <span class="c-num">1</span>),
+                        <span class="c-str">"chars"</span>: <span class="c-fn">len</span>(html), <span class="c-str">"file"</span>: filename})
+    <span class="c-kw">except</span> Exception <span class="c-kw">as</span> e:
+        <span class="c-fn">print</span>(f<span class="c-str">"FAILED: {e}"</span>)        <span class="c-com"># one provider down != project down</span>
+
+<span class="c-kw">import</span> pandas <span class="c-kw">as</span> pd
+display(pd.DataFrame(results))     <span class="c-com"># your own mini leaderboard</span></pre>
+    </div>
+
+    <div class="note">
+      <span class="lbl b">Small upgrade, big payoff</span>
+      <p>Running each provider in a separate cell is the natural first step. Putting them in one loop that <strong>records seconds and output size</strong> turns a demo into a measurement. After three or four startups you'll have real data on which model is fastest and most verbose for <em>your</em> prompts — which is worth more than any public leaderboard.</p>
+    </div>
+
+    <details class="recall">
+      <summary>Why does the pipeline need a "clean" step at all?</summary>
+      <div class="ans">
+        <p>Because models are trained to be chatty and to format code in markdown. Even when you say "only HTML," you'll often get <code>```html</code> fences and a friendly sentence around the code. Written straight to a <code>.html</code> file, those characters appear on the page and can break parsing. The clean step slices out everything from <code>&lt;!DOCTYPE</code> to <code>&lt;/html&gt;</code> and throws the rest away.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- 14 -->
+<section class="sec reveal" id="s14">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">14</span><h2>What each model actually produced</h2></div>
+
+    <p>Same prompt, three very different pages. The differences are obvious the moment you open them side by side — and each difference is a data point about the model, not the task.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Model</th><th>What the page looked like</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td class="n">GPT-4o</td><td>All the requested sections present, but plain and a bit messy. Layout not well composed.</td><td>Weakest of the three</td></tr>
+          <tr><td class="n">GPT-4o-mini</td><td>Slightly cleaner than full 4o on the same prompt — a genuine surprise.</td><td>Small ≠ worse</td></tr>
+          <tr><td class="n">Gemini (Flash)</td><td>Richer: emoji and inline graphics, better hierarchy, stronger copywriting ("Stop losing customers. Start growing smarter.")</td><td>Clearly better</td></tr>
+          <tr><td class="n">Claude 3.7 Sonnet</td><td>Most polished: a generated logo mark, coherent colour system, well-structured pricing and testimonial blocks. "Looks like a real SaaS site."</td><td>Best-looking output</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note good">
+      <span class="lbl m">The lesson hiding in the mini result</span>
+      <p>GPT-4o-mini beating GPT-4o on this task is the most instructive result here. <strong>The bigger, more expensive model is not automatically better for your specific task.</strong> If you'd picked purely on price tier or headline benchmark, you'd have chosen wrong — and paid more to do it. This is precisely why you test on your own prompts.</p>
+    </div>
+
+    <div class="note phi">
+      <span class="lbl v">AI Philosophy</span>
+      <p>There is <strong>no globally best model — only the best model for this task, this latency budget, this cost envelope, this user</strong>. Procurement based on headline benchmarks is optimising for someone else's task, measured by someone else's rubric. The leader who defaults to "we use the best model" without asking "best by what measure, for which job, at what cost?" has handed the architecture decision to a marketing team. The right question is always specific: what is the failure mode I care about, and which model fails there least?</p>
+    </div>
+
+    <h3>How to judge them properly, not just by eye</h3>
+    <p>The final practice asks which model produced the <em>cleanest, most semantic HTML</em> — judged by reading the code, not the rendered page. That's a different and better question. Things to check:</p>
+    <ul class="tight">
+      <li><strong>Semantic tags</strong> — does it use <code>&lt;header&gt; &lt;nav&gt; &lt;section&gt; &lt;footer&gt;</code>, or is everything a <code>&lt;div&gt;</code>?</li>
+      <li><strong>Heading order</strong> — one <code>&lt;h1&gt;</code>, then <code>&lt;h2&gt;</code>s in order? Or headings picked by how big they look?</li>
+      <li><strong>Accessibility</strong> — <code>alt</code> text, labels on form inputs, sensible colour contrast.</li>
+      <li><strong>Responsiveness</strong> — is there a viewport meta tag and any media query, or does it break on a phone?</li>
+      <li><strong>CSS sanity</strong> — repeated inline blocks copy-pasted everywhere, or a consistent set of styles?</li>
+      <li><strong>Dead weight</strong> — unused classes, empty tags, commented-out fragments.</li>
+    </ul>
+
+    <div class="ascii">
+      <div class="cap">Sketch 14 · Pretty page vs good code — they're not the same axis</div>
+<pre>
+   code
+  quality
+     ^
+     |   <i>[ ship this ]</i>              <i>[ the goal ]</i>
+     |   plain but semantic          pretty AND semantic
+     |   easy to hand to a dev       rare, and worth paying for
+     |
+     |---------------------------+---------------------------
+     |
+     |   [ throw away ]              <u>[ the trap ]</u>
+     |   ugly div soup               gorgeous div soup
+     |                               looks done, painful to maintain
+     +---------------------------------------------------> visual polish
+
+  Judging by screenshot alone lands you in the bottom-right.
+</pre>
+    </div>
+
+    <details class="recall">
+      <summary>Why is "which page looks best" a weaker question than "which HTML is cleanest"?</summary>
+      <div class="ans">
+        <p>Because looks are the easy half. A page can be beautiful and still be unmaintainable div soup with no semantic tags, no accessibility and no responsiveness — which means a developer has to rewrite it before it can be used. Clean semantic HTML can be restyled in an afternoon. <strong>Judge the artefact you'd have to maintain, not the screenshot.</strong></p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- 15 -->
+<section class="sec reveal" id="s15">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">15</span><h2>Iterating in plain English</h2></div>
+
+    <p>The exercise: add a contact/sign-up section and use attention-grabbing colours. You do this by <strong>editing one sentence</strong> in the prompt and re-running. No HTML knowledge involved.</p>
+
+    <div class="ascii">
+      <div class="cap">Sketch 15 · The design loop</div>
+<pre>
+        write / edit prompt in plain English
+                     |
+                     v
+          run the 3 models  (~30-60s)
+                     |
+                     v
+          open the .html files side by side
+                     |
+                     v
+          "the CTA is too quiet"  /  "add a FAQ"
+                     |
+                     +-----------> back to the top
+                     
+   Each loop costs cents and about a minute.
+   That is the actual superpower here - not the first draft,
+   but how cheap the <i>tenth</i> draft is.
+</pre>
+    </div>
+
+    <div class="note phi">
+      <span class="lbl v">AI Philosophy</span>
+      <p>The real shift generative AI introduces isn't that the first draft is good — it's that <strong>the tenth draft costs the same as the first</strong>. In traditional software, iteration compounds: debugging, regression testing, stakeholder alignment all add friction with each cycle. In prompt-driven generation, each run is independent and costs cents. This fundamentally changes the economics of exploration — and of risk. The implication for teams: the bottleneck moves from "can we afford to try this?" to "do we have the judgment to know when we've found something worth stopping at?"</p>
+    </div>
+
+    <h3>Vague vs specific — the same request, two results</h3>
+    <div class="grid g2">
+      <div class="card">
+        <span class="tag">Vague</span>
+        <h4>"add a contact form with red colours to grab attention"</h4>
+        <p>Works, and models understand it. But "red" is a guess — you'll get whatever red the model likes, different in each of the three pages, and hard to reproduce next run.</p>
+      </div>
+      <div class="card">
+        <span class="tag">Specific</span>
+        <h4>"add a contact section with name, work email and message fields. Submit button: background #E63946, white text, 8px radius."</h4>
+        <p>Same effort to type. Now all three pages are comparable, the result is reproducible, and you're testing the <em>model</em> rather than testing your own vagueness.</p>
+      </div>
+    </div>
+
+    <h3>Prompt upgrades worth adding to every run</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Add this line</th><th>What it fixes</th></tr></thead>
+        <tbody>
+          <tr><td class="n">"Use semantic HTML5 tags: header, nav, main, section, footer."</td><td>Stops div soup. Makes the output actually maintainable.</td></tr>
+          <tr><td class="n">"Must be responsive down to 375px. Include a viewport meta tag."</td><td>Otherwise the page breaks on a phone.</td></tr>
+          <tr><td class="n">"Palette: #0B1F3A background, #F4A261 accent, #F8F9FA text."</td><td>Removes colour guesswork; all three pages become comparable.</td></tr>
+          <tr><td class="n">"All form inputs must have associated label elements."</td><td>Basic accessibility, usually skipped unless asked.</td></tr>
+          <tr><td class="n">"Use inline SVG or emoji for icons. No external image files."</td><td>Icons appear without any broken links.</td></tr>
+          <tr><td class="n">"Mark testimonials with a data-placeholder attribute."</td><td>Makes fake quotes easy to find and replace before going live.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note warn">
+      <span class="lbl">Change one thing at a time</span>
+      <p>If you add a contact form <em>and</em> change the colours <em>and</em> switch the model in the same run, you can't tell which change caused the difference. Same discipline as any experiment: <strong>one variable per run</strong>, and keep the old file (use distinct filenames — see the next section).</p>
+    </div>
+
+    <details class="recall">
+      <summary>Why give a hex code instead of just saying "red"?</summary>
+      <div class="ans">
+        <p>Because "red" is a free variable each model fills in differently, and differently again on the next run. With a hex code, the colour stops being a source of variation, so any difference you see between the three pages is caused by the <strong>model</strong>, not by your ambiguity. Same principle as fixing the temperature or the seed: control everything you're not testing.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- 16 -->
+<section class="sec reveal" id="s16">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">16</span><h2>Gotchas and fixes</h2></div>
+
+    <p>Everything that goes wrong in this project, and what to do about it.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td class="n">``` appears at the top of the page</td><td>Markdown fences not stripped</td><td>Run the output through <code>clean_html()</code> before saving</td></tr>
+          <tr><td class="n">Page is cut off halfway</td><td>Hit <code>max_tokens</code></td><td>Raise it. A full landing page needs roughly 8–20K output tokens</td></tr>
+          <tr><td class="n">Anthropic call throws immediately</td><td><code>max_tokens</code> missing</td><td>It's required on Anthropic only. Always pass it</td></tr>
+          <tr><td class="n">Broken image icons everywhere</td><td>Model invented image URLs</td><td>Say "no images" or "inline SVG / emoji only"</td></tr>
+          <tr><td class="n">Old page still showing in browser</td><td>Browser cache</td><td>Hard refresh (Ctrl/Cmd + Shift + R)</td></tr>
+          <tr><td class="n">Lost the previous version</td><td>Same filename reused</td><td>Name files <code>{model}_{run}_{date}.html</code> — never overwrite</td></tr>
+          <tr><td class="n">Results differ every run</td><td>Temperature too high</td><td>Drop to 0–0.3 when comparing models; keep it higher only for creative variety</td></tr>
+          <tr><td class="n">"Model not found" error</td><td>Model ID string changed</td><td>Model names get renamed and retired constantly. Check the provider's docs page</td></tr>
+          <tr><td class="n">Only one provider fails</td><td>Bad key, quota, or region block</td><td>Wrap each call in try/except so one failure doesn't kill the run</td></tr>
+          <tr><td class="n">Notebook is a mess of stale output</td><td>Many re-runs</td><td>Kernel → Restart Kernel and Clear All Outputs, then run top to bottom</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <span class="lbl b">Two habits worth keeping</span>
+      <p><strong>Pin your model IDs in a config dict at the top of the notebook.</strong> When a model is retired you change one line, not fifteen.</p>
+      <p><strong>Keep every generated file.</strong> Storage is free; a folder of dated outputs is the evidence base for "which model is actually better," and lets you re-open old runs after a model has changed underneath you.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 17 -->
+<section class="sec reveal" id="s17">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">17</span><h2>The whole thing, in one script</h2></div>
+
+    <p>Everything above condensed into one file you can run. If you remember nothing else from these notes, keep this.</p>
+
+    <div class="codeblock">
+      <div class="codehead"><span>compare_llms.py — end to end</span><button class="copy">Copy</button></div>
+<pre class="code"><span class="c-str">"""Send one prompt to three providers, save three HTML pages, compare."""</span>
+<span class="c-kw">import</span> os, re, time, pathlib
+<span class="c-kw">from</span> datetime <span class="c-kw">import</span> date
+<span class="c-kw">from</span> dotenv <span class="c-kw">import</span> load_dotenv
+<span class="c-kw">from</span> openai <span class="c-kw">import</span> OpenAI
+<span class="c-kw">from</span> google <span class="c-kw">import</span> genai
+<span class="c-kw">import</span> anthropic
+
+load_dotenv(override=<span class="c-kw">True</span>)
+oai = OpenAI()
+gem = genai.Client()
+ant = anthropic.Anthropic()
+
+<span class="c-com"># --- 1. pin your models in ONE place -----------------------------</span>
+MODELS = {
+    <span class="c-str">"openai"</span>: <span class="c-str">"gpt-4o"</span>,
+    <span class="c-str">"gemini"</span>: <span class="c-str">"gemini-2.5-pro"</span>,
+    <span class="c-str">"claude"</span>: <span class="c-str">"claude-sonnet-4-5"</span>,
+}
+
+<span class="c-com"># --- 2. the idea -------------------------------------------------</span>
+startup_name = <span class="c-str">"ConnectGenius"</span>
+startup_concept = (
+    <span class="c-str">"An intelligent CRM that uses AI to analyse customer interactions, "</span>
+    <span class="c-str">"predict needs and automate personalised follow-ups."</span>
+)
+
+<span class="c-com"># --- 3. the prompt template --------------------------------------</span>
+html_prompt = f<span class="c-str">"""You are a helpful AI assistant acting as a front-end web developer.
+
+Generate the complete HTML for a clean, professional landing page for
+<span class="c-num">{startup_name}</span>.
+
+Concept: <span class="c-num">{startup_concept}</span>
+
+Sections: header with name and tagline; hero with headline and CTA;
+3-4 features; how it works; testimonials (fictional, marked with
+data-placeholder); pricing; contact form with labelled fields; footer.
+
+Rules:
+- Return ONLY raw HTML from &lt;!DOCTYPE html&gt; to &lt;/html&gt;. No fences, no prose.
+- Inline CSS only. Semantic HTML5 tags. Responsive to 375px.
+- No external images; inline SVG or emoji for icons.
+- Palette: #0B1F3A background, #F4A261 accent, #F8F9FA text.
+"""</span>
+
+<span class="c-com"># --- 4. one call shape for all three ------------------------------</span>
+<span class="c-kw">def</span> <span class="c-fn">ask</span>(provider, prompt):
+    <span class="c-kw">if</span> provider == <span class="c-str">"openai"</span>:
+        r = oai.chat.completions.create(
+            model=MODELS[provider], temperature=<span class="c-num">0.3</span>,
+            messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: prompt}])
+        <span class="c-kw">return</span> r.choices[<span class="c-num">0</span>].message.content
+    <span class="c-kw">if</span> provider == <span class="c-str">"gemini"</span>:
+        r = gem.models.generate_content(model=MODELS[provider], contents=prompt)
+        <span class="c-kw">return</span> r.text
+    <span class="c-kw">if</span> provider == <span class="c-str">"claude"</span>:
+        r = ant.messages.create(
+            model=MODELS[provider], max_tokens=<span class="c-num">20000</span>,
+            messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: prompt}])
+        <span class="c-kw">return</span> r.content[<span class="c-num">0</span>].text
+    <span class="c-kw">raise</span> ValueError(provider)
+
+<span class="c-com"># --- 5. clean the output -----------------------------------------</span>
+<span class="c-kw">def</span> <span class="c-fn">clean_html</span>(raw):
+    t = re.sub(<span class="c-str">r"^```(?:html)?\s*|\s*```$"</span>, <span class="c-str">""</span>, raw.strip())
+    s, e = t.find(<span class="c-str">"&lt;!DOCTYPE"</span>), t.rfind(<span class="c-str">"&lt;/html&gt;"</span>)
+    <span class="c-kw">return</span> t[s:e + <span class="c-num">7</span>].strip() <span class="c-kw">if</span> s != -<span class="c-num">1</span> <span class="c-kw">and</span> e != -<span class="c-num">1</span> <span class="c-kw">else</span> t.strip()
+
+<span class="c-com"># --- 6. run, time, save, report ----------------------------------</span>
+out = pathlib.Path(<span class="c-str">"pages"</span>); out.mkdir(exist_ok=<span class="c-kw">True</span>)
+stamp = date.today().isoformat()
+rows = []
+
+<span class="c-kw">for</span> provider <span class="c-kw">in</span> MODELS:
+    t0 = time.time()
+    <span class="c-kw">try</span>:
+        html = <span class="c-fn">clean_html</span>(<span class="c-fn">ask</span>(provider, html_prompt))
+        f = out / f<span class="c-str">"{provider}_{stamp}.html"</span>
+        f.write_text(html, encoding=<span class="c-str">"utf-8"</span>)
+        rows.append((provider, MODELS[provider],
+                     <span class="c-fn">round</span>(time.time() - t0, <span class="c-num">1</span>), <span class="c-fn">len</span>(html), <span class="c-fn">str</span>(f)))
+    <span class="c-kw">except</span> Exception <span class="c-kw">as</span> e:
+        rows.append((provider, MODELS[provider], <span class="c-kw">None</span>, <span class="c-kw">None</span>, f<span class="c-str">"FAILED: {e}"</span>))
+
+<span class="c-fn">print</span>(f<span class="c-str">"{'provider':10}{'seconds':>9}{'chars':>9}  file"</span>)
+<span class="c-kw">for</span> p, m, secs, n, f <span class="c-kw">in</span> rows:
+    <span class="c-fn">print</span>(f<span class="c-str">"{p:10}{<span class="c-fn">str</span>(secs):>9}{<span class="c-fn">str</span>(n):>9}  {f}"</span>)</pre>
+    </div>
+  </div>
+</section>
+
+<!-- CHECKLIST -->
+<section class="sec reveal" id="tasks">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">✓</span><h2>Every practice task, in one list</h2></div>
+    <p>All the practice tasks. Tick them off as you go — the state resets when you reload, so treat it as a working session tracker.</p>
+    <div class="tasks" id="taskList"></div>
+    <div class="taskbar">
+      <span>Done <b id="taskDone">0</b> of <b id="taskTotal">0</b></span>
+      <button class="btn" id="taskReset">Clear all</button>
+    </div>
+  </div>
+</section>
+
+<!-- QUIZ -->
+<section class="sec reveal" id="quiz">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">?</span><h2>Check yourself — 12 questions</h2></div>
+    <p>Answer before scrolling back. Pulling the answer out of your head is what makes it stick.</p>
+    <div class="quiz" id="quizBox"></div>
+    <div class="score" id="scoreBox">
+      <span>Answered <b id="answered">0</b> / 12 · Correct <b id="correct">0</b></span>
+      <button class="btn" id="resetQuiz">Reset</button>
+    </div>
+  </div>
+</section>
+
+<!-- CHEAT SHEET -->
+<section class="sec reveal" id="cheat">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">★</span><h2>One-page cheat sheet</h2></div>
+    <p>If you only keep one screenshot from these notes, make it this one.</p>
+
+    <div class="ascii">
+      <div class="cap">The whole module on one card</div>
+<pre>
+  ================================================================
+   PICKING A MODEL
+  ================================================================
+   Vellum      -> objective benchmarks + latency + speed + price
+   LMArena     -> blind human preference, Elo score, price/score chart
+   Your own    -> 20-30 real prompts from your domain  <i>(the only one
+                  eval set     that is actually about your problem)</i>
+
+   Benchmarks: GPQA=science reasoning   MATH-500=maths
+               SWE-bench=real code fixes  HLE=hardest questions
+   Traps: contamination, saturation, scaffolds, self-reporting
+
+  ================================================================
+   THE NUMBERS
+  ================================================================
+   context window  = total tokens in (prompt + answer)
+   max output      = how long the ANSWER can be  <u>(separate limit!)</u>
+   latency (TTFT)  = seconds to first token   -> matters for chat
+   throughput      = tokens/sec after that    -> matters for batch
+   cost            = $/1M in  AND  $/1M out   (out is pricier)
+   1 token ~= 0.75 word ~= 4 characters
+
+  ================================================================
+   THE THREE CALLS
+  ================================================================
+   openai   .chat.completions.create(model, messages, temperature)
+              -> .choices[0].message.content
+   gemini   .models.generate_content(model, contents)
+              -> .text
+   claude   .messages.create(model, <u>max_tokens</u>, messages)
+              -> .content[0].text
+
+  ================================================================
+   THE PROMPT (3 parts)
+  ================================================================
+   1 CONTEXT      "You are a front-end web developer."
+   2 INSTRUCTION  what to build + exact section list
+   3 OUTPUT       "raw HTML only, &lt;!DOCTYPE html&gt; to &lt;/html&gt;,
+                   inline CSS, no images, no fences, no prose"
+
+  ================================================================
+   THE PIPELINE
+  ================================================================
+   call -> <u>strip ```fences</u> -> save .html -> open in browser
+                   ^ the step everyone forgets
+
+  ================================================================
+   GOLDEN RULES
+  ================================================================
+   * bigger model != better for YOUR task (4o-mini beat 4o here)
+   * change one variable per run
+   * give hex codes, not colour words
+   * never overwrite a generated file
+   * pin model IDs in one config dict
+   * never ship AI-invented testimonials to a live site
+</pre>
+    </div>
+  </div>
+</section>
+
+<!-- GLOSSARY -->
+<section class="sec reveal" id="gloss">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">§</span><h2>Glossary</h2></div>
+    <dl class="gloss">
+      <div class="gitem"><dt>Token</dt><dd>Chunk of text a model reads and writes. ≈ ¾ of a word, ≈ 4 characters. Billing, limits and speed are all counted in these.</dd></div>
+      <div class="gitem"><dt>Context window</dt><dd>Total tokens allowed in one call — prompt and answer together.</dd></div>
+      <div class="gitem"><dt>Max output tokens</dt><dd>Separate cap on how long one answer can be. Usually far smaller than the context.</dd></div>
+      <div class="gitem"><dt>TTFT / latency</dt><dd>Seconds until the first token appears. What users feel as responsiveness.</dd></div>
+      <div class="gitem"><dt>Throughput</dt><dd>Tokens per second once it starts writing. Sets total completion time.</dd></div>
+      <div class="gitem"><dt>Knowledge cutoff</dt><dd>Last date in the training data. Anything newer must come from search or your documents.</dd></div>
+      <div class="gitem"><dt>Parameters</dt><dd>Learned weights in the network. More capacity — but also more cost and latency.</dd></div>
+      <div class="gitem"><dt>Temperature</dt><dd>Randomness dial. Low = repeatable, good for code and comparisons. High = varied, good for creative work.</dd></div>
+      <div class="gitem"><dt>Frontier model</dt><dd>Informal name for the current top tier of models across providers.</dd></div>
+      <div class="gitem"><dt>Open weights</dt><dd>Downloadable parameters you can self-host and fine-tune. Not the same as open source.</dd></div>
+      <div class="gitem"><dt>GPQA Diamond</dt><dd>Graduate-level "Google-proof" science questions. The reasoning benchmark.</dd></div>
+      <div class="gitem"><dt>SWE-bench</dt><dd>Patch real GitHub issues so tests pass. The agentic-coding benchmark.</dd></div>
+      <div class="gitem"><dt>Humanity's Last Exam</dt><dd>~2,500 expert questions built to resist saturation. Still low scores, still useful.</dd></div>
+      <div class="gitem"><dt>Arena Score</dt><dd>Elo-style rating from blind head-to-head human votes on LMArena.</dd></div>
+      <div class="gitem"><dt>Saturation</dt><dd>When top scores cluster at the ceiling and remaining gaps are just noise.</dd></div>
+      <div class="gitem"><dt>Contamination</dt><dd>Test questions leaking into training data, inflating scores without real skill.</dd></div>
+      <div class="gitem"><dt>Style bias</dt><dd>Human raters preferring longer, prettier answers regardless of correctness.</dd></div>
+      <div class="gitem"><dt>Pareto frontier</dt><dd>On a cost-vs-quality chart, the models you can't improve on one axis without losing the other. The only sensible choices.</dd></div>
+      <div class="gitem"><dt>Markdown fences</dt><dd>The ``` markers models wrap code in. Must be stripped before saving to a .html file.</dd></div>
+      <div class="gitem"><dt>Inline CSS</dt><dd>Styles written directly in the HTML instead of a separate file — so the whole page is one self-contained file.</dd></div>
+      <div class="gitem"><dt>Semantic HTML</dt><dd>Using tags that describe meaning (header, nav, section, footer) rather than generic divs. Better for accessibility, SEO and maintenance.</dd></div>
+      <div class="gitem"><dt>Hero section</dt><dd>The big top area of a landing page: headline, tagline, main call-to-action button.</dd></div>
+    </dl>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span class="mono">Architects Lab · Multi-LLM master notes</span>
+    <span>Course figures are a point-in-time snapshot. Verify against live leaderboards and provider docs before deciding anything.</span>
+  </div>
+</footer>
+
+<script>
+/* ================= BENCH ================= */
+const MODELS = {
+  "Gemini 2.5 Pro":    {ctx:1000000, out:65000, lat:30, tps:24,   cost:1.25, gpqa:84,   swe:63.8, cut:"Nov 2024"},
+  "DeepSeek R1":       {ctx:128000,  out:8000,  lat:4,  tps:19,   cost:0.55, gpqa:71.5, swe:49.2, cut:"Dec 2024"},
+  "Claude 3.7 Sonnet": {ctx:200000,  out:64000, lat:null, tps:null, cost:null, gpqa:null, swe:70.3, cut:"—"},
+  "Llama 4":           {ctx:128000,  out:null,  lat:null, tps:2500, cost:null, gpqa:null, swe:null, cut:"—"},
+  "OpenAI o3":         {ctx:null,    out:null,  lat:null, tps:null, cost:null, gpqa:null, swe:null, cut:"—"},
+  "Grok":              {ctx:null,    out:null,  lat:null, tps:null, cost:null, gpqa:84.6, swe:null, cut:"—"}
+};
+const METRICS = [
+  {key:"ctx",  label:"Context window",   hint:"bigger is better",  fmt:v=>v.toLocaleString()+" tok", },
+  {key:"out",  label:"Max output",       hint:"bigger is better",  fmt:v=>v.toLocaleString()+" tok"},
+  {key:"lat",  label:"Latency (TTFT)",   hint:"lower is better",   fmt:v=>v+" s"},
+  {key:"tps",  label:"Throughput",       hint:"higher is better",  fmt:v=>v+" tok/s"},
+  {key:"cost", label:"Blended I/O cost", hint:"lower is better",   fmt:v=>"$"+v.toFixed(2)+" /1M"},
+  {key:"gpqa", label:"GPQA Diamond",     hint:"science reasoning · higher better", fmt:v=>v+" %"},
+  {key:"swe",  label:"SWE-bench",        hint:"real code fixes · higher better",   fmt:v=>v+" %"}
+];
+const selA=document.getElementById("mA"), selB=document.getElementById("mB");
+Object.keys(MODELS).forEach(n=>{
+  selA.insertAdjacentHTML("beforeend",`<option>${n}</option>`);
+  selB.insertAdjacentHTML("beforeend",`<option>${n}</option>`);
+});
+selA.value="Gemini 2.5 Pro"; selB.value="DeepSeek R1";
+
+function renderBench(){
+  const a=selA.value,b=selB.value,A=MODELS[a],B=MODELS[b];
+  document.getElementById("lgA").textContent=a;
+  document.getElementById("lgB").textContent=b;
+  let html=`<div class="metric"><div class="metric-h"><span class="name">Knowledge cutoff</span><span class="hint">what it cannot know</span></div>
+    <div class="bar-row"><span class="val" style="text-align:left">${A.cut}</span><span class="val"></span></div>
+    <div class="bar-row"><span class="val" style="text-align:left">${B.cut}</span><span class="val"></span></div></div>`;
+  METRICS.forEach(m=>{
+    const va=A[m.key], vb=B[m.key], max=Math.max(va||0,vb||0)||1;
+    const pct=v=>v==null?0:Math.max(4,(v/max)*100);
+    html+=`<div class="metric">
+      <div class="metric-h"><span class="name">${m.label}</span><span class="hint">${m.hint}</span></div>
+      <div class="bar-row"><div class="track"><div class="fill a" data-w="${pct(va)}"></div></div>
+        <div class="val ${va==null?'none':''}">${va==null?"not published":m.fmt(va)}</div></div>
+      <div class="bar-row"><div class="track"><div class="fill b" data-w="${pct(vb)}"></div></div>
+        <div class="val ${vb==null?'none':''}">${vb==null?"not published":m.fmt(vb)}</div></div>
+    </div>`;
+  });
+  const body=document.getElementById("benchBody");
+  body.innerHTML=html;
+  requestAnimationFrame(()=>body.querySelectorAll(".fill").forEach(f=>f.style.width=f.dataset.w+"%"));
+}
+selA.addEventListener("change",renderBench);
+selB.addEventListener("change",renderBench);
+renderBench();
+
+/* ================= PROMPT BUILDER ================= */
+const SECTIONS = [
+  ["header","A sleek header with the startup name in a bold modern font, plus a short tagline",true],
+  ["hero","A hero section with a strong headline, one supporting line and a clear call-to-action button",true],
+  ["features","A features section with 3-4 key benefits",true],
+  ["how","A \"How it works\" section in 3 numbered steps",true],
+  ["testimonials","A testimonials section with fictional customer quotes, each marked data-placeholder=\"true\"",true],
+  ["pricing","A pricing section with three tiers",true],
+  ["contact","A contact / sign-up section with labelled fields for name, work email and message",false],
+  ["faq","A short FAQ section with four questions",false],
+  ["footer","A professional footer with navigation links and inline SVG social icons",true]
+];
+const RULES = [
+  ["raw","Return ONLY raw HTML, starting with <!DOCTYPE html> and ending with </html>. No explanation, no markdown code fences.",true],
+  ["css","Use inline CSS for all styling so the page is a single self-contained file.",true],
+  ["noimg","Do not use any external images. Use inline SVG or emoji for icons.",true],
+  ["sem","Use semantic HTML5 tags: header, nav, main, section, article, footer.",true],
+  ["resp","Must be responsive down to 375px width. Include a viewport meta tag.",true],
+  ["a11y","Every form input must have an associated label element. Keep colour contrast accessible.",false]
+];
+
+const secBox=document.getElementById("bSections"), ruleBox=document.getElementById("bRules");
+SECTIONS.forEach(([id,txt,on])=>{
+  secBox.insertAdjacentHTML("beforeend",
+    `<label><input type="checkbox" data-sec="${id}" ${on?"checked":""}><span>${txt.length>52?txt.slice(0,52)+"…":txt}</span></label>`);
+});
+RULES.forEach(([id,txt,on])=>{
+  ruleBox.insertAdjacentHTML("beforeend",
+    `<label><input type="checkbox" data-rule="${id}" ${on?"checked":""}><span>${txt.length>52?txt.slice(0,52)+"…":txt}</span></label>`);
+});
+
+function buildPrompt(){
+  const name=(document.getElementById("bName").value||"YourStartup").trim();
+  const concept=(document.getElementById("bConcept").value||"describe your idea here").trim();
+  const colour=(document.getElementById("bColour").value||"").trim();
+
+  const secs=SECTIONS.filter(([id])=>secBox.querySelector(`[data-sec="${id}"]`).checked).map(s=>"- "+s[1]);
+  const rules=RULES.filter(([id])=>ruleBox.querySelector(`[data-rule="${id}"]`).checked).map(r=>"- "+r[1]);
+  if(colour) rules.push(`- Colour direction: ${colour}.`);
+
+  const out =
+`You are a helpful AI assistant acting as a front-end web developer.
+
+Generate the complete HTML for a simple, clean and professional-looking
+landing page for ${name}.
+
+Concept: ${concept}
+
+Sections required:
+${secs.join("\n")}
+
+Rules:
+${rules.join("\n")}`;
+
+  document.getElementById("promptOut").value=out;
+}
+["bName","bConcept","bColour"].forEach(id=>document.getElementById(id).addEventListener("input",buildPrompt));
+secBox.addEventListener("change",buildPrompt);
+ruleBox.addEventListener("change",buildPrompt);
+buildPrompt();
+
+document.getElementById("copyPrompt").addEventListener("click",e=>{
+  navigator.clipboard.writeText(document.getElementById("promptOut").value).then(()=>{
+    e.target.textContent="Copied";
+    setTimeout(()=>e.target.textContent="Copy prompt",1400);
+  }).catch(()=>{e.target.textContent="Select manually";});
+});
+
+/* ================= CHECKLIST ================= */
+const TASKS = [
+  ["Compare two models on Vellum","Pick Gemini 2.5 Pro and DeepSeek R1 (or today's equivalents). Note context, cutoff, cost, max output, latency, speed."],
+  ["Sort the full Vellum table three ways","By maths, by SWE-bench, by GPQA. Confirm for yourself that the winner changes each time."],
+  ["Run a blind battle on LMArena","Three prompts: one technical, one creative, one funny. Vote, then reveal the names."],
+  ["Read the price-vs-score chart","Find the top-left cluster. Name one model you'd pick on value alone."],
+  ["Get all three API keys into .env","OpenAI, Google, Anthropic. Verify each loads by printing prefix + length only."],
+  ["Set spend limits in all three consoles","Do this before your first real run, not after the bill."],
+  ["Run the three probe prompts","Maths (answer: 1.5 years), the birthday poem, the BMI function. Score them on the rubric."],
+  ["Write the prompt with variables","startup_name and startup_concept as separate f-string slots."],
+  ["Generate a page with OpenAI","Save it. Confirm the markdown fences are stripped."],
+  ["Swap to a mini model and rerun","Save under a different filename. Compare — is the small one actually worse?"],
+  ["Generate the same page with Gemini","Same prompt, different provider, different file."],
+  ["Generate the same page with Claude","Remember max_tokens. 20000 is a safe ceiling for a full page."],
+  ["Try a second startup idea","Quantum Leap Computing, or your own. Two-line change, full rerun."],
+  ["Add a contact form and a colour palette","Use hex codes, not colour words. One variable per run."],
+  ["Judge the raw HTML, not the screenshot","Semantic tags? Heading order? Labels on inputs? Viewport meta? Pick a winner on code quality."],
+  ["Start your own 20-30 prompt eval set","Real tasks from your own domain. This is the one that keeps paying off."]
+];
+const taskList=document.getElementById("taskList");
+document.getElementById("taskTotal").textContent=TASKS.length;
+function renderTasks(){
+  taskList.innerHTML="";
+  TASKS.forEach(([title,desc],i)=>{
+    const d=document.createElement("label");
+    d.className="task";
+    d.innerHTML=`<input type="checkbox"><div class="t"><b>${i+1}. ${title}</b>${desc}</div>`;
+    d.querySelector("input").addEventListener("change",e=>{
+      d.classList.toggle("done",e.target.checked);
+      document.getElementById("taskDone").textContent=
+        taskList.querySelectorAll("input:checked").length;
+    });
+    taskList.appendChild(d);
+  });
+  document.getElementById("taskDone").textContent=0;
+}
+renderTasks();
+document.getElementById("taskReset").addEventListener("click",renderTasks);
+
+/* ================= QUIZ ================= */
+const QUIZ = [
+  {q:"A model has a 1M-token context but an 8K max output. What can't it do?",
+   o:["Read a 500-page document in one call","Produce a 60-page report in one response","Answer questions about a long transcript","Accept a very large system prompt"],a:1,
+   why:"Context governs intake, max output governs the reply. Big-in / small-out models are readers, not writers."},
+
+  {q:"A reasoning model takes 30 seconds before its first word. Most likely reason?",
+   o:["You're being rate-limited","It reasons internally before emitting tokens","Its throughput is low","The context window is too large"],a:1,
+   why:"Reasoning models trade first-token latency for accuracy on purpose. It's a design choice, not a fault."},
+
+  {q:"'Open weights' guarantees which of these?",
+   o:["Training data and code are public","You can download and fine-tune the parameters","Unrestricted commercial use","No licence terms apply"],a:1,
+   why:"Open weights = downloadable, runnable, fine-tunable parameters. Data, code and commercial rights are separate, licence-controlled questions."},
+
+  {q:"Which benchmark best predicts 'fix this failing test in our repo'?",
+   o:["GPQA Diamond","MATH-500","SWE-bench","Humanity's Last Exam"],a:2,
+   why:"SWE-bench uses real GitHub issues and requires a patch that makes the test suite pass."},
+
+  {q:"Vellum shows a blank cell for a model's maths score. Read it how?",
+   o:["The model scored zero","The vendor didn't publish that number","The benchmark doesn't apply","The model failed the eval"],a:1,
+   why:"A gap is missing data, not a low score. Ranking on a column with holes ranks who publishes, not who performs."},
+
+  {q:"Why does LMArena hide model names during a battle?",
+   o:["To reduce API cost","So brand preference doesn't contaminate the vote","To speed up responses","Vendor terms require it"],a:1,
+   why:"Blinding is the whole mechanism. Revealed names turn a quality signal into a popularity poll."},
+
+  {q:"On the Arena's cost-vs-score chart, where is the best value?",
+   o:["Upper right","Lower left","Upper left","Lower right"],a:2,
+   why:"Cost on x, score on y — so upper-left means high preference at low price. That edge is the Pareto frontier."},
+
+  {q:"Father is 36, son is 6. In how many years is the father exactly five times the son's age?",
+   o:["1.5 years","2 years","3 years","4.5 years"],a:0,
+   why:"36+n = 5(6+n) → 36+n = 30+5n → 6 = 4n → n = 1.5. Check: 37.5 / 7.5 = 5."},
+
+  {q:"Which parameter is required by Anthropic but optional for OpenAI?",
+   o:["temperature","max_tokens","top_p","stream"],a:1,
+   why:"Anthropic has no default output ceiling — max_tokens must be supplied. The most common porting error."},
+
+  {q:"Why does the landing-page prompt say 'don't include images'?",
+   o:["Images are expensive in tokens","The model invents URLs that don't exist, so you get broken icons","HTML can't display images","It slows generation down"],a:1,
+   why:"The model can't upload files — it only writes tags pointing at invented URLs. Banning images gives a page that looks finished on first open."},
+
+  {q:"Your saved page shows ``` characters at the top. What went wrong?",
+   o:["Wrong encoding","Markdown fences weren't stripped before saving","Max tokens too low","Temperature too high"],a:1,
+   why:"Models wrap code in markdown fences even when told not to. Slice from <!DOCTYPE to </html> before writing the file."},
+
+  {q:"GPT-4o-mini produced a nicer page than full GPT-4o on the same prompt. Main lesson?",
+   o:["Mini models are always better","The bigger model isn't automatically better for your specific task","4o is a broken model","Landing pages are an easy task"],a:1,
+   why:"Price tier and headline benchmarks don't predict performance on your particular prompt. That's exactly why you test on your own eval set."}
+];
+const box=document.getElementById("quizBox");
+let answered=0,correct=0;
+function buildQuiz(){
+  box.innerHTML=""; answered=0; correct=0;
+  document.getElementById("answered").textContent=0;
+  document.getElementById("correct").textContent=0;
+  QUIZ.forEach((item,i)=>{
+    const d=document.createElement("div"); d.className="q";
+    d.innerHTML=`<div class="qt"><span>${String(i+1).padStart(2,"0")}</span><div>${item.q}</div></div><div class="opts"></div><div class="why">${item.why}</div>`;
+    const opts=d.querySelector(".opts");
+    item.o.forEach((text,j)=>{
+      const btn=document.createElement("button");
+      btn.className="opt"; btn.type="button"; btn.textContent=text;
+      btn.addEventListener("click",()=>{
+        if(d.dataset.done) return;
+        d.dataset.done="1"; answered++;
+        opts.querySelectorAll(".opt").forEach((b,k)=>{
+          b.disabled=true;
+          if(k===item.a) b.classList.add("right");
+          else if(k===j) b.classList.add("wrong");
+        });
+        if(j===item.a) correct++;
+        d.querySelector(".why").classList.add("show");
+        document.getElementById("answered").textContent=answered;
+        document.getElementById("correct").textContent=correct;
+      });
+      opts.appendChild(btn);
+    });
+    box.appendChild(d);
+  });
+}
+buildQuiz();
+document.getElementById("resetQuiz").addEventListener("click",buildQuiz);
+
+/* ================= COPY BUTTONS ================= */
+document.querySelectorAll(".copy").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    const code=btn.closest(".codeblock").querySelector("pre").innerText;
+    navigator.clipboard.writeText(code).then(()=>{
+      const old=btn.textContent; btn.textContent="Copied";
+      setTimeout(()=>btn.textContent=old,1400);
+    }).catch(()=>{btn.textContent="Select manually";});
+  });
+});
+
+/* ================= COLLAPSIBLE ================= */
+const SIGN = open => open ? "–" : "+";
+
+function makeToggle(open){
+  const b=document.createElement("span");
+  b.className="toggle"; b.textContent=SIGN(open);
+  b.setAttribute("aria-hidden","true");
+  return b;
+}
+
+/* --- sections --- */
+document.querySelectorAll(".sec").forEach(sec=>{
+  const wrap=sec.querySelector(":scope > .wrap");
+  const head=wrap.querySelector(".sec-head");
+  if(!head) return;
+  const body=document.createElement("div");
+  body.className="sec-body";
+  let n=head.nextElementSibling;
+  while(n){ const next=n.nextElementSibling; body.appendChild(n); n=next; }
+  wrap.appendChild(body);
+
+  head.appendChild(makeToggle(true));
+  head.setAttribute("role","button");
+  head.setAttribute("tabindex","0");
+  head.setAttribute("aria-expanded","true");
+
+  const flip=()=>{
+    const closed=sec.classList.toggle("collapsed");
+    head.querySelector(".toggle").textContent=SIGN(!closed);
+    head.setAttribute("aria-expanded",String(!closed));
+  };
+  head.addEventListener("click",flip);
+  head.addEventListener("keydown",e=>{
+    if(e.key==="Enter"||e.key===" "){ e.preventDefault(); flip(); }
+  });
+});
+
+/* --- code blocks --- */
+document.querySelectorAll(".codeblock").forEach(cb=>{
+  const head=cb.querySelector(".codehead");
+  const label=head.querySelector("span");
+  const copy=head.querySelector(".copy");
+  label.classList.add("lbl-txt");
+
+  const grp=document.createElement("div");
+  grp.className="grp";
+  const mini=document.createElement("button");
+  mini.className="mini"; mini.type="button"; mini.textContent="–";
+  mini.setAttribute("aria-label","Collapse code block");
+  if(copy) grp.appendChild(copy);
+  grp.appendChild(mini);
+  head.appendChild(grp);
+
+  const flip=()=>{
+    const closed=cb.classList.toggle("collapsed");
+    mini.textContent=SIGN(!closed);
+  };
+  mini.addEventListener("click",flip);
+  label.addEventListener("click",flip);
+});
+
+/* --- ascii sketches --- */
+document.querySelectorAll(".ascii").forEach(a=>{
+  const cap=a.querySelector(".cap");
+  cap.innerHTML=`<span>${cap.textContent.trim()}</span>`;
+  cap.appendChild(makeToggle(true));
+  cap.setAttribute("role","button");
+  cap.setAttribute("tabindex","0");
+  const flip=()=>{
+    const closed=a.classList.toggle("collapsed");
+    cap.querySelector(".toggle").textContent=SIGN(!closed);
+  };
+  cap.addEventListener("click",flip);
+  cap.addEventListener("keydown",e=>{
+    if(e.key==="Enter"||e.key===" "){ e.preventDefault(); flip(); }
+  });
+});
+
+/* --- tables --- */
+document.querySelectorAll(".tablewrap").forEach(tw=>{
+  const table=tw.querySelector("table");
+  const first=table.querySelector("thead th");
+  const name=first && first.textContent.trim() ? first.textContent.trim() : "Reference table";
+  const rows=table.querySelectorAll("tbody tr").length;
+
+  const head=document.createElement("div");
+  head.className="tabhead";
+  head.setAttribute("role","button");
+  head.setAttribute("tabindex","0");
+  head.innerHTML=`<span>${name} · ${rows} rows</span>`;
+  head.appendChild(makeToggle(true));
+  tw.insertBefore(head, table);
+
+  const flip=()=>{
+    const closed=tw.classList.toggle("collapsed");
+    head.querySelector(".toggle").textContent=SIGN(!closed);
+  };
+  head.addEventListener("click",flip);
+  head.addEventListener("keydown",e=>{
+    if(e.key==="Enter"||e.key===" "){ e.preventDefault(); flip(); }
+  });
+});
+
+/* --- part dividers: collapse every section in that part --- */
+document.querySelectorAll(".part").forEach(part=>{
+  const bar=part.querySelector(".bar");
+  bar.appendChild(makeToggle(true));
+  bar.setAttribute("role","button");
+  bar.setAttribute("tabindex","0");
+
+  const members=[];
+  let n=part.nextElementSibling;
+  while(n && !n.classList.contains("part")){
+    if(n.classList.contains("sec")) members.push(n);
+    n=n.nextElementSibling;
+  }
+
+  const flip=()=>{
+    const closed=part.classList.toggle("collapsed");
+    bar.querySelector(".toggle").textContent=SIGN(!closed);
+    members.forEach(s=>setSection(s, !closed));
+  };
+  bar.addEventListener("click",flip);
+  bar.addEventListener("keydown",e=>{
+    if(e.key==="Enter"||e.key===" "){ e.preventDefault(); flip(); }
+  });
+});
+
+/* --- helpers + global controls --- */
+function setSection(sec, open){
+  sec.classList.toggle("collapsed", !open);
+  const t=sec.querySelector(".sec-head .toggle");
+  if(t) t.textContent=SIGN(open);
+  const h=sec.querySelector(".sec-head");
+  if(h) h.setAttribute("aria-expanded",String(open));
+}
+
+function setAll(open){
+  document.querySelectorAll(".sec").forEach(s=>setSection(s, open));
+  document.querySelectorAll(".part").forEach(p=>{
+    p.classList.toggle("collapsed", !open);
+    const t=p.querySelector(".bar .toggle"); if(t) t.textContent=SIGN(open);
+  });
+  document.querySelectorAll(".codeblock").forEach(c=>{
+    c.classList.toggle("collapsed", !open);
+    const m=c.querySelector(".mini"); if(m) m.textContent=SIGN(open);
+  });
+  document.querySelectorAll(".ascii, .tablewrap").forEach(el=>{
+    el.classList.toggle("collapsed", !open);
+    const t=el.querySelector(".toggle"); if(t) t.textContent=SIGN(open);
+  });
+  document.querySelectorAll("details.recall").forEach(d=>{ if(!open) d.open=false; });
+}
+document.getElementById("expandAll").addEventListener("click",()=>setAll(true));
+document.getElementById("collapseAll").addEventListener("click",()=>{
+  setAll(false);
+  window.scrollTo({top:0, behavior:"smooth"});
+});
+
+/* --- clicking a nav chip reopens a collapsed section --- */
+document.querySelectorAll("#nav a").forEach(a=>{
+  a.addEventListener("click",()=>{
+    const target=document.querySelector(a.getAttribute("href"));
+    if(!target) return;
+    if(target.classList.contains("sec")) setSection(target, true);
+    let p=target.previousElementSibling;
+    while(p && !p.classList.contains("part")) p=p.previousElementSibling;
+    if(p){ p.classList.remove("collapsed"); const t=p.querySelector(".bar .toggle"); if(t) t.textContent="–"; }
+  });
+});
+
+/* ================= SCROLL UI ================= */
+const bar=document.getElementById("scrollbar");
+window.addEventListener("scroll",()=>{
+  const h=document.documentElement;
+  bar.style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight)*100)+"%";
+},{passive:true});
+
+const links=[...document.querySelectorAll("#nav a")];
+const secs=links.map(a=>document.querySelector(a.getAttribute("href"))).filter(Boolean);
+const spy=new IntersectionObserver(es=>{
+  es.forEach(e=>{ if(e.isIntersecting){
+    links.forEach(l=>l.classList.toggle("on",l.getAttribute("href")==="#"+e.target.id));
+    const on=document.querySelector("#nav a.on");
+    if(on) on.scrollIntoView({block:"nearest",inline:"center"});
+  }});
+},{rootMargin:"-45% 0px -50% 0px"});
+secs.forEach(s=>spy.observe(s));
+
+const rev=new IntersectionObserver(es=>{
+  es.forEach(e=>{ if(e.isIntersecting){e.target.classList.add("in"); rev.unobserve(e.target);} });
+},{threshold:.05});
+document.querySelectorAll(".reveal").forEach(el=>rev.observe(el));
+</script>
+</body>
+</html>

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architects Lab · Fine-Tuning LLMs with LoRA &amp; PEFT</title>
+<style>
+  :root{
+    --bg:#0d0f14; --panel:#151823; --panel2:#1b1f2e;
+    --ink:#e8e6df; --dim:#8b8fa3;
+    --gold:#d4af5a; --gold-soft:#b8964a;
+    --teal:#5ad4c8; --rose:#d47a8a; --violet:#9a8ad4; --amber:#d4915a;
+    --line:#2a2f42;
+    --mono:'Courier New', ui-monospace, monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif;display:flex;flex-direction:column;min-height:100vh}
+  header{padding:16px 26px 12px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  header .k{font-family:var(--mono);font-size:.68rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase}
+  header h1{font-size:1rem;font-weight:normal}
+  header .count{margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--dim)}
+  .tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
+  .tab{flex:1;min-width:110px;padding:9px 10px;text-align:center;font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;color:var(--dim);border-right:1px solid var(--line);cursor:pointer;white-space:nowrap;transition:.2s;background:transparent;border-top:none;border-bottom:none;border-left:none}
+  .tab:last-child{border-right:none}
+  .tab.active{color:var(--bg);font-weight:bold}
+  .tab[data-c="gold"].active{background:var(--gold)}
+  .tab[data-c="teal"].active{background:var(--teal)}
+  .tab[data-c="rose"].active{background:var(--rose)}
+  .tab[data-c="violet"].active{background:var(--violet)}
+  .tab[data-c="amber"].active{background:var(--amber)}
+  .tab[data-c="ink"].active{background:var(--ink)}
+  main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px 96px;overflow-y:auto}
+  .slide{max-width:780px;width:100%;animation:fadeUp .4s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @media (prefers-reduced-motion: reduce){.slide{animation:none}}
+  .eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px}
+  .eyebrow.gold{color:var(--gold)} .eyebrow.teal{color:var(--teal)} .eyebrow.rose{color:var(--rose)}
+  .eyebrow.violet{color:var(--violet)} .eyebrow.amber{color:var(--amber)} .eyebrow.ink{color:var(--dim)}
+  .slide h2{font-size:1.55rem;font-weight:normal;line-height:1.3;margin-bottom:14px}
+  .slide h2 em{font-style:italic;color:var(--gold)}
+  .slide p{color:#c9c7bf;line-height:1.75;font-size:1rem;margin-bottom:13px}
+  .slide p strong, .slide li strong{color:var(--ink)}
+  .slide code{font-family:var(--mono);font-size:.85em;background:var(--panel2);padding:2px 6px;border-radius:3px;color:var(--gold)}
+  .ascii{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:6px;padding:14px 16px;margin:14px 0;font-family:var(--mono);font-size:.74rem;line-height:1.5;color:#b9c2d8;overflow-x:auto;white-space:pre}
+  .ascii .hl{color:var(--gold)} .ascii .tl{color:var(--teal)} .ascii .rs{color:var(--rose)}
+  .note{border:1px dashed var(--gold-soft);border-radius:6px;padding:11px 15px;margin:14px 0;font-size:.9rem;color:#cfc9ae;line-height:1.65}
+  .note b{color:var(--gold)}
+  ul.pts{margin:10px 0 13px 2px;list-style:none}
+  ul.pts li{padding:6px 0 6px 21px;position:relative;color:#c9c7bf;line-height:1.6;font-size:.95rem}
+  ul.pts li::before{content:"\203A";position:absolute;left:4px;color:var(--gold);font-family:var(--mono)}
+  /* ---- Think First (question) slides ---- */
+  .qcard{border:2px solid var(--gold);border-radius:10px;background:linear-gradient(160deg,#1a1608,#151823);padding:30px 28px;margin:6px 0 18px;position:relative}
+  .qcard::before{content:"?";position:absolute;top:-20px;left:22px;width:38px;height:38px;border-radius:50%;background:var(--gold);color:var(--bg);font-family:var(--mono);font-weight:bold;font-size:1.3rem;display:flex;align-items:center;justify-content:center}
+  .qcard .qlabel{font-family:var(--mono);font-size:.64rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;margin-bottom:12px}
+  .qcard .qtext{font-size:1.25rem;line-height:1.55;color:var(--ink);font-style:italic}
+  .qcard .qsub{margin-top:14px;font-size:.86rem;color:var(--dim);font-style:normal;font-family:var(--mono)}
+  /* ---- lenses (CTO / Director) ---- */
+  details.lens{margin:10px 0;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+  details.lens summary{cursor:pointer;padding:10px 14px;font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;color:var(--teal);list-style:none}
+  details.lens summary::before{content:"+ ";color:var(--gold)}
+  details.lens[open] summary::before{content:"\2212 "}
+  details.lens.dir summary{color:var(--rose)}
+  details.lens .body{padding:2px 16px 13px}
+  details.lens .body li{font-size:.9rem}
+  /* ---- recall quiz slides ---- */
+  .recall-item{border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:6px;background:var(--panel);margin:12px 0;overflow:hidden}
+  .recall-item summary{cursor:pointer;padding:13px 16px;font-size:.98rem;color:var(--ink);list-style:none;line-height:1.55}
+  .recall-item summary::before{content:"Q  ";font-family:var(--mono);color:var(--teal);font-weight:bold}
+  .recall-item .ans{padding:0 16px 13px;color:#b9c2b0;font-size:.92rem;line-height:1.65;border-top:1px dashed var(--line);padding-top:11px;margin:0 16px 13px;padding-left:0;padding-right:0}
+  .recall-item .ans b{color:var(--teal)}
+  .recall-hint{font-family:var(--mono);font-size:.7rem;color:var(--dim);margin-top:6px}
+  footer{position:fixed;left:0;right:0;bottom:0;background:rgba(13,15,20,.93);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:11px 20px;display:flex;align-items:center;gap:14px}
+  .dots{display:flex;gap:4px;flex:1;justify-content:center;flex-wrap:wrap}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--line);cursor:pointer;transition:.2s}
+  .dot.on{background:var(--gold);transform:scale(1.45)}
+  .dot.q{border:1px solid var(--gold);background:transparent}
+  .dot.q.on{background:var(--gold)}
+  button.nav{font-family:var(--mono);font-size:.78rem;letter-spacing:.1em;background:transparent;color:var(--ink);border:1px solid var(--line);padding:9px 18px;border-radius:5px;cursor:pointer;transition:.2s}
+  button.nav:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+  button.nav.primary{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:bold}
+  button.nav.primary:hover{background:#e2c070}
+  button.nav:disabled{opacity:.25;cursor:default}
+  button.nav:focus-visible,.tab:focus-visible,.dot:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .hint{position:fixed;bottom:62px;right:18px;font-family:var(--mono);font-size:.6rem;color:var(--dim);letter-spacing:.1em}
+  @media(max-width:600px){.slide h2{font-size:1.28rem}.ascii{font-size:.58rem;padding:11px}.hint{display:none}.qcard .qtext{font-size:1.08rem}}
+</style>
+</head>
+<body>
+<header>
+  <span class="k">Architects Lab</span>
+  <h1>Fine-Tuning LLMs · LoRA &amp; PEFT</h1>
+  <span class="count" id="counter"></span>
+</header>
+<div class="tabs" id="tabs"></div>
+<main><div id="stage"></div></main>
+<div class="hint">&larr; &rarr; keys work too</div>
+<footer>
+  <button class="nav" id="prevBtn">&larr; Prev</button>
+  <div class="dots" id="dots"></div>
+  <button class="nav primary" id="nextBtn">Next &rarr;</button>
+</footer>
+<script>
+const SECTIONS=[
+ {id:"intro",label:"START",c:"ink"},
+ {id:"why",label:"WHY FINE-TUNE",c:"teal"},
+ {id:"data",label:"DATA+FORMAT",c:"gold"},
+ {id:"lora",label:"LORA MATH",c:"violet"},
+ {id:"result",label:"RESULT",c:"rose"},
+ {id:"end",label:"WRAP-UP",c:"amber"}
+];
+const S=[
+
+{sec:"intro",c:"ink",eyebrow:"LLM Fine-Tuning Project",t:"a",h:"Fine-Tuning Open-Source LLMs — <em>PEFT, LoRA &amp; Financial Sentiment</em>",body:`
+<p>A hands-on fine-tuning project — taking a small open-source model (Gemma 1B) from zero-shot baseline to a LoRA-fine-tuned sentiment classifier on financial news, using Hugging Face Transformers, PEFT, and TRL's SFT Trainer. Emphasis: what's reusable production reasoning versus what's ML-research detail.</p>
+<div class="note"><b>How to use:</b> "?" slides ask you to predict first. Press Next to compare. Recall quizzes close each section.</div>`},
+
+/* ---------- WHY FINE-TUNE ---------- */
+{sec:"why",c:"teal",eyebrow:"Framing",t:"q",q:`Training a base LLM from scratch cost the original lab hundreds of millions of dollars. Fine-tuning starts from that same base model. What does it actually mean to <b>&quot;reuse&quot;</b> hundreds of millions of dollars of work with a tiny dataset of your own?`},
+
+{sec:"why",c:"teal",eyebrow:"Framing",t:"a",h:"Why fine-tune instead of training from scratch?",body:`
+<div class="ascii">BASE MODEL (generalist, cost $100M+ to train, frozen)
+   | asked: "joint pain + skin sensitivity?"
+   v
+vague answer: "could be an allergy"
+
+SAME base model + fine-tuned on medical reports/notes
+   | asked the SAME question
+   v
+specific answer: "could be lupus -- see a rheumatologist"
+
+same architecture, same starting weights --
+only the fine-tuning DATA reshapes what it reaches for
+
+TRAINING FROM SCRATCH        FINE-TUNING
+learn ALL weights from       start from an ALREADY-trained
+nothing                      model, adjust a small slice
+massive data + compute       small task-specific dataset
+$100M+ territory             affordable, even free-tier GPU</div>
+<div class="note">It means you're not teaching the model language, grammar, or general world knowledge again — all of that stays exactly as it was, frozen. You're only nudging a small slice of it toward a specific behavior using your much smaller dataset. That's the entire economic case for fine-tuning: you get to stand on hundreds of millions of dollars of prior training for the cost of a much smaller, targeted dataset.</div>`,
+cto:[`You already reason about "generalist platform, specialist configuration" in fintech — a rules engine tuned by config to act like a specialist tool. Where does that analogy break down? It holds structurally — the "engine" stays the same, only a targeted slice gets adjusted. It breaks down on predictability: a config change does exactly what you wrote, every time. A fine-tune reshapes probabilistic behavior — you're nudging what the model tends to reach for, not programming an exact rule, so the same "specialist configuration" can behave differently across similar inputs in a way a rules engine never would.`]},
+
+{sec:"why",c:"teal",eyebrow:"Tech Stack",t:"q",q:`Running a model (inference) worked fine on a free-tier GPU, even a CPU in a pinch. Fine-tuning the <b>SAME</b> model absolutely requires a real GPU. What's actually different about the two workloads?`},
+
+{sec:"why",c:"teal",eyebrow:"Tech Stack",t:"a",h:"The toolchain — PEFT, TRL, quantization, GPU",body:`
+<div class="ascii">Tool                Role
+Transformers        Load pre-trained models and tokenizers
+PEFT                Adapt large models by training only a small
+                     subset of parameters -- affordable on
+                     consumer/free-tier GPUs
+TRL                 Full training toolkit; here its SFT Trainer
+                     (also supports DPO, reward modeling, GRPO)
+bitsandbytes        4-bit quantization -- cuts memory dramatically
+scikit-learn        Evaluation: accuracy/precision/recall/F1/matrix</div>
+<div class="ascii">INFERENCE (running)              FINE-TUNING (training)
+input -> forward pass -> output   input -> forward pass -> output
+(weights frozen, one              compare to TRUE label
+ direction, done)                       |
+                                   push error BACKWARD through
+                                   every layer (backpropagation)
+                                         |
+                                   update weights (repeat per
+                                   example, per epoch)
+light enough for a CPU            needs a real GPU (T4 used here)</div>
+<div class="note">Inference is a single forward pass with frozen weights — plug in the input, read off the output, done. Fine-tuning adds backpropagation: compute how wrong the prediction was, then push that error backward through every layer to compute how each weight should change. A massive matrix-multiplication workload running in both directions, repeated over every example and epoch — categorically heavier than a single forward pass.</div>`,
+cto:[`4-bit quantization gives an 8x memory reduction for "surprisingly little" quality loss. If that's such a cheap win, why would anyone ever train or run a model at full 32-bit precision? Because "surprisingly little" isn't zero, and it compounds. A single quantized inference pass loses a little precision that rarely matters. During TRAINING, small precision errors accumulate across millions of gradient updates and can measurably hurt the final model — which is why quantization here is mainly used for loading/inference-time memory, while the LoRA weights being trained are still adjusted at higher precision.`]},
+
+{sec:"why",c:"teal",eyebrow:"Why Fine-Tune · Recall",t:"r",h:"Quick recall: why fine-tune, and the toolchain",qs:[
+{q:`What actually gets reused when you fine-tune instead of training from scratch?`,a:`The base model's language, grammar, and general world knowledge — all frozen and untouched. Fine-tuning data only reshapes a small slice toward a specific behavior, letting you stand on hundreds of millions of dollars of prior training for a much smaller cost.`},
+{q:`Why does fine-tuning need a real GPU while inference can limp along on CPU?`,a:`Inference is one forward pass, frozen weights, done. Fine-tuning adds backpropagation — pushing error backward through every layer to compute weight updates, repeated per example and per epoch — categorically heavier computation in both directions.`}]},
+
+/* ---------- DATA + FORMAT ---------- */
+{sec:"data",c:"gold",eyebrow:"Data",t:"q",q:`A model could hit 70% "accuracy" on this dataset just by always guessing "positive" if positive samples dominate. Does a high accuracy number alone tell you whether the model learned to classify negative and neutral — or could it be <b>hiding total failure</b> on those classes?`},
+
+{sec:"data",c:"gold",eyebrow:"Data",t:"a",h:"The dataset — financial news sentiment, and the imbalance problem",body:`
+<div class="ascii">~4,800 rows: text (news sentence) + sentiment (pos/neg/neutral)
+Split 90/10 train/test, shuffled first, fixed seed
+
+class counts (roughly):
+  positive: ***************************  ~1,300
+  negative: **********                   ~500
+  neutral:  (also underrepresented)
+
+THE TRAP
+model always guesses "positive"
+   | accuracy LOOKS fine (majority class dominates the average)
+   | but negative/neutral predictions are basically worthless
+   v accuracy alone HIDES this -- need per-class numbers to see it
+
+self-driving car analogy: trained on 10M cars, 1,000 bikes
+--> looks accurate overall, but badly misses bikes specifically</div>
+<div class="note">It can absolutely hide total failure. Accuracy is a single blended number across all classes — a model that always guesses the majority class scores deceptively high while being useless on the minority classes. This dataset's ~1,300 positive vs ~500 negative is exactly that setup. You only catch it by looking at PER-CLASS numbers — precision, recall, F1, confusion matrix — not one headline figure.</div>`,
+cto:[`Fraud detection has the exact same imbalance shape — fraud is always the minority class. If a fraud model reports "99.9% accurate," what's the FIRST follow-up question before trusting that number? What's the recall on the fraud class specifically — not the accuracy. A model predicting "not fraud" on every transaction scores 99.9%+ accuracy if fraud is rare, while catching zero fraud, worthless despite the impressive headline. The right follow-up isn't "how accurate" but "how many actual fraud cases did it catch, and how many false alarms" — same discipline, real money on the line.`]},
+
+{sec:"data",c:"gold",eyebrow:"Formatting",t:"q",q:`Gemma and DeepSeek each expect their own special-token format. Mismatched, training won't crash — it'll quietly teach the model something slightly wrong. Why would a model even <b>care</b> about matching its own original format?`},
+
+{sec:"data",c:"gold",eyebrow:"Formatting",t:"a",h:"Chat templates — speaking the model's native &quot;language&quot;",body:`
+<div class="ascii">Gemma format:
+&lt;bos&gt;&lt;start_of_turn&gt;user
+Classify the sentiment... [sentence]&lt;end_of_turn&gt;
+&lt;start_of_turn&gt;model
+positive&lt;end_of_turn&gt;
+
+DeepSeek format (different special tokens entirely):
+&lt;special token&gt; beginning-of-sequence marker
+Classify the sentiment... [sentence]
+[model turn marker]
+positive [end-of-sequence marker]</div>
+<div class="ascii">raw pair: text="Stock X jumps", sentiment="positive"
+   | tokenizer.apply_chat_template(...)
+  /                          \\
+Gemma model                DeepSeek model
+&lt;start_of_turn&gt;user...   &lt;special token&gt;...
+&lt;start_of_turn&gt;model         [model turn marker]
+positive&lt;end_of_turn&gt;         positive [eos]
+
+SAME call interface, COMPLETELY different actual output --
+each model only recognizes ITS OWN turn markers</div>
+<div class="note">Because the model didn't just learn language during pretraining — it learned to recognize ITS OWN turn markers as the signal for "this is where I should pay attention / this is where my reply starts." Feed it text formatted for a different model's tokens, and those markers are meaningless noise to it. The words are the same, but the structural cues the model relies on to separate "instruction" from "my answer" are gone or wrong, which degrades training even though nothing crashes.</div>`,
+cto:[`The Vercel course's OpenAI-style client hid every provider's formatting differences behind one consistent interface. Here, apply_chat_template() exists too — does it hide the difference the same way, or does it just relocate where you need to notice it? It relocates the problem. A chat API client hides formatting because the provider handles it server-side. apply_chat_template() does the OPPOSITE — it exposes the model-specific format directly into the text you're about to train on, so you must know which model you're targeting or you'll silently generate the wrong training format.`]},
+
+{sec:"data",c:"gold",eyebrow:"Baseline",t:"q",q:`Before spending GPU time fine-tuning anything, this project first measures the <b>UN-fine-tuned</b> model's performance. If you skipped that step, what specific question would you be unable to answer afterward?`},
+
+{sec:"data",c:"gold",eyebrow:"Baseline",t:"a",h:"Zero-shot evaluation — measuring before you improve",body:`
+<div class="ascii">base Gemma-1B, ZERO fine-tuning, run on test set:
+  accuracy: ~45-46%
+  neutral-class recall: 0.16  (very weak)
+  212 out of ~480 misclassified
+
+this number is the LINE fine-tuning has to beat --
+without it, "fine-tuned = 62% accuracy" means NOTHING
+
+PROMPT SENSITIVITY EXPERIMENT:
+  detailed prompt (lists valid labels explicitly)
+       --> model answers positive/negative/neutral, reliably
+  simplified prompt (label list removed)
+       --> model starts answering "unknown" -- not even one
+           of the three valid classes anymore
+  conclusion: SMALL models are especially sensitive to exact
+  prompt wording -- precise instructions are the difference
+  between reliable and broken output</div>
+<div class="note">You'd have no way to tell whether fine-tuning actually helped. Without a baseline, "the fine-tuned model got 62% accuracy" is a number floating with no reference point. The fine-tuned model in this project actually performed WORSE than baseline — a fact that would be invisible without this exact step. "Measure before you optimize" isn't ML ceremony, it's the only way to know if the optimization worked at all.</div>`,
+cto:[`Dropping ONE detail (an explicit label list) broke a small model's output entirely. If cost pressure ever pushed a tool toward a smaller/cheaper model, would you expect existing prompts (written for a frontier model) to just work? Expect real rework, not a drop-in swap. Tolerance for vague or implicit instructions shrinks with model size — a frontier model can often infer what you meant; a smaller model needs the constraint spelled out explicitly or it drifts into unreliable output. Treat any move to a smaller model as a prompt-engineering project in its own right.`]},
+
+{sec:"data",c:"gold",eyebrow:"Data &amp; Format · Recall",t:"r",h:"Quick recall: data, formatting &amp; baseline",qs:[
+{q:`Why can a high accuracy number hide total failure on minority classes?`,a:`Accuracy is one blended number across all classes — always predicting the majority class scores deceptively high while being useless on minority classes. Only per-class precision/recall/F1 exposes this (same shape as fraud detection).`},
+{q:`Why does a model care about matching its OWN chat template format?`,a:`It learned to recognize its own turn markers as the signal for "pay attention here / my reply starts here" during pretraining. A different model's tokens are meaningless noise to it — training degrades even though nothing crashes.`},
+{q:`What specific question becomes unanswerable if you skip the zero-shot baseline?`,a:`Whether fine-tuning actually helped at all — a post-fine-tuning accuracy number has no reference point without it. This project's own fine-tune came out WORSE than baseline, invisible without this step.`}]},
+
+/* ---------- LORA MATH ---------- */
+{sec:"lora",c:"violet",eyebrow:"Core Concept",t:"q",q:`A weight matrix has 200 million numbers. LoRA claims it can approximate the needed <b>CHANGE</b> to that matrix using two much smaller matrices instead. Before seeing the math — does that sound like it should lose real capability?`},
+
+{sec:"lora",c:"violet",eyebrow:"Core Concept",t:"a",h:"LoRA — the math behind &quot;fine-tune 0.3% of the model&quot;",body:`
+<div class="ascii">FULL FINE-TUNE                   LoRA (rank r=8)
+update ALL 200,000,000           freeze the original matrix
+numbers in the weight            add TWO tiny matrices:
+matrix directly                    A: 10,000 x 8    = 80,000
+                                    B:      8 x 20,000 = 160,000
+                                  train ONLY A and B (240,000)
+                                  A x B approximates the update
+
+200,000,000 ----> 240,000  =  ~833x fewer trainable params
+
+REAL PROJECT RESULT (Gemma-1B, ~1 billion total params):
+  only ~3 million trainable  =  0.29% of the whole model
+  applied to attention layers (Q, K, V, O projections)
+  everything else stays frozen
+
+rank (r) is a DIAL: higher r -> more capacity, more cost
+                     lower r  -> less capacity, cheaper/faster</div>
+<div class="note">It does lose some theoretical capability — a low-rank update genuinely can't represent every possible change the full matrix could. But the bet LoRA makes, and that works in practice, is that the ACTUAL change needed for most fine-tuning tasks doesn't need the full matrix's expressiveness — task adaptation tends to live in a much lower-dimensional space than the full weight matrix. Trading some theoretical capacity for an ~833&times; parameter reduction turns out to be a very good deal for most real tasks.</div>`,
+cto:[`An 833x parameter reduction is the difference between "needs a datacenter" and "runs on a free Colab GPU." If interviewers asked WHY that reduction doesn't just gut model quality, could you explain the mechanism, not just quote the ratio? It's a low-rank approximation — mathematically the same family of idea as dimensionality reduction elsewhere in data engineering: the actual adaptation needed for a specific task lives in a much lower-dimensional space than the full weight matrix, so constraining the update to rank r still captures most of what matters. That's the difference between having memorized a number and understanding why LoRA is a legitimate engineering trade-off.`]},
+
+{sec:"lora",c:"violet",eyebrow:"Training",t:"q",q:`After training, the pipeline saves only the small LoRA matrices (A and B) — <b>NOT</b> a full new copy of the 1-billion-parameter model. What does that imply about what you need on disk to use a fine-tuned model?`},
+
+{sec:"lora",c:"violet",eyebrow:"Training",t:"a",h:"Running the fine-tune — SFT Trainer and hyperparameters",body:`
+<div class="ascii">base model (quantized, frozen)
+   | LoraConfig(rank r, target modules, dropout)
+PEFT model = base model + LoRA adapters attached
+   | SFTTrainer(model, args, train_dataset, peft_config)
+   | trainer.train()
+
+training loss over ONE epoch:
+  3.5 -> 2.0 -> 1.7 -> 1.6 -> 1.4 (bumpy, not smooth --
+                                    expected/noisy for one epoch)
+   | SAVE: only the small adapter (A,B matrices) -- NOT a
+   |       whole new copy of the model
+
+EPOCH COUNT MATTERS:
+  1 epoch  -----> "to keep cost down" -- risk: UNDER-trained,
+                   can come out WORSE than zero-shot baseline
+  4-5+ epochs --> typically needed for real improvement
+  too many, no early stopping --> OVERFITTING risk</div>
+<div class="note">You need the original frozen base model PLUS the tiny adapter — the adapter alone is useless without the base model it was trained against, since it's only a small delta, not the whole capability. This is also why LoRA adapters are so easy to distribute and swap: the saved artifact is megabytes, not gigabytes, so you could keep several task-specific adapters around for one base model without storing multiple full copies.</div>`,
+cto:[`This run used exactly one epoch "to keep cost down," and it came out worse than doing nothing. Is "run fewer epochs" ever actually cheaper once you count the whole picture? Often not. A fine-tune that performs worse than the untouched base model isn't a cheaper result — it's a wasted training run plus the cost of catching that it underperformed (needs the baseline comparison) plus the eventual re-run at 4-5 epochs to actually improve. "Fewer epochs" only saves money if you were always going to check against baseline and stop the moment it's clearly not helping.`]},
+
+{sec:"lora",c:"violet",eyebrow:"LoRA Math · Recall",t:"r",h:"Quick recall: LoRA math &amp; training",qs:[
+{q:`Recite the worked LoRA example: matrix sizes and the reduction factor.`,a:`Original 10,000&times;20,000 = 200,000,000 params. LoRA rank 8: A (10,000&times;8=80,000) + B (8&times;20,000=160,000) = 240,000 trainable — an <b>~833&times;</b> reduction. Real project: 0.29% of Gemma-1B trainable, applied to attention Q/K/V/O.</p>`},
+{q:`Why is LoRA's ~833x parameter reduction not a trick, but a legitimate trade-off?`,a:`It's a low-rank approximation — the bet that the actual adaptation a task needs lives in a much lower-dimensional space than the full weight matrix, so constraining the update to rank r still captures most of what matters, at real (but acceptable) cost to theoretical capacity.`},
+{q:`What do you need on disk to actually USE a saved LoRA adapter?`,a:`The original frozen base model PLUS the tiny adapter — the adapter alone represents only a small delta and is useless without the base model it was trained against.`}]},
+
+/* ---------- RESULT ---------- */
+{sec:"result",c:"rose",eyebrow:"Result",t:"q",q:`Given everything you now know about one-epoch training being risky — do you predict the fine-tuned model beat the zero-shot baseline, matched it, or lost to it? If it lost, does that mean LoRA "doesn't work"?`},
+
+{sec:"result",c:"rose",eyebrow:"Result",t:"a",h:"The fine-tuned model performed slightly WORSE — and that's the real lesson",body:`
+<div class="ascii">zero-shot BASELINE        fine-tuned (1 epoch)
+accuracy:      ~45-46%    ~4% LOWER
+misclassified: 212/~480   258/~480
+precision:     --         up slightly on SOME classes
+recall:        --         down enough to drag accuracy
+                           below baseline overall
+
+WHY? only ONE epoch run ("to keep cost down")
+     --> LoRA adapters never got enough passes over the
+         data to converge on anything useful
+     --> a SEPARATE 4-5 epoch run (not the live demo) DID
+         show real improvement over baseline
+
+THE LESSON:
+  fine-tuning is not automatically an upgrade.
+  it's an EXPERIMENT -- it can make things worse
+  (under-training) just as easily as an over-trained
+  model can memorize and generalize worse (overfitting)
+  ALWAYS compare against baseline before trusting the result</div>
+<div class="note">It lost — accuracy dropped ~0.04, misclassifications rose from 212 to 258. But that does NOT mean fine-tuning doesn't work. It means one epoch wasn't enough training for the LoRA adapters to converge on anything useful — under-training, not a flaw in the approach. A separate longer run did show real improvement. The honest lesson: fine-tuning is an experiment with a real chance of making things worse, not a step that automatically helps just because you did it.</div>`,
+cto:[`This project could have just NOT shown you the failed run and only presented the successful 4-5 epoch version. Why is watching the failure more valuable than seeing only the polished success? Because the failure is the actual production lesson, and the success alone would have hidden it. Seeing only a winning result teaches "fine-tuning improves things" — true often enough to be dangerous, because the one time it's false is exactly when you need to have already internalized that fine-tuning can regress performance. Watching it fail live builds the actual discipline: never assume "we fine-tuned it" means "it's better" — always demand the baseline comparison and a go/no-go decision based on measured results.`]},
+
+{sec:"result",c:"rose",eyebrow:"Result · Recall",t:"r",h:"Quick recall: the result",qs:[
+{q:`State the actual accuracy delta and misclassification counts, baseline vs. fine-tuned.`,a:`Baseline ~45-46% accuracy, 212/~480 misclassified. Fine-tuned (1 epoch): accuracy ~0.04 LOWER, 258/~480 misclassified — a regression, not an improvement.`},
+{q:`Why does the fine-tune losing NOT mean "LoRA doesn't work"?`,a:`Only one epoch was run to keep cost down — the adapters never got enough passes to converge on anything useful. This is under-training, not a flaw in LoRA itself; a separate 4-5 epoch run showed real improvement.`}]},
+
+/* ---------- WRAP-UP ---------- */
+{sec:"end",c:"amber",eyebrow:"Wrap-up",t:"q",q:`Across this whole project — imbalanced data, prompt sensitivity, LoRA's rank trade-off, the under-trained result — one instinct kept showing up in different clothes. What's the <b>ONE habit</b> that would have caught every single one of these issues?`},
+
+{sec:"end",c:"amber",eyebrow:"Wrap-up",t:"a",h:"Project recap — what was actually learned",body:`
+<div class="ascii">base model (generalist, pre-trained, frozen)
+   | load via Transformers, quantize with bitsandbytes
+   | load + split + check class balance
+   | format with apply_chat_template, model-specific
+   | ZERO-SHOT BASELINE measured FIRST -- ~45-46%
+   | LoRA: freeze base, train tiny A/B matrices
+   | SFTTrainer.train(), save the small adapter
+   | re-evaluate, COMPARE to baseline
+   v
+result: WORSE than baseline this run (under-trained, 1 epoch)
+-- and that's the point: fine-tuning is an experiment,
+   not an automatic upgrade. Always measure, always compare.</div>
+<div class="note">Measure before you trust. Check per-class numbers instead of trusting accuracy. Test the model's actual behavior before assuming a prompt is "good enough." Compare against a real baseline before assuming fine-tuning helped. Every failure mode in this project is the same root cause wearing a different costume: trusting a plausible-looking result instead of measuring it against a reference point. That's the transferable skill here, more than any specific LoRA math.</div>
+<ol style="color:#c9c7bf;line-height:1.8;padding-left:20px;font-size:.92rem">
+<li>Fine-tuning rationale: generalist &rarr; specialist, small task-specific dataset on a pre-trained base</li>
+<li>Tech stack: Transformers, PEFT, TRL/SFT Trainer, bitsandbytes, scikit-learn</li>
+<li>Data prep: load, inspect, train/test split, check class balance</li>
+<li>Chat-template formatting: model-specific special tokens (Gemma vs. DeepSeek)</li>
+<li>Zero-shot baseline established BEFORE fine-tuning (~45-46% acc)</li>
+<li>LoRA theory: low-rank A/B matrices approximate weight updates (here: 0.29% of the model)</li>
+<li>Training run via SFTTrainer, one epoch (demo-scale)</li>
+<li>Evaluation showed a WORSE result than baseline — an honest lesson in under-training risk</li>
+</ol>`},
+
+{sec:"end",c:"amber",eyebrow:"Final Recall",t:"r",h:"Final recall: questions worth carrying forward",qs:[
+{q:`Would a small, cheaply fine-tuned open-source classifier ever beat a general-purpose frontier-model API call for a narrow, repeated internal classification task?`,a:`Plausibly yes for high-volume, narrow, repeated tasks where the per-call API cost dominates — a correctly-trained (multi-epoch, baseline-validated) small LoRA-adapted model can match or beat a frontier API's classification accuracy at a fraction of the ongoing inference cost. The precondition is doing the fine-tune properly: baseline first, enough epochs, measured comparison — exactly what this project's failed run illustrates skipping.`},
+{q:`What's a practical mental checklist for choosing zero-shot inference vs. fine-tuning for a given internal AI use case?`,a:`Start with zero-shot: it's cheap, immediate, no training needed — measure its baseline first regardless. Only reach for fine-tuning if the baseline genuinely falls short AND you have a labeled dataset AND you can commit to enough epochs plus a real baseline comparison before trusting the result — otherwise you risk exactly this project's under-trained regression.`}]}
+];
+
+let i=0;
+const stage=document.getElementById('stage'),dots=document.getElementById('dots'),
+tabs=document.getElementById('tabs'),counter=document.getElementById('counter'),
+prevBtn=document.getElementById('prevBtn'),nextBtn=document.getElementById('nextBtn');
+SECTIONS.forEach(s=>{const b=document.createElement('button');b.className='tab';b.dataset.c=s.c;b.dataset.sec=s.id;b.textContent=s.label;b.onclick=()=>go(S.findIndex(x=>x.sec===s.id));tabs.appendChild(b);});
+S.forEach((sl,k)=>{const d=document.createElement('span');d.className='dot'+(sl.t==='q'?' q':'');d.tabIndex=0;d.setAttribute('role','button');d.setAttribute('aria-label','Slide '+(k+1));d.onclick=()=>go(k);d.onkeydown=e=>{if(e.key==='Enter')go(k)};dots.appendChild(d);});
+function lens(cto,dir){
+  let out='';
+  if(cto&&cto.length) out+='<details class="lens"><summary>CTO LENS</summary><div class="body"><ul class="pts">'+cto.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+  if(dir&&dir.length) out+='<details class="lens dir"><summary>DIRECTOR LENS</summary><div class="body"><ul class="pts">'+dir.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+  return out;
+}
+function go(k){
+  i=Math.max(0,Math.min(S.length-1,k));
+  const s=S[i];stage.innerHTML='';
+  const el=document.createElement('div');el.className='slide';
+  try{
+    if(s.t==='q'){
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div>'
+        +'<div class="qcard"><div class="qlabel">Think first &middot; predict before you peek</div>'
+        +'<div class="qtext">'+s.q+'</div>'
+        +'<div class="qsub">Form your answer in your head. Then press Next to compare.</div></div>';
+    } else if(s.t==='r'){
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'
+        +'<p>Answer from memory first. Tap a question to reveal the answer.</p>'
+        +s.qs.map(x=>'<details class="recall-item"><summary>'+x.q+'</summary><div class="ans">'+x.a+'</div></details>').join('')
+        +'<div class="recall-hint">Struggled on any? Jump back with the tabs above, then return.</div>';
+    } else {
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'+s.body+(((s.cto&&s.cto.length)||(s.dir&&s.dir.length))?lens(s.cto,s.dir):'');
+    }
+  }catch(err){
+    el.innerHTML='<div class="eyebrow rose">Render error</div><h2>Slide '+(i+1)+' failed to render</h2><p>'+String(err&&err.message||err)+'</p>';
+  }
+  stage.appendChild(el);
+  counter.textContent=(i+1)+' / '+S.length;
+  document.querySelectorAll('.dot').forEach((d,k2)=>d.classList.toggle('on',k2===i));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.sec===s.sec));
+  prevBtn.disabled=(i===0);
+  nextBtn.textContent=(i===S.length-1)?'Done \u2713':'Next \u2192';
+  nextBtn.disabled=(i===S.length-1);
+  document.querySelector('main').scrollTop=0;window.scrollTo(0,0);
+}
+prevBtn.onclick=()=>go(i-1);nextBtn.onclick=()=>go(i+1);
+document.addEventListener('keydown',e=>{if(e.target.closest('details'))return;if(e.key==='ArrowRight')go(i+1);if(e.key==='ArrowLeft')go(i-1);});
+go(0);
+</script>
+</body>
+</html>

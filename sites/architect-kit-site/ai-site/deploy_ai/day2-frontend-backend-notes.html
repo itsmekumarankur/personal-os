@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Architects Lab — Day 2: Front End Meets Back End</title>
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#121821; --panel2:#161d28; --border:#22303f;
+    --text:#dbe4ee; --muted:#7d92a8; --accent:#39d3ac; --accent2:#f2b84b;
+    --danger:#ef6a6a; --code:#0d1319; --tag:#1c2a3a;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    line-height:1.6; padding:0 0 80px 0;
+  }
+  header{
+    padding:36px 24px 24px; border-bottom:1px solid var(--border);
+    background:linear-gradient(180deg,#0e141c,#0b0f14);
+  }
+  .eyebrow{color:var(--accent); font-size:12px; letter-spacing:2px; text-transform:uppercase; font-weight:600;}
+  h1{margin:8px 0 6px; font-size:28px; color:#f2f6fa;}
+  .sub{color:var(--muted); font-size:14px; max-width:780px;}
+  .course-link{
+    display:inline-block; margin-top:14px; font-size:13px; font-weight:600;
+    color:var(--accent); text-decoration:none; border:1px solid var(--border);
+    background:var(--panel2); padding:8px 14px; border-radius:6px;
+  }
+  .course-link:hover{border-color:var(--accent); background:#152030;}
+  .toolbar{
+    display:flex; gap:10px; padding:16px 24px; position:sticky; top:0;
+    background:rgba(11,15,20,0.95); backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--border); z-index:10; flex-wrap:wrap;
+  }
+  button.ctrl{
+    background:var(--panel2); color:var(--text); border:1px solid var(--border);
+    padding:8px 14px; border-radius:6px; cursor:pointer; font-size:13px;
+  }
+  button.ctrl:hover{border-color:var(--accent); color:var(--accent);}
+  .wrap{max-width:920px; margin:0 auto; padding:24px;}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    margin-bottom:16px; overflow:hidden;
+  }
+  .card-head{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:16px 20px; cursor:pointer; user-select:none;
+  }
+  .card-head:hover{background:var(--panel2);}
+  .card-title{font-size:16px; font-weight:600; color:#f2f6fa; display:flex; align-items:center; gap:10px;}
+  .tag{
+    font-size:10px; text-transform:uppercase; letter-spacing:1px;
+    background:var(--tag); color:var(--accent); padding:3px 8px; border-radius:4px; font-weight:700;
+  }
+  .tag.arch{color:var(--accent2);}
+  .chevron{color:var(--muted); transition:transform .2s;}
+  .card.open .chevron{transform:rotate(90deg);}
+  .card-body{
+    max-height:0; overflow:hidden; transition:max-height .25s ease;
+    padding:0 20px;
+  }
+  .card.open .card-body{ max-height:4000px; padding:0 20px 20px; }
+  p{margin:8px 0;}
+  .questions{
+    background:var(--code); border-left:3px solid var(--accent);
+    border-radius:6px; padding:12px 16px; margin:14px 0;
+  }
+  .questions h4{margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--accent);}
+  .questions ul{margin:0; padding-left:18px;}
+  .questions li{margin:6px 0; color:#c8d6e2;}
+  .archnote{
+    background:var(--code); border-left:3px solid var(--accent2);
+    border-radius:6px; padding:12px 16px; margin:14px 0;
+  }
+  .archnote h4{margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--accent2);}
+  pre{
+    background:var(--code); border:1px solid var(--border); border-radius:8px;
+    padding:14px; overflow-x:auto; font-size:12.5px; color:#a9e6c9; line-height:1.5;
+  }
+  code{color:var(--accent2); font-family:'Cascadia Code',Consolas,monospace;}
+  .recall{
+    margin-top:12px; border:1px dashed var(--border); border-radius:6px; padding:10px 14px;
+    cursor:pointer; background:#0e1620;
+  }
+  .recall .q{color:var(--accent2); font-weight:600; font-size:13.5px;}
+  .recall .a{display:none; margin-top:8px; color:var(--muted); font-size:13.5px; border-top:1px solid var(--border); padding-top:8px;}
+  .recall.show .a{display:block;}
+  .recall .hint{font-size:11px; color:var(--muted); float:right;}
+  ul.plain li{margin:4px 0;}
+  table{width:100%; border-collapse:collapse; margin:12px 0; font-size:13px;}
+  th,td{border:1px solid var(--border); padding:8px 10px; text-align:left;}
+  th{background:var(--panel2); color:var(--accent2);}
+  .foot{color:var(--muted); text-align:center; padding:30px; font-size:12px;}
+  .progress{font-size:11px; color:var(--muted);}
+  /* notes width expansion - matches learning plan box */
+  .wrap,.container,main,header.hero,header.masthead,nav.toc,section.block,footer{max-width:100%!important;padding-left:24px!important;padding-right:24px!important;}
+</style>
+</head>
+<body>
+<!-- LEARNING PLAN -->
+<div style="margin:24px;background:#0f1520;border:1px solid #1e2836;border-left:4px solid #e0a030;border-radius:8px;padding:24px 28px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;">
+  <div style="color:#e0a030;font-size:13px;font-weight:700;letter-spacing:.08em;margin-bottom:14px;">&#9670; LEARNING PLAN — 2.5 HOURS DAILY</div>
+  <div style="overflow-x:auto;">
+  <table style="width:100%;border-collapse:collapse;font-size:13px;color:#c8d3e0;margin-bottom:18px;white-space:nowrap;">
+    <thead><tr style="color:#7c8ba0;border-bottom:1px solid #1e2836;">
+      <th style="padding:6px 10px;text-align:left;width:48px;">Step</th>
+      <th style="padding:6px 10px;text-align:left;">Activity</th>
+      <th style="padding:6px 10px;text-align:left;">Outcome</th>
+    </tr></thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">1</td><td style="padding:7px 10px;"><b>Complete the Udemy Course</b> — watch videos, understand concepts, don't rush</td><td style="padding:7px 10px;color:#5fbf7f;">Build strong fundamentals</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">2</td><td style="padding:7px 10px;"><b>Practice Everything</b> — complete exercises, assignments, and source code</td><td style="padding:7px 10px;color:#5fbf7f;">Gain hands-on experience</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">3</td><td style="padding:7px 10px;"><b>Revise with these notes</b></td><td style="padding:7px 10px;color:#5fbf7f;">Reinforce concepts and fill knowledge gaps</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">4</td><td style="padding:7px 10px;"><b>Earn the Udemy Certificate</b></td><td style="padding:7px 10px;color:#5fbf7f;">Ensure the course is completed end-to-end</td></tr>
+      <tr><td style="padding:7px 10px;color:#e0a030;font-weight:700;">5</td><td style="padding:7px 10px;"><b>Practise real world tough scenario</b> — scenario-based questions &amp; interview problems</td><td style="padding:7px 10px;color:#5fbf7f;">Develop practical and interview-ready skills</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">1.5 HRS</div>
+      <div style="font-size:12px;color:#c8d3e0;">Udemy Videos + Exercises + Source Code</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Notes Revision</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Scenario-Based Questions &amp; Practical Problems</div>
+    </div>
+  </div>
+  <div style="color:#f0f4f8;font-size:12px;font-weight:600;letter-spacing:.04em;">GOAL: <span style="color:#e0a030;">Learn &#8594; Practice &#8594; Revise &#8594; Complete &#8594; Apply</span></div>
+</div>
+<!-- END LEARNING PLAN -->
+<a href="https://ai.shivawithin.in" id="home-return-btn" title="Back to Home" style="position:fixed;bottom:24px;right:24px;z-index:99999;display:inline-flex;align-items:center;gap:6px;background:#0d1b2a;color:#3fb6ff;border:1px solid #3fb6ff;padding:9px 15px;border-radius:8px;text-decoration:none;font-family:system-ui,-apple-system,sans-serif;font-size:13px;font-weight:600;box-shadow:0 2px 16px rgba(0,0,0,0.5);transition:background 0.2s,box-shadow 0.2s;" onmouseover="this.style.background='#1a2f47';this.style.boxShadow='0 4px 20px rgba(63,182,255,0.25)'" onmouseout="this.style.background='#0d1b2a';this.style.boxShadow='0 2px 16px rgba(0,0,0,0.5)'">&#8592; Home</a>
+
+<header>
+  <div class="eyebrow">Architects Lab · LLM &amp; Agentic AI Bootcamp</div>
+  <h1>Week 1 · Day 2 — Front End Meets Back End: Building the Full Stack</h1>
+  <div class="sub">Notes from Ed Donner's Day 2 lecture of the "Gen AI &amp; Agentic AI in Production" course —
+  front end/back end fundamentals, the React → Next.js stack, Python backend framework choices, and the
+  course's per-week repo strategy. Structured for a Senior Engineering Manager who already knows backend
+  deeply and is filling in front-end gaps.</div>
+  <a class="course-link" href="https://www.udemy.com/course/generative-and-agentic-ai-in-production/learn/lecture/52442087#overview" target="_blank" rel="noopener noreferrer">
+    ↗ Open on Udemy — Generative and Agentic AI in Production
+  </a>
+</header>
+
+<div class="toolbar">
+  <button class="ctrl" onclick="expandAll()">▾ Expand All</button>
+  <button class="ctrl" onclick="collapseAll()">▸ Collapse All</button>
+  <button class="ctrl" onclick="revealAllRecall()">💡 Reveal All Recall Answers</button>
+  <span class="progress" id="progressLabel"></span>
+</div>
+
+<div class="wrap">
+
+  <!-- SECTION 1 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Fundamentals</span> Front End vs. Back End — The Base Definitions</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <ul class="plain">
+        <li><strong>Front end</strong> = code running in the user's browser: HTML (structure), CSS (appearance), JavaScript (interactivity — button clicks, animations).</li>
+        <li><strong>Back end</strong> = business logic on the server: database access, calling LLMs, calling other APIs, holding secrets.</li>
+      </ul>
+      <p>Two ways the back end is used:</p>
+      <pre>
+Mode 1 — API mode
+  Browser (front end) → hits a web endpoint (URL)
+                       → back end runs logic, returns JSON
+                       → front end updates the UI using that JSON
+
+Mode 2 — Full page rendering
+  Browser requests a URL (e.g. "/home")
+                       → back end generates the ENTIRE HTML page
+                       → sends the whole page back to the browser
+      </pre>
+      <p>Both modes will be used across the course's labs.</p>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>This is the classic client-server contract you've enforced for years in payments/demat systems —
+        the interesting design decision is always <em>which</em> of the two modes a given screen should use.
+        JSON-API mode suits highly interactive, stateful screens (a live portfolio dashboard); full-page
+        rendering suits simpler, mostly-static, SEO-relevant screens (a marketing/landing page). Mixing both
+        badly in one app is a common source of unnecessary complexity — worth asking, for every screen you
+        design, which mode it actually needs before defaulting to "everything is an SPA."</p>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: What are the two distinct ways a back end can respond to a front-end request? <span class="hint">tap to reveal</span></div>
+        <div class="a">(1) Return a JSON object that the front end uses to update parts of the existing page (typical API call). (2) Generate and return an entire HTML page for a given URL, which the browser then renders in full.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Aside</span> Where Does Gradio Fit? (And Why Not Use It Here)</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>Gradio is technically a back-end (Python) framework, but it auto-generates the front end for you
+      behind the scenes — you describe a UI purely in Python, and Gradio produces the HTML/CSS/JS. That
+      makes it a "front end + back end in one," which is great for fast prototyping but is explicitly
+      <strong>not used in this course</strong>, since the goal here is building real, separately-controllable
+      front ends and back ends ("doing stuff for reals").</p>
+
+      <div class="questions">
+        <h4>Question worth sitting with</h4>
+        <ul>
+          <li>For your own rapid-prototype needs (e.g. an internal Optimus dashboard or squad tracker demo),
+          is Gradio still the right tool — fast to stand up but ultimately a dead end if the tool needs to
+          graduate into a real customer-facing product later?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">History</span> The Three Eras of Front-End Development</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <pre>
+Era 1 — Vanilla web
+  Hand-written HTML + CSS + JavaScript (maybe jQuery)
+  JS manipulates the DOM (Document Object Model — the browser's
+  live in-memory representation of the rendered page) directly
+
+Era 2 — JS Frontend Frameworks
+  React, Vue, Angular, Svelte, ...
+  Build UIs from small reusable "components"
+  Most commonly used to build a Single Page Application (SPA):
+  the whole app loads once, then all navigation is just API calls
+  re-rendering parts of that same page — not real page reloads
+
+Era 3 — Application Frameworks (built ON TOP of a framework)
+  Next.js (built on React, by Vercel) — bundles routing,
+  data-fetching, server-side rendering, and more, "out of the box"
+  so you don't have to hand-pick a dozen React add-ons yourself
+      </pre>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>This progression mirrors backend framework evolution almost exactly — vanilla HTTP handlers →
+        micro-frameworks (Flask-like) → opinionated "batteries-included" frameworks (Django/Next.js-like).
+        The underlying architectural lesson: opinionated frameworks trade flexibility for fewer decisions
+        and faster onboarding — the same trade-off you weigh every time a squad picks a new internal
+        framework at IDFC versus rolling their own.</p>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: What does SPA (Single Page Application) actually mean, mechanically? <span class="hint">tap to reveal</span></div>
+        <div class="a">The entire front-end application code loads once on the first URL hit. After that, even though it feels like the user is navigating between different pages, it's really the same loaded React app making API calls and re-rendering parts of itself — no full browser page reload happens.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 4 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">React</span> Core React Concepts — Declarative UI, Props, State</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <ul class="plain">
+        <li><strong>Component-based:</strong> each component packages its markup, styling, and logic together; you assemble UIs by composing components.</li>
+        <li><strong>Declarative:</strong> you describe what the UI should look like <em>for a given state</em> — you don't write step-by-step DOM-mutation instructions.</li>
+        <li><strong>Reconciliation:</strong> React diffs the DOM before/after a state change and updates only what changed — no full-screen redraw.</li>
+        <li><strong>Props</strong> (properties): data passed down from parent components to children, controlling how they render.</li>
+        <li><strong>State:</strong> the mutable data a component owns and manages; React re-renders automatically when state changes.</li>
+        <li><strong>JSX / TSX:</strong> a hybrid syntax mixing HTML-like markup directly into JavaScript/TypeScript — replaces the older, clumsier pattern of building markup as raw strings inside JS.</li>
+        <li><strong>Component libraries:</strong> pre-built suites of components (Material UI, Chakra) you can drop in rather than build from scratch.</li>
+      </ul>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>Declarative UI + automatic diffing is the same conceptual shift distributed systems went through
+        with declarative infra (Terraform/Kubernetes) vs. imperative scripts — you describe the desired end
+        state, and the framework/tool figures out the minimal diff to get there. Recognizing that pattern
+        once makes it much faster to pick up in a new domain, which is exactly the kind of transferable
+        mental model worth calling out to your squads when they hit React for the first time.</p>
+      </div>
+
+      <div class="questions">
+        <h4>Question worth sitting with</h4>
+        <ul>
+          <li>Given your systems background, is "React's reconciliation = Kubernetes reconciliation loop, just
+          for DOM instead of pods" a good enough analogy to teach your team React faster?</li>
+        </ul>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: What's the difference between props and state? <span class="hint">tap to reveal</span></div>
+        <div class="a">Props are data passed DOWN into a component from its parent, controlling how it renders — the component doesn't own or change them. State is data a component owns itself and can change; when it changes, React automatically re-renders the affected UI.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 5 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Next.js</span> Why Next.js, and the Two Router Systems</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>Next.js is built by Vercel (same company as yesterday's deployment platform) on top of React, and
+      bundles routing, data fetching, server-side rendering, TypeScript transpiling, and JS bundling out of
+      the box — so you're not hand-assembling a dozen separate libraries.</p>
+
+      <table>
+        <tr><th></th><th>Pages Router</th><th>App Router</th></tr>
+        <tr><td>Folder</td><td><code>pages/</code></td><td><code>app/</code></td></tr>
+        <tr><td>Maturity</td><td>Older, most trusted, widest support</td><td>Newer, more powerful, now Next.js's official recommendation</td></tr>
+        <tr><td>Used when</td><td>Week 1 (chosen because the course's auth framework only supports Pages Router)</td><td>Introduced Week 2 for exposure</td></tr>
+      </table>
+
+      <p>Other Next.js mechanics worth knowing: <strong>transpiling</strong> converts modern TypeScript into
+      vanilla JavaScript browsers can run; <strong>bundling</strong> packs that output efficiently for
+      delivery. The course uses <strong>client-side rendering</strong> (the more traditional, simpler
+      approach) rather than server-side rendering, though SSR exists and is increasingly common.</p>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>Notice the instructor picked Pages Router not because it's "better" in the abstract, but because
+        a specific dependency (the auth framework) forced the decision — and he explicitly admits getting
+        burned by building it in App Router first and having to rip it out. That's a useful, honest data
+        point: framework/router choice in real projects is often driven by your weakest-link dependency, not
+        by which is objectively newer or more powerful. Worth remembering next time a squad wants to adopt
+        the "newest recommended" pattern without first checking whether every dependency actually supports it.</p>
+      </div>
+
+      <div class="questions">
+        <h4>Questions worth sitting with</h4>
+        <ul>
+          <li>When your own team evaluates a new library/pattern for idfc-coder tooling, is there a step that
+          explicitly checks "does every dependency we need actually support this," or does that only surface
+          after the fact, the way it did here?</li>
+        </ul>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: Why does the course start Week 1 with the Pages Router instead of the newer, officially-recommended App Router? <span class="hint">tap to reveal</span></div>
+        <div class="a">Because the authentication framework being used only supports the Pages Router — the instructor discovered this the hard way after building everything in App Router first and having to pull it all out and rebuild.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 6 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Backend</span> Python Backend Frameworks — Django vs. Flask vs. FastAPI</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <table>
+        <tr><th>Framework</th><th>Philosophy</th><th>Notes</th></tr>
+        <tr><td>Django</td><td>"Batteries included" — heaviest</td><td>Built-in ORM, auth, templating, even an admin UI</td></tr>
+        <tr><td>Flask</td><td>Micro-framework — lightest</td><td>Just routing + request handling; you pick everything else</td></tr>
+        <tr><td>FastAPI</td><td>Modern middle ground</td><td>Async-first, built on Starlette + Pydantic, schema-driven routes — <strong>used throughout this course</strong></td></tr>
+      </table>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>This is a textbook build-vs-batteries-included spectrum, and FastAPI's popularity is largely
+        because Pydantic gives you request/response schema validation "for free" at the framework level —
+        directly relevant to any fintech API surface where malformed input has real financial consequences.
+        Worth comparing against whatever's standard for new microservices on your Wealth/Demat platform
+        today: is validation happening at the framework boundary the way FastAPI+Pydantic enforces it, or
+        is it scattered across handler code?</p>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: What two underlying libraries is FastAPI built on, and what does each contribute? <span class="hint">tap to reveal</span></div>
+        <div class="a">Starlette (the async web toolkit underneath, handling requests/responses) and Pydantic (schema validation for request/response objects — the same library used heavily across agent/LLM frameworks).</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 7 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Course Admin</span> Repo Strategy — One Repo Per Week, Not One Repo For the Course</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <pre>
+production   (main repo — cloned once)
+  └── week1/                (Day 1 instructions — used yesterday)
+
+SaaS         (new repo, built from scratch today)
+  ├── guides/                self-study docs (Docker, front end, etc.)
+  ├── community-contributions/   markdown write-ups + PRs from students
+  └── (app code)
+      </pre>
+      <p>Unlike his previous single-repo courses, this course spins up a <strong>separate repo per week</strong>
+      — deliberately mirroring real production practice: one repo = one deployable application, which is
+      also required for GitHub Actions to auto-deploy on push. Monorepos are acknowledged as a valid
+      alternative but intentionally avoided here to keep things simple.</p>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>"One repo per deployable app, mainly to keep CI/CD simple" is a completely reasonable default for
+        a teaching context, but it's worth noting explicitly for your own team: the monorepo-vs-polyrepo
+        decision at IDFC across 80+ microservices is a much higher-stakes version of this same trade-off —
+        deployment isolation and blast-radius control (polyrepo) vs. atomic cross-service changes and shared
+        tooling (monorepo). Good to keep this simple teaching example in mind as the "why polyrepo" baseline
+        case when explaining the trade-off to less experienced engineers.</p>
+      </div>
+
+      <div class="questions">
+        <h4>Questions worth sitting with</h4>
+        <ul>
+          <li>Does your Wealth/Demat platform's current repo strategy (polyrepo across 80+ microservices)
+          have the same "one repo = one deployable, CI/CD drives the boundary" rationale, or has it evolved
+          for different reasons over time?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 8: NEXT UP -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag arch">Preview</span> What the Rest of Day 2's Lab Will Likely Cover</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>The lecture ends right as the "admin" section wraps and the lab begins — building the actual SaaS
+      repo in Cursor, presumably wiring a Next.js (Pages Router) front end to a FastAPI back end for the
+      first time today, ahead of authentication and subscriptions being layered in later in Week 1.</p>
+
+      <div class="questions">
+        <h4>Questions to answer once you watch the rest of Day 2's lab</h4>
+        <ul>
+          <li>Does the FastAPI back end get deployed to Vercel the same serverless-function way as Day 1's
+          toy app, or does a real Next.js + FastAPI pairing need a different deployment shape (e.g. FastAPI
+          on a separate service, Next.js on Vercel)?</li>
+          <li>What does the actual JSON contract between the Next.js front end and the FastAPI back end look
+          like — is it hand-written, or generated from FastAPI's Pydantic schemas (e.g. via OpenAPI)?</li>
+          <li>Is TypeScript enforced strictly from day one, or introduced loosely and tightened later?</li>
+          <li>Where does Docker actually enter the picture — is it used for local dev only, or does it show
+          up in the deployment pipeline too?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="foot">Architects Lab · Study Notes · Source: "Gen AI &amp; Agentic AI in Production," Week 1 Day 2 (Ed Donner)</div>
+
+<script>
+  function toggleCard(headEl){
+    const card = headEl.parentElement;
+    card.classList.toggle('open');
+    updateProgress();
+  }
+  function toggleRecall(el){
+    el.classList.toggle('show');
+  }
+  function expandAll(){
+    document.querySelectorAll('.card').forEach(c=>c.classList.add('open'));
+    updateProgress();
+  }
+  function collapseAll(){
+    document.querySelectorAll('.card').forEach(c=>c.classList.remove('open'));
+    updateProgress();
+  }
+  function revealAllRecall(){
+    document.querySelectorAll('.recall').forEach(r=>r.classList.add('show'));
+  }
+  function updateProgress(){
+    const total = document.querySelectorAll('.card').length;
+    const open = document.querySelectorAll('.card.open').length;
+    document.getElementById('progressLabel').textContent = open + ' / ' + total + ' sections expanded';
+  }
+  updateProgress();
+</script>
+
+</body>
+</html>

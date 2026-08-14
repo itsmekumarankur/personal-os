@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architects Lab · Advanced AI Tutor — MCP + OpenAI Agents SDK</title>
+<style>
+  :root{
+    --bg:#0d0f14; --panel:#151823; --panel2:#1b1f2e;
+    --ink:#e8e6df; --dim:#8b8fa3;
+    --gold:#d4af5a; --gold-soft:#b8964a;
+    --teal:#5ad4c8; --rose:#d47a8a; --violet:#9a8ad4; --amber:#d4915a;
+    --line:#2a2f42;
+    --mono:'Courier New', ui-monospace, monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif;display:flex;flex-direction:column;min-height:100vh}
+  header{padding:16px 26px 12px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  header .k{font-family:var(--mono);font-size:.68rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase}
+  header h1{font-size:1rem;font-weight:normal}
+  header .count{margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--dim)}
+  .tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
+  .tab{flex:1;min-width:110px;padding:9px 10px;text-align:center;font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;color:var(--dim);border-right:1px solid var(--line);cursor:pointer;white-space:nowrap;transition:.2s;background:transparent;border-top:none;border-bottom:none;border-left:none}
+  .tab:last-child{border-right:none}
+  .tab.active{color:var(--bg);font-weight:bold}
+  .tab[data-c="gold"].active{background:var(--gold)}
+  .tab[data-c="teal"].active{background:var(--teal)}
+  .tab[data-c="rose"].active{background:var(--rose)}
+  .tab[data-c="violet"].active{background:var(--violet)}
+  .tab[data-c="amber"].active{background:var(--amber)}
+  .tab[data-c="ink"].active{background:var(--ink)}
+  main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px 96px;overflow-y:auto}
+  .slide{max-width:780px;width:100%;animation:fadeUp .4s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @media (prefers-reduced-motion: reduce){.slide{animation:none}}
+  .eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px}
+  .eyebrow.gold{color:var(--gold)} .eyebrow.teal{color:var(--teal)} .eyebrow.rose{color:var(--rose)}
+  .eyebrow.violet{color:var(--violet)} .eyebrow.amber{color:var(--amber)} .eyebrow.ink{color:var(--dim)}
+  .slide h2{font-size:1.55rem;font-weight:normal;line-height:1.3;margin-bottom:14px}
+  .slide h2 em{font-style:italic;color:var(--gold)}
+  .slide p{color:#c9c7bf;line-height:1.75;font-size:1rem;margin-bottom:13px}
+  .slide p strong, .slide li strong{color:var(--ink)}
+  .slide code{font-family:var(--mono);font-size:.85em;background:var(--panel2);padding:2px 6px;border-radius:3px;color:var(--gold)}
+  .ascii{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:6px;padding:14px 16px;margin:14px 0;font-family:var(--mono);font-size:.74rem;line-height:1.5;color:#b9c2d8;overflow-x:auto;white-space:pre}
+  .ascii .hl{color:var(--gold)} .ascii .tl{color:var(--teal)} .ascii .rs{color:var(--rose)}
+  .note{border:1px dashed var(--gold-soft);border-radius:6px;padding:11px 15px;margin:14px 0;font-size:.9rem;color:#cfc9ae;line-height:1.65}
+  .note b{color:var(--gold)}
+  ul.pts{margin:10px 0 13px 2px;list-style:none}
+  ul.pts li{padding:6px 0 6px 21px;position:relative;color:#c9c7bf;line-height:1.6;font-size:.95rem}
+  ul.pts li::before{content:"\203A";position:absolute;left:4px;color:var(--gold);font-family:var(--mono)}
+  /* ---- Think First (question) slides ---- */
+  .qcard{border:2px solid var(--gold);border-radius:10px;background:linear-gradient(160deg,#1a1608,#151823);padding:30px 28px;margin:6px 0 18px;position:relative}
+  .qcard::before{content:"?";position:absolute;top:-20px;left:22px;width:38px;height:38px;border-radius:50%;background:var(--gold);color:var(--bg);font-family:var(--mono);font-weight:bold;font-size:1.3rem;display:flex;align-items:center;justify-content:center}
+  .qcard .qlabel{font-family:var(--mono);font-size:.64rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;margin-bottom:12px}
+  .qcard .qtext{font-size:1.25rem;line-height:1.55;color:var(--ink);font-style:italic}
+  .qcard .qsub{margin-top:14px;font-size:.86rem;color:var(--dim);font-style:normal;font-family:var(--mono)}
+  /* ---- lenses (CTO / Director) ---- */
+  details.lens{margin:10px 0;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+  details.lens summary{cursor:pointer;padding:10px 14px;font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;color:var(--teal);list-style:none}
+  details.lens summary::before{content:"+ ";color:var(--gold)}
+  details.lens[open] summary::before{content:"\2212 "}
+  details.lens.dir summary{color:var(--rose)}
+  details.lens .body{padding:2px 16px 13px}
+  details.lens .body li{font-size:.9rem}
+  /* ---- recall quiz slides ---- */
+  .recall-item{border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:6px;background:var(--panel);margin:12px 0;overflow:hidden}
+  .recall-item summary{cursor:pointer;padding:13px 16px;font-size:.98rem;color:var(--ink);list-style:none;line-height:1.55}
+  .recall-item summary::before{content:"Q  ";font-family:var(--mono);color:var(--teal);font-weight:bold}
+  .recall-item .ans{padding:0 16px 13px;color:#b9c2b0;font-size:.92rem;line-height:1.65;border-top:1px dashed var(--line);padding-top:11px;margin:0 16px 13px;padding-left:0;padding-right:0}
+  .recall-item .ans b{color:var(--teal)}
+  .recall-hint{font-family:var(--mono);font-size:.7rem;color:var(--dim);margin-top:6px}
+  footer{position:fixed;left:0;right:0;bottom:0;background:rgba(13,15,20,.93);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:11px 20px;display:flex;align-items:center;gap:14px}
+  .dots{display:flex;gap:4px;flex:1;justify-content:center;flex-wrap:wrap}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--line);cursor:pointer;transition:.2s}
+  .dot.on{background:var(--gold);transform:scale(1.45)}
+  .dot.q{border:1px solid var(--gold);background:transparent}
+  .dot.q.on{background:var(--gold)}
+  button.nav{font-family:var(--mono);font-size:.78rem;letter-spacing:.1em;background:transparent;color:var(--ink);border:1px solid var(--line);padding:9px 18px;border-radius:5px;cursor:pointer;transition:.2s}
+  button.nav:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+  button.nav.primary{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:bold}
+  button.nav.primary:hover{background:#e2c070}
+  button.nav:disabled{opacity:.25;cursor:default}
+  button.nav:focus-visible,.tab:focus-visible,.dot:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .hint{position:fixed;bottom:62px;right:18px;font-family:var(--mono);font-size:.6rem;color:var(--dim);letter-spacing:.1em}
+  @media(max-width:600px){.slide h2{font-size:1.28rem}.ascii{font-size:.58rem;padding:11px}.hint{display:none}.qcard .qtext{font-size:1.08rem}}
+</style>
+</head>
+<body>
+<header>
+  <span class="k">Architects Lab</span>
+  <h1>Advanced AI Tutor · MCP + OpenAI Agents SDK</h1>
+  <span class="count" id="counter"></span>
+</header>
+<div class="tabs" id="tabs"></div>
+<main><div id="stage"></div></main>
+<div class="hint">&larr; &rarr; keys work too</div>
+<footer>
+  <button class="nav" id="prevBtn">&larr; Prev</button>
+  <div class="dots" id="dots"></div>
+  <button class="nav primary" id="nextBtn">Next &rarr;</button>
+</footer>
+<script>
+const SECTIONS=[
+ {id:"intro",label:"START",c:"ink"},
+ {id:"mcp",label:"WHAT MCP SOLVES",c:"teal"},
+ {id:"server",label:"BUILDING THE SERVER",c:"gold"},
+ {id:"client",label:"BUILDING THE CLIENT",c:"violet"},
+ {id:"end",label:"VALIDATION+WRAP-UP",c:"amber"}
+];
+const S=[
+
+{sec:"intro",c:"ink",eyebrow:"MCP + OpenAI Agents SDK",t:"a",h:"Advanced AI Tutor — <em>Model Context Protocol + OpenAI Agents SDK</em>",body:`
+<p>A hands-on project building a multi-tool AI tutor (explain / summarize / flashcards / quiz) exposed as an MCP server via Gradio, then consumed by an agent built with the OpenAI Agents SDK.</p>
+<div class="note"><b>How to use:</b> "?" slides ask you to predict first. Press Next to compare. Recall quizzes close each section.</div>`},
+
+/* ---------- WHAT MCP SOLVES ---------- */
+{sec:"mcp",c:"teal",eyebrow:"Framing",t:"q",q:`Without a common standard, wiring an agent to Slack, Gmail, a calendar, and a web API each needs bespoke glue code. What integration problem does MCP eliminate, described in <b>N&times;M</b> terms?`},
+
+{sec:"mcp",c:"teal",eyebrow:"Framing",t:"a",h:"What MCP actually solves — the USB-C analogy",body:`
+<p>MCP (Model Context Protocol) is an open standard that lets AI models securely discover and interact with tools, APIs, and data through one consistent interface — <strong>"a universal USB-C port for AI applications."</strong> Once a tool speaks MCP, any MCP-aware agent can use it without custom per-tool integration work.</p>
+<div class="note">Without MCP, connecting M different AI agents to N different tools/APIs requires up to N&times;M custom integrations, since each agent-tool pairing might need bespoke glue code. MCP standardizes the interface both sides speak, reducing this to roughly <b>N+M</b> — each tool implements MCP once, each agent implements MCP-client support once, and any agent can then use any MCP-compliant tool.</div>`,
+cto:[`This is directly the same standardization problem you already navigate in fintech integration work — before a common protocol, every bank/vendor integration is a bespoke adapter; after, it's a conformance requirement. MCP is doing for AI tool access exactly what standardized APIs (ISO 20022, REST conventions, OAuth) did for payments and identity integration: reducing N×M integration complexity down to N+M by agreeing on one shared interface.`]},
+
+{sec:"mcp",c:"teal",eyebrow:"Concepts",t:"q",q:`How does an AI agent know what tools an MCP server offers and how to call them, <b>without</b> being hardcoded in advance?`},
+
+{sec:"mcp",c:"teal",eyebrow:"Concepts",t:"a",h:"The three building blocks — server, manifest, action endpoint",body:`
+<div class="ascii">Component        What it is
+MCP Server       An application (here, Gradio) that exposes one
+                  or more tools, listening on a specific HTTP
+                  endpoint
+Manifest (schema) A standardized JSON description of available
+                   tools - name, description, expected input
+                   parameters+types, output format. How an agent
+                   "discovers" what it can do
+Action Endpoint   The standard endpoint where the model sends a
+                   POST request (tool name + parameters) to
+                   actually execute a specific tool</div>
+<div class="note">By fetching the server's <b>manifest</b> — a standardized JSON document describing each available tool's name, description, expected input parameters (and their types), and output format. The agent reads this at runtime to discover capabilities dynamically, rather than needing pre-written, tool-specific integration code. The manifest is a "language translator" — an agent doesn't need to be pre-programmed with knowledge of a specific tool.</div>`},
+
+{sec:"mcp",c:"teal",eyebrow:"Architecture",t:"q",q:`Two settings appear together: <code>timeout=30</code> and <code>client_session_timeout_seconds=60</code>. What's the practical difference — do they control the same thing at different values?`},
+
+{sec:"mcp",c:"teal",eyebrow:"Architecture",t:"a",h:"Two notebooks, two roles — server and client",body:`
+<div class="ascii">Notebook 1: MCP Client
+  - Builds the AI agent (OpenAI Agents SDK)
+  - Connects to the MCP server and sends requests
+Notebook 2: MCP Server
+  - Defines the 4 tool functions
+  - Launches a Gradio app with mcp_server=True
+  - Listens for MCP requests (SSE - Server-Sent Events)</div>
+<div class="ascii">MCPServerSse(name="AI Tutor", url=MCP_BASE,
+             timeout=30,                       # per-tool-call timeout
+             client_session_timeout_seconds=60) # idle session expiry</div>
+<div class="note">They control different things entirely. The 30-second <code>timeout</code> controls how long the server waits for a <b>single</b> tool execution/action to complete before giving up. The 60-second <code>client_session_timeout_seconds</code> controls how long an entire <b>session</b> can stay idle (no activity at all) before it's considered expired — one governs a single call, the other governs the whole connection's lifespan. <code>MCPServerSse</code> connects client-side via Server-Sent Events, well suited to streaming token output back from an LLM call.</div>`},
+
+{sec:"mcp",c:"teal",eyebrow:"What MCP Solves · Recall",t:"r",h:"Quick recall: what MCP solves",qs:[
+{q:`State the N×M vs N+M framing for MCP's value.`,a:`Without MCP: M agents &times; N tools = up to N&times;M custom integrations. With MCP: each tool implements the protocol once, each agent implements client support once = N+M total effort.`},
+{q:`How does an agent discover an MCP server's capabilities without hardcoded integration?`,a:`By fetching the server's <b>manifest</b> — standardized JSON describing each tool's name, description, parameters, and output format, read at runtime.`},
+{q:`Timeout vs client_session_timeout_seconds — what does each actually govern?`,a:`<code>timeout</code> governs one single tool call. <code>client_session_timeout_seconds</code> governs how long an entire idle session stays alive before expiring — one call, one connection lifespan.`}]},
+
+/* ---------- BUILDING THE SERVER ---------- */
+{sec:"server",c:"gold",eyebrow:"Build",t:"q",q:`Four tools — explain_concept, summarize_text, generate_flashcards, quiz_me — each with different inputs and behavior. What's the <b>shared underlying pattern</b> beneath all four?`},
+
+{sec:"server",c:"gold",eyebrow:"Build",t:"a",h:"The four tools — what each one actually does",body:`
+<div class="ascii">Tool                 Inputs                    Behavior
+explain_concept      question(str), level(1-5)  Streams an
+                                                   explanation at
+                                                   chosen complexity
+summarize_text       text(str),                 Streams a summary
+                      compression_ratio(float)    compressed to that
+                                                   fraction of length
+generate_flashcards  topic(str), num_cards(1-20) Streams Q&A pairs
+                                                   in JSON-line format
+quiz_me              topic(str), level(int),     Streams a multiple-
+                      num_questions(1-15)          choice quiz +
+                                                     answer key</div>
+<div class="note">Each tool builds a parameterized system prompt specific to its task, calls the OpenAI chat completions API with streaming enabled, and yields response chunks progressively back to the caller — the only real differences between tools are the specific prompt template and the input/output parameter shape, not the underlying execution pattern.</div>`,
+cto:[`Notice these four tools are really the same underlying pattern (parameterized system prompt → streamed completion) applied four times with different prompt templates — the same "thin vertical slice on a shared scaffold" pattern seen elsewhere. Recognizing this repeated shape across projects is itself useful: once you have one well-built streaming-completion wrapper, adding a fifth tool is nearly copy-paste work, not new architecture.`]},
+
+{sec:"server",c:"gold",eyebrow:"The Trick",t:"q",q:`One flag turns a normal Gradio app into a functioning MCP server. Guess what it is — and what happens to the UI's component definitions (labels, sliders) once you flip it.`},
+
+{sec:"server",c:"gold",eyebrow:"The Trick",t:"a",h:"One parameter turns a Gradio app into an MCP server",body:`
+<div class="ascii">demo.launch(mcp_server=True)</div>
+<p>That's the entire mechanism — a normal Gradio UI (tabs, text boxes, sliders, buttons) becomes simultaneously usable two ways: as a human-facing web interface AND as a machine-facing MCP server exposing each function as a discoverable, callable tool.</p>
+<div class="note">Adding <code>mcp_server=True</code> to the <code>demo.launch()</code> call. No other structural change is needed. The Gradio component definitions themselves (labels, types, ranges via sliders) become part of what gets reflected in the generated manifest/schema — the same UI-definition code doubles as an API contract.</div>`,
+cto:[`This single-flag duality is a genuinely clever piece of framework design — you don't maintain the human interface and the machine interface separately (a common source of drift in traditional systems, where a UI and its underlying API spec silently diverge over time). Worth remembering as a design goal even outside Gradio: wherever feasible, generate your API surface FROM your interface definition rather than maintaining both by hand.`]},
+
+{sec:"server",c:"gold",eyebrow:"Extension",t:"q",q:`Adding a fifth tool, <code>explain_concept_in_language</code>, was demonstrated as "nearly copy-paste." What's the <b>one</b> meaningful code difference from the original explain_concept?`},
+
+{sec:"server",c:"gold",eyebrow:"Extension",t:"a",h:"Practice opportunity — adding a fifth tool",body:`
+<p>A new tool adds a <code>language</code> string parameter to the existing <code>explain_concept</code> pattern — same core logic, with the system prompt extended to instruct the model to respond in the specified language.</p>
+<div class="note">The addition of a <b>language parameter</b>, woven into the system prompt (instructing the model to respond in that specified language) — everything else (the level mapping, the streaming completion call, the overall function shape) is identical to the original tool. Confirms the "copy-paste plus one new parameter" ease predicted by the shared-pattern observation.</div>`},
+
+{sec:"server",c:"gold",eyebrow:"Discovery",t:"q",q:`Where does the tool description text that appears in the MCP manifest actually <b>come from</b> — is it separately written, or derived automatically?`},
+
+{sec:"server",c:"gold",eyebrow:"Discovery",t:"a",h:"Fetching the manifest — seeing what the agent sees",body:`
+<div class="ascii">def fetch_schema(server_url):
+    schema_url = server_url.replace("sse", "schema")
+    response = http_client.get(schema_url, timeout=10)
+    response.raise_for_status()
+    return response.json()</div>
+<p>The server exposes its manifest at a predictable URL pattern (swap "sse" for "schema"). Critically, <strong>the docstring you write on each Python function becomes the tool's description in the manifest</strong> — demonstrated directly by improving a docstring and re-fetching the schema to see the richer description reflected automatically.</p>
+<div class="note">From the Python <b>docstring</b> written on each tool's function definition — automatically surfaced as the tool's description in the generated MCP schema, meaning a more detailed, precise docstring directly produces a more detailed, precise tool description the agent uses to decide when and how to call that tool.</div>`,
+cto:[`The docstring-becomes-manifest-description behavior is the single most practically important detail in this whole discovery section — it means prompt-engineering discipline extends directly to docstring-writing discipline for any MCP tool you build. A vague docstring produces a vague tool description, which directly degrades an agent's ability to choose the right tool at the right time. Write the docstring as carefully as you'd write a user-facing prompt, because functionally, that's exactly what it becomes.`]},
+
+{sec:"server",c:"gold",eyebrow:"Building the Server · Recall",t:"r",h:"Quick recall: building the server",qs:[
+{q:`What's the shared pattern behind all four tutor tools?`,a:`Build a parameterized system prompt &rarr; call the chat completions API with streaming enabled &rarr; yield chunks progressively. Only the prompt template and parameter shape differ between tools.`},
+{q:`What single change turns a Gradio app into an MCP server?`,a:`Adding <code>mcp_server=True</code> to <code>demo.launch()</code>. The same UI component definitions become part of the generated manifest — no separate API layer needed.`},
+{q:`Where does an MCP tool's manifest description come from?`,a:`The Python <b>docstring</b> on the tool's function — automatically surfaced as the description. Vague docstrings directly produce vague, harder-to-select tool descriptions.`}]},
+
+/* ---------- BUILDING THE CLIENT ---------- */
+{sec:"client",c:"violet",eyebrow:"Agent",t:"q",q:`The OpenAI Agents SDK has three core primitives: Agents, Handoffs, Guardrails. What does each one actually <b>do</b>?`},
+
+{sec:"client",c:"violet",eyebrow:"Agent",t:"a",h:"Building the client — OpenAI Agents SDK",body:`
+<div class="ascii">agent = Agent(
+    name="Smart Assistant",
+    instructions="""You are an AI assistant with access to an
+    MCP server exposing four streaming tools: explain_concept,...
+    For each user request, decide the tool (if any) that
+    fulfills it best. Call the tool via MCP by returning only
+    JSON with tool and arguments - no extra text. If no tool
+    fits, answer directly in plain language.
+
+    Example: "explain quantum tunneling like I'm 10" -> calls
+    explain_concept with question="quantum tunneling", level=2
+    """,
+    model="gpt-4o-mini", mcp_servers=[mcp_tool])
+
+await mcp_tool.connect()
+while True:
+    user_input = input("You: ")
+    if user_input in ("exit","quit"): break
+    result = await Runner.run(agent, conversation_history)
+    conversation_history.append(...)  # maintain context</div>
+<div class="note"><b>Agents</b> — LLMs equipped with instructions and tools. <b>Handoffs</b> — agents delegating tasks to other agents. <b>Guardrails</b> — validating inputs to agents. The agent's instructions include a worked example — few-shot prompting embedded directly in the system instructions, showing exactly what tool-selection reasoning and JSON output format is expected.</div>`,
+cto:[`The pattern "instructions + explicit example of correct tool-call output format, embedded in the prompt" is a very reliable technique for improving structured tool-selection accuracy — directly useful for any prompt template that needs to route between multiple internal tools reliably. Worth treating as a standard component of any agent system prompt: don't just describe the tools abstractly, show one concrete input→tool-call mapping.`]},
+
+{sec:"client",c:"violet",eyebrow:"Building the Client · Recall",t:"r",h:"Quick recall: building the client",qs:[
+{q:`Name the OpenAI Agents SDK's three core primitives and one line each.`,a:`<b>Agents</b> (LLMs equipped with instructions and tools), <b>Handoffs</b> (one agent delegating to another), <b>Guardrails</b> (validating inputs before they're acted on).`},
+{q:`Why embed a worked example inside the agent's instructions rather than just describing the tools abstractly?`,a:`Few-shot prompting embedded directly in system instructions is a reliable technique for improving structured tool-selection accuracy — showing one concrete input&rarr;tool-call mapping, not just a description.`}]},
+
+/* ---------- VALIDATION + WRAP-UP ---------- */
+{sec:"end",c:"amber",eyebrow:"Validation",t:"q",q:`Partway through a conversation, simply asking the agent "which tools have you called?" produces an accurate list. Is that just a party trick, or does it serve a <b>real production purpose</b>?`},
+
+{sec:"end",c:"amber",eyebrow:"Validation",t:"a",h:"Testing the full loop — and auditing tool usage",body:`
+<p>Live test: "explain how iPhones work in simple terms" correctly triggered <code>explain_concept</code>; a follow-up "generate 10 quiz questions about this" correctly triggered <code>quiz_me</code> — demonstrating conversational context maintained across multiple tool calls in one session.</p>
+<div class="note">Self-introspection on its own tool-usage history — the agent can accurately report which specific MCP tools it invoked earlier in the same session, functioning as a <b>built-in, conversational audit trail</b> without needing separate external logging to be queried.</div>`,
+cto:[`That tool-usage introspection capability is worth flagging as more than a party trick — it's a lightweight, built-in observability mechanism. For any production agentic tool, being able to ask (or programmatically query) "what tools were actually invoked for this session, and with what arguments" is essential for debugging, auditing, and cost attribution.`]},
+
+{sec:"end",c:"amber",eyebrow:"Wrap-up",t:"a",h:"Full project recap",body:`
+<ol style="color:#c9c7bf;line-height:1.9;padding-left:20px;font-size:.95rem">
+<li>MCP = a standardized "USB-C" protocol for AI agents to discover and call external tools, eliminating N&times;M custom integration work</li>
+<li>Server exposes tools + a manifest (auto-derived partly from docstrings) + an action endpoint for execution</li>
+<li>Gradio app + <code>mcp_server=True</code> = instant MCP server, no separate API layer needed — UI definition doubles as API contract</li>
+<li>Four streaming tools built on one shared pattern: parameterized system prompt &rarr; streamed OpenAI completion</li>
+<li>Fetching the manifest (schema URL) shows exactly what an agent "sees" — docstrings directly become tool descriptions</li>
+<li>OpenAI Agents SDK: Agent (instructions + tools) + MCPServerSse connection + Runner.run() in a conversation loop</li>
+<li>Agent reliably selects the correct tool per request, maintains context across turns, and can self-report its own tool-usage history</li>
+</ol>`},
+
+{sec:"end",c:"amber",eyebrow:"Final Recall",t:"r",h:"Final recall: questions worth carrying forward",qs:[
+{q:`How might this project's DIY MCP server compare to how MCP Apps or third-party connectors are packaged and discovered in a larger ecosystem?`,a:`Both rely on the same core concept — a manifest/schema an agent reads at runtime to discover capabilities — but a production ecosystem typically adds a discovery layer (a registry or directory) and stronger auth/permission handling on top of the bare manifest-plus-endpoint pattern shown here.`},
+{q:`Given how directly docstring quality translates to agent tool-selection accuracy, would an internal MCP documentation standard be worth drafting?`,a:`Yes — since the docstring IS the manifest description, treating MCP tool documentation with the rigor of a public API spec (before tools get built ad hoc) directly protects downstream agent reliability, not just human readability.`},
+{q:`At what point would routing complexity push you from one agent with a longer tool list toward the SDK's "handoffs" primitive?`,a:`Once tool count or routing logic grows enough that a single flat instruction set starts making inconsistent selections between overlapping-sounding tools — the same threshold question raised for n8n and for LangGraph's fifty-tools problem. Splitting into specialized agents with handoffs narrows each agent's decision space.`}]}
+];
+
+let i=0;
+const stage=document.getElementById('stage'),dots=document.getElementById('dots'),
+tabs=document.getElementById('tabs'),counter=document.getElementById('counter'),
+prevBtn=document.getElementById('prevBtn'),nextBtn=document.getElementById('nextBtn');
+SECTIONS.forEach(s=>{const b=document.createElement('button');b.className='tab';b.dataset.c=s.c;b.dataset.sec=s.id;b.textContent=s.label;b.onclick=()=>go(S.findIndex(x=>x.sec===s.id));tabs.appendChild(b);});
+S.forEach((sl,k)=>{const d=document.createElement('span');d.className='dot'+(sl.t==='q'?' q':'');d.tabIndex=0;d.setAttribute('role','button');d.setAttribute('aria-label','Slide '+(k+1));d.onclick=()=>go(k);d.onkeydown=e=>{if(e.key==='Enter')go(k)};dots.appendChild(d);});
+function lens(cto,dir){
+  let out='';
+  if(cto&&cto.length) out+='<details class="lens"><summary>CTO LENS</summary><div class="body"><ul class="pts">'+cto.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+  if(dir&&dir.length) out+='<details class="lens dir"><summary>DIRECTOR LENS</summary><div class="body"><ul class="pts">'+dir.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+  return out;
+}
+function go(k){
+  i=Math.max(0,Math.min(S.length-1,k));
+  const s=S[i];stage.innerHTML='';
+  const el=document.createElement('div');el.className='slide';
+  try{
+    if(s.t==='q'){
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div>'
+        +'<div class="qcard"><div class="qlabel">Think first &middot; predict before you peek</div>'
+        +'<div class="qtext">'+s.q+'</div>'
+        +'<div class="qsub">Form your answer in your head. Then press Next to compare.</div></div>';
+    } else if(s.t==='r'){
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'
+        +'<p>Answer from memory first. Tap a question to reveal the answer.</p>'
+        +s.qs.map(x=>'<details class="recall-item"><summary>'+x.q+'</summary><div class="ans">'+x.a+'</div></details>').join('')
+        +'<div class="recall-hint">Struggled on any? Jump back with the tabs above, then return.</div>';
+    } else {
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'+s.body+(((s.cto&&s.cto.length)||(s.dir&&s.dir.length))?lens(s.cto,s.dir):'');
+    }
+  }catch(err){
+    el.innerHTML='<div class="eyebrow rose">Render error</div><h2>Slide '+(i+1)+' failed to render</h2><p>'+String(err&&err.message||err)+'</p>';
+  }
+  stage.appendChild(el);
+  counter.textContent=(i+1)+' / '+S.length;
+  document.querySelectorAll('.dot').forEach((d,k2)=>d.classList.toggle('on',k2===i));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.sec===s.sec));
+  prevBtn.disabled=(i===0);
+  nextBtn.textContent=(i===S.length-1)?'Done \u2713':'Next \u2192';
+  nextBtn.disabled=(i===S.length-1);
+  document.querySelector('main').scrollTop=0;window.scrollTo(0,0);
+}
+prevBtn.onclick=()=>go(i-1);nextBtn.onclick=()=>go(i+1);
+document.addEventListener('keydown',e=>{if(e.target.closest('details'))return;if(e.key==='ArrowRight')go(i+1);if(e.key==='ArrowLeft')go(i-1);});
+go(0);
+</script>
+</body>
+</html>

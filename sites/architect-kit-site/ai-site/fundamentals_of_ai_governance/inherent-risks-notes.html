@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Governance — Architects Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0d14;
+    --bg-panel:#0f1420;
+    --bg-panel-2:#121828;
+    --grid-line:rgba(94,177,255,0.07);
+    --grid-line-strong:rgba(94,177,255,0.14);
+    --border:#1c2333;
+    --border-soft:#171d2c;
+    --text:#e7ecf5;
+    --text-dim:#93a0b8;
+    --text-faint:#5c6780;
+    --blue:#5eb1ff;
+    --blue-dim:#2b6ea8;
+    --amber:#eab04a;
+    --amber-dim:#8a672a;
+    --green:#5fcf9a;
+    --green-dim:#2f6d51;
+    --red:#f0665c;
+    --red-dim:#8a3630;
+    --purple:#b18fef;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', sans-serif;
+    --disp: 'Space Grotesk', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:
+      linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0/48px 48px,
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0/48px 48px,
+      var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.65;
+    padding-bottom:120px;
+  }
+  a{color:var(--blue);}
+
+  /* ===== HERO ===== */
+  .hero{
+    position:relative;
+    padding:64px 24px 40px;
+    border-bottom:1px solid var(--border);
+    overflow:hidden;
+  }
+  .hero::before{
+    content:"";
+    position:absolute; inset:0;
+    background: radial-gradient(600px 300px at 15% 0%, rgba(94,177,255,0.10), transparent 60%),
+                radial-gradient(500px 260px at 85% 20%, rgba(234,176,74,0.07), transparent 60%);
+    pointer-events:none;
+  }
+  .hero-inner{max-width:980px; margin:0 auto; position:relative;}
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:var(--mono); font-size:12px; letter-spacing:.14em;
+    color:var(--amber); text-transform:uppercase;
+    border:1px solid var(--amber-dim); background:rgba(234,176,74,0.06);
+    padding:5px 12px; border-radius:3px;
+  }
+  .eyebrow::before{content:"◆"; font-size:10px;}
+  h1.title{
+    font-family:var(--disp); font-weight:700;
+    font-size:clamp(30px,5vw,50px);
+    margin:18px 0 8px; letter-spacing:-0.02em;
+    background:linear-gradient(120deg,#fff,#a9c7ef 60%,var(--blue));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .subtitle{color:var(--text-dim); font-size:16px; max-width:620px;}
+  .meta-row{
+    display:flex; flex-wrap:wrap; gap:10px; margin-top:22px;
+    font-family:var(--mono); font-size:12px; color:var(--text-faint);
+  }
+  .meta-chip{
+    border:1px solid var(--border); padding:5px 10px; border-radius:3px;
+    background:var(--bg-panel);
+  }
+  .meta-chip b{color:var(--text-dim); font-weight:500;}
+
+  /* ===== CONTROL BAR ===== */
+  .controlbar{
+    position:sticky; top:0; z-index:50;
+    background:rgba(10,13,20,0.92); backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:14px;
+    padding:10px 24px; overflow-x:auto;
+  }
+  .cb-title{
+    font-family:var(--mono); font-size:11px; color:var(--text-faint);
+    text-transform:uppercase; letter-spacing:.1em; white-space:nowrap;
+  }
+  .cb-btn{
+    font-family:var(--mono); font-size:11.5px; color:var(--text);
+    background:var(--bg-panel-2); border:1px solid var(--border);
+    padding:6px 12px; border-radius:3px; cursor:pointer; white-space:nowrap;
+    transition:.15s;
+  }
+  .cb-btn:hover{border-color:var(--blue-dim); color:var(--blue);}
+  .cb-nav{display:flex; gap:6px; margin-left:auto;}
+  .cb-nav a{
+    font-family:var(--mono); font-size:11px; color:var(--text-faint);
+    text-decoration:none; border:1px solid transparent; padding:5px 8px; border-radius:3px;
+  }
+  .cb-nav a:hover{color:var(--blue); border-color:var(--border);}
+
+  /* ===== MAIN ===== */
+  main{max-width:980px; margin:0 auto; padding:40px 24px;}
+
+  section.chapter{
+    margin-bottom:26px;
+    border:1px solid var(--border);
+    border-radius:8px;
+    background:linear-gradient(180deg, var(--bg-panel), rgba(15,20,32,0.4));
+    scroll-margin-top:70px;
+    overflow:hidden;
+  }
+  .chapter-head{
+    display:flex; align-items:flex-start; gap:16px;
+    padding:22px 24px;
+    border-bottom:1px solid var(--border-soft);
+  }
+  .chapter-num{
+    font-family:var(--mono); font-size:13px; color:var(--bg);
+    background:var(--blue); min-width:34px; height:34px;
+    border-radius:6px; display:flex; align-items:center; justify-content:center;
+    font-weight:700; flex-shrink:0;
+  }
+  .chapter-titlewrap h2{
+    font-family:var(--disp); font-size:22px; margin:0 0 4px; letter-spacing:-0.01em;
+  }
+  .chapter-titlewrap .tag{
+    font-family:var(--mono); font-size:11px; color:var(--text-faint);
+    text-transform:uppercase; letter-spacing:.08em;
+  }
+  .chapter-body{padding:0 24px 24px;}
+
+  /* Recall question - click to reveal */
+  .recall{
+    margin:18px 0; border:1px dashed var(--blue-dim); border-radius:6px;
+    background:rgba(94,177,255,0.04); overflow:hidden;
+  }
+  .recall > summary{
+    list-style:none; cursor:pointer; padding:14px 16px;
+    display:flex; align-items:center; gap:10px;
+    font-family:var(--mono); font-size:12.5px; color:var(--blue);
+  }
+  .recall > summary::-webkit-details-marker{display:none;}
+  .recall > summary::before{content:"▸"; transition:.2s; display:inline-block; color:var(--blue);}
+  .recall[open] > summary::before{transform:rotate(90deg);}
+  .recall-label{text-transform:uppercase; letter-spacing:.1em; color:var(--text-faint); font-size:10.5px;}
+  .recall-q{color:var(--text);}
+  .recall-answer{
+    padding:0 16px 16px 40px; color:var(--text-dim); font-size:14.5px;
+    border-top:1px solid rgba(94,177,255,0.12); margin-top:2px; padding-top:14px;
+  }
+
+  h3.sub{
+    font-family:var(--disp); font-size:16.5px; color:var(--text);
+    margin:26px 0 10px; padding-left:12px; border-left:3px solid var(--amber);
+  }
+  p{color:var(--text-dim); font-size:15px; margin:10px 0;}
+  strong{color:var(--text); font-weight:600;}
+  ul, ol{color:var(--text-dim); font-size:15px; padding-left:22px;}
+  li{margin:6px 0;}
+  li::marker{color:var(--blue);}
+  code.inline{
+    font-family:var(--mono); font-size:12.5px; background:var(--bg-panel-2);
+    border:1px solid var(--border); padding:1px 6px; border-radius:3px; color:var(--amber);
+  }
+
+  /* Diagram frame */
+  .blueprint{
+    margin:18px 0; border:1px solid var(--border); border-radius:6px;
+    background:#0b0f1a;
+    background-image:linear-gradient(var(--grid-line-strong) 1px, transparent 1px),
+                      linear-gradient(90deg, var(--grid-line-strong) 1px, transparent 1px);
+    background-size:22px 22px;
+    position:relative; overflow-x:auto;
+  }
+  .blueprint::before{
+    content:"FIG";
+    position:absolute; top:8px; right:12px;
+    font-family:var(--mono); font-size:10px; color:var(--text-faint);
+    letter-spacing:.15em;
+  }
+  .blueprint pre{
+    margin:0; padding:20px 18px 16px;
+    font-family:var(--mono); font-size:12px; line-height:1.5;
+    color:var(--blue); white-space:pre; overflow-x:auto;
+  }
+  .blueprint .cap{
+    font-family:var(--mono); font-size:11px; color:var(--text-faint);
+    border-top:1px solid var(--border); padding:8px 16px; background:rgba(0,0,0,0.2);
+  }
+
+  /* Table */
+  .tablewrap{overflow-x:auto; margin:16px 0; border:1px solid var(--border); border-radius:6px;}
+  table{width:100%; border-collapse:collapse; font-size:13.5px; min-width:520px;}
+  thead th{
+    font-family:var(--mono); text-transform:uppercase; letter-spacing:.06em;
+    font-size:11px; color:var(--amber); text-align:left;
+    background:var(--bg-panel-2); padding:10px 14px; border-bottom:1px solid var(--border);
+  }
+  tbody td{padding:10px 14px; border-bottom:1px solid var(--border-soft); color:var(--text-dim);}
+  tbody tr:hover{background:rgba(94,177,255,0.03);}
+  tbody tr:last-child td{border-bottom:none;}
+
+  /* Architect's Lens - CTO/Director perspectives */
+  .lens{
+    margin:22px 0 6px; border:1px solid var(--amber-dim); border-radius:6px;
+    background:linear-gradient(180deg, rgba(234,176,74,0.06), transparent);
+    overflow:hidden;
+  }
+  .lens > summary{
+    list-style:none; cursor:pointer; display:flex; align-items:center; gap:10px;
+    padding:12px 16px; font-family:var(--mono); font-size:12px; color:var(--amber);
+    text-transform:uppercase; letter-spacing:.08em;
+  }
+  .lens > summary::-webkit-details-marker{display:none;}
+  .lens > summary::before{content:"⌂"; font-size:14px;}
+  .lens-arrow{margin-left:auto; transition:.2s; color:var(--text-faint);}
+  .lens[open] .lens-arrow{transform:rotate(180deg);}
+  .lens-body{padding:2px 16px 16px;}
+  .voice{
+    display:flex; gap:12px; padding:12px 0; border-top:1px solid rgba(234,176,74,0.12);
+  }
+  .voice:first-child{border-top:none;}
+  .voice-badge{
+    flex-shrink:0; width:74px; text-align:center;
+    font-family:var(--mono); font-size:10px; letter-spacing:.06em;
+    padding:4px 0; border-radius:3px; height:fit-content; text-transform:uppercase;
+  }
+  .voice.cto .voice-badge{background:rgba(94,177,255,0.12); color:var(--blue); border:1px solid var(--blue-dim);}
+  .voice.director .voice-badge{background:rgba(95,207,154,0.12); color:var(--green); border:1px solid var(--green-dim);}
+  .voice p{margin:0; font-size:14px; font-style:italic; color:var(--text-dim);}
+
+  /* Section-level collapsible wrapper toggle already via <details> on chapter */
+  details.chapter > summary{list-style:none; cursor:pointer;}
+  details.chapter > summary::-webkit-details-marker{display:none;}
+  .chevron{
+    margin-left:auto; font-family:var(--mono); font-size:16px; color:var(--text-faint);
+    transition:transform .2s; flex-shrink:0; align-self:center;
+  }
+  details.chapter[open] .chevron{transform:rotate(90deg);}
+
+  /* Nested mini-collapse for lists inside sections (used for pillar/factor breakdowns) */
+  .minifold{border:1px solid var(--border); border-radius:5px; margin:10px 0; background:var(--bg-panel-2);}
+  .minifold > summary{
+    list-style:none; cursor:pointer; padding:10px 14px; font-family:var(--mono);
+    font-size:12.5px; color:var(--text); display:flex; gap:8px; align-items:center;
+  }
+  .minifold > summary::-webkit-details-marker{display:none;}
+  .minifold > summary::before{content:"+"; color:var(--blue); font-weight:700; width:14px;}
+  .minifold[open] > summary::before{content:"–";}
+  .minifold-body{padding:0 14px 14px 36px;}
+  .minifold-body p, .minifold-body ul{margin:6px 0;}
+
+  /* Risk pyramid special */
+  .pyramid{display:flex; flex-direction:column; align-items:center; gap:0; padding:26px 16px;}
+  .pyramid-tier{
+    font-family:var(--mono); font-size:11.5px; text-align:center; padding:12px 20px;
+    margin:2px 0; border-radius:3px; color:#0a0d14; font-weight:700;
+    letter-spacing:.03em; width:100%; max-width:640px;
+  }
+  .pyramid-tier small{display:block; font-weight:500; font-size:10px; margin-top:3px; opacity:.85;}
+  .t1{background:var(--red); max-width:220px;}
+  .t2{background:var(--amber); max-width:360px;}
+  .t3{background:var(--blue); max-width:500px;}
+  .t4{background:var(--green); max-width:640px;}
+
+  /* Footer / progress */
+  .progress-note{
+    max-width:980px; margin:0 auto; padding:0 24px;
+    font-family:var(--mono); font-size:11.5px; color:var(--text-faint);
+    text-align:center; margin-top:10px;
+  }
+  footer{
+    max-width:980px; margin:60px auto 0; padding:24px; text-align:center;
+    border-top:1px solid var(--border); color:var(--text-faint); font-family:var(--mono); font-size:11.5px;
+  }
+
+  ::-webkit-scrollbar{height:8px; width:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--border); border-radius:4px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  /* notes width expansion - matches learning plan box */
+  .wrap,.container,main,header.hero,header.masthead,nav.toc,section.block,footer{max-width:100%!important;padding-left:24px!important;padding-right:24px!important;}
+</style>
+</head>
+<body>
+<div style="position:sticky;top:0;z-index:9999;background:#0a0d14;border-bottom:1px solid #1c2333;padding:10px 20px;font-family:-apple-system,'Segoe UI',sans-serif;"><a href="https://ai.shivawithin.in" style="color:#5eb1ff;text-decoration:none;font-size:13px;font-weight:600;letter-spacing:.04em;">← Back to Home</a></div>
+<!-- LEARNING PLAN -->
+<div style="margin:24px;background:#0f1520;border:1px solid #1e2836;border-left:4px solid #e0a030;border-radius:8px;padding:24px 28px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;">
+  <div style="color:#e0a030;font-size:13px;font-weight:700;letter-spacing:.08em;margin-bottom:14px;">&#9670; LEARNING PLAN — 2.5 HOURS DAILY</div>
+  <div style="overflow-x:auto;">
+  <table style="width:100%;border-collapse:collapse;font-size:13px;color:#c8d3e0;margin-bottom:18px;white-space:nowrap;">
+    <thead><tr style="color:#7c8ba0;border-bottom:1px solid #1e2836;">
+      <th style="padding:6px 10px;text-align:left;width:48px;">Step</th>
+      <th style="padding:6px 10px;text-align:left;">Activity</th>
+      <th style="padding:6px 10px;text-align:left;">Outcome</th>
+    </tr></thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">1</td><td style="padding:7px 10px;"><b>Complete the Udemy Course</b> — watch videos, understand concepts, don't rush</td><td style="padding:7px 10px;color:#5fbf7f;">Build strong fundamentals</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">2</td><td style="padding:7px 10px;"><b>Practice Everything</b> — complete exercises, assignments, and source code</td><td style="padding:7px 10px;color:#5fbf7f;">Gain hands-on experience</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">3</td><td style="padding:7px 10px;"><b>Revise with these notes</b></td><td style="padding:7px 10px;color:#5fbf7f;">Reinforce concepts and fill knowledge gaps</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">4</td><td style="padding:7px 10px;"><b>Earn the Udemy Certificate</b></td><td style="padding:7px 10px;color:#5fbf7f;">Ensure the course is completed end-to-end</td></tr>
+      <tr><td style="padding:7px 10px;color:#e0a030;font-weight:700;">5</td><td style="padding:7px 10px;"><b>Practise real world tough scenario</b> — scenario-based questions &amp; interview problems</td><td style="padding:7px 10px;color:#5fbf7f;">Develop practical and interview-ready skills</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">1.5 HRS</div>
+      <div style="font-size:12px;color:#c8d3e0;">Udemy Videos + Exercises + Source Code</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Notes Revision</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Scenario-Based Questions &amp; Practical Problems</div>
+    </div>
+  </div>
+  <div style="color:#f0f4f8;font-size:12px;font-weight:600;letter-spacing:.04em;">GOAL: <span style="color:#e0a030;">Learn &#8594; Practice &#8594; Revise &#8594; Complete &#8594; Apply</span></div>
+</div>
+<!-- END LEARNING PLAN -->
+
+<div class="hero">
+  <div class="hero-inner">
+    <span class="eyebrow">Architects Lab · Governance Module</span>
+    <h1 class="title">Inherent Risks of AI</h1>
+    <p class="subtitle">The risk landscape a governance framework must navigate — security, ethics, society, law, opacity, and discrimination — mapped so it can be managed proactively, not discovered reactively.</p>
+    <div class="meta-row">
+      <span class="meta-chip"><b>Source:</b> Ultimate AI Governance Master Notes — Inherent Risks of AI</span>
+      <span class="meta-chip"><b>Sections:</b> 6</span>
+      <span class="meta-chip"><b>Format:</b> Recall → Structure → Diagram → Lens</span>
+      <span class="meta-chip"><b>Context:</b> Wealth/Demat platform, regulated fintech</span>
+    </div>
+  </div>
+</div>
+
+<div class="controlbar">
+  <span class="cb-title">Controls</span>
+  <button class="cb-btn" id="expandAll">▾ Expand all</button>
+  <button class="cb-btn" id="collapseAll">▸ Collapse all</button>
+  <div class="cb-nav">
+    <a href="#s1">01</a><a href="#s2">02</a><a href="#s3">03</a><a href="#s4">04</a><a href="#s5">05</a><a href="#s6">06</a>
+  </div>
+</div>
+
+<main>
+
+<!-- ============ SECTION 1 ============ -->
+<details class="chapter" id="s1" open>
+  <summary class="chapter-head">
+    <span class="chapter-num">01</span>
+    <div class="chapter-titlewrap">
+      <h2>Security &amp; Operational Control Risks</h2>
+      <span class="tag">Inherent Risks · Security</span>
+    </div>
+    <span class="chevron">›</span>
+  </summary>
+  <div class="chapter-body">
+
+    <details class="recall">
+      <summary><span class="recall-label">Recall</span><span class="recall-q">What makes AI systems uniquely vulnerable from a security and operational perspective, and how can governance address risks like adversarial attacks and silent failures?</span></summary>
+      <div class="recall-answer">The traits that make AI powerful — adaptability, complexity, reliance on data — also create new attack surfaces: <strong>excessive dependency, adversarial inputs, brittle edge-case behavior, and traceability gaps</strong>. Governance addresses these with continuous monitoring, pre-defined fallbacks, adversarial testing, and immutable audit logs — not standard software QA alone.</div>
+    </details>
+
+    <h3 class="sub">Beyond Traditional Cybersecurity</h3>
+    <p>AI introduces new classes of risk that go beyond standard software vulnerabilities. The very traits that make AI powerful — adaptability, complexity, and reliance on data — create new attack surfaces and failure modes.</p>
+
+    <h3 class="sub">Key Security &amp; Operational Risks</h3>
+    <details class="minifold">
+      <summary>Excessive Dependency</summary>
+      <div class="minifold-body"><p>Automating critical operations without fallback mechanisms creates a single point of failure. If the model degrades, context shifts, or data drifts, the organization may suffer large-scale errors before anyone notices. Users often develop automation bias, blindly trusting AI recommendations.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Adversarial Attacks</summary>
+      <div class="minifold-body"><p>Malicious actors can craft inputs specifically designed to fool AI models — subtle pixel changes can make a vision system misclassify a stop sign as a speed limit sign, or carefully crafted text can bypass content filters. These attacks exploit model weaknesses invisible in normal testing.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Lack of Robustness</summary>
+      <div class="minifold-body"><p>Many models perform well on clean, ideal data but fail spectacularly on edge cases, anomalies, or rare events. In healthcare, finance, or autonomous systems, such failures can be catastrophic. Robustness is not just about accuracy — it's about safe degradation under stress.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Traceability Gaps</summary>
+      <div class="minifold-body"><p>When an AI makes an automated decision without logging the reasoning path, internal control breaks down. You cannot audit, correct, or explain the decision — a control deficiency that undermines accountability and incident response.</p></div>
+    </details>
+
+    <h3 class="sub">Governance Controls Needed</h3>
+    <ul>
+      <li>Continuous monitoring with drift detection and performance alerts</li>
+      <li>Pre-defined fallback and escalation procedures (e.g. switch to rule-based system)</li>
+      <li>Adversarial robustness testing as part of validation</li>
+      <li>Immutable audit logs capturing inputs, model version, and decision rationale</li>
+      <li>Access controls and change management for model updates</li>
+    </ul>
+
+    <div class="blueprint">
+<pre>
+   AI SECURITY & OPERATIONAL RISK LANDSCAPE
+   +--------------------------------------------------+
+   |                      AI System                   |
+   +----+----------+----------+------------+----------+
+        |          |          |            |
+        v          v          v            v
+   +--------+ +--------+ +--------+ +--------+
+   |Excessive| |Advers. | |Lack of | |Traceab.|
+   |Depen.   | |Attacks | |Robust. | |Gaps    |
+   +--------+ +--------+ +--------+ +--------+
+        |          |          |            |
+        +----------+----------+------------+
+                           |
+                     Governance Shield
+          (monitoring, fallbacks, audits, testing)
+</pre>
+      <div class="cap">Fig 1.1 — Four distinct risk vectors converging, mitigated by a single governance shield.</div>
+    </div>
+
+    <details class="lens">
+      <summary>Architect's Lens — CTO &amp; Director Perspective <span class="lens-arrow">▾</span></summary>
+      <div class="lens-body">
+        <div class="voice cto">
+          <span class="voice-badge">CTO</span>
+          <p>"I view adversarial robustness as a first-class security requirement, not a research curiosity. Our CI/CD pipeline must include adversarial test suites, and our incident response playbook must cover AI-specific failure modes — like automated rollback to a safe baseline. If we can't trust the model under attack, we can't deploy it in any security-sensitive context."</p>
+        </div>
+        <div class="voice director">
+          <span class="voice-badge">Director</span>
+          <p>"Excessive dependency is a business continuity risk. If we can't operate without the AI, we're one model failure away from a major operational crisis. I want every AI-driven critical process to have a documented manual fallback or a rules-based alternative. That's not a lack of confidence in AI; it's basic risk management that the board expects to see."</p>
+        </div>
+      </div>
+    </details>
+
+  </div>
+</details>
+
+<!-- ============ SECTION 2 ============ -->
+<details class="chapter" id="s2">
+  <summary class="chapter-head">
+    <span class="chapter-num">02</span>
+    <div class="chapter-titlewrap">
+      <h2>Ethical Risks</h2>
+      <span class="tag">Inherent Risks · Ethics</span>
+    </div>
+    <span class="chevron">›</span>
+  </summary>
+  <div class="chapter-body">
+
+    <details class="recall">
+      <summary><span class="recall-label">Recall</span><span class="recall-q">When an AI system performs exactly as designed technically, how can it still conflict with fundamental human values like fairness, dignity, and autonomy?</span></summary>
+      <div class="recall-answer">Ethical risk is independent of technical accuracy — a system can hit every performance target and still <strong>discriminate invisibly, deny autonomy through opacity, invade privacy via inference, or manipulate users psychologically</strong>. Technical correctness and ethical soundness are separate validation tracks.</div>
+    </details>
+
+    <h3 class="sub">Defining Ethical Risk</h3>
+    <p>An AI system can be highly accurate and still produce outcomes that violate ethical principles. Ethical risk arises when system behavior clashes with values such as equality, dignity, freedom, privacy, or justice — regardless of intent.</p>
+
+    <h3 class="sub">Major Ethical Risk Categories</h3>
+    <details class="minifold">
+      <summary>Discrimination and Unfair Bias</summary>
+      <div class="minifold-body"><p>Even without explicit discriminatory programming, models trained on biased data can systematically disadvantage certain groups in hiring, credit, or judicial decisions. This perpetuates and amplifies societal inequalities, often invisibly.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Lack of Transparency as an Ethical Issue</summary>
+      <div class="minifold-body"><p>When a person is evaluated or affected by an automated system without knowing, or without being able to understand the rationale, it violates principles of autonomy and informed consent. The "black box" is not just a technical flaw — it's a denial of human dignity.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Privacy Invasion</summary>
+      <div class="minifold-body"><p>AI can infer sensitive attributes (health, political orientation, emotions) from seemingly innocuous data without consent. Using these inferences for decision-making crosses ethical lines, even if not strictly illegal in some jurisdictions.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Manipulation and Psychological Impact</summary>
+      <div class="minifold-body"><p>AI systems that interact with humans — chatbots, virtual assistants, content recommenders — can create emotional bonds, influence opinions, or nudge behavior. If they deceive users about their non-human nature or exploit cognitive biases, they undermine autonomy and informed choice.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Unavoidable Evaluation</summary>
+      <div class="minifold-body"><p>When individuals cannot opt out of AI assessment without penalty (e.g. job applicants, students, welfare recipients), the power imbalance creates an ethical obligation to ensure fairness, transparency, and appeal mechanisms.</p></div>
+    </details>
+
+    <h3 class="sub">Governance Response</h3>
+    <ul>
+      <li>Establish an AI Ethics Committee with diverse membership</li>
+      <li>Mandate Ethical Impact Assessments before deployment</li>
+      <li>Define and enforce transparency requirements (e.g. notice of automated decision-making)</li>
+      <li>Regular post-deployment ethical audits, not just technical performance reviews</li>
+      <li>Whistleblower channels for ethical concerns</li>
+    </ul>
+
+    <div class="blueprint">
+<pre>
+   ETHICAL AI ALIGNMENT FRAMEWORK
+   +-----------------------------+
+   | Core Values:                |
+   | Fairness, Dignity, Autonomy,|
+   | Privacy, Justice            |
+   +-----------------------------+
+             |
+             v
+   +-----------------------------+
+   | AI System Design & Data     |
+   |  - Bias checks              |
+   |  - Consent mechanisms       |
+   |  - Explainability design    |
+   +-----------------------------+
+             |
+             v
+   +-----------------------------+
+   | Deployment with Human Rights|
+   | Impact Assessment           |
+   +-----------------------------+
+             |
+             v
+   +-----------------------------+
+   | Continuous Ethical Monitoring|
+   +-----------------------------+
+</pre>
+      <div class="cap">Fig 2.1 — Core values flow down into design, deployment review, and continuous monitoring.</div>
+    </div>
+
+    <details class="lens">
+      <summary>Architect's Lens — CTO &amp; Director Perspective <span class="lens-arrow">▾</span></summary>
+      <div class="lens-body">
+        <div class="voice cto">
+          <span class="voice-badge">CTO</span>
+          <p>"I want ethical metrics treated with the same rigor as latency or accuracy. If a model fails fairness thresholds, our MLOps pipeline must block it from production, just like a failing unit test. That means investing in fairness-aware tooling and giving engineers the power to say 'no' on ethical grounds."</p>
+        </div>
+        <div class="voice director">
+          <span class="voice-badge">Director</span>
+          <p>"Ethical failures don't just violate values; they destroy brand equity and invite regulation. I support establishing an independent AI Ethics Board that can halt a project if it poses unacceptable ethical risk. This signals to our customers and employees that we take responsible AI seriously — it's a market differentiator, not a compliance burden."</p>
+        </div>
+      </div>
+    </details>
+
+  </div>
+</details>
+
+<!-- ============ SECTION 3 ============ -->
+<details class="chapter" id="s3">
+  <summary class="chapter-head">
+    <span class="chapter-num">03</span>
+    <div class="chapter-titlewrap">
+      <h2>Social Risks</h2>
+      <span class="tag">Inherent Risks · Society</span>
+    </div>
+    <span class="chevron">›</span>
+  </summary>
+  <div class="chapter-body">
+
+    <details class="recall">
+      <summary><span class="recall-label">Recall</span><span class="recall-q">Beyond individual harm, how can the widespread use of AI create negative effects at a societal scale, and why should organizations care?</span></summary>
+      <div class="recall-answer">Social risks accumulate across many systems and users rather than showing up in a single deployment — <strong>job displacement, misinformation, digital exclusion, and cultural homogenization</strong>. Organizations should care because ignoring them invites regulation, boycotts, and loss of "social license to operate."</div>
+    </details>
+
+    <h3 class="sub">The Collective Impact of AI</h3>
+    <p>Social risks are those that affect communities, labor markets, democratic processes, and cultural diversity. They may not be directly visible in a single deployment but accumulate across many systems and users.</p>
+
+    <h3 class="sub">Four Critical Social Risks</h3>
+    <details class="minifold">
+      <summary>Mass Automation and Employment Displacement</summary>
+      <div class="minifold-body"><p>AI can automate both manual and cognitive tasks, making entire job categories obsolete. This leads to structural unemployment, skill gaps, and widening inequality between those who can adapt and those who cannot. Organizations that ignore this risk may face backlash, regulation, or talent pipeline issues.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Information Fragmentation and Misinformation</summary>
+      <div class="minifold-body"><p>Generative AI can produce convincing falsehoods at scale, create hyper-personalized echo chambers, and manipulate public opinion. This erodes democratic trust, fuels polarization, and can be weaponized against institutions.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Digital Exclusion</summary>
+      <div class="minifold-body"><p>As AI becomes the gatekeeper for essential services (credit, education, public benefits), those lacking digital literacy or access are systematically excluded — creating a two-tier society where the digitally disenfranchised lose access to opportunities.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Cultural Homogenization</summary>
+      <div class="minifold-body"><p>When AI models are trained predominantly on data from dominant cultures or languages, they reinforce stereotypes, marginalize minority voices, and promote a narrow worldview — a loss of cultural diversity and linguistic richness.</p></div>
+    </details>
+
+    <h3 class="sub">Governance Beyond the Organization</h3>
+    <ul>
+      <li>Incorporate Social Impact Assessments as part of the AI governance lifecycle</li>
+      <li>Engage with affected communities and vulnerable groups during design</li>
+      <li>Promote diversity in training data and development teams</li>
+      <li>Establish principles of inclusion, accessibility, and non-discrimination that extend to societal effects</li>
+      <li>Transparent reporting on workforce transition plans and algorithmic literacy initiatives</li>
+    </ul>
+
+    <div class="blueprint">
+<pre>
+   AI SOCIAL RISK SPECTRUM
+   +-------------------------------------------------------+
+   |                        SOCIETY                        |
+   +---+---------------+---------------+-------------------+
+       |               |               |
+       v               v               v
+   +-------+      +--------+      +------------+
+   |Employment|   |Information|  |Digital    |
+   |Displace. |   |Fragmentation| |Exclusion  |
+   +-------+      +--------+      +------------+
+       |               |               |
+       +-------+-------+-------+-------+
+                               |
+                               v
+                     Cultural Homogenization
+</pre>
+      <div class="cap">Fig 3.1 — Three visible societal risks feeding into the slower, quieter risk of cultural homogenization.</div>
+    </div>
+
+    <details class="lens">
+      <summary>Architect's Lens — CTO &amp; Director Perspective <span class="lens-arrow">▾</span></summary>
+      <div class="lens-body">
+        <div class="voice cto">
+          <span class="voice-badge">CTO</span>
+          <p>"I can't solve societal displacement alone, but I can ensure our AI projects are designed to augment human capability, not just replace it. I also push for building accessibility and multi-language support into our products from the start — inclusion should be an engineering requirement, not an afterthought."</p>
+        </div>
+        <div class="voice director">
+          <span class="voice-badge">Director</span>
+          <p>"Social license to operate is real. If our AI is seen as job-destroying or democracy-undermining, we will face regulatory crackdowns and consumer boycotts. I want our annual report to include a section on AI's social impact and our mitigation efforts. This transparency builds long-term trust and aligns with ESG goals that investors increasingly demand."</p>
+        </div>
+      </div>
+    </details>
+
+  </div>
+</details>
+
+<!-- ============ SECTION 4 ============ -->
+<details class="chapter" id="s4">
+  <summary class="chapter-head">
+    <span class="chapter-num">04</span>
+    <div class="chapter-titlewrap">
+      <h2>Legal &amp; Fundamental Rights Risks</h2>
+      <span class="tag">Inherent Risks · Legal</span>
+    </div>
+    <span class="chevron">›</span>
+  </summary>
+  <div class="chapter-body">
+
+    <details class="recall">
+      <summary><span class="recall-label">Recall</span><span class="recall-q">How can an AI system, even when well-intentioned, violate fundamental legal rights, and what proactive legal governance measures are non-negotiable?</span></summary>
+      <div class="recall-answer">Legal risk doesn't require intent — <strong>indirect discrimination via proxy variables, missing human involvement in significant automated decisions (GDPR Art. 22), unlawful data reuse, and unchecked content filtering</strong> can all trigger liability regardless of purpose. Non-negotiables: legal counsel involved end-to-end, mandatory Fundamental Rights Impact Assessments for high-risk systems, and a human review channel for every significant automated decision.</div>
+    </details>
+
+    <h3 class="sub">The Legal Landscape</h3>
+    <p>AI must operate within the bounds of existing and emerging law. Legal risks arise when systems infringe upon protected rights, even unintentionally. Key legal frameworks include GDPR (especially Article 22), anti-discrimination laws, consumer protection, and sector-specific regulations.</p>
+
+    <h3 class="sub">Primary Legal Risks</h3>
+    <details class="minifold">
+      <summary>Indirect Discrimination</summary>
+      <div class="minifold-body"><p>Using seemingly neutral variables (postal code, browsing history) that correlate with protected characteristics can result in unlawful discrimination. Intent is irrelevant — disparate impact alone can trigger liability.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Right to an Explanation (GDPR Art. 22)</summary>
+      <div class="minifold-body"><p>Individuals have the right not to be subject to solely automated decisions producing legal or similarly significant effects without meaningful human involvement. A fully autonomous loan denial or job screening without human review likely violates this right.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Unlawful Data Processing</summary>
+      <div class="minifold-body"><p>Using personal data without a valid legal basis, repurposing data beyond original consent, or retaining data longer than necessary can result in heavy fines. In AI, this often happens when training datasets are reused for new models.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Freedom of Expression &amp; Information</summary>
+      <div class="minifold-body"><p>AI-driven content moderation or recommendation systems that filter, silence, or prioritize information without clear, auditable criteria may infringe on fundamental freedoms, especially when applied at scale.</p></div>
+    </details>
+
+    <h3 class="sub">Governance Mitigations</h3>
+    <ul>
+      <li>Involve legal counsel from design through retirement, not just at launch</li>
+      <li>Conduct mandatory Fundamental Rights Impact Assessments (FRIA) for high-risk systems</li>
+      <li>Document every key decision regarding data usage, model selection, and override mechanisms</li>
+      <li>Ensure every automated decision that significantly affects individuals includes a human review channel</li>
+    </ul>
+
+    <div class="blueprint">
+<pre>
+   LEGAL COMPLIANCE LIFECYCLE CHECKLIST
+   +-----------------------------+
+   | Design Phase                |
+   | - Legal basis for data?     |
+   | - FRIA initiated?           |
+   +-----------------------------+
+                 |
+                 v
+   +-----------------------------+
+   | Development & Validation    |
+   | - Discrimination testing?   |
+   | - Explainability feasible? |
+   +-----------------------------+
+                 |
+                 v
+   +-----------------------------+
+   | Deployment                  |
+   | - Human override in place?  |
+   | - User notice provided?     |
+   +-----------------------------+
+                 |
+                 v
+   +-----------------------------+
+   | Monitoring                  |
+   | - Logging for audits?       |
+   | - Consent changes handled? |
+   +-----------------------------+
+</pre>
+      <div class="cap">Fig 4.1 — Legal checkpoints threaded through every lifecycle phase, not just a pre-launch review.</div>
+    </div>
+
+    <details class="lens">
+      <summary>Architect's Lens — CTO &amp; Director Perspective <span class="lens-arrow">▾</span></summary>
+      <div class="lens-body">
+        <div class="voice cto">
+          <span class="voice-badge">CTO</span>
+          <p>"Compliance isn't just about avoiding fines; it's about building systems that can withstand legal scrutiny without costly re-architecture later. I want 'explainability by design' and 'human oversight interface' to be standard architectural patterns, not retrofits. Legal requirements should be treated as non-functional requirements, enforced in the architecture review board."</p>
+        </div>
+        <div class="voice director">
+          <span class="voice-badge">Director</span>
+          <p>"A GDPR fine can be up to 4% of global turnover — that's an existential risk. But beyond fines, legal violations destroy customer trust. I mandate that every high-risk AI project gets a legal sign-off gate before deployment, and I personally review the FRIA summary. If we can't demonstrate compliance, we don't launch."</p>
+        </div>
+      </div>
+    </details>
+
+  </div>
+</details>
+
+<!-- ============ SECTION 5 ============ -->
+<details class="chapter" id="s5">
+  <summary class="chapter-head">
+    <span class="chapter-num">05</span>
+    <div class="chapter-titlewrap">
+      <h2>The Risk of Opacity: The Black Box Problem</h2>
+      <span class="tag">Inherent Risks · Transparency</span>
+    </div>
+    <span class="chevron">›</span>
+  </summary>
+  <div class="chapter-body">
+
+    <details class="recall">
+      <summary><span class="recall-label">Recall</span><span class="recall-q">Why is an opaque AI system inherently ungovernable, and how does a lack of transparency cascade into trust, compliance, and improvement failures?</span></summary>
+      <div class="recall-answer">Opacity cascades: <strong>users lose trust → regulators flag non-compliance → auditors can't verify fairness or legality → business and compliance teams can't even suggest improvements</strong> because they don't understand what's happening inside. Transparency isn't about revealing source code — it's making the system's logic, data, and boundaries clear enough to be understood and challenged.</div>
+    </details>
+
+    <h3 class="sub">Transparency as a Governance Foundation</h3>
+    <p>Transparency doesn't require revealing source code; it means the system's functioning, data usage, decision criteria, and boundaries are clear enough for stakeholders to understand, trust, and challenge.</p>
+
+    <h3 class="sub">Consequences of Opacity</h3>
+    <details class="minifold">
+      <summary>Loss of Trust</summary>
+      <div class="minifold-body"><p>Users and employees reject systems they can't understand, especially when affected personally. This reduces adoption and can spark public backlash.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Regulatory Non-Compliance</summary>
+      <div class="minifold-body"><p>Regulations like GDPR and the EU AI Act demand explainability for certain decisions. An opaque model in a high-risk context is a compliance violation waiting to be discovered.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Audit Impossibility</summary>
+      <div class="minifold-body"><p>If internal auditors cannot trace how decisions are made, they cannot verify fairness, accuracy, or legality. This weakens internal controls and increases legal exposure.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Stunted Improvement</summary>
+      <div class="minifold-body"><p>Business teams can't suggest meaningful improvements if they don't grasp model limitations. Compliance teams can't anticipate risks without knowing which variables matter. User feedback becomes useless if the system's reasoning is hidden.</p></div>
+    </details>
+
+    <h3 class="sub">What Transparency Means in Practice</h3>
+    <ul>
+      <li>Clear <strong>documentation</strong> of the model's purpose, training data, limitations, and performance across segments</li>
+      <li><strong>Explainability methods</strong> (e.g. SHAP, LIME) that produce plain-language justifications for individual decisions</li>
+      <li>Defined <strong>boundaries</strong> of use and explicit off-limits applications</li>
+      <li>A <strong>complaint and appeal mechanism</strong> accessible to affected individuals</li>
+    </ul>
+
+    <div class="blueprint">
+<pre>
+   TRANSPARENCY LAYER MODEL
+   +-------------------------------+
+   | PUBLIC & USER LEVEL          |
+   | - Notice of automation       |
+   | - Plain-language explanations|
+   | - How to challenge decisions |
+   +-------------------------------+
+   +-------------------------------+
+   | INTERNAL AUDITOR LEVEL       |
+   | - Model documentation        |
+   | - Variable importance        |
+   | - Performance by subgroup    |
+   +-------------------------------+
+   +-------------------------------+
+   | REGULATOR LEVEL              |
+   | - Full technical dossier     |
+   | - Risk management evidence   |
+   | - Human oversight logs       |
+   +-------------------------------+
+</pre>
+      <div class="cap">Fig 5.1 — Transparency is layered: different stakeholders need different depths of explanation.</div>
+    </div>
+
+    <details class="lens">
+      <summary>Architect's Lens — CTO &amp; Director Perspective <span class="lens-arrow">▾</span></summary>
+      <div class="lens-body">
+        <div class="voice cto">
+          <span class="voice-badge">CTO</span>
+          <p>"I treat model explainability like I treat database encryption — it must be built into the platform, not bolted on. We invest in tools that auto-generate model documentation and explanation APIs. If a model can't be explained to our own risk team, it doesn't belong in production."</p>
+        </div>
+        <div class="voice director">
+          <span class="voice-badge">Director</span>
+          <p>"Transparency is our defense when things go wrong. If we can show we documented, tested, and monitored the model, we can shift the narrative from negligence to responsible management. I want every critical AI decision to be explainable to a non-technical stakeholder in under five minutes — if it can't pass that test, we need to rethink the approach."</p>
+        </div>
+      </div>
+    </details>
+
+  </div>
+</details>
+
+<!-- ============ SECTION 6 ============ -->
+<details class="chapter" id="s6">
+  <summary class="chapter-head">
+    <span class="chapter-num">06</span>
+    <div class="chapter-titlewrap">
+      <h2>Algorithmic Discrimination &amp; Lack of Explainability</h2>
+      <span class="tag">Inherent Risks · Fairness × Transparency</span>
+    </div>
+    <span class="chevron">›</span>
+  </summary>
+  <div class="chapter-body">
+
+    <details class="recall">
+      <summary><span class="recall-label">Recall</span><span class="recall-q">How are algorithmic discrimination and explainability two sides of the same governance coin, and what concrete practices can turn them from risks into managed controls?</span></summary>
+      <div class="recall-answer">Discrimination hides in probabilistic outputs; without explainability you can't detect, prove, or correct it — the two risks compound into one governance failure. Concrete controls: <strong>subgroup fairness testing, hard fairness thresholds, explainability constraints for high-risk domains, mandatory human-in-the-loop review, and full documentation of every decision variable</strong>.</div>
+    </details>
+
+    <h3 class="sub">The Twin Threat</h3>
+    <p>Algorithmic discrimination occurs when a model produces systematically unfair outcomes for protected groups, regardless of intent. Lack of explainability means you can't detect, prove, or correct that discrimination. Together, they form a governance nightmare: unfair outcomes hidden behind an opaque wall.</p>
+
+    <h3 class="sub">Why These Risks Are So Dangerous</h3>
+    <ul>
+      <li><strong>Subtlety:</strong> discrimination can persist for months or years without detection because it's buried in probabilistic outputs, not explicit rules.</li>
+      <li><strong>Perceived Objectivity:</strong> people tend to trust machine outputs as neutral, making biased decisions harder to challenge.</li>
+      <li><strong>Legal Cascade:</strong> discrimination leads to lawsuits; inability to explain leads to regulatory penalties. Both erode reputation and customer confidence.</li>
+    </ul>
+
+    <h3 class="sub">Mandatory Governance Controls</h3>
+    <details class="minifold">
+      <summary>Subgroup Fairness Testing</summary>
+      <div class="minifold-body"><p>Continuously evaluate model performance across demographic segments using metrics like equal opportunity and demographic parity difference.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Fairness Thresholds</summary>
+      <div class="minifold-body"><p>Establish concrete, documented thresholds. If a model's fairness metric falls below the threshold, it cannot be deployed or must be remediated.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Explainability Constraints</summary>
+      <div class="minifold-body"><p>In high-risk domains (hiring, credit, healthcare), require that the model be inherently explainable (e.g. using interpretable models) or paired with a strong post-hoc explanation method. If explainability cannot be achieved, restrict the model's use.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Human-in-the-Loop</summary>
+      <div class="minifold-body"><p>For decisions significantly affecting individuals, mandate a human review step with the authority to override, not just rubber-stamp.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Full Documentation of Decision Variables</summary>
+      <div class="minifold-body"><p>List every feature used by the model and justify why it is not a proxy for a protected characteristic.</p></div>
+    </details>
+
+    <div class="blueprint">
+<pre>
+   FAIRNESS-EXPLAINABILITY GOVERNANCE LOOP
+   +-----------------------+
+   | Train Model           |
+   +-----------+-----------+
+               |
+               v
+   +-----------+-----------+
+   | Fairness Audit        |
+   | (by subgroup)         |
+   +-----------+-----------+
+          |        |
+    Pass  |        | Fail
+          v        v
+   +--------+  +-------------------+
+   |Explain |  | Mitigate & Retrain|
+   |ability |  | or Kill Project   |
+   |check   |  +-------------------+
+   +----+---+
+        | (if explainable)
+        v
+   +-----------------+
+   | Deploy with     |
+   | Monitoring &    |
+   | Human Review    |
+   +-----------------+
+</pre>
+      <div class="cap">Fig 6.1 — Fairness and explainability as sequential gates, both required before deployment.</div>
+    </div>
+
+    <details class="lens">
+      <summary>Architect's Lens — CTO &amp; Director Perspective <span class="lens-arrow">▾</span></summary>
+      <div class="lens-body">
+        <div class="voice cto">
+          <span class="voice-badge">CTO</span>
+          <p>"I want fairness and explainability metrics integrated into our model registry. Every model version gets a 'governance score' that combines accuracy, fairness, and explainability. Low scores block promotion. This makes governance tangible for data scientists and creates a culture of responsible excellence."</p>
+        </div>
+        <div class="voice director">
+          <span class="voice-badge">Director</span>
+          <p>"If a model discriminates and we can't explain why, we're completely exposed — legally and reputationally. I'll authorize investment in explainability tools and bias audits because the cost is minuscule compared to a class-action lawsuit or a regulatory ban. I also want a quarterly fairness report on every high-risk model presented to the risk committee. This is board-level governance."</p>
+        </div>
+      </div>
+    </details>
+
+  </div>
+</details>
+
+</main>
+
+<div class="progress-note">— End of module · 6/6 sections · use ▾ Expand all to review before an interview run-through —</div>
+
+<footer>
+  ARCHITECTS LAB &nbsp;·&nbsp; Inherent Risks of AI &nbsp;·&nbsp; compiled from Ultimate AI Governance Master Notes
+</footer>
+
+<script>
+  document.getElementById('expandAll').addEventListener('click', () => {
+    document.querySelectorAll('details').forEach(d => d.open = true);
+  });
+  document.getElementById('collapseAll').addEventListener('click', () => {
+    document.querySelectorAll('details.chapter').forEach(d => d.open = false);
+    document.querySelectorAll('details:not(.chapter)').forEach(d => d.open = false);
+  });
+</script>
+
+</body>
+</html>

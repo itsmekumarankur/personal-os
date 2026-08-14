@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Architects Lab — AWS Cloud Fundamentals (for the AI Practitioner Exam)</title>
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#121821; --panel2:#161d28; --border:#22303f;
+    --text:#dbe4ee; --muted:#7d92a8; --accent:#39d3ac; --accent2:#f2b84b;
+    --danger:#ef6a6a; --code:#0d1319; --tag:#1c2a3a;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    line-height:1.6; padding:0 0 80px 0;
+  }
+  header{
+    padding:36px 24px 24px; border-bottom:1px solid var(--border);
+    background:linear-gradient(180deg,#0e141c,#0b0f14);
+  }
+  .eyebrow{color:var(--accent); font-size:12px; letter-spacing:2px; text-transform:uppercase; font-weight:600;}
+  h1{margin:8px 0 6px; font-size:28px; color:#f2f6fa;}
+  .sub{color:var(--muted); font-size:14px; max-width:780px;}
+  .course-link{
+    display:inline-block; margin-top:14px; font-size:13px; font-weight:600;
+    color:var(--accent); text-decoration:none; border:1px solid var(--border);
+    background:var(--panel2); padding:8px 14px; border-radius:6px;
+  }
+  .course-link:hover{border-color:var(--accent); background:#152030;}
+  .toolbar{
+    display:flex; gap:10px; padding:16px 24px; position:sticky; top:0;
+    background:rgba(11,15,20,0.95); backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--border); z-index:10; flex-wrap:wrap;
+  }
+  button.ctrl{
+    background:var(--panel2); color:var(--text); border:1px solid var(--border);
+    padding:8px 14px; border-radius:6px; cursor:pointer; font-size:13px;
+  }
+  button.ctrl:hover{border-color:var(--accent); color:var(--accent);}
+  .wrap{max-width:920px; margin:0 auto; padding:24px;}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    margin-bottom:16px; overflow:hidden;
+  }
+  .card-head{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:16px 20px; cursor:pointer; user-select:none;
+  }
+  .card-head:hover{background:var(--panel2);}
+  .card-title{font-size:16px; font-weight:600; color:#f2f6fa; display:flex; align-items:center; gap:10px;}
+  .tag{
+    font-size:10px; text-transform:uppercase; letter-spacing:1px;
+    background:var(--tag); color:var(--accent); padding:3px 8px; border-radius:4px; font-weight:700;
+  }
+  .tag.arch{color:var(--accent2);}
+  .tag.exam{color:#c792ea;}
+  .chevron{color:var(--muted); transition:transform .2s;}
+  .card.open .chevron{transform:rotate(90deg);}
+  .card-body{
+    max-height:0; overflow:hidden; transition:max-height .25s ease;
+    padding:0 20px;
+  }
+  .card.open .card-body{ max-height:4500px; padding:0 20px 20px; }
+  p{margin:8px 0;}
+  .questions{
+    background:var(--code); border-left:3px solid var(--accent);
+    border-radius:6px; padding:12px 16px; margin:14px 0;
+  }
+  .questions h4{margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--accent);}
+  .questions ul{margin:0; padding-left:18px;}
+  .questions li{margin:6px 0; color:#c8d6e2;}
+  .archnote{
+    background:var(--code); border-left:3px solid var(--accent2);
+    border-radius:6px; padding:12px 16px; margin:14px 0;
+  }
+  .archnote h4{margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--accent2);}
+  .examnote{
+    background:var(--code); border-left:3px solid #c792ea;
+    border-radius:6px; padding:12px 16px; margin:14px 0;
+  }
+  .examnote h4{margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:1px; color:#c792ea;}
+  pre{
+    background:var(--code); border:1px solid var(--border); border-radius:8px;
+    padding:14px; overflow-x:auto; font-size:12.5px; color:#a9e6c9; line-height:1.5;
+  }
+  code{color:var(--accent2); font-family:'Cascadia Code',Consolas,monospace;}
+  .recall{
+    margin-top:12px; border:1px dashed var(--border); border-radius:6px; padding:10px 14px;
+    cursor:pointer; background:#0e1620;
+  }
+  .recall .q{color:var(--accent2); font-weight:600; font-size:13.5px;}
+  .recall .a{display:none; margin-top:8px; color:var(--muted); font-size:13.5px; border-top:1px solid var(--border); padding-top:8px;}
+  .recall.show .a{display:block;}
+  .recall .hint{font-size:11px; color:var(--muted); float:right;}
+  ul.plain li{margin:4px 0;}
+  table{width:100%; border-collapse:collapse; margin:12px 0; font-size:13px;}
+  th,td{border:1px solid var(--border); padding:8px 10px; text-align:left;}
+  th{background:var(--panel2); color:var(--accent2);}
+  .foot{color:var(--muted); text-align:center; padding:30px; font-size:12px;}
+  .progress{font-size:11px; color:var(--muted);}
+  /* notes width expansion - matches learning plan box */
+  .wrap,.container,main,header.hero,header.masthead,nav.toc,section.block,footer{max-width:100%!important;padding-left:24px!important;padding-right:24px!important;}
+</style>
+</head>
+<body>
+<!-- LEARNING PLAN -->
+<div style="margin:24px;background:#0f1520;border:1px solid #1e2836;border-left:4px solid #e0a030;border-radius:8px;padding:24px 28px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;">
+  <div style="color:#e0a030;font-size:13px;font-weight:700;letter-spacing:.08em;margin-bottom:14px;">&#9670; LEARNING PLAN — 2.5 HOURS DAILY</div>
+  <div style="overflow-x:auto;">
+  <table style="width:100%;border-collapse:collapse;font-size:13px;color:#c8d3e0;margin-bottom:18px;white-space:nowrap;">
+    <thead><tr style="color:#7c8ba0;border-bottom:1px solid #1e2836;">
+      <th style="padding:6px 10px;text-align:left;width:48px;">Step</th>
+      <th style="padding:6px 10px;text-align:left;">Activity</th>
+      <th style="padding:6px 10px;text-align:left;">Outcome</th>
+    </tr></thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">1</td><td style="padding:7px 10px;"><b>Complete the Udemy Course</b> — watch videos, understand concepts, don't rush</td><td style="padding:7px 10px;color:#5fbf7f;">Build strong fundamentals</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">2</td><td style="padding:7px 10px;"><b>Practice Everything</b> — complete exercises, assignments, and source code</td><td style="padding:7px 10px;color:#5fbf7f;">Gain hands-on experience</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">3</td><td style="padding:7px 10px;"><b>Revise with these notes</b></td><td style="padding:7px 10px;color:#5fbf7f;">Reinforce concepts and fill knowledge gaps</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">4</td><td style="padding:7px 10px;"><b>Earn the Udemy Certificate</b></td><td style="padding:7px 10px;color:#5fbf7f;">Ensure the course is completed end-to-end</td></tr>
+      <tr><td style="padding:7px 10px;color:#e0a030;font-weight:700;">5</td><td style="padding:7px 10px;"><b>Practise real world tough scenario</b> — scenario-based questions &amp; interview problems</td><td style="padding:7px 10px;color:#5fbf7f;">Develop practical and interview-ready skills</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">1.5 HRS</div>
+      <div style="font-size:12px;color:#c8d3e0;">Udemy Videos + Exercises + Source Code</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Notes Revision</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Scenario-Based Questions &amp; Practical Problems</div>
+    </div>
+  </div>
+  <div style="color:#f0f4f8;font-size:12px;font-weight:600;letter-spacing:.04em;">GOAL: <span style="color:#e0a030;">Learn &#8594; Practice &#8594; Revise &#8594; Complete &#8594; Apply</span></div>
+</div>
+<!-- END LEARNING PLAN -->
+<a href="https://ai.shivawithin.in" id="home-return-btn" title="Back to Home" style="position:fixed;bottom:24px;right:24px;z-index:99999;display:inline-flex;align-items:center;gap:6px;background:#0d1b2a;color:#3fb6ff;border:1px solid #3fb6ff;padding:9px 15px;border-radius:8px;text-decoration:none;font-family:system-ui,-apple-system,sans-serif;font-size:13px;font-weight:600;box-shadow:0 2px 16px rgba(0,0,0,0.5);transition:background 0.2s,box-shadow 0.2s;" onmouseover="this.style.background='#1a2f47';this.style.boxShadow='0 4px 20px rgba(63,182,255,0.25)'" onmouseout="this.style.background='#0d1b2a';this.style.boxShadow='0 2px 16px rgba(0,0,0,0.5)'">&#8592; Home</a>
+
+<header>
+  <div class="eyebrow">Architects Lab · AWS Certified AI Practitioner — Foundations</div>
+  <h1>Section 1 — How the AWS Cloud Actually Works</h1>
+  <div class="sub">Notes from the cloud-fundamentals section that opens the AI Practitioner course —
+  covering client-server basics, why the cloud replaced traditional data centers, cloud service/deployment
+  models, AWS's global infrastructure, and account setup. Structured for a Senior Engineering Manager who
+  has already done hands-on AWS work (IAM, Docker, App Runner in the Vercel production course) — the
+  emphasis here is on formalizing what you already know operationally into exam-ready, precisely worded concepts.</div>
+  <a class="course-link" href="https://www.udemy.com/course/aws-ai-practitioner-certified/learn/lecture/44976993#overview" target="_blank" rel="noopener noreferrer">
+    ↗ Open on Udemy — AWS Certified AI Practitioner
+  </a>
+</header>
+
+<div class="toolbar">
+  <button class="ctrl" onclick="expandAll()">▾ Expand All</button>
+  <button class="ctrl" onclick="collapseAll()">▸ Collapse All</button>
+  <button class="ctrl" onclick="revealAllRecall()">💡 Reveal All Recall Answers</button>
+  <span class="progress" id="progressLabel"></span>
+</div>
+
+<div class="wrap">
+
+  <!-- SECTION 1 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Framing</span> Why an "AI Practitioner" Exam Starts With Cloud Basics</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>The instructor is explicit: this certification focuses more on AI than raw AWS infrastructure —
+      but understanding how the AWS Cloud fundamentally works is a prerequisite for later understanding
+      managed AI services like Amazon Bedrock. If you already know AWS well, this section is explicitly
+      marked skippable.</p>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>Given you already have hands-on AWS experience from the Vercel production course (IAM users,
+        Docker, App Runner, budgets), the real value of this section for you isn't new operational knowledge —
+        it's <strong>precise, exam-standard vocabulary</strong> for concepts you already use intuitively.
+        Certification exams reward exact terminology (e.g. "shared responsibility model," "elasticity" vs.
+        "scalability" as distinct terms) even when the underlying concept is already second nature to you.</p>
+      </div>
+
+      <div class="questions">
+        <h4>Question worth sitting with</h4>
+        <ul>
+          <li>Given you've already deployed to App Runner with real IAM/budget setup — where do you expect
+          the biggest gap to be between "what I've done hands-on" and "what the exam expects me to define
+          precisely," and is that gap in terminology, or in breadth (services you haven't touched yet)?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Fundamentals</span> How Websites Work — The Client/Server/Network Model</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <pre>
+Client (browser) ──request──▶ Network (routers, switches) ──▶ Server
+Client (browser) ◀──response── Network ◀── Server
+
+Analogy: writing a letter
+  You (client) → post office network → recipient (server)
+  Recipient replies using the return address you wrote →
+  same network → back to you
+      </pre>
+      <p>Both client and server need IP addresses to find each other — the same way a letter needs a
+      destination address and a return address for the correspondence to work both ways.</p>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: In the letter analogy, what maps to an IP address? <span class="hint">tap to reveal</span></div>
+        <div class="a">The address written on the envelope — both the destination address (equivalent to the server's IP) and the return address (equivalent to the client's IP), which lets the recipient know how to send a reply back.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Fundamentals</span> What's Actually Inside a Server — The "Brain" Analogy</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <table>
+        <tr><th>Component</th><th>Role</th><th>Human Analogy</th></tr>
+        <tr><td>CPU</td><td>Performs computations</td><td>The reasoning part of the brain</td></tr>
+        <tr><td>RAM (Memory)</td><td>Very fast, short-term storage for active work</td><td>Working/short-term memory</td></tr>
+        <tr><td>Storage</td><td>Long-term data persistence (files)</td><td>Long-term memory</td></tr>
+        <tr><td>Database</td><td>Structured, queryable/searchable data</td><td>An organized filing system</td></tr>
+        <tr><td>Networking</td><td>Routers, switches, DNS — how the server communicates</td><td>The nervous system / senses</td></tr>
+      </table>
+      <p>CPU + RAM together are framed as "the brain" — compute plus fast working memory. Storage and
+      databases are the longer-term memory layer. Networking is what lets all of this actually communicate
+      with the outside world. This five-part decomposition (compute, memory, storage, database, networking)
+      is exactly what the cloud is going to offer "on demand" throughout the rest of this course.</p>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: Why are CPU and RAM described together as "the brain," while storage/database are described separately? <span class="hint">tap to reveal</span></div>
+        <div class="a">CPU (computation) and RAM (very fast, immediately accessible memory) together mirror how a brain actively thinks and holds information in the moment — analogous to short-term, working cognition. Storage and databases represent longer-term, persistent memory that isn't necessarily loaded for active use at any given instant, a distinct role from the fast, active compute+memory pairing.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 4 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">History</span> The Garage-to-Data-Center Story — And Its Real Pain Points</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>The classic narrative: startups (Google being the famous example) began with literal physical
+      servers in a garage or home, then graduated to a dedicated data center room as they grew. This worked
+      for years but had five compounding problems:</p>
+      <ul class="plain">
+        <li>Fixed costs regardless of usage — rent, power, cooling, maintenance</li>
+        <li>Slow to scale — ordering and physically installing new hardware takes real time</li>
+        <li>Scaling is capped by physical space and budget, not just demand</li>
+        <li>Requires a 24/7 human team just to monitor infrastructure</li>
+        <li>Single point of physical failure — earthquake, fire, power outage can take everything down at once</li>
+      </ul>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>This "garage to data center" story is a useful narrative hook, but the more interesting exam-relevant
+        insight buried in it is the shift from <strong>CapEx to OpEx</strong> (covered explicitly later in this
+        section) — every one of these five pain points is really a symptom of committing large capital
+        expenditure ahead of actual, measured demand. That reframing — "the cloud isn't just 'someone else's
+        computer,' it's a mechanism for converting unpredictable capacity planning into pay-as-you-go
+        operating cost" — is the single most testable idea in this entire section.</p>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: What's the common thread underlying all five traditional data-center pain points listed here? <span class="hint">tap to reveal</span></div>
+        <div class="a">They all stem from having to commit fixed capital and physical resources upfront, ahead of and independent of actual real-time demand — rent, power, hardware purchases, staffing, and disaster exposure are all consequences of owning and operating physical infrastructure yourself, rather than consuming capacity elastically as needed.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 5 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag exam">Exam Term</span> Cloud Computing — The Precise Definition</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p><strong>"Cloud computing is the on-demand delivery of compute power, database storage,
+      application, and other IT resources through a cloud service platform via pay-as-you-go pricing."</strong></p>
+      <p>The two load-bearing words: <strong>on-demand</strong> (get exactly what you need, when you need
+      it, instantly — not with a 24-hour or multi-week procurement lead time) and <strong>pay-as-you-go</strong>
+      (you pay only for what you actually consume, and stop paying the moment you stop using it).</p>
+      <p>Familiar consumer cloud services used as everyday analogies: Gmail (email as a cloud service — you
+      only "provision" storage implicitly by using it), Dropbox (cloud storage — notably, originally built
+      on top of AWS itself), and Netflix (video-on-demand, entirely built on AWS infrastructure).</p>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: What are the two defining characteristics in the formal definition of cloud computing given here? <span class="hint">tap to reveal</span></div>
+        <div class="a">On-demand delivery (resources are available instantly, without advance provisioning or lead time) and pay-as-you-go pricing (you only pay for exactly what you use, for exactly as long as you use it).</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 6 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag exam">Exam Term</span> Private, Public, and Hybrid Cloud</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <table>
+        <tr><th>Type</th><th>Description</th><th>Example Providers</th></tr>
+        <tr><td>Private Cloud</td><td>Dedicated to a single organization, not exposed publicly — full control, higher security for sensitive workloads</td><td>Rackspace-style dedicated offerings</td></tr>
+        <tr><td>Public Cloud</td><td>Owned/operated by a third party, delivered over the internet, shared infrastructure</td><td>AWS, Microsoft Azure, Google Cloud</td></tr>
+        <tr><td>Hybrid Cloud</td><td>Mix of both — sensitive assets stay on-premises, other capabilities extend into the public cloud</td><td>Combination of your own infra + AWS</td></tr>
+      </table>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>Hybrid cloud is worth pausing on given your regulated-fintech background — this is precisely the
+        model many banks actually run in practice: core banking, ledgers, and sensitive customer data often
+        stay on-premises or in a private cloud for compliance/data-residency reasons, while less sensitive
+        workloads (analytics, dev/test environments, customer-facing web tiers) extend into the public cloud
+        for elasticity and cost efficiency. Worth checking whether IDFC's current architecture is explicitly
+        framed this way internally, or whether that's implicit and unstated.</p>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: What's the core trade-off hybrid cloud is designed to solve? <span class="hint">tap to reveal</span></div>
+        <div class="a">It balances the need for control and security over sensitive assets (kept on private/on-premises infrastructure) against the flexibility and cost-effectiveness of the public cloud (used for everything else) — rather than forcing an all-or-nothing choice between the two.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 7 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag exam">Exam Term</span> Five Characteristics + Six Advantages of Cloud Computing</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p><strong>Five characteristics (what defines cloud computing):</strong></p>
+      <ol style="padding-left:18px; color:#c8d6e2;">
+        <li>On-demand self-service — provision resources without human intervention from the provider</li>
+        <li>Broad network access — resources reachable over the network, in diverse ways</li>
+        <li>Multi-tenancy and resource pooling — shared physical infrastructure across customers, with isolation/privacy</li>
+        <li>Rapid elasticity and scalability — quickly acquire and release resources as demand changes</li>
+        <li>Measured service — usage is metered, and billing matches exactly what was consumed</li>
+      </ol>
+
+      <p><strong>Six advantages (why it's worth adopting):</strong></p>
+      <ol style="padding-left:18px; color:#c8d6e2;">
+        <li>Trade CapEx for OpEx — rent instead of buy, reducing Total Cost of Ownership (TCO)</li>
+        <li>Massive economies of scale — AWS's own efficiency at scale lowers prices over time for everyone</li>
+        <li>Stop guessing capacity — scale to actual measured usage instead of forecasted-and-often-wrong estimates</li>
+        <li>Increased speed and agility — no procurement blockers, build and iterate immediately</li>
+        <li>Stop spending on running/maintaining data centers — eliminates that entire operational burden</li>
+        <li>Go global in minutes — a small team can deploy a worldwide application leveraging AWS's existing global infrastructure</li>
+      </ol>
+
+      <div class="examnote">
+        <h4>Exam Note</h4>
+        <p>"Elasticity" and "scalability" are often used together but are technically distinct: <strong>scalability</strong>
+        is the ability to grow (add resources) to meet demand; <strong>elasticity</strong> specifically implies
+        the ability to both scale <em>out</em> and scale <em>back in</em> automatically, matching resources
+        closely to real-time demand in both directions. The exam may test this exact distinction.</p>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: What's the precise difference between "scalability" and "elasticity" as distinct terms? <span class="hint">tap to reveal</span></div>
+        <div class="a">Scalability is the general ability to increase resources to handle growing demand. Elasticity specifically means the ability to automatically both scale OUT (add resources) and scale IN (remove resources) as demand rises and falls, keeping resource usage closely matched to actual real-time need in both directions — not just growth.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 8 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag exam">Exam Term</span> IaaS vs. PaaS vs. SaaS — Who Manages What</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <table>
+        <tr><th>Layer</th><th>On-Premises (you manage)</th><th>IaaS</th><th>PaaS</th><th>SaaS</th></tr>
+        <tr><td>Application + Data</td><td>You</td><td>You</td><td>You</td><td>Provider</td></tr>
+        <tr><td>Runtime, Middleware, OS</td><td>You</td><td>You</td><td>Provider</td><td>Provider</td></tr>
+        <tr><td>Virtualization, Servers, Storage, Networking</td><td>You</td><td>Provider</td><td>Provider</td><td>Provider</td></tr>
+      </table>
+      <table>
+        <tr><th>Model</th><th>AWS Example</th><th>Other Examples</th></tr>
+        <tr><td>IaaS</td><td>Amazon EC2</td><td>Google Cloud, Azure, DigitalOcean, Linode, Rackspace</td></tr>
+        <tr><td>PaaS</td><td>Elastic Beanstalk</td><td>Heroku, Google App Engine, Windows Azure</td></tr>
+        <tr><td>SaaS</td><td>Amazon Rekognition (and many other AWS managed services)</td><td>Gmail, Dropbox, Zoom</td></tr>
+      </table>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>Your Day 5 App Runner deployment from the Vercel course actually sits closer to <strong>PaaS
+        territory</strong> for the deployment/runtime layer (App Runner manages the container orchestration,
+        scaling, and networking), even though you were using an IaaS-style building block (a Docker container)
+        as the unit of deployment — a good concrete example of how these categories blur in practice rather
+        than being perfectly clean boxes. Worth having your own deployment on hand as a working example if
+        this distinction comes up in an interview: "I used EC2-adjacent IaaS building blocks through a
+        PaaS-like managed deployment service."</p>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: In the PaaS model, what is the customer still responsible for, and what does the provider take over compared to IaaS? <span class="hint">tap to reveal</span></div>
+        <div class="a">In PaaS, the customer is only responsible for their application and data. The provider takes over everything else — runtime, middleware, OS, virtualization, servers, storage, and networking — whereas in IaaS the customer still had to manage the application, data, runtime, middleware, and OS themselves.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 9 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag exam">Exam Term</span> AWS Pricing Fundamentals — Three Pillars</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <table>
+        <tr><th>Resource</th><th>How You're Charged</th></tr>
+        <tr><td>Compute</td><td>Pay for exact compute time used</td></tr>
+        <tr><td>Storage</td><td>Pay for the exact amount of data stored</td></tr>
+        <tr><td>Networking (data transfer)</td><td>Only charged when data LEAVES the cloud (egress) — data going IN is free</td></tr>
+      </table>
+
+      <div class="examnote">
+        <h4>Exam Note</h4>
+        <p>The data-in-free / data-out-charged asymmetry is a frequently tested detail and directly explains
+        real cost-governance behavior — it's exactly why moving large volumes of data OUT of AWS (e.g. to
+        another cloud, or back on-premises) can become a surprisingly significant cost line item, while
+        ingesting data is essentially free. This is directly relevant if you ever need to reason about egress
+        costs for a multi-cloud or hybrid architecture.</p>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: Which direction of data transfer is free on AWS, and which is charged? <span class="hint">tap to reveal</span></div>
+        <div class="a">Data transferred INTO AWS (ingress) is free. Data transferred OUT of AWS (egress — leaving the cloud) is what you're charged for.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 10 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">History</span> AWS's Origin Story and Current Market Position</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <pre>
+2002  Launched internally at amazon.com — Amazon realized its own
+      infrastructure expertise could be externalized as a product
+2004  First public offering: SQS
+2006  Major relaunch: SQS + S3 + EC2 become publicly available
+Later Expanded from US-only to global regions (Europe, etc.)
+Today $90B+ revenue (2023) · ~31% market share (Q1 2024,
+      vs. Microsoft's ~25%) · Gartner Magic Quadrant leader for
+      13 consecutive years · 1M+ active users
+      </pre>
+      <p>Notable early/major AWS-hosted companies mentioned: Dropbox, Netflix, Airbnb, and even NASA.</p>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: What was AWS's very first publicly available service, and in what year? <span class="hint">tap to reveal</span></div>
+        <div class="a">SQS (Simple Queue Service), launched publicly in 2004 — two years before the more famous 2006 relaunch that added S3 and EC2 alongside it.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 11 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag exam">Exam Term</span> Global Infrastructure — Regions, Availability Zones, Edge Locations</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <pre>
+Region (e.g. ap-southeast-2, "Sydney")
+  = a cluster of data centers in one geographic area
+  = most AWS services are SCOPED to a region — using a
+    service in one region is independent of using it in
+    another (separate resources, separate configuration)
+
+  └── Availability Zone (e.g. ap-southeast-2A, 2B, 2C)
+        = usually 3 per region (min 3, max 6)
+        = one or more DISCRETE data centers with redundant
+          power, networking, and connectivity
+        = ISOLATED from each other — a disaster in one AZ
+          is designed NOT to cascade into another
+        = connected to other AZs in the same region via
+          high-bandwidth, ultra-low-latency private networking
+
+Points of Presence / Edge Locations
+  = 400+ locations across 90 cities in 40+ countries
+  = used for delivering content to end users with the
+    lowest possible latency (e.g. via CloudFront)
+      </pre>
+
+      <div class="examnote">
+        <h4>Exam Note — Choosing a Region: 4 Factors</h4>
+        <ol style="padding-left:18px; color:#c8d6e2; margin:6px 0;">
+          <li><strong>Compliance</strong> — some jurisdictions require data to stay within the country (data residency)</li>
+          <li><strong>Latency</strong> — deploy close to your actual user base to minimize lag</li>
+          <li><strong>Service availability</strong> — not every AWS service exists in every region; check the regional services table before committing</li>
+          <li><strong>Pricing</strong> — costs vary by region; check the specific service's pricing page</li>
+        </ol>
+      </div>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>The compliance/data-residency factor is directly relevant to a regulated Indian financial
+        institution — RBI data localization requirements for payment and financial data are exactly the kind
+        of "compliance forces a specific region" scenario this section describes abstractly. Worth treating
+        this exam concept as already-lived experience rather than new theory: you've almost certainly made
+        exactly this kind of region-selection decision (or seen it made) at IDFC for regulatory reasons.</p>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: Why are Availability Zones within a region deliberately kept isolated from each other, and how are they still connected? <span class="hint">tap to reveal</span></div>
+        <div class="a">They're isolated (separate discrete data centers with independent power/networking) specifically so a disaster affecting one AZ — power outage, fire, etc. — doesn't cascade and take down the others, giving fault tolerance within a region. Despite this isolation, they're still connected to each other via high-bandwidth, ultra-low-latency private networking, which is what lets applications span multiple AZs for high availability while staying fast.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 12 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Console</span> Global vs. Regional Services — A Practical Distinction</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>Most AWS services are region-scoped (EC2, Elastic Beanstalk, Lambda, Rekognition — switching
+      regions in the console gives you a genuinely different, separate view of your resources). A smaller
+      set are <strong>global services</strong> — IAM, Route 53, CloudFront, and WAF — where the console shows
+      the same view regardless of which region selector is active, since these services aren't tied to a
+      single region at all.</p>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: Name two AWS services explicitly called out as "global" rather than region-scoped, and what does that mean practically in the console? <span class="hint">tap to reveal</span></div>
+        <div class="a">IAM and Route 53 (also CloudFront and WAF). Practically, this means the console for these services shows the exact same view no matter which region you have selected in the region selector — unlike region-scoped services like EC2, where switching regions shows an entirely different set of resources.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 13 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Setup</span> Account Creation — Practical Details Worth Remembering</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <ul class="plain">
+        <li>Root user email + account name required, followed by email verification and a password meeting complexity requirements (8+ characters, at least 3 of: uppercase, lowercase, numbers, non-alphanumeric)</li>
+        <li>Choice between Free and Paid account plans — both start with credits (~$100, up to $200 total in the example given). Free plan requires no credit card and auto-closes if credits run out; Paid plan requires a card and bills beyond the credit</li>
+        <li>A credit card is still required even on the free plan — purely for identity verification / fraud prevention, with a refundable $1 verification charge, not an ongoing billing commitment</li>
+        <li>Phone number verification and a Support Plan choice (Basic/free is fine to start) are also required</li>
+      </ul>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: Why does AWS require a credit card even for accounts on the free plan? <span class="hint">tap to reveal</span></div>
+        <div class="a">Purely for identity verification and fraud prevention — not for billing. A small refundable charge (around $1) is used to verify the card is real, but the free plan itself won't incur ongoing charges from that card unless the account is later upgraded to a paid plan.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 14 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag exam">Exam Term</span> The Shared Responsibility Model — Frequently Tested</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <table>
+        <tr><th>Customer's Responsibility ("Security IN the cloud")</th><th>AWS's Responsibility ("Security OF the cloud")</th></tr>
+        <tr><td>Your data</td><td>All physical infrastructure</td></tr>
+        <tr><td>Your operating system configuration</td><td>All hardware</td></tr>
+        <tr><td>Network and firewall configuration</td><td>All underlying software (virtualization layer)</td></tr>
+        <tr><td>How you configure whatever services you use</td><td>Their own internal security practices</td></tr>
+      </table>
+      <p>Explicitly flagged as heavily tested on the exam — questions typically present a scenario and ask
+      you to identify whether a specific failure or misconfiguration falls under the customer's or AWS's side
+      of the line.</p>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>This model isn't exam trivia — it's the exact framework that determines liability and audit scope
+        in any real cloud security incident. "Security IN the cloud vs. OF the cloud" is the same distinction
+        your own security/compliance teams at IDFC would apply when scoping a penetration test or an audit
+        against a cloud-hosted service: AWS's physical/hypervisor security isn't your concern or your audit
+        surface, but anything you configured — IAM policies, security groups, data encryption settings — is
+        entirely yours to answer for.</p>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: If a data breach happens because a customer left an S3 bucket publicly accessible by mistake, whose responsibility is that under the Shared Responsibility Model? <span class="hint">tap to reveal</span></div>
+        <div class="a">The customer's — bucket access configuration is a "security IN the cloud" concern, which is entirely the customer's responsibility. AWS is responsible for the underlying security of the S3 service infrastructure itself, but not for how the customer configures access permissions on their own resources.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 15: WRAP-UP / NEXT UP -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag arch">Preview</span> Section Recap &amp; What Comes Next</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <pre>
+Covered: client-server basics → server anatomy → traditional
+IT pain points → cloud computing definition → private/public/
+hybrid → 5 characteristics + 6 advantages → IaaS/PaaS/SaaS →
+pricing → AWS history & market position → global infrastructure
+(regions/AZs/edge locations) → account setup → shared
+responsibility model → acceptable use policy
+      </pre>
+      <p>The course's explicit next step is a deeper, hands-on dive into AWS itself — this section was
+      framed as scene-setting theory before the practical sections begin. The Acceptable Use Policy was
+      covered only briefly (no illegal/harmful content, no security violations, no network abuse, no
+      messaging abuse) — treated as common-sense and not expected to be a major exam focus.</p>
+
+      <div class="questions">
+        <h4>Questions to carry into the next section</h4>
+        <ul>
+          <li>Given this section deliberately stayed away from hands-on labs — will the next section revisit
+          IAM in more exam-specific depth than your practical Day 5 experience already covered (e.g. IAM
+          policy JSON syntax, specific managed policies, or MFA device types), or will it stay conceptual?</li>
+          <li>The pricing section covered compute/storage/networking — does the next section introduce AWS's
+          actual pricing tools (Pricing Calculator, Cost Explorer, Trusted Advisor) as hands-on exam material,
+          building on the budget-alerts work you already did in the Vercel course's AWS deployment?</li>
+          <li>Now that Bedrock was named as the motivating reason for this cloud-fundamentals detour — how
+          soon does the course connect these infrastructure concepts (regions, IAM, shared responsibility)
+          directly to how Bedrock and other managed AI services are actually deployed and secured?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="foot">Architects Lab · Study Notes · Source: AWS Certified AI Practitioner — Cloud Fundamentals Section</div>
+
+<script>
+  function toggleCard(headEl){
+    const card = headEl.parentElement;
+    card.classList.toggle('open');
+    updateProgress();
+  }
+  function toggleRecall(el){
+    el.classList.toggle('show');
+  }
+  function expandAll(){
+    document.querySelectorAll('.card').forEach(c=>c.classList.add('open'));
+    updateProgress();
+  }
+  function collapseAll(){
+    document.querySelectorAll('.card').forEach(c=>c.classList.remove('open'));
+    updateProgress();
+  }
+  function revealAllRecall(){
+    document.querySelectorAll('.recall').forEach(r=>r.classList.add('show'));
+  }
+  function updateProgress(){
+    const total = document.querySelectorAll('.card').length;
+    const open = document.querySelectorAll('.card.open').length;
+    document.getElementById('progressLabel').textContent = open + ' / ' + total + ' sections expanded';
+  }
+  updateProgress();
+</script>
+
+</body>
+</html>

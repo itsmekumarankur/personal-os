@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architects Lab · AI Guardrails Part 3 — Hallucination, Presidio, Bedrock</title>
+<style>
+  :root{
+    --bg:#0d0f14; --panel:#151823; --panel2:#1b1f2e;
+    --ink:#e8e6df; --dim:#8b8fa3;
+    --gold:#d4af5a; --gold-soft:#b8964a;
+    --teal:#5ad4c8; --rose:#d47a8a; --violet:#9a8ad4; --amber:#d4915a;
+    --line:#2a2f42;
+    --mono:'Courier New', ui-monospace, monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif;display:flex;flex-direction:column;min-height:100vh}
+  header{padding:16px 26px 12px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  header .k{font-family:var(--mono);font-size:.68rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase}
+  header h1{font-size:1rem;font-weight:normal}
+  header .count{margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--dim)}
+  .tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
+  .tab{flex:1;min-width:110px;padding:9px 10px;text-align:center;font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;color:var(--dim);border-right:1px solid var(--line);cursor:pointer;white-space:nowrap;transition:.2s;background:transparent;border-top:none;border-bottom:none;border-left:none}
+  .tab:last-child{border-right:none}
+  .tab.active{color:var(--bg);font-weight:bold}
+  .tab[data-c="gold"].active{background:var(--gold)}
+  .tab[data-c="teal"].active{background:var(--teal)}
+  .tab[data-c="rose"].active{background:var(--rose)}
+  .tab[data-c="violet"].active{background:var(--violet)}
+  .tab[data-c="amber"].active{background:var(--amber)}
+  .tab[data-c="ink"].active{background:var(--ink)}
+  main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px 96px;overflow-y:auto}
+  .slide{max-width:780px;width:100%;animation:fadeUp .4s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @media (prefers-reduced-motion: reduce){.slide{animation:none}}
+  .eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px}
+  .eyebrow.gold{color:var(--gold)} .eyebrow.teal{color:var(--teal)} .eyebrow.rose{color:var(--rose)}
+  .eyebrow.violet{color:var(--violet)} .eyebrow.amber{color:var(--amber)} .eyebrow.ink{color:var(--dim)}
+  .slide h2{font-size:1.55rem;font-weight:normal;line-height:1.3;margin-bottom:14px}
+  .slide h2 em{font-style:italic;color:var(--gold)}
+  .slide p{color:#c9c7bf;line-height:1.75;font-size:1rem;margin-bottom:13px}
+  .slide p strong, .slide li strong{color:var(--ink)}
+  .slide code{font-family:var(--mono);font-size:.85em;background:var(--panel2);padding:2px 6px;border-radius:3px;color:var(--gold)}
+  .ascii{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:6px;padding:14px 16px;margin:14px 0;font-family:var(--mono);font-size:.74rem;line-height:1.5;color:#b9c2d8;overflow-x:auto;white-space:pre}
+  .ascii .hl{color:var(--gold)} .ascii .tl{color:var(--teal)} .ascii .rs{color:var(--rose)}
+  .note{border:1px dashed var(--gold-soft);border-radius:6px;padding:11px 15px;margin:14px 0;font-size:.9rem;color:#cfc9ae;line-height:1.65}
+  .note b{color:var(--gold)}
+  ul.pts{margin:10px 0 13px 2px;list-style:none}
+  ul.pts li{padding:6px 0 6px 21px;position:relative;color:#c9c7bf;line-height:1.6;font-size:.95rem}
+  ul.pts li::before{content:"\203A";position:absolute;left:4px;color:var(--gold);font-family:var(--mono)}
+  /* ---- Think First (question) slides ---- */
+  .qcard{border:2px solid var(--gold);border-radius:10px;background:linear-gradient(160deg,#1a1608,#151823);padding:30px 28px;margin:6px 0 18px;position:relative}
+  .qcard::before{content:"?";position:absolute;top:-20px;left:22px;width:38px;height:38px;border-radius:50%;background:var(--gold);color:var(--bg);font-family:var(--mono);font-weight:bold;font-size:1.3rem;display:flex;align-items:center;justify-content:center}
+  .qcard .qlabel{font-family:var(--mono);font-size:.64rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;margin-bottom:12px}
+  .qcard .qtext{font-size:1.25rem;line-height:1.55;color:var(--ink);font-style:italic}
+  .qcard .qsub{margin-top:14px;font-size:.86rem;color:var(--dim);font-style:normal;font-family:var(--mono)}
+  /* ---- lenses (CTO / Director) ---- */
+  details.lens{margin:10px 0;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+  details.lens summary{cursor:pointer;padding:10px 14px;font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;color:var(--teal);list-style:none}
+  details.lens summary::before{content:"+ ";color:var(--gold)}
+  details.lens[open] summary::before{content:"\2212 "}
+  details.lens.dir summary{color:var(--rose)}
+  details.lens .body{padding:2px 16px 13px}
+  details.lens .body li{font-size:.9rem}
+  /* ---- recall quiz slides ---- */
+  .recall-item{border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:6px;background:var(--panel);margin:12px 0;overflow:hidden}
+  .recall-item summary{cursor:pointer;padding:13px 16px;font-size:.98rem;color:var(--ink);list-style:none;line-height:1.55}
+  .recall-item summary::before{content:"Q  ";font-family:var(--mono);color:var(--teal);font-weight:bold}
+  .recall-item .ans{padding:0 16px 13px;color:#b9c2b0;font-size:.92rem;line-height:1.65;border-top:1px dashed var(--line);padding-top:11px;margin:0 16px 13px;padding-left:0;padding-right:0}
+  .recall-item .ans b{color:var(--teal)}
+  .recall-hint{font-family:var(--mono);font-size:.7rem;color:var(--dim);margin-top:6px}
+  footer{position:fixed;left:0;right:0;bottom:0;background:rgba(13,15,20,.93);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:11px 20px;display:flex;align-items:center;gap:14px}
+  .dots{display:flex;gap:4px;flex:1;justify-content:center;flex-wrap:wrap}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--line);cursor:pointer;transition:.2s}
+  .dot.on{background:var(--gold);transform:scale(1.45)}
+  .dot.q{border:1px solid var(--gold);background:transparent}
+  .dot.q.on{background:var(--gold)}
+  button.nav{font-family:var(--mono);font-size:.78rem;letter-spacing:.1em;background:transparent;color:var(--ink);border:1px solid var(--line);padding:9px 18px;border-radius:5px;cursor:pointer;transition:.2s}
+  button.nav:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+  button.nav.primary{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:bold}
+  button.nav.primary:hover{background:#e2c070}
+  button.nav:disabled{opacity:.25;cursor:default}
+  button.nav:focus-visible,.tab:focus-visible,.dot:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .hint{position:fixed;bottom:62px;right:18px;font-family:var(--mono);font-size:.6rem;color:var(--dim);letter-spacing:.1em}
+  @media(max-width:600px){.slide h2{font-size:1.28rem}.ascii{font-size:.58rem;padding:11px}.hint{display:none}.qcard .qtext{font-size:1.08rem}}
+</style>
+</head>
+<body>
+<header>
+  <span class="k">Architects Lab</span>
+  <h1>AI Guardrails · Part 3 — Hallucination, Presidio, Bedrock</h1>
+  <span class="count" id="counter"></span>
+</header>
+<div class="tabs" id="tabs"></div>
+<main><div id="stage"></div></main>
+<div class="hint">&larr; &rarr; keys work too</div>
+<footer>
+  <button class="nav" id="prevBtn">&larr; Prev</button>
+  <div class="dots" id="dots"></div>
+  <button class="nav primary" id="nextBtn">Next &rarr;</button>
+</footer>
+<script>
+const SECTIONS=[
+ {id:"intro",label:"START",c:"ink"},
+ {id:"hall",label:"HALLUCINATION",c:"rose"},
+ {id:"pres",label:"PRESIDIO (PII)",c:"teal"},
+ {id:"bed",label:"BEDROCK+SYN",c:"amber"}
+];
+const S=[
+
+{sec:"intro",c:"ink",eyebrow:"Part 3 of 3",t:"a",h:"Hallucination Detection, Presidio &amp; <em>Bedrock Guardrails</em>",body:`
+<p>Part 3 covers why models hallucinate and how to measure and catch it, how <strong>Microsoft Presidio</strong> strips PII before it ever reaches an LLM, and how <strong>AWS Bedrock Guardrails</strong> ties safety, privacy, and grounding into one managed layer. 10 modules + synthesis, CTO / Director dual lens preserved. Tools: Presidio &middot; Vectara &middot; Bedrock.</p>
+<div class="ascii"><span class="hl">HOW TO USE THESE SLIDES</span>
+ 1. "?" slides = THINK FIRST. Predict before you peek.
+ 2. Next reveals the answer + diagram.
+ 3. Open CTO / DIRECTOR lenses on each slide.
+ 4. Section ends = recall quiz. Answer, then reveal.</div>
+<div class="note"><b>Daily plan (2.5 hrs):</b> 1.5 hr Udemy videos + exercises + source code &middot; 30 min notes revision &middot; 30 min scenario questions. Learn &rarr; Practice &rarr; Revise &rarr; Complete &rarr; Apply.</div>`},
+
+/* ---------- HALLUCINATION ---------- */
+{sec:"hall",c:"rose",eyebrow:"Hallucination · 01",t:"q",q:`The model is not lying — it is doing exactly what it was trained to do. So why does it sometimes invent facts with full confidence? Guess the <b>three root causes</b> before peeking.`},
+
+{sec:"hall",c:"rose",eyebrow:"Hallucination · 01",t:"a",h:"AI hallucination: the phantom in the machine",body:`
+<p>Hallucination = the model generates <strong>incorrect or misleading results that look plausible</strong>. These are not random errors — they are confident, fluent falsehoods. The model isn't lying; it predicts the most probable token sequence from its training distribution. When that distribution doesn't match reality, hallucination emerges.</p>
+<ul class="pts">
+<li><strong>Cause 1: Flawed training data</strong> — incomplete, biased, or unrepresentative data teaches wrong patterns.</li>
+<li><strong>Cause 2: Lack of grounding</strong> — no real-world verification mechanism; the model generates from memorized patterns, not verified facts.</li>
+<li><strong>Cause 3: Overconfidence in generation</strong> — the model can't say "I don't know"; it always produces something.</li>
+</ul>
+<div class="ascii">[Training Data] --&gt; [Pattern Learning] --&gt; [Model Weights]
+ (gaps, biases,                            (encoded knowledge)
+  inaccuracies)
+      |
+Query: "What did James Webb telescope discover first?"
+      | model retrieves statistical associations, not facts
+      v
+"James Webb took the first picture of an exoplanet"
+ <span class="rs">(FALSE — that happened 16 years earlier; the model just
+  combined 'James Webb' + 'first' + 'exoplanet' plausibly)</span></div>
+<p><strong>Three types of hallucination:</strong> incorrect predictions (rain forecast on a clear day) &middot; false positives (legit transaction flagged as fraud) &middot; false negatives (missing a cancerous tumor in a scan).</p>`,
+cto:[`Fundamentally a data quality + architecture problem: trained on internet text, the model learned that confident-sounding statements win regardless of truth.`,`Don't rely on the model's internal knowledge for facts — RAG with verified sources as ground truth is mandatory, not an optional enhancement.`,`Training-time techniques help, but at inference time I need a second model — a hallucination judge — to fact-check outputs. Doubles inference cost, non-negotiable for high-stakes domains.`,`Also implement an "I don't know" training objective: teach refusal at low confidence instead of hallucinating.`],
+dir:[`Hallucination is a trust killer: one public error — like Google Bard's exoplanet mistake — can wipe billions in market cap and erode confidence industry-wide.`,`For us it's liability: a hallucinated stock recommendation = regulatory action; a hallucinated diagnosis = people could die.`,`Set a measurable target (e.g. under 0.1% on critical facts) with monitoring that alerts on breach. This is a business KPI the board will ask about, not just a tech metric.`]},
+
+{sec:"hall",c:"rose",eyebrow:"Hallucination · 02",t:"q",q:`Can an answer be <b>faithful but irrelevant</b>? Can it be <b>relevant but unfaithful</b>? Try to construct one example of each — then check why both metrics are needed.`},
+
+{sec:"hall",c:"rose",eyebrow:"Hallucination · 02",t:"a",h:"Detection metrics: faithfulness &amp; answer relevancy",body:`
+<ul class="pts">
+<li><strong>1. Faithfulness (the hallucination metric)</strong> — factual consistency of the answer against the <em>retrieved context</em>. Asks: "Is every claim supported by what we gave the model?" NOT "Is it true in the world?" but "Is it true given what we told it?"</li>
+<li><strong>2. Answer relevancy</strong> — how pertinent the answer is to the user's query. Penalizes incomplete answers and irrelevant tangents. Asks: "Did the model actually address what was asked?"</li>
+</ul>
+<div class="ascii">User Query
+    |
+[Retrieve Documents] --&gt; [Context (facts)] ---+
+                                              v
+                                     [LLM Generation (Answer)]
+                                              |
+                    +-------------------------+------------------+
+                    v                                            v
+          [Faithfulness Check]                        [Answer Relevancy Check]
+          (Answer vs Context)                         (Answer vs User Query)
+                    |                                            |
+              Score 0-1                                    Score 0-1
+          (1 = fully grounded)                        (1 = highly relevant)</div>
+<div class="note"><b>Key insight:</b> a response can be <b>faithful but irrelevant</b> (grounded in context but not answering the question) or <b>relevant but unfaithful</b> (addresses the query but invents facts). You need both metrics.</div>`,
+cto:[`These two scores are the core of my AI quality observability — instrument the RAG pipeline to compute both for every production response.`,`Faithfulness below 0.9 = retrieval or grounding broke. Relevancy drops = prompt or retrieval broke.`,`The scoring model (e.g. Phi-3 judge) is another inference call adding latency — sample heavily for offline analysis, use lightweight online proxies (keyword overlap).`,`Track by query category: medical queries need stricter faithfulness thresholds than casual chat. This is my SLO dashboard for AI quality.`],
+dir:[`Faithfulness and relevancy are the proof-of-reliability numbers for customers and regulators: "98.7% faithfulness on financial queries" is a powerful trust signal and a differentiator.`,`Consider productizing it: a "confidence indicator" showing users how grounded each response is.`,`Wrap SLAs around these scores with consequences on degradation — for our internal AI team, and potentially for the foundation-model provider if we use an API.`]},
+
+{sec:"hall",c:"rose",eyebrow:"Hallucination · 03",t:"q",q:`We deliberately give the model this context: "The capital of France is Berlin." The model answers: "The capital of France is Paris." <b>Correct answer — but is it a hallucination?</b> Decide, then defend your answer.`},
+
+{sec:"hall",c:"rose",eyebrow:"Hallucination · 03",t:"a",h:"Judge models: Phi-3 &amp; Vectara's entailment approach",body:`
+<p>Detecting hallucination needs a <strong>second model — a judge</strong> — comparing the answer to the source context. Two prominent open-source options:</p>
+<ul class="pts">
+<li><strong>Phi-3 Hallucination Judge</strong> — fine-tuned specifically for hallucination detection in RAG apps: is the summary factually consistent with the provided facts?</li>
+<li><strong>Vectara's Hallucination Evaluation Model</strong> (on Hugging Face) — a <strong>textual entailment</strong> approach: is the hypothesis (LLM answer) <em>supported</em> by the premise (context)? Crucially, it flags factual hallucination even when the answer is true in the real world but not supported by the given context.</li>
+</ul>
+<div class="ascii">Premise (context):  "The capital of France is Berlin."  (test trap)
+Hypothesis (answer): "The capital of France is Paris."
+
+[Vectara Eval Model] Is hypothesis entailed by premise?
+   Premise says capital = Berlin
+   Hypothesis says capital = Paris  --&gt; <span class="rs">Contradiction!</span>
+   Label: HALLUCINATION
+   (True in the world, but NOT supported by the provided
+    context — so it IS a hallucination in the RAG sense.
+    The model answered from training data, not our context.)</div>
+<div class="note"><b>The RAG principle:</b> the model must answer <b>from the provided documents</b>, not pre-training memory. If the retrieved documents contain errors, the model should still be faithful to them — and we fix <b>retrieval</b>, not generation.</div>`,
+cto:[`Profound architectural truth: I can't just fact-check against the open web — I need a judge that checks against MY retrieved context, which may differ from ground truth.`,`Host the judge myself (or a trusted service) and feed it exact context+answer pairs from the RAG pipeline.`,`The judge can hallucinate too — one model policing another. Validate its accuracy on a labeled dataset, monitor performance drift, and give it the same reliability requirements as the primary LLM.`],
+dir:[`A hallucination judge = a self-auditing AI system — a powerful compliance and trust narrative.`,`Extra costs: model hosting, inference latency, maintenance. The upside: measurable quality assurance — every response automatically checked, questionable outputs flagged or blocked. Defensible for regulated industries.`,`Audit the judge regularly: is it catching real hallucinations? Is it generating false positives that frustrate users? A quality-control investment.`]},
+
+{sec:"hall",c:"rose",eyebrow:"Hallucination · 04",t:"q",q:`Prevention is cheaper than detection. Name <b>three things you can do before inference</b> to make hallucination less likely — and explain why prevention alone is never enough.`},
+
+{sec:"hall",c:"rose",eyebrow:"Hallucination · 04",t:"a",h:"Prevention: limiting hallucination at the source",body:`
+<ul class="pts">
+<li><strong>1. Regularization</strong> — penalizes extreme predictions during training, reducing overfitting and the tendency for wild unsupported leaps.</li>
+<li><strong>2. Relevant training data</strong> — task-specific data only. Training a medical image model? No cat pictures. Irrelevant data teaches spurious correlations.</li>
+<li><strong>3. Output templates</strong> — constrain response format (title, introduction, body, conclusion). Structure reduces the degrees of freedom available for hallucination.</li>
+</ul>
+<div class="ascii">PREVENTION (training / design)
+  Regularization                 --&gt; reduces overconfidence
+  Relevant data curation         --&gt; kills spurious patterns
+  Output templates               --&gt; constrains generation space
+  Prompt engineering (grounding) --&gt; "answer only from provided docs"
+        |
+        v
+  [Model] --&gt; lower hallucination probability, <span class="rs">but never zero</span>
+        |
+        v
+DETECTION (inference)
+  Faithfulness scoring           --&gt; catch what slips through
+  Answer relevancy scoring       --&gt; keep answers on-topic
+  Human-in-the-loop for critical --&gt; final safety net</div>
+<p><strong>Reality:</strong> prevention reduces frequency; detection catches what slips through. Both are necessary.</p>`,
+cto:[`Prevention lives in my MLOps pipeline: regularization is a training hyperparameter; data curation is a data engineering problem (clean, domain-relevant sets are expensive); templates can be enforced via constrained decoding or structured generation (JSON mode).`,`For high-stakes use cases: fine-tuned model + low temperature + strict output schema shrinks the search space until hallucination is nearly impossible — at the cost of flexibility.`,`Creative use cases get more freedom plus heavy post-hoc detection. The architecture must support both modes.`],
+dir:[`Prevention is where domain expertise pays: curated, high-quality domain data means our model hallucinates less — a defensible competitive moat.`,`Templates align with our brand: consistent, structured responses feel professional and trustworthy.`,`Prevention has limits: set expectations that we can dramatically reduce hallucination, but absolute elimination requires human oversight for critical decisions — a cost to budget, not a failure of technology.`]},
+
+{sec:"hall",c:"rose",eyebrow:"Hallucination · Recall",t:"r",h:"Quick recall: Hallucination",qs:[
+{q:`Recite the three root causes and the three types of hallucination.`,a:`<b>Causes:</b> flawed training data, lack of grounding, overconfidence (can't say "I don't know"). <b>Types:</b> incorrect predictions, false positives (legit flagged as fraud), false negatives (missed tumor).`},
+{q:`The Berlin/Paris trap: why is a true answer still a hallucination?`,a:`Because faithfulness measures consistency with the <b>provided context</b>, not the world. "Paris" contradicts the premise, so in the RAG sense it hallucinated — it answered from training memory. If the context is wrong, fix <b>retrieval</b>, not generation.`},
+{q:`Faithful-but-irrelevant vs relevant-but-unfaithful — give one example of each.`,a:`<b>Faithful/irrelevant:</b> answer quotes the context correctly but never addresses the question. <b>Relevant/unfaithful:</b> answer addresses the question directly but invents facts not in the context. That's why both scores are needed.`},
+{q:`Name the three prevention techniques.`,a:`Regularization, relevant (task-specific) training data, and output templates — plus grounding prompt engineering ("answer only from provided docs").`}]},
+
+/* ---------- PRESIDIO ---------- */
+{sec:"pres",c:"teal",eyebrow:"Presidio · 05",t:"q",q:`Users WILL paste account numbers, SSNs, and medical details into your chatbot — you can't stop them typing. What must happen to that text <b>before</b> it reaches the LLM, the logs, or a third-party API?`},
+
+{sec:"pres",c:"teal",eyebrow:"Presidio · 05",t:"a",h:"Microsoft Presidio: PII protection for AI systems",body:`
+<p><strong>Microsoft Presidio</strong> is an open-source framework for identifying and anonymizing <strong>PII</strong> in text — a <strong>privacy guardrail</strong> sitting between users and AI systems so sensitive data never reaches LLM APIs, training pipelines, or logs.</p>
+<ul class="pts">
+<li><strong>Why it's critical:</strong> LLMs process vast free-form text — PII can be anywhere &middot; GDPR/CCPA impose severe breach penalties &middot; LLMs memorize and leak training data — Presidio stops PII from ever being ingested &middot; enables "privacy by design": proactive protection, not reactive cleanup.</li>
+<li><strong>Capabilities:</strong> 50+ built-in PII recognizers (credit cards, names, phones, SSNs...) &middot; NLP-powered NER detection &middot; customizable recognizers for domain PII (employee IDs, medical record numbers) &middot; flexible anonymization operators: redact, mask, replace, hash, encrypt &middot; language-agnostic architecture.</li>
+</ul>
+<div class="ascii">User input (may contain PII)
+    |
+[PRESIDIO ANALYZER]    scans text, identifies entity types,
+    |                  returns confidence scores
+[PRESIDIO ANONYMIZER]  applies transformations (mask/redact/replace)
+    |
+Cleaned text --&gt; [LLM]  &lt;-- <span class="tl">never sees raw PII</span>
+    |
+Response (safe, no PII leakage)</div>
+<p>Presidio directly addresses the <strong>OWASP Top 10 for LLM Applications</strong> risk of Sensitive Information Disclosure — sanitizing both inputs and outputs so models can't reveal PII through completions or memorized data.</p>`,
+cto:[`Solves a problem I can't control: users will paste secrets whether I want it or not. Without a PII filter, every prompt potentially leaks to my LLM provider (API) or into my logs (self-hosted).`,`Deploy as a sidecar or API-gateway filter: every request passes the analyzer, PII stripped, clean text flows downstream; logs get the masked version.`,`Custom recognizers cover internal identifiers unique to our business. Watch latency — Presidio is Python-based; consider a Go rewrite or batching for high throughput.`],
+dir:[`PII protection is a legal requirement, not optional — GDPR fines reach 4% of global revenue. Presidio is a defensible technical control demonstrating due diligence.`,`It shrinks breach blast radius: even compromised LLM API logs contain masked data, not real PII.`,`Budget deployment + maintenance, reflect the processing in our privacy policy, and pen-test it: can PII leak through? Part of security certification.`]},
+
+{sec:"pres",c:"teal",eyebrow:"Presidio · 06",t:"q",q:`Presidio splits its work into <b>two separate engines</b>. Guess what each does — and why keeping them separate is a powerful design choice.`},
+
+{sec:"pres",c:"teal",eyebrow:"Presidio · 06",t:"a",h:"Presidio architecture: the two-engine design",body:`
+<ul class="pts">
+<li><strong>1. Analyzer Engine — the detection brain.</strong> Raw text in &rarr; runs multiple recognizers (regex, NER, deny lists, context analysis) &rarr; outputs detected PII entities with type, location, and confidence score.</li>
+<li><strong>2. Anonymizer Engine — the transformation engine.</strong> Takes analyzer results, applies configurable operators (redact, mask, replace, hash, encrypt) per entity, produces sanitized text.</li>
+</ul>
+<p><strong>Why separate?</strong> Swap detection methods or anonymization strategies independently — e.g. a fast regex analyzer for real-time and a slower NER model for batch, sharing the same anonymizer.</p>
+<div class="ascii">Input: "Hi, my name is David and my number is 212-555-1234"
+    |
+[ANALYZER ENGINE]
+  [Pattern Match (regex)] [NLP/NER (Spacy/Stanza)] [Deny List (custom)]
+            \\                  |                    /
+             [Context-Aware Enhancer]
+             (surrounding words improve accuracy)
+                       |
+  Results: PERSON start=18 end=23 score=0.85
+           PHONE_NUMBER start=42 end=54 score=0.95
+    |
+[ANONYMIZER ENGINE]  operators:
+  Redact:  &lt;PERSON&gt;, &lt;PHONE_NUMBER&gt;
+  Mask:    212-***-****
+  Replace: Faker generates fake-but-realistic data
+  Hash:    irreversible hash
+  Encrypt: reversible (for authorized access)
+    |
+Output: "Hi, my name is &lt;PERSON&gt; and my number is 212-***-****"</div>
+<p><strong>Recognizer hierarchy:</strong> <code>EntityRecognizer</code> (base) &rarr; <code>PatternRecognizer</code> (regex), <code>NERRecognizer</code> (ML model), <code>DenyListRecognizer</code> (exact match), plus custom recognizers. The <strong>RecognizerRegistry</strong> holds all active recognizers; the analyzer iterates through them.</p>`,
+cto:[`Clean, extensible design: plug in our org's PII patterns without touching the core library — just add a PatternRecognizer for our employee-ID format.`,`The context-aware enhancer is a differentiator: it decides if a 9-digit number is an SSN or a tracking number from surrounding words — fewer false positives.`,`Deploy each engine as its own microservice: analyzer scales independently (CPU regex + GPU NER); anonymizer is lightweight. Different strategies per consumer: devs see masked logs, support sees realistic fake data, the LLM sees fully redacted text.`],
+dir:[`Modularity meets differing regulations: full redaction for EU users (GDPR), masking for California (CCPA) — configure anonymization per jurisdiction without changing detection.`,`Custom recognizers let legal define industry PII (patient ID, client code) and enforce it programmatically — policy translated into code, a major governance win.`,`Regular audits keep recognizers current as regulations and data types evolve.`]},
+
+{sec:"pres",c:"teal",eyebrow:"Presidio · 07",t:"q",q:`Your company's "MRN: 12345" format is in no PII library on earth. How would you teach Presidio to catch it — and then apply <b>different</b> anonymization rules to names vs phone numbers?`},
+
+{sec:"pres",c:"teal",eyebrow:"Presidio · 07",t:"a",h:"Hands-on: custom recognizers &amp; the anonymizer",body:`
+<p><strong>Custom recognizer</strong> — 4 steps: import <code>AnalyzerEngine</code> + <code>PatternRecognizer</code>; define it with a deny list (exact words) or regex; add it to the analyzer's registry; run — it now catches your custom entities.</p>
+<div class="ascii">title_recognizer = PatternRecognizer(
+    supported_entity="TITLE",
+    deny_list=["Mr.", "Mrs.", "Ms.", "Dr."]
+)
+analyzer.registry.add_recognizer(title_recognizer)
+results = analyzer.analyze(text="His name is Mr. Jones...",
+                           entities=["TITLE"])
+# entity "Mr." detected at position 12-15, score=1.0</div>
+<p><strong>Anonymizer in action</strong> — run the analyzer, then configure operators per entity type:</p>
+<div class="ascii">anonymizer = AnonymizerEngine()
+anonymized = anonymizer.anonymize(
+  text="His name is Mr. Jones and his phone number is 212-555-1234",
+  analyzer_results=results,
+  operators={
+    "PHONE_NUMBER": OperatorConfig("mask",
+        {"masking_char":"*","chars_to_mask":12,"from_end":False}),
+    "TITLE": OperatorConfig("redact")
+  })
+# "His name is &lt;TITLE&gt; Jones and his phone number is ************"</div>
+<div class="ascii"><span class="tl">Full pipeline example:</span>
+"Patient John Doe, MRN: 12345, admitted."
+    |
+[Analyzer]  built-in: PERSON -&gt; "John Doe"
+            custom regex \\d{5}: MEDICAL_RECORD_NUMBER -&gt; "12345"
+    |
+[Anonymizer] PERSON -&gt; replace with fake name -&gt; "Jane Smith"
+             MRN    -&gt; hash -&gt; "a1b2c3d4e5"
+    |
+"Patient Jane Smith, MRN: a1b2c3d4e5, admitted."
+<span class="hl">(safe for analytics, structure kept, zero real PII)</span></div>`,
+cto:[`Custom recognizers without forking the library = maintain our PII patterns as versioned, tested code.`,`Choose the right tool: deny lists for known terms (fast, precise), regex for structured patterns, NER with a fine-tuned model for ambiguous PII (medical terms that might be names).`,`Operator-per-entity gives fine-grained control: hash medical record numbers (irreversible but consistent for analytics) while redacting names entirely. Precision matters — over-masking destroys data utility downstream.`],
+dir:[`Custom recognizers turn our domain expertise into a security asset: legal and compliance know exactly what counts as PII in our industry, and it gets enforced automatically instead of relying on developers to remember.`,`The anonymizer helps data retention policy: keep masked data for analytics (not PII) while purging the raw.`,`Quarterly review of recognizers with the privacy team, covering new data types from product changes.`]},
+
+{sec:"pres",c:"teal",eyebrow:"Presidio · Recall",t:"r",h:"Quick recall: Presidio",qs:[
+{q:`Name Presidio's two engines and one sentence on each.`,a:`<b>Analyzer</b> = the detection brain (regex + NER + deny lists + context enhancer &rarr; entities with type, position, confidence). <b>Anonymizer</b> = the transformation engine (redact / mask / replace / hash / encrypt per entity).`},
+{q:`Five anonymization operators — recite them and when you'd hash vs encrypt.`,a:`Redact, mask, replace, hash, encrypt. <b>Hash</b> when you need irreversible-but-consistent values for analytics; <b>encrypt</b> when authorized users must be able to reverse it.`},
+{q:`What does the context-aware enhancer do?`,a:`It uses surrounding words to disambiguate — a 9-digit number next to "SSN:" is an SSN; next to "tracking number:" it isn't. Cuts false positives.`},
+{q:`Which OWASP LLM risk does Presidio directly address?`,a:`<b>Sensitive Information Disclosure</b> — by sanitizing both inputs and outputs so the model can't reveal PII via completions or memorized data.`}]},
+
+/* ---------- BEDROCK + SYN ---------- */
+{sec:"bed",c:"amber",eyebrow:"Bedrock · 08",t:"q",q:`AWS bundles a full safety layer into one managed "guardrail" you attach to any Bedrock model. Guess the <b>six filter types</b> inside it — one of them is basically a built-in hallucination detector.`},
+
+{sec:"bed",c:"amber",eyebrow:"Bedrock · 08",t:"a",h:"AWS Bedrock Guardrails: a managed safety platform",body:`
+<p><strong>AWS Bedrock Guardrails</strong> adds safety controls to any foundation model on Bedrock — configurable filters checking inputs AND outputs, integrated into the Bedrock API, with no infrastructure to manage.</p>
+<ul class="pts">
+<li><strong>1. Content filters</strong> — 6 categories: Hate, Insults, Sexual, Violence, Misconduct, and now <strong>Image</strong> for multimodal. Strengths: None / Low / Medium / High.</li>
+<li><strong>2. Prompt attack detection</strong> — blocks jailbreaks and prompt injections.</li>
+<li><strong>3. Denied topics</strong> — up to 30 custom topics to block (e.g. "competitor products", "politics" for a banking bot).</li>
+<li><strong>4. Word filters</strong> — continuously updated profanity filter + custom word lists up to 10,000 items.</li>
+<li><strong>5. Sensitive information filters</strong> — detect PII; block or mask it.</li>
+<li><strong>6. Contextual grounding check</strong> — hallucination detection comparing responses against a reference source and the user query, on two dimensions: <strong>Grounding</strong> (factual accuracy) and <strong>Relevance</strong> (pertinence).</li>
+</ul>
+<div class="ascii">User Input
+    |
+[AWS BEDROCK GUARDRAIL]
+  [Content Filter (6 cat)] [Prompt Attack Detection]
+  [Denied Topics (custom)] [Word Filter (profanity+custom)]
+  [Sensitive Info (PII)]   [Contextual Grounding Check]
+    | (all pass)
+[Foundation Model]  (Bedrock-hosted LLM)
+    |
+[AWS BEDROCK GUARDRAIL]  (same filters on output)
+    |
+Safe response to user
+
+<span class="hl">Image support:</span> guardrails now scan images for the same harmful
+categories (hate, violence...) — multimodal safety built in.</div>`,
+cto:[`Shifts operational burden to AWS — no hosting, scaling, or updating safety models. API-level integration: attach a guardrail to the invocation and it's enforced. Compliance-as-code.`,`Configurable strengths tune the FP/FN trade-off per use case. The contextual grounding check is a built-in hallucination detector — no separate judge model to deploy.`,`Lock-in risk: dependent on AWS's update cycle for new attack vectors. Use Bedrock as baseline; supplement high-stakes apps with custom models. Benchmark the added API latency; use async processing where real-time isn't needed.`],
+dir:[`Simplifies vendor due diligence: AWS's SOC2/HIPAA certifications transfer to our guardrail usage — "we use AWS Bedrock Guardrails" is a credible enterprise answer.`,`Denied topics = brand protection at the platform level: block competitor mentions, block opinions on sensitive subjects.`,`Legal reviews the guardrail configuration regularly; changes must be auditable. Model the per-invocation cost against traffic — possibly cheaper than self-hosting, but verify.`]},
+
+{sec:"bed",c:"amber",eyebrow:"Bedrock · 09",t:"q",q:`How would you <b>test</b> an image guardrail end-to-end? Sketch the demo: what do you configure, what two tests do you run, and what does the trace show when something is blocked?`},
+
+{sec:"bed",c:"amber",eyebrow:"Bedrock · 09",t:"a",h:"Bedrock in action: image moderation demo",body:`
+<p>The hands-on demo builds a guardrail specifically for image content moderation:</p>
+<ul class="pts">
+<li><strong>1. Create guardrail</strong> — name it, set the blocked message: "Sorry, the model cannot answer this question with image."</li>
+<li><strong>2. Configure content filters</strong> — the same categories (Hate, Insults, Sexual, Violence, Misconduct) now apply to <strong>both text and images</strong>. Filter strength: High.</li>
+<li><strong>3. Enable prompt attack detection</strong> — also works on multimodal inputs.</li>
+<li><strong>4. Skip other filters</strong> (word, PII, grounding) to isolate image moderation for the test.</li>
+<li><strong>5. Test</strong> — benign image passes; inappropriate image gets blocked with a detailed trace.</li>
+</ul>
+<div class="ascii">Test 1: Benign image ("Example Text") + "How can I find the taxes..."
+Result: <span class="tl">PASSED — no action taken. Trace: no issues detected.</span>
+
+Test 2: Harmful image + "What are the loopholes for doing this..."
+Result: <span class="rs">BLOCKED</span>
+Trace:
++---------------------------+
+| Content Filter            |
+| Category: Misconduct      |
+| Strength: HIGH            |
+| Action: INTERVENED        |
++---------------------------+
+User sees: "Sorry, the model cannot answer this question with image"</div>
+<p>Multimodal safety is now a first-class feature in managed platforms: the guardrail inspects image pixels + associated text, applying one consistent policy.</p>`,
+cto:[`Image safety is treated symmetrically with text — same categories, same strengths — which simplifies policy management: no separate image rules.`,`Image processing is computationally expensive: understand the latency and cost of enabling image filters. For high volume, pre-screen with a lightweight classifier before Bedrock to cut costs.`,`Traceability is excellent — exact category and strength logged per intervention, crucial for auditing and improvement.`],
+dir:[`Essential for any user-generated-content platform: profile pictures, screenshots, and documents must not weaponize images under our brand.`,`The customizable blocked message keeps the experience user-friendly even when blocking.`,`Community guidelines and terms of service should state that image uploads are moderated, with an appeals process for false positives. Trace data powers content-moderation reports — exactly what was detected and why.`]},
+
+{sec:"bed",c:"amber",eyebrow:"Final Synthesis",t:"q",q:`Presidio, hallucination judges, and Bedrock Guardrails — <b>rivals or layers?</b> Stack them in order from user input to safe response, and name the job of each layer.`},
+
+{sec:"bed",c:"amber",eyebrow:"Final Synthesis",t:"a",h:"Integrating PII, hallucination detection &amp; platform guardrails",body:`
+<p>These are not competing solutions — they address different layers of the AI safety stack:</p>
+<ul class="pts">
+<li><strong>Presidio</strong> &rarr; the <em>privacy</em> layer: keeps PII from ever entering the system.</li>
+<li><strong>Hallucination detection</strong> &rarr; the <em>quality</em> layer: keeps outputs factually grounded.</li>
+<li><strong>Bedrock Guardrails</strong> &rarr; the <em>safety</em> layer: enforces content policy, blocks attacks — and can host all of the above as a managed platform.</li>
+</ul>
+<div class="ascii">User Input
+    |
+[Presidio]  --&gt; PII scrubbing (privacy)
+    |
+[Guardrails: Content Filter, Prompt Attack, Denied Topics] --&gt; safety &amp; policy
+    |
+[LLM with RAG] --&gt; grounded generation
+    |
+[Guardrails: Content Filter, Sensitive Info, Word Filter] --&gt; output safety
+    |
+[Hallucination Detection (Faithfulness, Relevancy)] --&gt; quality assurance
+    |
+[Presidio (output scan)] --&gt; catch accidental PII leakage in the response
+    |
+Safe response to user</div>
+<p>Each layer can be open source (Presidio, Vectara/Phi-3) or managed (Bedrock) — the choice depends on infrastructure preferences, data residency requirements, and cost models.</p>`,
+cto:[`My reference architecture for production LLMs: four independent safety layers — privacy (Presidio), policy enforcement (guardrails), factual accuracy (hallucination detection), output privacy (Presidio again). Composable, deployable incrementally.`,`Rollout order: Bedrock Guardrails first for quickest time-to-safety, then Presidio for PII compliance, then hallucination detection for high-stakes use cases.`,`Aggregate signals from all layers into one dashboard — a single pane of glass showing PII blocks, content violations, hallucination scores, and attack attempts, feeding continuous improvement and regulatory reporting.`],
+dir:[`This layered architecture wins enterprise deals: a bank or hospital's security checklist gets a tick in every box — PII? Presidio. Content safety? Bedrock. Hallucination? Faithfulness scoring. Audit trail? Unified logging.`,`It moves the conversation from "is your AI safe?" to "how do you continuously improve safety?" — a strategic advantage.`,`Build this stack thoroughly for flagship products; use it as the reference for all AI initiatives. Its cost is dwarfed by one major incident or one lost enterprise contract.`]},
+
+{sec:"bed",c:"amber",eyebrow:"Final Recall",t:"r",h:"Final recall: the whole of Part 3",qs:[
+{q:`Recite the comprehensive AI safety stack from memory — all seven stops between user input and safe response.`,a:`Presidio (input PII scrub) &rarr; guardrails input side (content filter, prompt attack, denied topics) &rarr; LLM with RAG &rarr; guardrails output side (content, sensitive info, word filter) &rarr; hallucination detection (faithfulness + relevancy) &rarr; Presidio output scan &rarr; safe response.`},
+{q:`Bedrock's contextual grounding check measures two dimensions — name them.`,a:`<b>Grounding</b> (factual accuracy against the reference source) and <b>Relevance</b> (pertinence to the user query). It's a built-in hallucination detector.`},
+{q:`What are Bedrock's six guardrail features with their limits?`,a:`Content filters (6 categories + image, strength None-High); prompt attack detection; denied topics (up to 30); word filters (profanity + up to 10,000 custom words); sensitive info filters (block or mask PII); contextual grounding check.`},
+{q:`One-line role of each tool: Presidio / Vectara-Phi-3 / Bedrock.`,a:`<b>Presidio:</b> privacy — PII never enters or leaves. <b>Vectara / Phi-3 judges:</b> quality — every answer checked against its context. <b>Bedrock Guardrails:</b> safety — managed policy enforcement wrapped around any Bedrock model.`}]}
+];
+
+let i=0;
+const stage=document.getElementById('stage'),dots=document.getElementById('dots'),
+tabs=document.getElementById('tabs'),counter=document.getElementById('counter'),
+prevBtn=document.getElementById('prevBtn'),nextBtn=document.getElementById('nextBtn');
+SECTIONS.forEach(s=>{const b=document.createElement('button');b.className='tab';b.dataset.c=s.c;b.dataset.sec=s.id;b.textContent=s.label;b.onclick=()=>go(S.findIndex(x=>x.sec===s.id));tabs.appendChild(b);});
+S.forEach((sl,k)=>{const d=document.createElement('span');d.className='dot'+(sl.t==='q'?' q':'');d.tabIndex=0;d.setAttribute('role','button');d.setAttribute('aria-label','Slide '+(k+1));d.onclick=()=>go(k);d.onkeydown=e=>{if(e.key==='Enter')go(k)};dots.appendChild(d);});
+function lens(cto,dir){
+  return '<details class="lens"><summary>CTO LENS</summary><div class="body"><ul class="pts">'+cto.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>'
+       + '<details class="lens dir"><summary>DIRECTOR LENS</summary><div class="body"><ul class="pts">'+dir.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+}
+function go(k){
+  i=Math.max(0,Math.min(S.length-1,k));
+  const s=S[i];stage.innerHTML='';
+  const el=document.createElement('div');el.className='slide';
+  if(s.t==='q'){
+    el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div>'
+      +'<div class="qcard"><div class="qlabel">Think first &middot; predict before you peek</div>'
+      +'<div class="qtext">'+s.q+'</div>'
+      +'<div class="qsub">Form your answer in your head. Then press Next to compare.</div></div>';
+  } else if(s.t==='r'){
+    el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'
+      +'<p>Answer from memory first. Tap a question to reveal the answer.</p>'
+      +s.qs.map(x=>'<details class="recall-item"><summary>'+x.q+'</summary><div class="ans">'+x.a+'</div></details>').join('')
+      +'<div class="recall-hint">Struggled on any? Jump back with the tabs above, then return.</div>';
+  } else {
+    el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'+s.body+(s.cto?lens(s.cto,s.dir):'');
+  }
+  stage.appendChild(el);
+  counter.textContent=(i+1)+' / '+S.length;
+  document.querySelectorAll('.dot').forEach((d,k2)=>d.classList.toggle('on',k2===i));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.sec===s.sec));
+  prevBtn.disabled=(i===0);
+  nextBtn.textContent=(i===S.length-1)?'Done \u2713':'Next \u2192';
+  nextBtn.disabled=(i===S.length-1);
+  document.querySelector('main').scrollTop=0;window.scrollTo(0,0);
+}
+prevBtn.onclick=()=>go(i-1);nextBtn.onclick=()=>go(i+1);
+document.addEventListener('keydown',e=>{if(e.target.closest('details'))return;if(e.key==='ArrowRight')go(i+1);if(e.key==='ArrowLeft')go(i-1);});
+go(0);
+</script>
+</body>
+</html>

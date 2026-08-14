@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architects Lab · Low-Code Agentic AI with n8n</title>
+<style>
+  :root{
+    --bg:#0d0f14; --panel:#151823; --panel2:#1b1f2e;
+    --ink:#e8e6df; --dim:#8b8fa3;
+    --gold:#d4af5a; --gold-soft:#b8964a;
+    --teal:#5ad4c8; --rose:#d47a8a; --violet:#9a8ad4; --amber:#d4915a;
+    --line:#2a2f42;
+    --mono:'Courier New', ui-monospace, monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif;display:flex;flex-direction:column;min-height:100vh}
+  header{padding:16px 26px 12px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  header .k{font-family:var(--mono);font-size:.68rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase}
+  header h1{font-size:1rem;font-weight:normal}
+  header .count{margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--dim)}
+  .tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
+  .tab{flex:1;min-width:110px;padding:9px 10px;text-align:center;font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;color:var(--dim);border-right:1px solid var(--line);cursor:pointer;white-space:nowrap;transition:.2s;background:transparent;border-top:none;border-bottom:none;border-left:none}
+  .tab:last-child{border-right:none}
+  .tab.active{color:var(--bg);font-weight:bold}
+  .tab[data-c="gold"].active{background:var(--gold)}
+  .tab[data-c="teal"].active{background:var(--teal)}
+  .tab[data-c="rose"].active{background:var(--rose)}
+  .tab[data-c="violet"].active{background:var(--violet)}
+  .tab[data-c="amber"].active{background:var(--amber)}
+  .tab[data-c="ink"].active{background:var(--ink)}
+  main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px 96px;overflow-y:auto}
+  .slide{max-width:780px;width:100%;animation:fadeUp .4s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @media (prefers-reduced-motion: reduce){.slide{animation:none}}
+  .eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px}
+  .eyebrow.gold{color:var(--gold)} .eyebrow.teal{color:var(--teal)} .eyebrow.rose{color:var(--rose)}
+  .eyebrow.violet{color:var(--violet)} .eyebrow.amber{color:var(--amber)} .eyebrow.ink{color:var(--dim)}
+  .slide h2{font-size:1.55rem;font-weight:normal;line-height:1.3;margin-bottom:14px}
+  .slide h2 em{font-style:italic;color:var(--gold)}
+  .slide p{color:#c9c7bf;line-height:1.75;font-size:1rem;margin-bottom:13px}
+  .slide p strong, .slide li strong{color:var(--ink)}
+  .slide code{font-family:var(--mono);font-size:.85em;background:var(--panel2);padding:2px 6px;border-radius:3px;color:var(--gold)}
+  .ascii{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:6px;padding:14px 16px;margin:14px 0;font-family:var(--mono);font-size:.74rem;line-height:1.5;color:#b9c2d8;overflow-x:auto;white-space:pre}
+  .ascii .hl{color:var(--gold)} .ascii .tl{color:var(--teal)} .ascii .rs{color:var(--rose)}
+  .note{border:1px dashed var(--gold-soft);border-radius:6px;padding:11px 15px;margin:14px 0;font-size:.9rem;color:#cfc9ae;line-height:1.65}
+  .note b{color:var(--gold)}
+  ul.pts{margin:10px 0 13px 2px;list-style:none}
+  ul.pts li{padding:6px 0 6px 21px;position:relative;color:#c9c7bf;line-height:1.6;font-size:.95rem}
+  ul.pts li::before{content:"\203A";position:absolute;left:4px;color:var(--gold);font-family:var(--mono)}
+  /* ---- Think First (question) slides ---- */
+  .qcard{border:2px solid var(--gold);border-radius:10px;background:linear-gradient(160deg,#1a1608,#151823);padding:30px 28px;margin:6px 0 18px;position:relative}
+  .qcard::before{content:"?";position:absolute;top:-20px;left:22px;width:38px;height:38px;border-radius:50%;background:var(--gold);color:var(--bg);font-family:var(--mono);font-weight:bold;font-size:1.3rem;display:flex;align-items:center;justify-content:center}
+  .qcard .qlabel{font-family:var(--mono);font-size:.64rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;margin-bottom:12px}
+  .qcard .qtext{font-size:1.25rem;line-height:1.55;color:var(--ink);font-style:italic}
+  .qcard .qsub{margin-top:14px;font-size:.86rem;color:var(--dim);font-style:normal;font-family:var(--mono)}
+  /* ---- lenses (CTO / Director) ---- */
+  details.lens{margin:10px 0;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+  details.lens summary{cursor:pointer;padding:10px 14px;font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;color:var(--teal);list-style:none}
+  details.lens summary::before{content:"+ ";color:var(--gold)}
+  details.lens[open] summary::before{content:"\2212 "}
+  details.lens.dir summary{color:var(--rose)}
+  details.lens .body{padding:2px 16px 13px}
+  details.lens .body li{font-size:.9rem}
+  /* ---- recall quiz slides ---- */
+  .recall-item{border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:6px;background:var(--panel);margin:12px 0;overflow:hidden}
+  .recall-item summary{cursor:pointer;padding:13px 16px;font-size:.98rem;color:var(--ink);list-style:none;line-height:1.55}
+  .recall-item summary::before{content:"Q  ";font-family:var(--mono);color:var(--teal);font-weight:bold}
+  .recall-item .ans{padding:0 16px 13px;color:#b9c2b0;font-size:.92rem;line-height:1.65;border-top:1px dashed var(--line);padding-top:11px;margin:0 16px 13px;padding-left:0;padding-right:0}
+  .recall-item .ans b{color:var(--teal)}
+  .recall-hint{font-family:var(--mono);font-size:.7rem;color:var(--dim);margin-top:6px}
+  footer{position:fixed;left:0;right:0;bottom:0;background:rgba(13,15,20,.93);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:11px 20px;display:flex;align-items:center;gap:14px}
+  .dots{display:flex;gap:4px;flex:1;justify-content:center;flex-wrap:wrap}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--line);cursor:pointer;transition:.2s}
+  .dot.on{background:var(--gold);transform:scale(1.45)}
+  .dot.q{border:1px solid var(--gold);background:transparent}
+  .dot.q.on{background:var(--gold)}
+  button.nav{font-family:var(--mono);font-size:.78rem;letter-spacing:.1em;background:transparent;color:var(--ink);border:1px solid var(--line);padding:9px 18px;border-radius:5px;cursor:pointer;transition:.2s}
+  button.nav:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+  button.nav.primary{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:bold}
+  button.nav.primary:hover{background:#e2c070}
+  button.nav:disabled{opacity:.25;cursor:default}
+  button.nav:focus-visible,.tab:focus-visible,.dot:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .hint{position:fixed;bottom:62px;right:18px;font-family:var(--mono);font-size:.6rem;color:var(--dim);letter-spacing:.1em}
+  @media(max-width:600px){.slide h2{font-size:1.28rem}.ascii{font-size:.58rem;padding:11px}.hint{display:none}.qcard .qtext{font-size:1.08rem}}
+</style>
+</head>
+<body>
+<header>
+  <span class="k">Architects Lab</span>
+  <h1>Building Agentic AI Workflows with n8n</h1>
+  <span class="count" id="counter"></span>
+</header>
+<div class="tabs" id="tabs"></div>
+<main><div id="stage"></div></main>
+<div class="hint">&larr; &rarr; keys work too</div>
+<footer>
+  <button class="nav" id="prevBtn">&larr; Prev</button>
+  <div class="dots" id="dots"></div>
+  <button class="nav primary" id="nextBtn">Next &rarr;</button>
+</footer>
+<script>
+const SECTIONS=[
+ {id:"intro",label:"START",c:"ink"},
+ {id:"build1",label:"FIRST WORKFLOWS",c:"teal"},
+ {id:"sheets",label:"PERSISTING+RISK",c:"rose"},
+ {id:"cal",label:"CALENDAR AGENT",c:"violet"},
+ {id:"end",label:"WRAP-UP",c:"amber"}
+];
+const S=[
+
+{sec:"intro",c:"ink",eyebrow:"Low-Code Agentic AI with n8n",t:"a",h:"Building Agentic AI Workflows with <em>n8n</em>",body:`
+<p>A hands-on module building a text summarizer, a translation engine, a Google Sheets logger, and a calendar-reading/scheduling agent — all via drag-and-drop nodes rather than hand-written code.</p>
+<div class="note"><b>How to use:</b> "?" slides ask you to predict first. Press Next to compare. Recall quizzes close each section.</div>`},
+
+/* ---------- FIRST WORKFLOWS ---------- */
+{sec:"build1",c:"teal",eyebrow:"Framing",t:"q",q:`n8n's AI Agent node can be given a "brain," memory, and tools — the same conceptual pieces as a code-first agent framework. What's the real <b>build-vs-buy trade-off</b> this represents for an internal tooling strategy?`},
+
+{sec:"build1",c:"teal",eyebrow:"Framing",t:"a",h:"What n8n actually is — low-code agentic workflows",body:`
+<p>n8n is a low-code/no-code workflow automation tool that connects services (Gmail, Google Sheets, Slack, Notion, custom APIs, and AI models like OpenAI/Anthropic/DeepSeek) via a visual drag-and-drop canvas rather than hand-written integration code.</p>
+<div class="ascii">Core building blocks:
+TRIGGERS  what starts a workflow - a chat message, an incoming
+           email, a schedule
+NODES     each represents a service or a processing step
+AI AGENT NODE  can be given a "brain" (an LLM), memory, and
+                tools - same pieces as a code-first agent,
+                wired together visually</div>
+<div class="note">A "brain" (connection to an LLM like OpenAI, Claude, or DeepSeek), memory (retain context across a conversation), and tools (access to external services/APIs — search, calendar, spreadsheets) — the same three conceptual components a code-first agent framework provides, just configured through a visual interface instead of code.</div>`,
+cto:[`n8n trades flexibility and version-controllability for speed of iteration and approachability to non-engineers. Low-code platforms let non-engineers (business analysts, ops teams) build and maintain their own automations without an engineer in the loop for every change — at the cost of workflows living outside your normal code review, testing, and version control practices. A genuine build-vs-buy-style decision axis for any internal tooling strategy.`]},
+
+{sec:"build1",c:"teal",eyebrow:"Build",t:"q",q:`In n8n, a field can be in "fixed" mode or "expression" mode. What's the difference — and why does the summarizer workflow need <code>{{ $json.chatInput }}</code> instead of static text?`},
+
+{sec:"build1",c:"teal",eyebrow:"Build",t:"a",h:"Workflow 1 — a text summarization engine",body:`
+<div class="ascii">[Chat Trigger] --> [AI Agent]  (brain: OpenAI GPT-4o-mini)
+ "on chat message    prompt: "Summarize the user input in one
+  received"            sentence: {{ $json.chatInput }}"</div>
+<p>The minimal viable agentic workflow: a chat trigger feeds a message into an AI Agent node, whose prompt uses n8n's templating syntax to dynamically pull in the prior node's output. The agent is given a brain via an OpenAI Chat Model node, no memory, no tools — deliberately minimal.</p>
+<div class="note">"Fixed" mode means the field contains static, literal text that never changes. "Expression" mode lets the field dynamically reference data from previous steps (e.g. the chat trigger's input) using n8n's templating syntax, so the value is computed at runtime based on what actually flowed through the workflow rather than being hardcoded.</div>`},
+
+{sec:"build1",c:"teal",eyebrow:"Ops",t:"q",q:`What does exporting an n8n workflow as <b>JSON</b> actually let you do that you couldn't do with the workflow only existing inside the UI?`},
+
+{sec:"build1",c:"teal",eyebrow:"Ops",t:"a",h:"Debugging, export/import, and multiple data views",body:`
+<ul class="pts">
+<li><strong>Export/Import as JSON</strong> — an entire workflow (every node, connection, config) can be downloaded and re-imported elsewhere, fully portable without rebuilding.</li>
+<li><strong>Per-node execution inspection</strong> — clicking into any executed node shows exactly what data flowed in and out, viewable as Schema, Table, or raw JSON.</li>
+<li><strong>Token usage tracking</strong> — visible per execution, directly supporting cost monitoring.</li>
+<li><strong>Drag-and-drop variable wiring</strong> — drag a field name from one node's output directly into another node's input, rather than typing expression syntax by hand.</li>
+</ul>
+<div class="note">It makes the workflow portable and shareable as a standalone file — back it up, version it, move it between n8n instances/accounts, or share it with someone who imports it directly rather than manually rebuilding every node and connection from scratch.</div>`,
+cto:[`The JSON export/import feature is the detail that makes this genuinely practical rather than a toy — it's effectively n8n's answer to "infrastructure as code" for a low-code tool. Worth checking whether your team would treat these exported JSON files with the same discipline as any other config-as-code artifact (stored in git, reviewed before import) — otherwise you get the same "who changed this and why" problem that plagued pre-IaC infrastructure management.`]},
+
+{sec:"build1",c:"teal",eyebrow:"Practice",t:"q",q:`Swapping the workflow's brain from OpenAI to Claude — what actually had to change: the prompt, the workflow structure, or just one node?`},
+
+{sec:"build1",c:"teal",eyebrow:"Practice",t:"a",h:"Swapping the brain — translation workflow with Claude",body:`
+<p>Same structural pattern as the summarizer (chat trigger &rarr; AI Agent), prompt changed to "translate to French" — and the actual point of the exercise: the brain swapped from an OpenAI Chat Model node to an Anthropic Chat Model node (Claude), configured with a separate API key.</p>
+<div class="note">Only the model connection node itself — replacing OpenAI Chat Model with Anthropic Chat Model and providing its API key. The AI Agent's prompt, the chat trigger, and the overall workflow structure required no changes at all.</div>`,
+cto:[`The ease of this brain-swap (a completely different model provider, same workflow logic, same prompt structure, near-zero rework) is the clearest practical illustration in this module of why visual, node-based agent building is genuinely useful for rapid model comparison — you could build the same workflow four times with four different brains in the time it'd take to write and test one code-based integration.`]},
+
+{sec:"build1",c:"teal",eyebrow:"Practice",t:"q",q:`A multi-turn test: "What is the price of Bitcoin?" &rarr; "How many are in circulation?" &rarr; abrupt topic change. What specifically <b>demonstrates</b> the agent's memory is actually working?`},
+
+{sec:"build1",c:"teal",eyebrow:"Practice",t:"a",h:"Testing memory and search tools — multi-turn context",body:`
+<p>A separate workflow (memory + a search API tool attached to the AI Agent) tested across: "What is the price of Bitcoin?" &rarr; "How many are in circulation?" &rarr; "Show the price history since 2010" &rarr; then "list the top 5 restaurants in the world." Each follow-up triggered a fresh search API call and the agent maintained context until the topic was deliberately changed.</p>
+<div class="note">The follow-up "how many are in circulation today?" was correctly understood as referring to Bitcoin without the user restating it explicitly — the agent used its memory of the prior turn to resolve the implicit reference, which it could only do if conversational context was actually being retained across turns.</div>`},
+
+{sec:"build1",c:"teal",eyebrow:"First Workflows · Recall",t:"r",h:"Quick recall: first workflows",qs:[
+{q:`What three things can an n8n AI Agent node be given, mirroring a code-first agent?`,a:`A "brain" (LLM connection), memory (context retention), and tools (external service/API access) — same conceptual pieces as a code-first agent, configured visually instead of in code.`},
+{q:`What's the difference between "fixed" and "expression" mode for a field?`,a:`Fixed = static literal text that never changes. Expression = dynamically references data from earlier workflow steps at runtime, using n8n's templating syntax (<code>{{ $json.field }}</code>).`},
+{q:`What did swapping OpenAI for Claude actually require changing?`,a:`Only the model connection node itself — the prompt, chat trigger, and overall workflow structure needed zero changes.`}]},
+
+/* ---------- PERSISTING + RISK ---------- */
+{sec:"sheets",c:"rose",eyebrow:"Build",t:"q",q:`The Google Sheets node offers Append Row, Create Spreadsheet, Delete Spreadsheet, Clear Sheet, and Update — all on the <b>same node type</b>. What real risk does that create for an agent with write access?`},
+
+{sec:"sheets",c:"rose",eyebrow:"Build",t:"a",h:"Google Sheets integration — persisting agent output",body:`
+<div class="ascii">[Chat Trigger] --> [AI Agent: summarize] --> [Google Sheets: Append Row]
+  (brain: OpenAI)                              columns: Input | Summary
+                                                (values dragged in from
+                                                 prior nodes' outputs)</div>
+<p>Extends the summarizer to persist every input/output pair as a new row, rather than just displaying it in chat. Setup: a pre-created sheet with exact, case-sensitive column headers, OAuth credentials, and the <strong>Append Row</strong> operation selected.</p>
+<div class="note">That the same Google Sheets node type that enables useful operations like appending a row can also perform destructive operations like deleting an entire spreadsheet — an AI agent given broad, unscoped access to such a node could, in principle, delete real data. "Just imagine what could be done in 5 or 10 years when these workflows are in place" — explicitly flagged as real, not hypothetical.</div>`,
+cto:[`Worth taking seriously as a design principle for any agentic tool with write access to real systems: the node/operation you grant should be scoped to the narrowest capability actually needed (Append Row, not "Google Sheets: all operations") — the same least-privilege discipline as IAM policies. An agent with unscoped delete/update access to production data is a real operational risk category, and this n8n example makes it viscerally concrete.`]},
+
+{sec:"sheets",c:"rose",eyebrow:"Practice",t:"q",q:`A Python-to-C code translator logging to a spreadsheet: the first naive prompt produced output <b>cluttered with explanatory prose</b> around the code. Why did that make the output unusable for this pipeline specifically?`},
+
+{sec:"sheets",c:"rose",eyebrow:"Practice",t:"a",h:"Python-to-C code translator, with an output-cleanup lesson",body:`
+<p>Exercise: receive Python code, convert to C, log both versions to a new Google Sheet (columns: Python, C). The instructive twist: the first naive prompt produced output cluttered with explanatory prose around the code, unsuitable for a clean spreadsheet cell.</p>
+<div class="note">The model included explanatory prose alongside the converted C code by default, and that mixed text-plus-code output wasn't suitable for being written cleanly into a single spreadsheet cell — the prompt needed to be explicitly tightened to request ONLY the raw code with no surrounding explanation. A downstream system (the spreadsheet) needed clean, structured output, not a conversational response.</div>
+<div class="note">"The model did what I asked, but not what I actually needed for this pipeline" is an extremely common first-pass failure mode whenever an LLM's output feeds directly into another system (a spreadsheet cell, a database field, a UI) rather than being read by a human. The fix — tightening the prompt to specify format constraints explicitly — is a pattern worth applying by default anywhere an LLM output becomes another system's structured input.</div>`},
+
+{sec:"sheets",c:"rose",eyebrow:"Persisting &amp; Risk · Recall",t:"r",h:"Quick recall: persisting output and its risks",qs:[
+{q:`What specific risk does connecting an AI agent to a Google Sheets node carry?`,a:`The same node type that enables Append Row also enables Delete Spreadsheet — an unscoped agent could, in principle, delete real data. Least-privilege scoping (grant only Append Row, not "all operations") is the fix.`},
+{q:`Why did the naive Python-to-C prompt fail for this specific pipeline, even though the model "did what was asked"?`,a:`It answered conversationally with prose around the code, which isn't clean structured output — a spreadsheet cell needs ONLY the code. Any LLM output feeding another system needs explicit format constraints, not just a correct answer.`}]},
+
+/* ---------- CALENDAR AGENT ---------- */
+{sec:"cal",c:"violet",eyebrow:"Build",t:"q",q:`The calendar tool's event date range is set to <b>"defined automatically by the model"</b> rather than a fixed parameter. What's the trade-off, and where does it become risky?`},
+
+{sec:"cal",c:"violet",eyebrow:"Build",t:"a",h:"Calendar agent — reading and creating events",body:`
+<div class="ascii">[Chat Trigger] --> [AI Agent] --> tools: [Google Calendar: Get Many]
+                     (brain: OpenAI)  [Google Calendar: Create]
+
+Prompt structure:
+  Context      -> "You are a helpful assistant with access to
+                    the user's Google Calendar..."
+  Instructions -> "...use available tools to retrieve or create
+                    events based on user input..."
+  Time         -> dynamically set to "now" (reasons about
+                    availability going forward, not the past)
+  Input        -> {{ $json.chatInput }}</div>
+<p>Two calendar tool instances on one agent: <strong>Get Many</strong> (start time "now," end time "defined automatically by the model") and <strong>Create</strong> (start/end times similarly inferred from context).</p>
+<div class="note">"Defined automatically by the model" hands a piece of reasoning (how far forward should I look?) to the LLM rather than hardcoding it — more flexible but introduces a new class of failure mode: the model's inference about scope could be wrong in ways a fixed parameter never would.</div>`,
+cto:[`Worth treating this as a spectrum, not a binary — for low-stakes queries (read-only calendar checks) model-inferred parameters are a reasonable trade for flexibility; for higher-stakes actions (actual event creation), tighter, more explicit constraints might be worth the loss of flexibility.`]},
+
+{sec:"cal",c:"violet",eyebrow:"Build",t:"q",q:`Why is the calendar tool's time window start set to <b>"now"</b> rather than left unset or defaulting to some earlier point?`},
+
+{sec:"cal",c:"violet",eyebrow:"Build",t:"a",h:"Reasoning forward, not into the past",body:`
+<p>So the agent only reasons about calendar availability going forward from the present moment, not events that already happened in the past.</p>
+<div class="note">This ensures scheduling and availability-checking logic stays relevant to real, current, and future commitments rather than potentially getting confused by or referencing stale past events.</div>`},
+
+{sec:"cal",c:"violet",eyebrow:"Debug",t:"q",q:`The Create-event tool books a meeting at the correct time, but the calendar entry shows <b>"No title."</b> Was the agent's language understanding wrong — or something else?`},
+
+{sec:"cal",c:"violet",eyebrow:"Debug",t:"a",h:"The missing-title bug — a real iteration cycle",body:`
+<p>First test successfully booked a meeting at the correct time, but showed "No title" — the agent understood the requested time slot correctly but had no configured field to actually pass through the event's title/summary text. Fix: adding an explicit "Summary" field to the Google Calendar node's configuration, also set to "defined by the model."</p>
+<div class="note">Something else — a tool configuration gap, not a model reasoning failure. The agent correctly understood what the meeting should be titled ("video editing") based on the conversation; the tool's configuration simply didn't expose a field for that information to land in.</div>
+<div class="note">Worth internalizing as a debugging heuristic for any agent-plus-tool system: when output looks "almost right but missing a piece," check the tool's parameter/field configuration before assuming the model's reasoning is at fault — often the gap is in what the tool call is actually <b>wired to accept.</b></div>`},
+
+{sec:"cal",c:"violet",eyebrow:"Calendar Agent · Recall",t:"r",h:"Quick recall: the calendar agent",qs:[
+{q:`What's the trade-off in letting the model define calendar parameters "automatically" rather than hardcoding them?`,a:`More flexible (adapts to what the user actually asked), but introduces a new failure mode — the model's inferred scope could be wrong in ways a fixed parameter never would. Treat it as a spectrum: fine for read-only checks, riskier for actual event creation.`},
+{q:`Was the "No title" bug caused by the model failing to understand the meeting title?`,a:`No — a tool configuration gap. The agent correctly inferred the title; the Google Calendar node just had no field configured for that information to pass through.`}]},
+
+/* ---------- WRAP-UP ---------- */
+{sec:"end",c:"amber",eyebrow:"Wrap-up",t:"a",h:"Module recap",body:`
+<ol style="color:#c9c7bf;line-height:1.9;padding-left:20px;font-size:.95rem">
+<li>n8n: visual, node-based workflow builder — triggers, nodes, AI Agent nodes with pluggable brain/memory/tools</li>
+<li>Prompt structure reused throughout: Context &rarr; Instructions &rarr; Input &rarr; Output format (same pattern as code-first prompting)</li>
+<li>Expression mode (<code>{{ $json.field }}</code>) dynamically wires data between nodes — the low-code equivalent of variable passing</li>
+<li>Swapping the underlying LLM (OpenAI &harr; Claude) requires changing only the model node, not the workflow logic</li>
+<li>Memory + tools (search, calendar, sheets) attach to an agent the same way they would in a code framework, just visually</li>
+<li>Real risk: broad tool/operation access (e.g. unscoped Google Sheets access) on an LLM-driven agent is a genuine operational hazard, not hypothetical — least-privilege scoping matters here too</li>
+<li>"Defined automatically by the model" parameters trade flexibility for a new class of possible reasoning-error failure mode</li>
+<li>Debugging agent+tool systems: check tool field configuration before assuming a model reasoning failure when output is "almost right but missing something"</li>
+</ol>
+<div class="note">The through-line across this whole module: n8n gives you the exact same agent building blocks (brain, memory, tools) as a code framework — the risks (unscoped write access, model-inferred parameters, tool-vs-reasoning debugging confusion) transfer completely too, just wearing a visual-canvas costume instead of Python.</div>`},
+
+{sec:"end",c:"amber",eyebrow:"Final Recall",t:"r",h:"Final recall: questions worth carrying forward",qs:[
+{q:`Everything built here uses one flat agent with different tools attached. At what point would you reach for sub-workflows or conditional branches instead?`,a:`When routing complexity or tool count grows enough that one flat agent starts making inconsistent tool choices — the same threshold question as "when do you need multi-agent handoffs" in code-first frameworks. A single agent with 2-4 well-differentiated tools is fine; many overlapping tools need routing structure.`},
+{q:`Given the Google Sheets delete-risk warning, what's a minimum guardrail requirement before allowing any workflow write/delete access to production-adjacent systems?`,a:`Scope every granted operation to the narrowest capability actually needed (never "all operations"), require a human approval step for anything destructive or high-value, and treat exported workflow JSON with the same git-reviewed discipline as any other infrastructure-as-code artifact.`},
+{q:`Does the low-code approach's non-engineer-friendliness change its fit for a regulated banking environment?`,a:`It's a genuine trade-off, not a disqualifier — non-engineer ownership speeds iteration but moves workflows outside normal code review and version control. For regulated environments, this argues for treating n8n workflows as auditable artifacts (exported, versioned, reviewed) rather than avoiding low-code tools outright.`}]}
+];
+
+let i=0;
+const stage=document.getElementById('stage'),dots=document.getElementById('dots'),
+tabs=document.getElementById('tabs'),counter=document.getElementById('counter'),
+prevBtn=document.getElementById('prevBtn'),nextBtn=document.getElementById('nextBtn');
+SECTIONS.forEach(s=>{const b=document.createElement('button');b.className='tab';b.dataset.c=s.c;b.dataset.sec=s.id;b.textContent=s.label;b.onclick=()=>go(S.findIndex(x=>x.sec===s.id));tabs.appendChild(b);});
+S.forEach((sl,k)=>{const d=document.createElement('span');d.className='dot'+(sl.t==='q'?' q':'');d.tabIndex=0;d.setAttribute('role','button');d.setAttribute('aria-label','Slide '+(k+1));d.onclick=()=>go(k);d.onkeydown=e=>{if(e.key==='Enter')go(k)};dots.appendChild(d);});
+function lens(cto,dir){
+  let out='';
+  if(cto&&cto.length) out+='<details class="lens"><summary>CTO LENS</summary><div class="body"><ul class="pts">'+cto.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+  if(dir&&dir.length) out+='<details class="lens dir"><summary>DIRECTOR LENS</summary><div class="body"><ul class="pts">'+dir.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+  return out;
+}
+function go(k){
+  i=Math.max(0,Math.min(S.length-1,k));
+  const s=S[i];stage.innerHTML='';
+  const el=document.createElement('div');el.className='slide';
+  try{
+    if(s.t==='q'){
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div>'
+        +'<div class="qcard"><div class="qlabel">Think first &middot; predict before you peek</div>'
+        +'<div class="qtext">'+s.q+'</div>'
+        +'<div class="qsub">Form your answer in your head. Then press Next to compare.</div></div>';
+    } else if(s.t==='r'){
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'
+        +'<p>Answer from memory first. Tap a question to reveal the answer.</p>'
+        +s.qs.map(x=>'<details class="recall-item"><summary>'+x.q+'</summary><div class="ans">'+x.a+'</div></details>').join('')
+        +'<div class="recall-hint">Struggled on any? Jump back with the tabs above, then return.</div>';
+    } else {
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'+s.body+(((s.cto&&s.cto.length)||(s.dir&&s.dir.length))?lens(s.cto,s.dir):'');
+    }
+  }catch(err){
+    el.innerHTML='<div class="eyebrow rose">Render error</div><h2>Slide '+(i+1)+' failed to render</h2><p>'+String(err&&err.message||err)+'</p>';
+  }
+  stage.appendChild(el);
+  counter.textContent=(i+1)+' / '+S.length;
+  document.querySelectorAll('.dot').forEach((d,k2)=>d.classList.toggle('on',k2===i));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.sec===s.sec));
+  prevBtn.disabled=(i===0);
+  nextBtn.textContent=(i===S.length-1)?'Done \u2713':'Next \u2192';
+  nextBtn.disabled=(i===S.length-1);
+  document.querySelector('main').scrollTop=0;window.scrollTo(0,0);
+}
+prevBtn.onclick=()=>go(i-1);nextBtn.onclick=()=>go(i+1);
+document.addEventListener('keydown',e=>{if(e.target.closest('details'))return;if(e.key==='ArrowRight')go(i+1);if(e.key==='ArrowLeft')go(i-1);});
+go(0);
+</script>
+</body>
+</html>

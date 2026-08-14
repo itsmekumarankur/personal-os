@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architects Lab · Data Strategy &amp; Preparation</title>
+<style>
+  :root{
+    --bg:#0d0f14; --panel:#151823; --panel2:#1b1f2e;
+    --ink:#e8e6df; --dim:#8b8fa3;
+    --gold:#d4af5a; --gold-soft:#b8964a;
+    --teal:#5ad4c8; --rose:#d47a8a; --violet:#9a8ad4; --amber:#d4915a;
+    --line:#2a2f42;
+    --mono:'Courier New', ui-monospace, monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif;display:flex;flex-direction:column;min-height:100vh}
+  header{padding:16px 26px 12px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  header .k{font-family:var(--mono);font-size:.68rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase}
+  header h1{font-size:1rem;font-weight:normal}
+  header .count{margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--dim)}
+  .tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
+  .tab{flex:1;min-width:110px;padding:9px 10px;text-align:center;font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;color:var(--dim);border-right:1px solid var(--line);cursor:pointer;white-space:nowrap;transition:.2s;background:transparent;border-top:none;border-bottom:none;border-left:none}
+  .tab:last-child{border-right:none}
+  .tab.active{color:var(--bg);font-weight:bold}
+  .tab[data-c="gold"].active{background:var(--gold)}
+  .tab[data-c="teal"].active{background:var(--teal)}
+  .tab[data-c="rose"].active{background:var(--rose)}
+  .tab[data-c="violet"].active{background:var(--violet)}
+  .tab[data-c="amber"].active{background:var(--amber)}
+  .tab[data-c="ink"].active{background:var(--ink)}
+  main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px 96px;overflow-y:auto}
+  .slide{max-width:780px;width:100%;animation:fadeUp .4s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @media (prefers-reduced-motion: reduce){.slide{animation:none}}
+  .eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px}
+  .eyebrow.gold{color:var(--gold)} .eyebrow.teal{color:var(--teal)} .eyebrow.rose{color:var(--rose)}
+  .eyebrow.violet{color:var(--violet)} .eyebrow.amber{color:var(--amber)} .eyebrow.ink{color:var(--dim)}
+  .slide h2{font-size:1.55rem;font-weight:normal;line-height:1.3;margin-bottom:14px}
+  .slide h2 em{font-style:italic;color:var(--gold)}
+  .slide p{color:#c9c7bf;line-height:1.75;font-size:1rem;margin-bottom:13px}
+  .slide p strong, .slide li strong{color:var(--ink)}
+  .slide code{font-family:var(--mono);font-size:.85em;background:var(--panel2);padding:2px 6px;border-radius:3px;color:var(--gold)}
+  .ascii{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:6px;padding:14px 16px;margin:14px 0;font-family:var(--mono);font-size:.74rem;line-height:1.5;color:#b9c2d8;overflow-x:auto;white-space:pre}
+  .ascii .hl{color:var(--gold)} .ascii .tl{color:var(--teal)} .ascii .rs{color:var(--rose)}
+  .note{border:1px dashed var(--gold-soft);border-radius:6px;padding:11px 15px;margin:14px 0;font-size:.9rem;color:#cfc9ae;line-height:1.65}
+  .note b{color:var(--gold)}
+  ul.pts{margin:10px 0 13px 2px;list-style:none}
+  ul.pts li{padding:6px 0 6px 21px;position:relative;color:#c9c7bf;line-height:1.6;font-size:.95rem}
+  ul.pts li::before{content:"\203A";position:absolute;left:4px;color:var(--gold);font-family:var(--mono)}
+  /* ---- Think First (question) slides ---- */
+  .qcard{border:2px solid var(--gold);border-radius:10px;background:linear-gradient(160deg,#1a1608,#151823);padding:30px 28px;margin:6px 0 18px;position:relative}
+  .qcard::before{content:"?";position:absolute;top:-20px;left:22px;width:38px;height:38px;border-radius:50%;background:var(--gold);color:var(--bg);font-family:var(--mono);font-weight:bold;font-size:1.3rem;display:flex;align-items:center;justify-content:center}
+  .qcard .qlabel{font-family:var(--mono);font-size:.64rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;margin-bottom:12px}
+  .qcard .qtext{font-size:1.25rem;line-height:1.55;color:var(--ink);font-style:italic}
+  .qcard .qsub{margin-top:14px;font-size:.86rem;color:var(--dim);font-style:normal;font-family:var(--mono)}
+  /* ---- lenses (CTO / Director) ---- */
+  details.lens{margin:10px 0;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+  details.lens summary{cursor:pointer;padding:10px 14px;font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;color:var(--teal);list-style:none}
+  details.lens summary::before{content:"+ ";color:var(--gold)}
+  details.lens[open] summary::before{content:"\2212 "}
+  details.lens.dir summary{color:var(--rose)}
+  details.lens .body{padding:2px 16px 13px}
+  details.lens .body li{font-size:.9rem}
+  /* ---- recall quiz slides ---- */
+  .recall-item{border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:6px;background:var(--panel);margin:12px 0;overflow:hidden}
+  .recall-item summary{cursor:pointer;padding:13px 16px;font-size:.98rem;color:var(--ink);list-style:none;line-height:1.55}
+  .recall-item summary::before{content:"Q  ";font-family:var(--mono);color:var(--teal);font-weight:bold}
+  .recall-item .ans{padding:0 16px 13px;color:#b9c2b0;font-size:.92rem;line-height:1.65;border-top:1px dashed var(--line);padding-top:11px;margin:0 16px 13px;padding-left:0;padding-right:0}
+  .recall-item .ans b{color:var(--teal)}
+  .recall-hint{font-family:var(--mono);font-size:.7rem;color:var(--dim);margin-top:6px}
+  footer{position:fixed;left:0;right:0;bottom:0;background:rgba(13,15,20,.93);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:11px 20px;display:flex;align-items:center;gap:14px}
+  .dots{display:flex;gap:4px;flex:1;justify-content:center;flex-wrap:wrap}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--line);cursor:pointer;transition:.2s}
+  .dot.on{background:var(--gold);transform:scale(1.45)}
+  .dot.q{border:1px solid var(--gold);background:transparent}
+  .dot.q.on{background:var(--gold)}
+  button.nav{font-family:var(--mono);font-size:.78rem;letter-spacing:.1em;background:transparent;color:var(--ink);border:1px solid var(--line);padding:9px 18px;border-radius:5px;cursor:pointer;transition:.2s}
+  button.nav:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+  button.nav.primary{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:bold}
+  button.nav.primary:hover{background:#e2c070}
+  button.nav:disabled{opacity:.25;cursor:default}
+  button.nav:focus-visible,.tab:focus-visible,.dot:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .hint{position:fixed;bottom:62px;right:18px;font-family:var(--mono);font-size:.6rem;color:var(--dim);letter-spacing:.1em}
+  @media(max-width:600px){.slide h2{font-size:1.28rem}.ascii{font-size:.58rem;padding:11px}.hint{display:none}.qcard .qtext{font-size:1.08rem}}
+</style>
+</head>
+<body>
+<header>
+  <span class="k">Architects Lab</span>
+  <h1>Study Note 024 · Data Strategy &amp; Preparation</h1>
+  <span class="count" id="counter"></span>
+</header>
+<div class="tabs" id="tabs"></div>
+<main><div id="stage"></div></main>
+<div class="hint">&larr; &rarr; keys work too</div>
+<footer>
+  <button class="nav" id="prevBtn">&larr; Prev</button>
+  <div class="dots" id="dots"></div>
+  <button class="nav primary" id="nextBtn">Next &rarr;</button>
+</footer>
+<script>
+const SECTIONS=[
+ {id:"intro",label:"START",c:"ink"},
+ {id:"found",label:"FOUNDATIONS",c:"teal"},
+ {id:"types",label:"DATA TYPES",c:"gold"},
+ {id:"quality",label:"QUALITY+PREP",c:"rose"},
+ {id:"label",label:"LABELING",c:"amber"},
+ {id:"store",label:"STORAGE+PIPES",c:"violet"},
+ {id:"end",label:"SUMMARY+RECALL",c:"ink"}
+];
+const S=[
+
+{sec:"intro",c:"ink",eyebrow:"Study Note 024",t:"a",h:"Data Strategy &amp; Preparation — <em>garbage in, garbage out</em>",body:`
+<p>From why data strategy matters down to Pandas code cleaning a real client dataset — the module that explains why 80% of an AI project's time goes here. Same rhythm throughout: prime with a question, learn the concept, recap what stuck, then view it from the CTO's, Architect's, and PM's seat.</p>
+<div class="ascii">FIG — THREE INGREDIENTS, ONE IS THE FUEL
+  DATA = FUEL          MODEL              COMPUTE
+  without it,      +   Algorithm      +   GPUs/TPUs
+  nothing moves        Math·Patterns      Cloud resources</div>
+<div class="note"><b>How to use:</b> "?" slides ask you to predict first. Press Next to compare. Recall quizzes close each section.</div>
+<div class="note"><b>Daily plan (2.5 hrs):</b> 1.5 hr Udemy videos + exercises + source code &middot; 30 min notes revision &middot; 30 min scenario questions. Learn &rarr; Practice &rarr; Revise &rarr; Complete &rarr; Apply.</div>`},
+
+/* ---------- FOUNDATIONS ---------- */
+{sec:"found",c:"teal",eyebrow:"Foundations · 01",t:"q",q:`Data, Model, and Compute are supposedly equally important. So why does <b>Data specifically</b> get called "the fuel"? And guess a number: what percent of an AI project's time goes into data prep vs. training the model?`},
+
+{sec:"found",c:"teal",eyebrow:"Foundations · 01",t:"a",h:"The Critical Role of Data in AI",body:`
+<p>Data, Model, and Compute are equally <em>necessary</em>, but data alone is called "the fuel" because a great algorithm and unlimited GPUs produce nothing without it.</p>
+<div class="ascii">FIG — THE 80/20 RULE OF DATA SCIENCE
+where the time actually goes
+  80% — Data prep, cleaning, wrangling
+  20% — Model
+the part nobody's job posting mentions is the part that eats the calendar</div>
+<p>That dependency shows up directly in how time gets spent: roughly <strong>80%</strong> of a real AI project goes into preparing data, only <strong>20%</strong> into training and tuning the model itself.</p>`,
+cto:[`If your team's time allocation doesn't roughly match 80/20, that's a signal worth investigating — either the data pipeline is unusually mature, or (far more likely) data quality problems are about to surface downstream in evaluation or production.`],
+dir:[`Timeline estimates that don't explicitly budget 80% of the schedule for data work are the single most common reason AI project timelines slip — pad the data phase, not the modeling phase.`]},
+
+{sec:"found",c:"teal",eyebrow:"Foundations · 02",t:"q",q:`What's the actual difference between "having data" and "having a data strategy"? And: which regulation carries a fine of up to <b>4% of global revenue</b> — and why would that make data strategy a board-level topic?`},
+
+{sec:"found",c:"teal",eyebrow:"Foundations · 02",t:"a",h:"What Is a Data Strategy?",body:`
+<p><strong>Definition:</strong> a comprehensive plan that defines how an organization will collect, manage, govern, share, and use data to support AI projects.</p>
+<ul class="pts">
+<li><strong>Enables reliable model training</strong> — without a strategy, models are built on quicksand.</li>
+<li><strong>Reduces bias, privacy &amp; governance risk</strong> — prevents reputational damage and legal exposure.</li>
+<li><strong>Ensures reusability across teams</strong> — data becomes an asset, not a one-time cost.</li>
+<li><strong>Supports regulatory compliance</strong> — GDPR fines: up to &euro;20M or <strong>4% of global revenue</strong>. HIPAA: health data protection requirements.</li>
+<li><strong>Aligns AI with business goals</strong> — translates data capabilities into business value and KPIs.</li>
+</ul>
+<div class="note">Having data isn't the same as having a data <b>strategy</b> — a strategy is the deliberate plan for how data gets collected, governed, shared, and reused. One of these five reasons (GDPR's 4%-of-global-revenue fine) turns data strategy from an engineering concern into a board-level risk conversation.</div>`,
+cto:[`Treat data governance failures the same way you'd treat a security breach in your risk register — a GDPR fine at 4% of global revenue can dwarf the cost of the AI project it was supporting.`]},
+
+{sec:"found",c:"teal",eyebrow:"Foundations · 03",t:"q",q:`Before reading — list <b>three things</b> you think a complete data strategy has to cover beyond "collect data." Now compare against the real list of nine.`},
+
+{sec:"found",c:"teal",eyebrow:"Foundations · 03",t:"a",h:"9 Key Components of a Data Strategy",body:`
+<ul class="pts">
+<li><strong>1. Data discovery &amp; audit</strong> — identify existing sources, evaluate availability/quality/gaps.</li>
+<li><strong>2. Data collection plan</strong> — how will we collect it (sensors, APIs, manual, logs)? What frequency?</li>
+<li><strong>3. Data quality management</strong> — define metrics: accuracy, completeness, consistency, timeliness, validity.</li>
+<li><strong>4. Data governance</strong> — define roles and responsibilities, implement versioning.</li>
+<li><strong>5. Data privacy &amp; compliance</strong> — GDPR/HIPAA, anonymize PII, consent management.</li>
+<li><strong>6. Data storage &amp; access</strong> — lake vs warehouse, principle of least privilege.</li>
+<li><strong>7. Data labeling</strong> — for supervised learning: guidelines, cost, quality control.</li>
+<li><strong>8. Data integration</strong> — merge datasets, build ETL pipelines, consistent formatting.</li>
+<li><strong>9. Data strategy KPIs</strong> — model accuracy improvements, time-to-insight, accessibility scores.</li>
+</ul>
+<div class="note">"Collect the data" is only <b>one of nine</b> — governance, privacy, storage, and labeling each demand just as much deliberate planning.</div>`,
+cto:[`Components 4-6 (governance, privacy, storage) are the ones that need to be architected before data starts flowing — retrofitting access control and PII anonymization onto a live data lake is far more disruptive than designing them in from component 1.`]},
+
+{sec:"found",c:"teal",eyebrow:"Foundations · Recall",t:"r",h:"Quick recall: foundations",qs:[
+{q:`Why is data called "the fuel" if all three ingredients are equally necessary?`,a:`Because a great model and unlimited compute produce nothing without it — the dependency is directional. And it shows in the calendar: ~<b>80%</b> of project time goes to data prep, only <b>20%</b> to modeling.`},
+{q:`Name all nine components of a data strategy from memory.`,a:`Discovery &amp; audit, collection plan, quality management, governance, privacy &amp; compliance, storage &amp; access, labeling, integration, and strategy KPIs.`}]},
+
+/* ---------- DATA TYPES ---------- */
+{sec:"types",c:"gold",eyebrow:"Data Types · 04",t:"q",q:`Most of the world's data is unstructured, yet enterprise strategy is still dominated by structured databases. <b>Why the gap?</b> Guess before reading.`},
+
+{sec:"types",c:"gold",eyebrow:"Data Types · 04",t:"a",h:"Structured vs Unstructured Data",body:`
+<ul class="pts">
+<li><strong>Structured data</strong> — organized in a predefined schema, rows/columns. Easy to store, access, analyze. Examples: Excel, CSV, SQL tables, Pandas DataFrames.</li>
+<li><strong>Unstructured data</strong> — no predefined data model. Requires pre-processing to extract features. Examples: text, images, audio, video. Formats: JSON, MP4, MP3, PDF.</li>
+</ul>
+<div class="ascii">Unstructured examples:
+  free text ("The patient reported chest pain and shortness
+  of breath"), raw image pixel data with no schema, or
+  semi-structured JSON like
+  {"patient_id": 123, "symptoms": ["chest_pain", "fatigue"]}</div>
+<div class="note">Traditional databases still dominate enterprise strategy mostly because structured data is <b>cheaper and faster to govern and query</b> — even though unstructured data is the larger and faster-growing share of what organizations actually generate.</div>`,
+cto:[`Design storage by data type, not by department — structured data belongs in a warehouse for fast queries, unstructured belongs in a lake, and a system that forces both through the same schema-on-write store will bottleneck on the unstructured side.`]},
+
+{sec:"types",c:"gold",eyebrow:"Data Types · 05",t:"q",q:`Why is labeled data described as "higher quality but limited scale" while unlabeled is "abundant but less structured"? What's the actual trade-off buried in that sentence?`},
+
+{sec:"types",c:"gold",eyebrow:"Data Types · 05",t:"a",h:"Labeled vs Unlabeled Data",body:`
+<ul class="pts">
+<li><strong>Labeled data</strong> — has associated tags/labels. Required for supervised learning. Expensive (human labeling). Higher quality, limited scale.
+ <br>Examples: 🖼️ dog image &rarr; "Dog" &middot; 📧 "Win free iPhone" &rarr; "Spam" &middot; 🏦 $500 transaction &rarr; "Legitimate"</li>
+<li><strong>Unlabeled data</strong> — no tags. Used for unsupervised learning. Easy to access, no manual labeling. Abundant but less structured.
+ <br>Examples: 🖼️ image, no label &middot; 📧 "Meeting at 3pm", no label &middot; 🏦 $1,000,000 transfer, no label</li>
+</ul>
+<div class="note">The trade-off is direct: labeling requires human effort, so labeled datasets are smaller and pricier but power supervised learning's precision; unlabeled data costs nothing extra to collect, so it's abundant and feeds unsupervised methods that find structure without being told the answer in advance.</div>`,
+},
+
+{sec:"types",c:"gold",eyebrow:"Data Types · 05b",t:"a",h:"The PM note on labeled data",body:`<div class="note"><b>📋 PM view:</b> before committing to a supervised approach, check whether the labeled data actually exists or has to be created — that decision alone can move a project's budget by 10&times;.</div>`},
+
+{sec:"types",c:"gold",eyebrow:"Data Types · 06",t:"q",q:`A baby learning not to touch fire isn't shown thousands of labeled "hot/not hot" examples. <b>What kind of learning is that instead?</b> And what do clustering and dimensionality reduction have in common that puts both under "unsupervised"?`},
+
+{sec:"types",c:"gold",eyebrow:"Data Types · 06",t:"a",h:"Supervised, Unsupervised &amp; Reinforcement Learning",body:`
+<div class="ascii">SUPERVISED — input, labels required, model, KNOWN-TYPE output
+  Input (x): image of dog -&gt; Model -&gt; Output (y): "Dog"
+  Use cases: spam detection, fraud detection, diabetes risk
+
+UNSUPERVISED — find structure with NO labels given
+  unlabeled points in -&gt; clusters discovered, no ground truth
+  Use cases: customer segmentation, anomaly detection,
+             dimensionality reduction
+
+REINFORCEMENT — trial and error, maximize cumulative reward
+  Environment &lt;-&gt; Agent: Action (move, brake) -&gt; Reward (good/bad)
+  Example: a baby learning not to touch fire — touch fire -&gt; -10
+  (penalty), drink milk -&gt; +10 (reward). Use cases: game playing,
+  robotics, self-driving cars.</div>
+<p>The baby-and-fire example is RL because there's no pre-labeled dataset of "hot" and "not hot" — the feedback (pain) arrives <em>after</em> the action, exactly like a reward signal.</p>`,
+cto:[`The learning type you choose constrains your data strategy long before modeling starts — committing to supervised learning means committing to a labeling budget and pipeline; committing to RL means building a safe simulation environment before any real-world trial and error is acceptable.`]},
+
+{sec:"types",c:"gold",eyebrow:"Data Types · 07",t:"q",q:`Free open datasets (Hugging Face, Kaggle) vs. paid proprietary feeds (Bloomberg) — <b>what's the actual trade-off beyond price?</b>`},
+
+{sec:"types",c:"gold",eyebrow:"Data Types · 07",t:"a",h:"Data Sources",body:`
+<ul class="pts">
+<li><strong>Hugging Face</strong> — datasets hub, 400,000+ datasets, text/image/audio/video, free and open source, built-in exploration tools.</li>
+<li><strong>Kaggle</strong> — competitions &amp; community, 50,000+ public datasets, ML competition focus, real-world company data, notebooks &amp; community sharing.</li>
+<li><strong>Bloomberg API</strong> — financial market data, real-time pricing/news/analytics, enterprise-grade for financial AI, REST API access — expensive, but high quality.</li>
+</ul>
+<div class="note">Free sources are excellent for learning, benchmarking, and general-purpose models. Paid enterprise feeds exist because certain domains — real-time financial data especially — need <b>freshness, accuracy guarantees, and licensing terms</b> open datasets simply don't provide.</div>`,
+dir:[`Budget for data licensing the same way you'd budget for a SaaS subscription — Bloomberg-tier data sources are recurring costs, not one-time acquisitions.`]},
+
+{sec:"types",c:"gold",eyebrow:"Data Types · Recall",t:"r",h:"Quick recall: data types &amp; sources",qs:[
+{q:`Recite the three learning types and one example use case for each.`,a:`<b>Supervised</b> (labels required) — spam/fraud detection. <b>Unsupervised</b> (no labels) — customer segmentation. <b>Reinforcement</b> (reward signal) — game playing, self-driving cars.`},
+{q:`Why is the baby-and-fire example reinforcement learning, not supervised?`,a:`There's no pre-labeled "hot/not hot" dataset — the feedback (pain) arrives <b>after</b> the action, exactly like a reward signal, not a label given in advance.`},
+{q:`What decision can move a project's budget 10×, according to the PM view?`,a:`Whether the <b>labeled data already exists or has to be created</b> — committing to a supervised approach without checking this first.`}]},
+
+/* ---------- QUALITY + PREP ---------- */
+{sec:"quality",c:"rose",eyebrow:"Quality · 08",t:"q",q:`Between 100,000 low-quality samples and 10,000 high-quality samples, <b>which would you bet on</b>? And: a model tests well on biased test data — how would you even detect that the good score is misleading?`},
+
+{sec:"quality",c:"rose",eyebrow:"Quality · 08",t:"a",h:"Data Quality Assessment — nine dimensions",body:`
+<ul class="pts">
+<li><strong>Relevance</strong> — directly related to the problem, not unrelated/unnecessary.</li>
+<li><strong>Representation</strong> — covers all expected scenarios, doesn't miss key groups/conditions.</li>
+<li><strong>Accuracy</strong> — correct labels, error-free.</li>
+<li><strong>Completeness</strong> — minimal missing values.</li>
+<li><strong>Balance</strong> — all classes well represented, not one dominating.</li>
+<li><strong>Consistency</strong> — uniform formatting/labeling.</li>
+<li><strong>Timeliness</strong> — up-to-date, current patterns.</li>
+<li><strong>Privacy/ethics</strong> — responsibly collected, anonymized.</li>
+<li><strong>Signal-to-noise</strong> — high signal, low noise.</li>
+</ul>
+<div class="ascii">SPAM CLASSIFICATION EXAMPLE
+GOOD: "Win a free iPhone!" -&gt; spam OK | "Meeting agenda" -&gt; not_spam OK
+      50/50 balance, correct labels, no duplicates.
+BAD:  "Win a free iPhone!" -&gt; not_spam WRONG
+      "Meeting agenda" -&gt; spam WRONG
+      duplicate row + NULL -&gt; NULL missing + 2 spam/4 not_spam
+      unbalanced, wrong labels, missing data — all in 6 rows.</div>
+<div class="note">Hidden bias is dangerous specifically because it can <b>pass a test set that shares the same bias</b> — representation and balance need to be checked against real-world distribution, not just against the test split.</div>`,
+cto:[`Research increasingly shows quality beats quantity — don't default to "collect more data" as the fix for a struggling model without first auditing against these nine dimensions.`],
+dir:[`Bias hidden in both train and test sets is invisible to standard evaluation — the mitigation is an independent, out-of-distribution validation set or real-world A/B testing, not just a bigger held-out split from the same source.`]},
+
+{sec:"quality",c:"rose",eyebrow:"Prep · 09",t:"q",q:`Is "wrangling" and "feature engineering" just two names for the same cleanup work — or are they doing genuinely different jobs?`},
+
+{sec:"quality",c:"rose",eyebrow:"Prep · 09",t:"a",h:"Data Wrangling &amp; Feature Engineering",body:`
+<p><strong>Data wrangling — cleaning and organizing raw data:</strong> read from multiple sources, handle missing values (drop or impute), remove duplicates, fix inconsistent formatting, merge/join datasets, convert data types, validate quality.</p>
+<p><strong>Feature engineering — transforming features to improve model performance:</strong></p>
+<ul class="pts">
+<li><strong>1. Feature selection</strong> — remove irrelevant/noisy columns; drop highly correlated features (&gt;0.95).</li>
+<li><strong>2. Feature scaling</strong> — normalize Age (20-80) to 0-1; standardize Income to mean=0, &sigma;=1.</li>
+<li><strong>3. Feature creation</strong> — BMI = Weight/Height&sup2;. Debt-to-Income = Loan/Income. Age Group = Young/Middle/Senior.</li>
+<li><strong>4. Encoding categorical data</strong> — one-hot: City &rarr; [NY, CHI, SF]. Label encoding: Risk &rarr; [Low, Med, High].</li>
+</ul>
+<div class="note">Wrangling and feature engineering are <b>sequential, not interchangeable</b>: wrangling makes raw, messy data usable at all; feature engineering then reshapes clean data specifically to help a model learn better. You wrangle first, then engineer.</div>`,
+cto:[`Correlation-based feature selection (dropping features >0.95 correlated) needs to happen after wrangling, not before — correlations computed on dirty data can be misleading.`]},
+
+{sec:"quality",c:"rose",eyebrow:"Case Study · 10",t:"q",q:`Two datasets share a <code>Client_ID</code> column. What's the standard Pandas operation to combine them into one table?`},
+
+{sec:"quality",c:"rose",eyebrow:"Case Study · 10",t:"a",h:"Practical Example: Pandas Case Study",body:`
+<p><strong>Problem:</strong> merge client demographics with client financials to analyze the combined dataset.</p>
+<div class="ascii">WRANGLING STEPS
+Handle missing values:
+  df['Age'].fillna(df['Age'].mean())
+  df['City'].fillna(df['City'].mode())
+  df['Risk'].fillna(df['Risk'].mode())
+Merge on Client_ID:
+  pd.merge(df_demographics, df_financials, on='Client_ID', how='inner')
+Analyze: df.describe(), filter portfolio > $150K,
+         sort_values('Portfolio', ascending=False)
+Visualize: scatter Age vs Portfolio, histogram of Age,
+           correlation heatmap</div>
+<div class="ascii">RESULTS
+  Age missing  -&gt; filled with mean (39.44)
+  City missing -&gt; filled with mode (New York)
+  Risk missing -&gt; filled with mode (Medium)
+  Clients merged: 6 -&gt; combined dataset
+  High net worth (&gt;$150K): 2 clients
+  Correlation Age vs Portfolio: 0.57 (positive)</div>
+<div class="note"><b>Worth noting:</b> ChatGPT can do all of this — imputation, merging, filtering, visualization — from simple natural-language prompts, without hand-writing the Pandas code yourself.</div>`,
+dir:[`Because ChatGPT can execute this whole workflow from prompts, the bottleneck shifts from "who can write Pandas" to "who understands the data well enough to sanity-check the output" — hire and staff for the domain judgment, not just the syntax.`]},
+
+{sec:"quality",c:"rose",eyebrow:"Quality &amp; Prep · Recall",t:"r",h:"Quick recall: quality &amp; preparation",qs:[
+{q:`Name all nine data quality dimensions.`,a:`Relevance, representation, accuracy, completeness, balance, consistency, timeliness, privacy/ethics, signal-to-noise.`},
+{q:`Why is hidden bias dangerous specifically?`,a:`Because it can <b>pass a test set that shares the same bias</b> — invisible to standard evaluation. Mitigation: an independent, out-of-distribution validation set or real-world A/B testing.`},
+{q:`In what order do wrangling and feature engineering happen, and why?`,a:`<b>Wrangling first, then feature engineering.</b> Wrangling makes data usable at all; feature engineering reshapes already-clean data to help the model learn. Correlation-based feature selection on dirty data is misleading.`}]},
+
+/* ---------- LABELING ---------- */
+{sec:"label",c:"amber",eyebrow:"Labeling · 11",t:"q",q:`Guess before reading: is labeling a simple image classification <b>cheaper or more expensive</b> than labeling for semantic segmentation? By roughly how many times?`},
+
+{sec:"label",c:"amber",eyebrow:"Labeling · 11",t:"a",h:"Data Labeling: Process &amp; Cost",body:`
+<p><strong>Data labeling</strong> is the process of annotating raw data with relevant information — required for supervised learning.</p>
+<ul class="pts">
+<li><strong>Image</strong> — classification, detection, segmentation. Cat or dog? Bounding boxes. Pixel-level semantic segmentation.</li>
+<li><strong>Text</strong> — sentiment, entities, classification. Positive/negative/neutral. Person/org/location. Spam or not.</li>
+<li><strong>Audio</strong> — transcription &amp; classification. Speech-to-text. Sound classification. Speaker ID.</li>
+<li><strong>Video</strong> — tracking &amp; recognition. Frame-by-frame object tracking. Action recognition.</li>
+</ul>
+<div class="ascii">COST PER OBJECT
+  Image classification       $0.012
+  Text classification        $0.012
+  Named entity recognition   $0.024
+  Bounding boxes             $0.036
+  Semantic segmentation      $0.840  (expensive)
+  3D point cloud             $3.00 / frame (very expensive)
+  Reviewed objects (&lt;50K)    $0.08 / object
+
+<span class="rs">Self-driving car labeling costs tens of millions of dollars</span> —
+segmentation and point cloud labeling at millions-of-frames
+scale adds up fast.</div>
+<div class="ascii">FIG — AWS SAGEMAKER GROUND TRUTH WORKFLOW
+Upload raw data -&gt; Setup workflow -&gt; AI-powered labeling
+-&gt; Expert review -&gt; Quality checks</div>
+<div class="note">Cost scales dramatically with task complexity — a <b>250&times; spread</b> between simple classification (~1 cent) and 3D point cloud ($3/frame).</div>`,
+cto:[`Before committing to a labeling-heavy task type (segmentation, point cloud), price it out at your expected data volume first — the per-object cost multiplier can single-handedly make or break a project's budget.`],
+dir:[`Active learning and semi-supervised approaches (label only the most informative samples, let the model bootstrap the rest) are the standard cost-reduction lever here — worth evaluating before defaulting to labeling the entire dataset.`]},
+
+{sec:"label",c:"amber",eyebrow:"Labeling · Recall",t:"r",h:"Quick recall: labeling",qs:[
+{q:`What's the cost spread between the cheapest and most expensive labeling type mentioned?`,a:`~250&times; — image/text classification at $0.012 vs. 3D point cloud at $3.00/frame.`},
+{q:`Name the five stages of the AWS Ground Truth workflow.`,a:`Upload raw data &rarr; setup workflow &rarr; AI-powered labeling &rarr; expert review &rarr; quality checks.`}]},
+
+/* ---------- STORAGE + PIPELINES ---------- */
+{sec:"store",c:"violet",eyebrow:"Storage · 12",t:"q",q:`A data lake with no governance is jokingly called a <b>"data swamp."</b> What do you think causes that?`},
+
+{sec:"store",c:"violet",eyebrow:"Storage · 12",t:"a",h:"Data Storage: DB vs Warehouse vs Lake",body:`
+<div class="ascii">FIG — DATABASE -&gt; DATA WAREHOUSE -&gt; DASHBOARDS (the analytics path)
+Database(CRM) Database(ERP) Database(Sales)
+        -&gt; Data Warehouse (analytics layer)
+        -&gt; Tableau / Power BI dashboards</div>
+<div class="ascii">Feature       Database        Warehouse        Lake
+Data type     Structured      Structured       All types
+Users         Operations      Analysts         Data scientists
+Use case      OLTP            OLAP / BI        ML / AI / analytics
+Schema        Fixed           Fixed            Schema-on-read
+Cost          Lower           Medium           Higher at scale
+Speed         Very fast       Fast             Slower (batch)
+Examples      MySQL,          Snowflake,       Amazon S3,
+              PostgreSQL,     Redshift,        Azure Data Lake
+              Oracle          BigQuery</div>
+<div class="note">A "data swamp" happens when a lake accumulates every data type with <b>no governance, catalog, or ownership</b> — nobody can find, trust, or safely use what's in it anymore.</div>`,
+cto:[`Choosing lake vs warehouse isn't either/or for most orgs — the common pattern is a lake for raw/all-type storage feeding a warehouse for the structured, analytics-ready subset.`],
+dir:[`The minimum governance that keeps a lake from becoming a swamp: a data catalog (what's here, who owns it), consistent naming/partitioning conventions, and access control from day one.`]},
+
+{sec:"store",c:"violet",eyebrow:"Pipelines · 13",t:"q",q:`If a company stores PII in a data lake without encryption and a breach occurs, <b>who do you think is actually liable</b> — the data engineer, the architect, or the CEO?`},
+
+{sec:"store",c:"violet",eyebrow:"Pipelines · 13",t:"a",h:"Pipelines, Security &amp; Governance",body:`
+<div class="ascii">FIG — END-TO-END DATA PIPELINE
+Raw data (sources) -&gt; Extract (E) collect -&gt; Transform (T)
+clean/encode/normalize -&gt; Load (L) into Lake/Warehouse
+-&gt; Model training -&gt; Monitoring &amp; feedback (quality, drift, perf)</div>
+<ul class="pts">
+<li><strong>1. Access control</strong> — principle of least privilege, RBAC, multi-factor authentication.</li>
+<li><strong>2. Data encryption</strong> — at-rest encryption, in-transit encryption (TLS/SSL).</li>
+<li><strong>3. Data quality monitoring</strong> — track missing values over time, monitor drift, validate schema changes.</li>
+<li><strong>4. Data lineage</strong> — track origin, track transformations applied, audit trail for compliance.</li>
+</ul>
+<div class="note">Liability for a PII breach in practice spreads across roles (the architect who designed access, the engineer who implemented it, leadership accountable for governance) rather than resting on one person — which is exactly why governance needs to be a <b>named, owned responsibility</b>, not an assumption.</div>`,
+cto:[`"Who's liable" is the wrong first question — the better one is "who owns encryption-at-rest as a checklist item before launch." Assign that ownership explicitly.`],
+dir:[`Data lineage is the component teams skip under time pressure and regret first during an audit or an incident — build it into the pipeline from day one, since retrofitting lineage tracking onto years of untracked transformations is close to impossible.`]},
+
+{sec:"store",c:"violet",eyebrow:"Storage &amp; Pipelines · Recall",t:"r",h:"Quick recall: storage &amp; pipelines",qs:[
+{q:`Match use case to storage layer: OLTP, OLAP/BI, ML/AI.`,a:`OLTP &rarr; <b>Database</b>. OLAP/BI &rarr; <b>Warehouse</b>. ML/AI/analytics &rarr; <b>Lake</b> (schema-on-read, all data types).`},
+{q:`Recite the four ETL pipeline stages.`,a:`<b>Extract</b> (collect from sources) &rarr; <b>Transform</b> (clean, encode, normalize) &rarr; <b>Load</b> (into lake/warehouse) &rarr; feeds model training, then monitoring/feedback.`},
+{q:`What's the actual answer to "who's liable for a PII breach"?`,a:`Legally, liability generally attaches to the <b>organization</b> (the "data controller"). Internally, accountability traces to whoever owned the governance decision — usually the architect's design and leadership's risk sign-off, not the engineer who implemented it.`}]},
+
+/* ---------- SUMMARY + RECALL ---------- */
+{sec:"end",c:"ink",eyebrow:"Research Insight · 14",t:"q",q:`Research suggests <b>30% of high-quality pruned data can match or beat 100% of the full noisy dataset.</b> Does this mean you should stop collecting more data entirely?`},
+
+{sec:"end",c:"ink",eyebrow:"Research Insight · 14",t:"a",h:"Quality vs Quantity — the research insight",body:`
+<p>From "The Coming Revolution" research report — a 1.5B-parameter LLM compared on full data vs 30% pruned (highest-quality) data:</p>
+<div class="ascii">Task                    Full data   30% pruned data
+Sentiment analysis        87.5%        87.8% (better)
+Semantic similarity       84.2%        84.5%
+Text classification       86.1%        86.3%
+Question answering        82.3%        82.0% (~same)</div>
+<div class="note"><b>Key insight:</b> high-quality pruned data can match or outperform larger, noisier datasets. <b>Quality &gt; quantity</b> — but not absolutely: the finding is that quality substitutes for quantity <em>up to a point</em>. More diverse data still helps with rare edge cases a pruned set may not contain. The practical move is "prune aggressively first, then decide if more collection is still worth it," not an absolute stop.</div>`},
+
+{sec:"end",c:"ink",eyebrow:"Module Summary",t:"a",h:"Summary &amp; the one line to remember",body:`
+<ul class="pts">
+<li><strong>Data strategy is foundational</strong> — 9 components from discovery to KPIs, aligns AI with business goals, ensures compliance (GDPR: &euro;20M fines).</li>
+<li><strong>Data requirements</strong> — structured vs unstructured, labeled vs unlabeled, supervised/unsupervised/reinforcement.</li>
+<li><strong>80% of time = preparation</strong> — wrangling: clean, merge, handle missing. Feature engineering: select, scale, create. Quality &gt; quantity.</li>
+<li><strong>Labeling is expensive</strong> — $0.012–$3.00 per object. Self-driving cars: millions of dollars.</li>
+<li><strong>Storage choices</strong> — database (OLTP), warehouse (OLAP/BI), lake (all types for ML/AI).</li>
+<li><strong>Sources are abundant</strong> — Hugging Face 400K+, Kaggle 50K+, Bloomberg for paid financial data.</li>
+<li><strong>Pandas covers wrangling</strong> — read, clean, merge, analyze, visualize — and ChatGPT can do all of it from simple prompts.</li>
+</ul>
+<div class="note"><b>🏗️ The one line to remember:</b> "A model is only as good as the data it's trained on. Prioritize data quality, governance, and strategy from day 1."</div>`},
+
+{sec:"end",c:"ink",eyebrow:"Deep Recall · Part A",t:"r",h:"Active Recall — deep thought questions (1/2)",qs:[
+{q:`If data quality is so critical, why do most companies still treat data as a "cost center" rather than a "strategic asset"?`,a:`Data work is largely invisible in a P&amp;L — cleaning and governance don't show up as a line item the way a new feature does, so it gets funded reactively (after a failure), not proactively. Changing this requires tying data quality metrics directly to a business KPI leadership already tracks (e.g. "data completeness &rarr; model accuracy &rarr; conversion rate").`},
+{q:`We need to label millions of self-driving-car images at $0.08/object. How do we reduce costs?`,a:`Active learning (model flags its most-uncertain examples, humans only label the highest-value samples) and semi-supervised learning (bootstrap from a smaller labeled set + a large unlabeled pool) — and both compound. Teams also use pre-trained foundation models to auto-label first drafts, with humans only correcting errors.`},
+{q:`How should companies balance structured vs. exploding unstructured data in their strategy?`,a:`Route by use case rather than picking one: structured data in a warehouse for fast, governed BI queries; unstructured data into a lake feeding ML pipelines that extract structure (embeddings, entity extraction) on the way in. Extract structure at ingestion where it's cheap; leave it raw where extraction cost isn't justified yet.`},
+{q:`If a company stores PII in a Data Lake without encryption and a breach occurs, who's liable?`,a:`Legally, GDPR liability generally attaches to the <b>organization</b> (the "data controller"). Internally, accountability traces to whoever owned the governance decision — usually the Data Architect's design and leadership's risk-acceptance sign-off, not the engineer who implemented what they were told to build.`}]},
+
+{sec:"end",c:"ink",eyebrow:"Deep Recall · Part B",t:"r",h:"Active Recall — deep thought questions (2/2)",qs:[
+{q:`Research shows 30% high-quality data can match 100% noisy data. Should we stop collecting more data and focus only on quality?`,a:`Not entirely — quality substitutes for quantity up to a point, not that quantity has zero value. More diverse, high-quality data still helps with edge cases a smaller pruned set may not contain. The trade-off is diminishing returns: prune aggressively first, then decide if more collection is still worth it.`},
+{q:`If AI models are built on historical data, are they inherently conservative — reinforcing the past? How do we inject novelty?`,a:`Largely yes — outputs are bounded by the training distribution's patterns. Injecting novelty deliberately usually means synthetic data generation, deliberately oversampling underrepresented/emerging patterns, or human-in-the-loop curation that intentionally includes edge cases the historical data underrepresents.`},
+{q:`In RL, trial and error can be dangerous in the real world (e.g. self-driving cars). How do we balance exploration vs safety?`,a:`Do the dangerous exploration in simulation first — millions of trial-and-error cycles in a safe virtual environment — then deploy a heavily constrained version to the real world, often with a rule-based safety layer that can override the learned policy in high-risk situations. Real-world "exploration" becomes narrow and supervised (test tracks with a safety driver), not open-ended.`},
+{q:`Data lakes promise to store "everything" but become "data swamps" without governance. What's the minimum governance needed?`,a:`At minimum: a data catalog documenting what exists and who owns each dataset, consistent naming/partitioning conventions so data can be found, and access control tied to the principle of least privilege. Without the catalog and ownership piece, a lake accumulates data nobody can locate, trust, or safely reuse.`}]}
+];
+
+let i=0;
+const stage=document.getElementById('stage'),dots=document.getElementById('dots'),
+tabs=document.getElementById('tabs'),counter=document.getElementById('counter'),
+prevBtn=document.getElementById('prevBtn'),nextBtn=document.getElementById('nextBtn');
+SECTIONS.forEach(s=>{const b=document.createElement('button');b.className='tab';b.dataset.c=s.c;b.dataset.sec=s.id;b.textContent=s.label;b.onclick=()=>go(S.findIndex(x=>x.sec===s.id));tabs.appendChild(b);});
+S.forEach((sl,k)=>{const d=document.createElement('span');d.className='dot'+(sl.t==='q'?' q':'');d.tabIndex=0;d.setAttribute('role','button');d.setAttribute('aria-label','Slide '+(k+1));d.onclick=()=>go(k);d.onkeydown=e=>{if(e.key==='Enter')go(k)};dots.appendChild(d);});
+function lens(cto,dir){
+  let out='';
+  if(cto&&cto.length) out+='<details class="lens"><summary>CTO LENS</summary><div class="body"><ul class="pts">'+cto.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+  if(dir&&dir.length) out+='<details class="lens dir"><summary>DIRECTOR LENS</summary><div class="body"><ul class="pts">'+dir.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+  return out;
+}
+function go(k){
+  i=Math.max(0,Math.min(S.length-1,k));
+  const s=S[i];stage.innerHTML='';
+  const el=document.createElement('div');el.className='slide';
+  try{
+    if(s.t==='q'){
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div>'
+        +'<div class="qcard"><div class="qlabel">Think first &middot; predict before you peek</div>'
+        +'<div class="qtext">'+s.q+'</div>'
+        +'<div class="qsub">Form your answer in your head. Then press Next to compare.</div></div>';
+    } else if(s.t==='r'){
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'
+        +'<p>Answer from memory first. Tap a question to reveal the answer.</p>'
+        +s.qs.map(x=>'<details class="recall-item"><summary>'+x.q+'</summary><div class="ans">'+x.a+'</div></details>').join('')
+        +'<div class="recall-hint">Struggled on any? Jump back with the tabs above, then return.</div>';
+    } else {
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'+s.body+(((s.cto&&s.cto.length)||(s.dir&&s.dir.length))?lens(s.cto,s.dir):'');
+    }
+  }catch(err){
+    el.innerHTML='<div class="eyebrow rose">Render error</div><h2>Slide '+(i+1)+' failed to render</h2><p>'+String(err&&err.message||err)+'</p>';
+  }
+  stage.appendChild(el);
+  counter.textContent=(i+1)+' / '+S.length;
+  document.querySelectorAll('.dot').forEach((d,k2)=>d.classList.toggle('on',k2===i));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.sec===s.sec));
+  prevBtn.disabled=(i===0);
+  nextBtn.textContent=(i===S.length-1)?'Done \u2713':'Next \u2192';
+  nextBtn.disabled=(i===S.length-1);
+  document.querySelector('main').scrollTop=0;window.scrollTo(0,0);
+}
+prevBtn.onclick=()=>go(i-1);nextBtn.onclick=()=>go(i+1);
+document.addEventListener('keydown',e=>{if(e.target.closest('details'))return;if(e.key==='ArrowRight')go(i+1);if(e.key==='ArrowLeft')go(i-1);});
+go(0);
+</script>
+</body>
+</html>

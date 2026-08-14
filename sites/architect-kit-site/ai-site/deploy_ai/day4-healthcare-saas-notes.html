@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Architects Lab — Day 4: The Healthcare SaaS App</title>
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#121821; --panel2:#161d28; --border:#22303f;
+    --text:#dbe4ee; --muted:#7d92a8; --accent:#39d3ac; --accent2:#f2b84b;
+    --danger:#ef6a6a; --code:#0d1319; --tag:#1c2a3a;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    line-height:1.6; padding:0 0 80px 0;
+  }
+  header{
+    padding:36px 24px 24px; border-bottom:1px solid var(--border);
+    background:linear-gradient(180deg,#0e141c,#0b0f14);
+  }
+  .eyebrow{color:var(--accent); font-size:12px; letter-spacing:2px; text-transform:uppercase; font-weight:600;}
+  h1{margin:8px 0 6px; font-size:28px; color:#f2f6fa;}
+  .sub{color:var(--muted); font-size:14px; max-width:780px;}
+  .course-link{
+    display:inline-block; margin-top:14px; font-size:13px; font-weight:600;
+    color:var(--accent); text-decoration:none; border:1px solid var(--border);
+    background:var(--panel2); padding:8px 14px; border-radius:6px;
+  }
+  .course-link:hover{border-color:var(--accent); background:#152030;}
+  .toolbar{
+    display:flex; gap:10px; padding:16px 24px; position:sticky; top:0;
+    background:rgba(11,15,20,0.95); backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--border); z-index:10; flex-wrap:wrap;
+  }
+  button.ctrl{
+    background:var(--panel2); color:var(--text); border:1px solid var(--border);
+    padding:8px 14px; border-radius:6px; cursor:pointer; font-size:13px;
+  }
+  button.ctrl:hover{border-color:var(--accent); color:var(--accent);}
+  .wrap{max-width:920px; margin:0 auto; padding:24px;}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    margin-bottom:16px; overflow:hidden;
+  }
+  .card-head{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:16px 20px; cursor:pointer; user-select:none;
+  }
+  .card-head:hover{background:var(--panel2);}
+  .card-title{font-size:16px; font-weight:600; color:#f2f6fa; display:flex; align-items:center; gap:10px;}
+  .tag{
+    font-size:10px; text-transform:uppercase; letter-spacing:1px;
+    background:var(--tag); color:var(--accent); padding:3px 8px; border-radius:4px; font-weight:700;
+  }
+  .tag.arch{color:var(--accent2);}
+  .tag.risk{color:var(--danger);}
+  .chevron{color:var(--muted); transition:transform .2s;}
+  .card.open .chevron{transform:rotate(90deg);}
+  .card-body{
+    max-height:0; overflow:hidden; transition:max-height .25s ease;
+    padding:0 20px;
+  }
+  .card.open .card-body{ max-height:4000px; padding:0 20px 20px; }
+  p{margin:8px 0;}
+  .questions{
+    background:var(--code); border-left:3px solid var(--accent);
+    border-radius:6px; padding:12px 16px; margin:14px 0;
+  }
+  .questions h4{margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--accent);}
+  .questions ul{margin:0; padding-left:18px;}
+  .questions li{margin:6px 0; color:#c8d6e2;}
+  .archnote{
+    background:var(--code); border-left:3px solid var(--accent2);
+    border-radius:6px; padding:12px 16px; margin:14px 0;
+  }
+  .archnote h4{margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--accent2);}
+  .risknote{
+    background:var(--code); border-left:3px solid var(--danger);
+    border-radius:6px; padding:12px 16px; margin:14px 0;
+  }
+  .risknote h4{margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--danger);}
+  pre{
+    background:var(--code); border:1px solid var(--border); border-radius:8px;
+    padding:14px; overflow-x:auto; font-size:12.5px; color:#a9e6c9; line-height:1.5;
+  }
+  code{color:var(--accent2); font-family:'Cascadia Code',Consolas,monospace;}
+  .recall{
+    margin-top:12px; border:1px dashed var(--border); border-radius:6px; padding:10px 14px;
+    cursor:pointer; background:#0e1620;
+  }
+  .recall .q{color:var(--accent2); font-weight:600; font-size:13.5px;}
+  .recall .a{display:none; margin-top:8px; color:var(--muted); font-size:13.5px; border-top:1px solid var(--border); padding-top:8px;}
+  .recall.show .a{display:block;}
+  .recall .hint{font-size:11px; color:var(--muted); float:right;}
+  ul.plain li{margin:4px 0;}
+  .foot{color:var(--muted); text-align:center; padding:30px; font-size:12px;}
+  .progress{font-size:11px; color:var(--muted);}
+  /* notes width expansion - matches learning plan box */
+  .wrap,.container,main,header.hero,header.masthead,nav.toc,section.block,footer{max-width:100%!important;padding-left:24px!important;padding-right:24px!important;}
+</style>
+</head>
+<body>
+<!-- LEARNING PLAN -->
+<div style="margin:24px;background:#0f1520;border:1px solid #1e2836;border-left:4px solid #e0a030;border-radius:8px;padding:24px 28px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;">
+  <div style="color:#e0a030;font-size:13px;font-weight:700;letter-spacing:.08em;margin-bottom:14px;">&#9670; LEARNING PLAN — 2.5 HOURS DAILY</div>
+  <div style="overflow-x:auto;">
+  <table style="width:100%;border-collapse:collapse;font-size:13px;color:#c8d3e0;margin-bottom:18px;white-space:nowrap;">
+    <thead><tr style="color:#7c8ba0;border-bottom:1px solid #1e2836;">
+      <th style="padding:6px 10px;text-align:left;width:48px;">Step</th>
+      <th style="padding:6px 10px;text-align:left;">Activity</th>
+      <th style="padding:6px 10px;text-align:left;">Outcome</th>
+    </tr></thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">1</td><td style="padding:7px 10px;"><b>Complete the Udemy Course</b> — watch videos, understand concepts, don't rush</td><td style="padding:7px 10px;color:#5fbf7f;">Build strong fundamentals</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">2</td><td style="padding:7px 10px;"><b>Practice Everything</b> — complete exercises, assignments, and source code</td><td style="padding:7px 10px;color:#5fbf7f;">Gain hands-on experience</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">3</td><td style="padding:7px 10px;"><b>Revise with these notes</b></td><td style="padding:7px 10px;color:#5fbf7f;">Reinforce concepts and fill knowledge gaps</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">4</td><td style="padding:7px 10px;"><b>Earn the Udemy Certificate</b></td><td style="padding:7px 10px;color:#5fbf7f;">Ensure the course is completed end-to-end</td></tr>
+      <tr><td style="padding:7px 10px;color:#e0a030;font-weight:700;">5</td><td style="padding:7px 10px;"><b>Practise real world tough scenario</b> — scenario-based questions &amp; interview problems</td><td style="padding:7px 10px;color:#5fbf7f;">Develop practical and interview-ready skills</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">1.5 HRS</div>
+      <div style="font-size:12px;color:#c8d3e0;">Udemy Videos + Exercises + Source Code</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Notes Revision</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Scenario-Based Questions &amp; Practical Problems</div>
+    </div>
+  </div>
+  <div style="color:#f0f4f8;font-size:12px;font-weight:600;letter-spacing:.04em;">GOAL: <span style="color:#e0a030;">Learn &#8594; Practice &#8594; Revise &#8594; Complete &#8594; Apply</span></div>
+</div>
+<!-- END LEARNING PLAN -->
+<a href="https://ai.shivawithin.in" id="home-return-btn" title="Back to Home" style="position:fixed;bottom:24px;right:24px;z-index:99999;display:inline-flex;align-items:center;gap:6px;background:#0d1b2a;color:#3fb6ff;border:1px solid #3fb6ff;padding:9px 15px;border-radius:8px;text-decoration:none;font-family:system-ui,-apple-system,sans-serif;font-size:13px;font-weight:600;box-shadow:0 2px 16px rgba(0,0,0,0.5);transition:background 0.2s,box-shadow 0.2s;" onmouseover="this.style.background='#1a2f47';this.style.boxShadow='0 4px 20px rgba(63,182,255,0.25)'" onmouseout="this.style.background='#0d1b2a';this.style.boxShadow='0 2px 16px rgba(0,0,0,0.5)'">&#8592; Home</a>
+
+<header>
+  <div class="eyebrow">Architects Lab · LLM &amp; Agentic AI Bootcamp</div>
+  <h1>Week 1 · Day 4 — The Healthcare SaaS App: Pydantic Meets Real Business Logic</h1>
+  <div class="sub">Notes from Ed Donner's Day 4 lecture — turning the generic "idea generator" into a
+  vertical healthcare product (consultation notes → summary + patient email), and the Week 1 stack recap
+  before Friday's AWS reality check. Structured for a Senior Engineering Manager weighing what's genuinely
+  reusable here against what a real regulated healthcare product would actually need.</div>
+  <a class="course-link" href="https://www.udemy.com/course/generative-and-agentic-ai-in-production/learn/lecture/52442087#overview" target="_blank" rel="noopener noreferrer">
+    ↗ Open on Udemy — Generative and Agentic AI in Production
+  </a>
+</header>
+
+<div class="toolbar">
+  <button class="ctrl" onclick="expandAll()">▾ Expand All</button>
+  <button class="ctrl" onclick="collapseAll()">▸ Collapse All</button>
+  <button class="ctrl" onclick="revealAllRecall()">💡 Reveal All Recall Answers</button>
+  <span class="progress" id="progressLabel"></span>
+</div>
+
+<div class="wrap">
+
+  <!-- SECTION 1 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Framing</span> "Blue Day" — Project Work, Not New Platform Concepts</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>Donner flags a color-coding convention for the course (blue = project/commercial application day,
+      as opposed to yellow = DevOps/platform, purple = AI concepts — introduced back on Day 1's curriculum
+      slide). Today is about <strong>applying</strong> the auth + subscription scaffolding from Day 3 to a
+      real vertical — healthcare — not learning new infrastructure.</p>
+
+      <p>He also re-anchors the "environment pain is part of the deal" theme from Day 1's five terms:
+      most student frustration so far has come from configuration issues (wrong env vars, VPN/network
+      restrictions blocking outbound API calls), not from AI concepts. Advice repeated: verify LLM debugging
+      advice with a second model, and watch for LLMs patching symptoms instead of root causes.</p>
+
+      <div class="questions">
+        <h4>Question worth sitting with</h4>
+        <ul>
+          <li>Does your own Optimus Project material use a similar visual/color convention to tell a squad
+          at a glance "today is a build day" vs. "today is an infra day" — and would that reduce context-switching friction?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Product</span> What We're Building: A Doctor's-Notes-to-Patient-Email Assistant</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>The pitch: doctors take rough consultation notes; turning those into (a) a clean summary for the
+      medical record and (b) a professional, patient-friendly follow-up email is real administrative work.
+      The app takes three inputs — patient name, visit date, notes — and returns both outputs via a single
+      LLM call, explicitly framed as a minimal <strong>starting canvas</strong>, not a finished product.</p>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>Notice how little actually changed between the generic "idea generator" (Day 3) and this
+        healthcare app: same auth, same subscription gating, same streaming pattern — only the system
+        prompt, the request schema, and the front-end form fields changed. That's the real payoff of having
+        built a reusable auth/billing/streaming scaffold first: the vertical-specific work is now almost
+        entirely prompt design + a typed request object, which is exactly the kind of "thin vertical slice on
+        top of shared platform" pattern you'd want for spinning up new Optimus-adjacent tools quickly.</p>
+      </div>
+
+      <div class="questions">
+        <h4>Questions worth sitting with</h4>
+        <ul>
+          <li>If your Optimus/idfc-coder tooling had an equivalent reusable scaffold (auth, request schema,
+          streaming, billing-if-needed) already built, how many new "vertical" tools could a single squad
+          spin up per week using the same pattern shown here?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Backend</span> Pydantic Request Models — Why FastAPI Developers Love This</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <pre>
+class Visit(BaseModel):
+    patient_name: str
+    date_of_visit: str
+    notes: str
+
+@app.post("/api")
+async def generate(visit: Visit, creds = Depends(clerk_auth)):
+    ...
+      </pre>
+      <p>Endpoint changed from GET to POST. The route's first argument, <code>visit: Visit</code>, is a
+      Pydantic <code>BaseModel</code> subclass — essentially a typed schema, like a dictionary but with
+      named, typed attributes. FastAPI automatically parses the incoming JSON POST body into a validated
+      <code>Visit</code> object — no manual JSON parsing, no manual field extraction.</p>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>This is the FastAPI + Pydantic combination flagged back on Day 2 as the framework's real selling
+        point — schema validation happens at the API boundary automatically, before your business logic ever
+        runs. For a healthcare or fintech payload, that's not a convenience feature, it's a correctness
+        guarantee: malformed or missing fields get rejected by the framework itself, consistently, rather
+        than depending on every handler remembering to validate manually. Worth comparing directly against
+        how request validation is enforced (or not) across your Wealth/Demat microservices today.</p>
+      </div>
+
+      <div class="risknote">
+        <h4>Risk Flag — Easy to Miss</h4>
+        <p>Adding a Pydantic model means <code>pydantic</code> must be added to <code>requirements.txt</code>
+        — forgetting this is called out explicitly as "a gotcha" that silently breaks the deploy. Small
+        dependency, easy to forget, same category of failure as Day 1's typo'd env var key.</p>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: What does declaring a Pydantic <code>BaseModel</code> as a route's argument actually save you from writing? <span class="hint">tap to reveal</span></div>
+        <div class="a">Manual JSON parsing and manual field extraction/validation from the raw request body. FastAPI reads the incoming JSON POST body and automatically populates a validated instance of that typed object for you.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 4 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Frontend</span> Off-the-Shelf Components: The Date Picker Example</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>A single <code>npm install</code> (React Date Picker + its TypeScript types) adds a full calendar
+      widget to the form — explicitly contrasted with "the days before React," when building a date picker
+      from scratch was itself a meaningful chunk of work.</p>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>This is the practical payoff of the "rich component ecosystem" point made back on Day 2 (Material
+        UI, Chakra, etc.) — the React ecosystem's real productivity gain isn't the framework itself, it's the
+        density of battle-tested, drop-in components available for common UI needs. Worth remembering when
+        estimating front-end timelines for any future internal tool: "do we need to build this widget" is
+        usually the wrong question; "which existing component do we adopt" is the right one.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 5 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag risk">Compliance</span> The "HIPAA Compliant" Footer Joke — Read This One Carefully</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>The landing page footer text claims the app is "HIPAA compliant, secure and professional" —
+      Donner explicitly flags, on camera, that this is <strong>not actually true</strong>, it's just demo
+      copy, and tells viewers to remove that claim before taking the app anywhere real.</p>
+
+      <div class="risknote">
+        <h4>Risk Flag</h4>
+        <p>This is worth treating as more than a throwaway joke. A working demo that touches patient data
+        and displays an unearned compliance claim in its own UI is exactly the kind of artifact that's easy
+        to forget started as a toy — if anyone on a real team ever forks this pattern for something
+        healthcare-adjacent, "delete the HIPAA claim" needs to become "actually evaluate what HIPAA
+        compliance would require" (BAAs with vendors, encryption at rest/in transit, audit logging, data
+        retention policy, and critically — whether sending patient notes to a third-party LLM API is even
+        permissible under a signed Business Associate Agreement).</p>
+      </div>
+
+      <div class="questions">
+        <h4>Questions worth sitting with</h4>
+        <ul>
+          <li>In a regulated-industry context like yours, how many "quick internal tool" prototypes have
+          you seen accumulate unearned compliance-sounding language in their UI simply because nobody
+          revisited the placeholder copy before wider rollout?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 6 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Recap</span> Full Week 1 Stack, End to End</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <pre>
+Front end   Next.js (Pages Router) + React + TypeScript
+            Client-side rendering · Tailwind CSS
+Back end    FastAPI · Pydantic request models · streaming responses
+Auth        Clerk (JWT, social login)
+Billing     Clerk billing (test gateway) / Stripe-capable
+Deploy      Vercel — dev → preview → production progression
+AI layer    OpenAI (gpt-5-nano) via the openai Python client
+      </pre>
+      <p>Explicit closing point: the LLM call itself was almost incidental — "it could have been reading a
+      flat file, it's just the same." Everything genuinely learned this week is <strong>transferable
+      platform engineering</strong> (auth, billing, deployment, typed APIs), with AI as the lens rather than the substance.</p>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>This closing reframe is worth taking seriously rather than treating as course marketing —
+        it's the same "80% platform engineering" claim from Day 1, now demonstrated rather than asserted.
+        For your own AI/ML job positioning: the differentiator most companies actually need isn't "can you
+        call an LLM API" (that's now trivial), it's "can you ship a secure, billable, production-grade
+        product with an LLM somewhere inside it" — which is precisely the skill set your 16 years of
+        fintech platform work already covers most of.</p>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: What's the instructor's explicit closing claim about how central the AI/LLM piece actually was this week? <span class="hint">tap to reveal</span></div>
+        <div class="a">That the LLM call was a relatively minor part of the actual engineering work — it could have been replaced with reading a flat file and the surrounding platform engineering (auth, billing, deployment, typed request handling) would have been identical. The real skills built this week are generally applicable platform/DevOps skills, just applied through an AI lens.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 7 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Extension Ideas</span> Suggested Next Steps (Explicitly Left as Exercises)</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <ul class="plain">
+        <li>Switch the LLM response from markdown to <strong>structured outputs</strong> (typed JSON) instead of a single markdown blob — flagged as "a much better implementation" than what was built today.</li>
+        <li>Make it multimodal — record/transcribe the doctor's visit directly (ties to LLM Engineering course content Ankur may already know from his own multi-LLM work).</li>
+        <li>Auto-send the email via SendGrid or Resend instead of copy-paste.</li>
+        <li>Gate specific features (e.g. auto-send, multimodal input) behind specific Clerk subscription tiers — a monetization lever, not just an access lever.</li>
+      </ul>
+
+      <div class="questions">
+        <h4>Question worth sitting with</h4>
+        <ul>
+          <li>Of these four extension ideas, structured outputs is arguably the most important for
+          production reliability (markdown parsing is fragile) — does the course circle back to implement
+          it later, or is it left entirely as a reader exercise?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 8: NEXT UP -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag arch">Preview</span> What Day 5 Will Likely Cover — "Prepare for Industrial Grade"</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>Explicit, unusually direct warning: Day 5 (Friday) moves off Vercel's PaaS convenience onto AWS
+      — described as "a different kind of deal," expected to involve real friction ("a lot of sweat,"
+      "gritting of teeth"). The stated plan is to deploy the <em>same</em> healthcare app to AWS, giving a
+      direct side-by-side comparison: PaaS speed (Vercel) vs. AWS's flexibility, security, and monitoring
+      depth — described as what "industrial grade" production deployment actually requires.</p>
+
+      <div class="questions">
+        <h4>Questions to answer once you watch Day 5</h4>
+        <ul>
+          <li>Which specific AWS services replace what Vercel handled automatically — compute (Lambda?
+          ECS?), the managed preview/production environment split, and secret storage (Secrets Manager vs.
+          Vercel env vars)?</li>
+          <li>Does deploying the same Next.js + FastAPI app to AWS require splitting them onto separate
+          services (e.g. front end on S3/CloudFront, back end on Lambda/ECS), or is there a single-service
+          equivalent to Vercel's all-in-one model?</li>
+          <li>Is Clerk auth/billing still usable unchanged on AWS, or does moving off Vercel introduce any
+          new integration friction there?</li>
+          <li>Given Week 2 is explicitly the "AWS deep-dive" week with Terraform and GitHub Actions — is Day
+          5 a taste of that, or a separate, simpler first AWS deploy before Week 2's IaC treatment?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="foot">Architects Lab · Study Notes · Source: "Gen AI &amp; Agentic AI in Production," Week 1 Day 4 (Ed Donner)</div>
+
+<script>
+  function toggleCard(headEl){
+    const card = headEl.parentElement;
+    card.classList.toggle('open');
+    updateProgress();
+  }
+  function toggleRecall(el){
+    el.classList.toggle('show');
+  }
+  function expandAll(){
+    document.querySelectorAll('.card').forEach(c=>c.classList.add('open'));
+    updateProgress();
+  }
+  function collapseAll(){
+    document.querySelectorAll('.card').forEach(c=>c.classList.remove('open'));
+    updateProgress();
+  }
+  function revealAllRecall(){
+    document.querySelectorAll('.recall').forEach(r=>r.classList.add('show'));
+  }
+  function updateProgress(){
+    const total = document.querySelectorAll('.card').length;
+    const open = document.querySelectorAll('.card.open').length;
+    document.getElementById('progressLabel').textContent = open + ' / ' + total + ' sections expanded';
+  }
+  updateProgress();
+</script>
+
+</body>
+</html>

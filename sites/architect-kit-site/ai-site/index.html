@@ -1,0 +1,3468 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Knowledge Vault</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:              #03060f;
+      --surface:         #0d1525;
+      --card:            rgba(13, 21, 40, 0.75);
+      --border:          rgba(99, 102, 241, 0.13);
+      --border-hover:    rgba(99, 102, 241, 0.45);
+      --primary:         #6366f1;
+      --primary-glow:    rgba(99, 102, 241, 0.28);
+      --cyan:            #06b6d4;
+      --cyan-glow:       rgba(6, 182, 212, 0.28);
+      --violet:          #8b5cf6;
+      --emerald:         #10b981;
+      --amber:           #f59e0b;
+      --rose:            #f43f5e;
+      --text:            #e2e8f0;
+      --text-dim:        #94a3b8;
+      --text-muted:      #475569;
+      --heading:         'Space Grotesk', system-ui, sans-serif;
+      --mono:            'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 15px;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Neural Canvas ─────────────────────────── */
+    #neural-bg {
+      position: fixed;
+      inset: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.55;
+    }
+
+    /* ── Layout ────────────────────────────────── */
+    .z1 { position: relative; z-index: 1; }
+
+    .wrap {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    /* ── Header ────────────────────────────────── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      background: rgba(3, 6, 15, 0.82);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-row {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .logo {
+      width: 42px; height: 42px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--cyan) 100%);
+      box-shadow: 0 0 22px var(--primary-glow);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      animation: logo-pulse 3s ease infinite;
+    }
+
+    @keyframes logo-pulse {
+      0%, 100% { box-shadow: 0 0 20px var(--primary-glow); }
+      50%       { box-shadow: 0 0 38px rgba(99,102,241,0.5); }
+    }
+
+    .brand { flex: 1; }
+
+    .brand h1 {
+      font-family: var(--heading);
+      font-size: 1.2rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #a5b4fc 0%, #67e8f9 40%, #a7f3d0 100%);
+      background-size: 200% 100%;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer 5s linear infinite;
+      letter-spacing: -0.02em;
+    }
+
+    .brand p {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    @keyframes shimmer {
+      0%   { background-position:   0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position:   0% 50%; }
+    }
+
+
+    .clock {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      min-width: 72px;
+      text-align: right;
+    }
+
+    /* ── Hero ──────────────────────────────────── */
+    .hero {
+      padding: 2.5rem 0 1.75rem;
+      text-align: center;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.28rem 0.9rem;
+      border-radius: 999px;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      background: rgba(99,102,241,0.08);
+      border: 1px solid rgba(99,102,241,0.22);
+      color: #a5b4fc;
+      margin-bottom: 1.5rem;
+      animation: fade-up 0.5s ease both;
+    }
+
+    .live-dot {
+      width: 6px; height: 6px;
+      background: var(--emerald);
+      border-radius: 50%;
+      animation: blink 2s ease infinite;
+    }
+
+    @keyframes blink {
+      0%,100% { opacity:1; transform: scale(1); }
+      50%      { opacity:0.4; transform: scale(1.6); }
+    }
+
+    .hero-heading {
+      font-family: var(--heading);
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      font-weight: 700;
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+      margin-bottom: 1.25rem;
+      animation: fade-up 0.5s 0.1s ease both;
+    }
+
+    .hero-heading .grad {
+      background: linear-gradient(135deg, #818cf8 0%, #38bdf8 50%, #34d399 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      color: var(--text-dim);
+      font-size: 1rem;
+      max-width: 480px;
+      margin: 0 auto 2.5rem;
+      line-height: 1.75;
+      animation: fade-up 0.5s 0.2s ease both;
+    }
+
+    @keyframes fade-up {
+      from { opacity:0; transform: translateY(18px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+
+    /* ── Stats ─────────────────────────────────── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.875rem;
+      margin-bottom: 1.5rem;
+      animation: fade-up 0.5s 0.3s ease both;
+    }
+
+    .s-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 1.25rem 1rem;
+      text-align: center;
+      backdrop-filter: blur(12px);
+      transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .s-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(99,102,241,0.04) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .s-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 36px rgba(99,102,241,0.12);
+      border-color: var(--border-hover);
+    }
+
+    .s-emoji { font-size: 1.5rem; margin-bottom: 0.5rem; }
+
+    .s-num {
+      display: block;
+      font-family: var(--heading);
+      font-size: 2.1rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #a5b4fc, #67e8f9);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+    }
+
+    .s-label {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-top: 0.3rem;
+    }
+
+
+    /* ── Project card ──────────────────────────── */
+    .project {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 26px;
+      overflow: hidden;
+      backdrop-filter: blur(20px);
+      margin-bottom: 2rem;
+      animation: fade-up 0.5s 0.4s ease both;
+      transition: border-color 0.3s;
+    }
+
+    .project:hover { border-color: rgba(99,102,241,0.28); }
+
+    .project-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 1.25rem;
+      padding: 1.75rem 2rem;
+      background: linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(6,182,212,0.03) 100%);
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .p-chevron {
+      width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-muted);
+      transition: transform 0.3s ease, color 0.2s;
+      flex-shrink: 0;
+      margin-top: 0.15rem;
+    }
+
+    .project-head:hover .p-chevron { color: var(--text-dim); }
+    .project.collapsed .p-chevron { transform: rotate(-90deg); }
+
+    .project-body {
+      overflow: hidden;
+      max-height: 4000px;
+      transition: max-height 0.4s ease;
+    }
+
+    .project.collapsed .project-body { max-height: 0; }
+    .project.collapsed .project-head { border-bottom-color: transparent; }
+
+    .p-icon {
+      width: 58px; height: 58px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--primary), var(--violet));
+      box-shadow: 0 0 30px rgba(99,102,241,0.35);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem; flex-shrink: 0;
+    }
+
+    .p-meta { flex: 1; }
+
+    .p-eyebrow {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--primary);
+      margin-bottom: 0.35rem;
+    }
+
+    .p-name {
+      font-family: var(--heading);
+      font-size: 1.3rem;
+      font-weight: 600;
+      line-height: 1.3;
+      letter-spacing: -0.01em;
+      margin-bottom: 0.8rem;
+    }
+
+    .tags { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+
+    .tag {
+      padding: 0.22rem 0.65rem;
+      border-radius: 999px;
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      font-weight: 500;
+      border: 1px solid;
+    }
+
+    .t-i { background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.28); color: #a5b4fc; }
+    .t-c { background: rgba(6,182,212,0.1);  border-color: rgba(6,182,212,0.28);  color: #67e8f9; }
+    .t-v { background: rgba(139,92,246,0.1); border-color: rgba(139,92,246,0.28); color: #c4b5fd; }
+    .t-e { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.28); color: #6ee7b7; }
+
+    .p-badges {
+      display: flex; flex-direction: column;
+      align-items: flex-end; gap: 0.4rem;
+      flex-shrink: 0;
+    }
+
+    .badge {
+      padding: 0.28rem 0.7rem;
+      background: rgba(99,102,241,0.08);
+      border: 1px solid rgba(99,102,241,0.18);
+      border-radius: 8px;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: #a5b4fc;
+      white-space: nowrap;
+    }
+
+    /* ── Section ───────────────────────────────── */
+    .section { padding: 1.5rem 2rem; }
+
+    .sec-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.875rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sec-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--cyan), rgba(6,182,212,0.3));
+      box-shadow: 0 0 8px var(--cyan-glow);
+      flex-shrink: 0;
+    }
+
+    .sec-title {
+      font-family: var(--heading);
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--cyan);
+      flex: 1;
+    }
+
+    .sec-badge {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      padding: 0.18rem 0.55rem;
+      border-radius: 6px;
+    }
+
+    /* ── Notes grid ────────────────────────────── */
+    .notes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+      gap: 1rem;
+    }
+
+    /* ── Note card ─────────────────────────────── */
+    .note-card {
+      background: rgba(255,255,255,0.018);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 1.25rem;
+      cursor: pointer;
+      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      user-select: none;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .note-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--card-glow, transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      border-radius: 18px;
+    }
+
+    .note-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--border-hover);
+    }
+
+    .note-card:hover::before { opacity: 1; }
+
+    .note-card.n1 { --card-glow: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(139,92,246,0.03)); }
+    .note-card.n2 { --card-glow: linear-gradient(135deg, rgba(6,182,212,0.06),  rgba(14,165,233,0.03)); }
+    .note-card.n3 { --card-glow: linear-gradient(135deg, rgba(16,185,129,0.06), rgba(5,150,105,0.03));  }
+
+    .note-card.n1:hover { box-shadow: 0 18px 50px rgba(99,102,241,0.16); }
+    .note-card.n2:hover { box-shadow: 0 18px 50px rgba(6,182,212,0.16);  }
+    .note-card.n3:hover { box-shadow: 0 18px 50px rgba(16,185,129,0.16); }
+
+    .note-card.n4 { --card-glow: linear-gradient(135deg, rgba(245,158,11,0.06), rgba(251,146,60,0.03)); }
+    .note-card.n5 { --card-glow: linear-gradient(135deg, rgba(244,63,94,0.06),  rgba(236,72,153,0.03)); }
+
+    .note-card.n4:hover { box-shadow: 0 18px 50px rgba(245,158,11,0.16); }
+    .note-card.n5:hover { box-shadow: 0 18px 50px rgba(244,63,94,0.16); }
+
+    .n-icon.n4 { background: linear-gradient(135deg,#f59e0b,#fb923c); box-shadow: 0 5px 18px rgba(245,158,11,0.35); }
+    .n-icon.n5 { background: linear-gradient(135deg,#f43f5e,#ec4899); box-shadow: 0 5px 18px rgba(244,63,94,0.35); }
+
+    /* ── Prompt Engineering project accent ─────── */
+    .project.pe { animation-delay: 0.5s; }
+    .project.pe .project-head { background: linear-gradient(135deg, rgba(245,158,11,0.07) 0%, rgba(251,146,60,0.03) 100%); }
+    .project.pe .p-icon { background: linear-gradient(135deg,#f59e0b,#f43f5e); box-shadow: 0 0 30px rgba(245,158,11,0.35); }
+    .project.pe .p-eyebrow { color: var(--amber); }
+    .project.pe .badge { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.18); color: #fcd34d; }
+    .project.pe .sec-dot { background: radial-gradient(circle,var(--amber),rgba(245,158,11,0.3)); box-shadow: 0 0 8px rgba(245,158,11,0.28); }
+    .project.pe .sec-title { color: var(--amber); }
+    .project.pe .open-btn { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.18); color: #fcd34d; }
+    .project.pe .note-card:hover .open-btn { background: rgba(245,158,11,0.18); border-color: rgba(245,158,11,0.45); box-shadow: 0 0 14px rgba(245,158,11,0.2); }
+
+    /* ── MCP project accent ────────────────────── */
+    .note-card.n6 { --card-glow: linear-gradient(135deg, rgba(16,185,129,0.07), rgba(5,150,105,0.03)); }
+    .note-card.n6:hover { box-shadow: 0 18px 50px rgba(16,185,129,0.18); }
+    .n-icon.n6 { background: linear-gradient(135deg,#10b981,#0891b2); box-shadow: 0 5px 18px rgba(16,185,129,0.35); }
+
+    .project.mcp { animation-delay: 0.6s; }
+    .project.mcp .project-head { background: linear-gradient(135deg, rgba(16,185,129,0.07) 0%, rgba(8,145,178,0.03) 100%); }
+    .project.mcp .p-icon { background: linear-gradient(135deg,#10b981,#0891b2); box-shadow: 0 0 30px rgba(16,185,129,0.35); }
+    .project.mcp .p-eyebrow { color: var(--emerald); }
+    .project.mcp .badge { background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.18); color: #6ee7b7; }
+    .project.mcp .sec-dot { background: radial-gradient(circle,var(--emerald),rgba(16,185,129,0.3)); box-shadow: 0 0 8px rgba(16,185,129,0.28); }
+    .project.mcp .sec-title { color: var(--emerald); }
+    .project.mcp .open-btn { background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.18); color: #6ee7b7; }
+    .project.mcp .note-card:hover .open-btn { background: rgba(16,185,129,0.18); border-color: rgba(16,185,129,0.45); box-shadow: 0 0 14px rgba(16,185,129,0.2); }
+
+    /* ── RAG project accent ────────────────────── */
+    .note-card.n7 { --card-glow: linear-gradient(135deg, rgba(6,182,212,0.08), rgba(56,189,248,0.03)); }
+    .note-card.n7:hover { box-shadow: 0 18px 50px rgba(6,182,212,0.18); }
+    .n-icon.n7 { background: linear-gradient(135deg,#06b6d4,#3b82f6); box-shadow: 0 5px 18px rgba(6,182,212,0.35); }
+
+    .project.rag { animation-delay: 0.7s; }
+    .project.rag .project-head { background: linear-gradient(135deg, rgba(6,182,212,0.07) 0%, rgba(59,130,246,0.03) 100%); }
+    .project.rag .p-icon { background: linear-gradient(135deg,#06b6d4,#3b82f6); box-shadow: 0 0 30px rgba(6,182,212,0.35); }
+    .project.rag .p-eyebrow { color: var(--cyan); }
+    .project.rag .badge { background: rgba(6,182,212,0.08); border-color: rgba(6,182,212,0.18); color: #67e8f9; }
+    .project.rag .sec-dot { background: radial-gradient(circle,var(--cyan),rgba(6,182,212,0.3)); box-shadow: 0 0 8px rgba(6,182,212,0.28); }
+    .project.rag .sec-title { color: var(--cyan); }
+    .project.rag .open-btn { background: rgba(6,182,212,0.08); border-color: rgba(6,182,212,0.18); color: #67e8f9; }
+    .project.rag .note-card:hover .open-btn { background: rgba(6,182,212,0.18); border-color: rgba(6,182,212,0.45); box-shadow: 0 0 14px rgba(6,182,212,0.2); }
+
+    .note-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.875rem;
+      margin-bottom: 0.875rem;
+    }
+
+    .n-icon {
+      width: 44px; height: 44px;
+      border-radius: 13px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    .n-icon.n1 { background: linear-gradient(135deg,#6366f1,#8b5cf6); box-shadow: 0 5px 18px rgba(99,102,241,0.35);  }
+    .n-icon.n2 { background: linear-gradient(135deg,#06b6d4,#0ea5e9); box-shadow: 0 5px 18px rgba(6,182,212,0.35);   }
+    .n-icon.n3 { background: linear-gradient(135deg,#10b981,#059669); box-shadow: 0 5px 18px rgba(16,185,129,0.35);  }
+
+    .n-meta { flex: 1; min-width: 0; }
+
+    .n-num {
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .n-title {
+      font-family: var(--heading);
+      font-size: 0.92rem;
+      font-weight: 600;
+      line-height: 1.4;
+      color: var(--text);
+    }
+
+    .n-desc {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      line-height: 1.68;
+      margin-bottom: 0.875rem;
+    }
+
+    .topics {
+      display: flex; flex-wrap: wrap; gap: 0.35rem;
+      margin-bottom: 1rem;
+    }
+
+    .tp {
+      padding: 0.14rem 0.5rem;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 999px;
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      color: var(--text-dim);
+      white-space: nowrap;
+    }
+
+    .note-foot {
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .depth-wrap { flex: 1; }
+
+    .depth-bar {
+      height: 3px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 0.3rem;
+    }
+
+    .depth-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--da), var(--db));
+    }
+
+    .depth-text {
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      color: var(--text-muted);
+    }
+
+    .open-btn {
+      display: flex; align-items: center; gap: 0.3rem;
+      padding: 0.38rem 0.8rem;
+      background: rgba(99,102,241,0.08);
+      border: 1px solid rgba(99,102,241,0.18);
+      border-radius: 8px;
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: #a5b4fc;
+      transition: all 0.2s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .note-card:hover .open-btn {
+      background: rgba(99,102,241,0.18);
+      border-color: rgba(99,102,241,0.45);
+      box-shadow: 0 0 14px rgba(99,102,241,0.2);
+    }
+
+
+    /* ── Footer ─────────────────────────────────── */
+    footer {
+      margin-top: 4rem;
+      padding: 2rem 1.5rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+
+    footer .hl { color: var(--primary); }
+
+    /* ── Scrollbar ──────────────────────────────── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.28); border-radius: 999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,0.5); }
+
+    /* ── Responsive ─────────────────────────────── */
+    @media (max-width: 768px) {
+      .stats { grid-template-columns: repeat(2,1fr); }
+      .project-head { flex-wrap: wrap; }
+      .p-badges { flex-direction: row; flex-wrap: wrap; justify-content: flex-end; }
+      .notes-grid { grid-template-columns: 1fr; }
+      .clock { display: none; }
+      .hero-heading { font-size: 2.2rem; }
+    }
+
+    @media (max-width: 540px) {
+      .header-row { flex-wrap: wrap; }
+.section { padding: 1.25rem 1.25rem; }
+      .project-head { padding: 1.25rem; }
+    }
+
+    /* ── Utility ────────────────────────────────── */
+    .hidden { display: none !important; }
+
+    /* ── Upcoming courses ────────────────────────── */
+    .upcoming-section {
+      margin-top: 3rem;
+      margin-bottom: 0;
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+    }
+
+    .upcoming-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      cursor: pointer;
+      user-select: none;
+      padding-bottom: 0.1rem;
+    }
+
+    .upcoming-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .upcoming-eyebrow {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      flex: 1;
+    }
+
+    .upcoming-toggle {
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      color: var(--text-muted);
+      transition: color 0.2s;
+    }
+
+    .upcoming-header:hover .upcoming-eyebrow,
+    .upcoming-header:hover .upcoming-toggle { color: var(--text-dim); }
+
+    .upcoming-body {
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 0.35s ease, opacity 0.3s ease;
+      opacity: 0;
+    }
+
+    .upcoming-body.open {
+      max-height: 600px;
+      opacity: 1;
+    }
+
+    .upcoming-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+
+    .course-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 1.2rem 1.3rem;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .course-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      border-radius: 999px;
+    }
+
+    .cc1::before { background: linear-gradient(180deg, #06b6d4, #3b82f6); }
+    .cc2::before { background: linear-gradient(180deg, #f59e0b, #f43f5e); }
+    .cc3::before { background: linear-gradient(180deg, #8b5cf6, #6366f1); }
+    .cc4::before { background: linear-gradient(180deg, #10b981, #059669); }
+    .cc5::before { background: linear-gradient(180deg, #f97316, #ef4444); }
+    .cc6::before { background: linear-gradient(180deg, #facc15, #f59e0b); }
+
+    .course-card:hover { transform: translateY(-3px); border-color: var(--border-hover); }
+    .cc1:hover { box-shadow: 0 10px 32px rgba(6,182,212,0.15); }
+    .cc2:hover { box-shadow: 0 10px 32px rgba(245,158,11,0.15); }
+    .cc3:hover { box-shadow: 0 10px 32px rgba(139,92,246,0.15); }
+    .cc4:hover { box-shadow: 0 10px 32px rgba(16,185,129,0.15); }
+
+    .cc-num {
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+
+    .cc-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .cc-icon { font-size: 1.5rem; line-height: 1; }
+
+    .cc-platform {
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 0.18rem 0.5rem;
+      border-radius: 6px;
+    }
+
+    [data-theme="light"] .cc-platform {
+      background: rgba(0,0,0,0.05);
+      border-color: rgba(0,0,0,0.08);
+    }
+
+    .cc-title {
+      font-family: var(--heading);
+      font-size: 0.88rem;
+      font-weight: 600;
+      line-height: 1.38;
+      color: var(--text);
+      flex: 1;
+    }
+
+    .cc-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+    }
+
+    .cc-tags span {
+      padding: 0.12rem 0.45rem;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 999px;
+      font-family: var(--mono);
+      font-size: 0.57rem;
+      color: var(--text-dim);
+    }
+
+    [data-theme="light"] .cc-tags span {
+      background: rgba(0,0,0,0.04);
+      border-color: rgba(0,0,0,0.07);
+    }
+
+    .cc-go {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      margin-top: 0.15rem;
+      transition: color 0.2s;
+    }
+
+    .course-card:hover .cc-go { color: var(--text); }
+
+    @media (max-width: 640px) {
+      .upcoming-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── Reading progress bar ────────────────────── */
+    #reading-progress {
+      position: fixed;
+      top: 0; left: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--primary), var(--cyan), #34d399);
+      width: 0%;
+      z-index: 9999;
+      pointer-events: none;
+      transition: width 0.08s linear;
+    }
+
+    /* ── Back to top ─────────────────────────────── */
+    #back-top {
+      position: fixed;
+      bottom: 1.75rem; right: 1.75rem;
+      width: 42px; height: 42px;
+      border-radius: 13px;
+      background: rgba(99,102,241,0.82);
+      border: 1px solid rgba(99,102,241,0.4);
+      color: #fff;
+      font-size: 1.05rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 500;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.3s, transform 0.3s, background 0.2s, box-shadow 0.2s;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    #back-top.visible { opacity: 1; transform: translateY(0); }
+
+    #back-top:hover {
+      background: var(--primary);
+      box-shadow: 0 6px 24px rgba(99,102,241,0.45);
+    }
+
+    /* ── Theme toggle ────────────────────────────── */
+    .theme-toggle {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: rgba(99,102,241,0.06);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+
+    .theme-toggle:hover {
+      background: rgba(99,102,241,0.14);
+      border-color: var(--border-hover);
+      color: var(--text);
+    }
+
+    .icon-sun, .icon-moon { display: none; pointer-events: none; }
+
+    [data-theme="dark"]  .icon-moon { display: block; }
+    [data-theme="light"] .icon-sun  { display: block; }
+
+    /* ── Smooth theme transitions ────────────────── */
+    body, header, .s-card, .project, .note-card, .focus-banner,
+    .badge, .tag, .tp, .open-btn, .sec-badge {
+      transition:
+        background-color 0.22s ease,
+        border-color     0.22s ease,
+        color            0.22s ease,
+        box-shadow       0.22s ease;
+    }
+
+    /* ── Light theme ─────────────────────────────── */
+    [data-theme="light"] {
+      --bg:           #f3f2ef;
+      --surface:      #ffffff;
+      --card:         rgba(255,255,255,0.92);
+      --border:       rgba(99,102,241,0.14);
+      --border-hover: rgba(99,102,241,0.36);
+      --text:         #1a1e2e;
+      --text-dim:     #4a5368;
+      --text-muted:   #7e8aaa;
+    }
+
+    [data-theme="light"] body {
+      background: var(--bg);
+    }
+
+    [data-theme="light"] header {
+      background: rgba(243,242,239,0.9);
+      border-bottom-color: rgba(99,102,241,0.12);
+    }
+
+    [data-theme="light"] #neural-bg { opacity: 0.10; }
+
+
+    [data-theme="light"] .s-card {
+      background: #ffffff;
+      box-shadow: 0 2px 16px rgba(99,102,241,0.07);
+    }
+
+    [data-theme="light"] .project {
+      background: #ffffff;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.06);
+    }
+
+    [data-theme="light"] .project-head {
+      background: linear-gradient(135deg, rgba(99,102,241,0.04) 0%, rgba(6,182,212,0.02) 100%);
+    }
+
+    [data-theme="light"] .project-head:hover {
+      background: linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(6,182,212,0.04) 100%);
+    }
+
+    [data-theme="light"] .project.pe  .project-head { background: linear-gradient(135deg, rgba(245,158,11,0.05) 0%, rgba(251,146,60,0.02) 100%); }
+    [data-theme="light"] .project.mcp .project-head { background: linear-gradient(135deg, rgba(16,185,129,0.05) 0%, rgba(8,145,178,0.02) 100%); }
+    [data-theme="light"] .project.rag .project-head { background: linear-gradient(135deg, rgba(6,182,212,0.05) 0%, rgba(59,130,246,0.02) 100%); }
+    [data-theme="light"] .project.deploy .project-head { background: linear-gradient(135deg, rgba(249,115,22,0.05) 0%, rgba(225,29,72,0.02) 100%); }
+
+    [data-theme="light"] .note-card {
+      background: rgba(248,248,253,0.95);
+      box-shadow: 0 1px 8px rgba(0,0,0,0.05);
+    }
+
+    [data-theme="light"] .note-card:hover {
+      box-shadow: 0 10px 32px rgba(99,102,241,0.11);
+    }
+
+    [data-theme="light"] .note-card.n1:hover { box-shadow: 0 10px 32px rgba(99,102,241,0.14); }
+    [data-theme="light"] .note-card.n2:hover { box-shadow: 0 10px 32px rgba(6,182,212,0.14); }
+    [data-theme="light"] .note-card.n3:hover { box-shadow: 0 10px 32px rgba(16,185,129,0.14); }
+    [data-theme="light"] .note-card.n4:hover { box-shadow: 0 10px 32px rgba(245,158,11,0.14); }
+    [data-theme="light"] .note-card.n5:hover { box-shadow: 0 10px 32px rgba(244,63,94,0.14); }
+    [data-theme="light"] .note-card.n6:hover { box-shadow: 0 10px 32px rgba(16,185,129,0.14); }
+    [data-theme="light"] .note-card.n7:hover { box-shadow: 0 10px 32px rgba(6,182,212,0.14); }
+    [data-theme="light"] .note-card.n8:hover { box-shadow: 0 10px 32px rgba(249,115,22,0.14); }
+
+    [data-theme="light"] .tp {
+      background: rgba(99,102,241,0.05);
+      border-color: rgba(99,102,241,0.12);
+      color: var(--text-dim);
+    }
+
+    [data-theme="light"] .depth-bar { background: rgba(0,0,0,0.07); }
+
+    [data-theme="light"] .focus-banner {
+      background: linear-gradient(135deg, rgba(249,115,22,0.06) 0%, rgba(225,29,72,0.03) 100%);
+    }
+
+    [data-theme="light"] .sec-badge {
+      background: rgba(0,0,0,0.04);
+      border-color: rgba(0,0,0,0.07);
+      color: var(--text-muted);
+    }
+
+
+    [data-theme="light"] #back-top {
+      background: rgba(99,102,241,0.88);
+    }
+
+    [data-theme="light"] footer {
+      border-top-color: rgba(99,102,241,0.12);
+    }
+
+    [data-theme="light"] ::-webkit-scrollbar-track { background: #f3f2ef; }
+    [data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.22); }
+
+    /* ── Project description (visible when collapsed) */
+    .p-desc {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin-top: 0.45rem;
+      line-height: 1.55;
+      max-width: 560px;
+    }
+
+
+    /* ── Collapsed project hint ───────────────────── */
+    .project.collapsed .p-chevron {
+      color: var(--primary);
+      opacity: 0.7;
+    }
+
+    .project-head:hover {
+      background: linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(6,182,212,0.05) 100%);
+    }
+
+    .project.pe .project-head:hover  { background: linear-gradient(135deg, rgba(245,158,11,0.10) 0%, rgba(251,146,60,0.05) 100%); }
+    .project.mcp .project-head:hover { background: linear-gradient(135deg, rgba(16,185,129,0.10) 0%, rgba(8,145,178,0.05) 100%); }
+    .project.rag .project-head:hover { background: linear-gradient(135deg, rgba(6,182,212,0.10) 0%, rgba(59,130,246,0.05) 100%); }
+    .project.deploy .project-head:hover { background: linear-gradient(135deg, rgba(249,115,22,0.10) 0%, rgba(225,29,72,0.05) 100%); }
+
+    /* ── Note count dot row in collapsed header ───── */
+    .p-note-dots {
+      display: flex;
+      gap: 0.25rem;
+      margin-top: 0.55rem;
+      align-items: center;
+    }
+
+    .p-note-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: rgba(99,102,241,0.3);
+      border: 1px solid rgba(99,102,241,0.2);
+    }
+
+    .p-note-dot.filled { background: var(--primary); border-color: transparent; }
+
+    .project.pe .p-note-dot.filled   { background: var(--amber); }
+    .project.mcp .p-note-dot.filled  { background: var(--emerald); }
+    .project.rag .p-note-dot.filled  { background: var(--cyan); }
+    .project.deploy .p-note-dot.filled { background: #f97316; }
+
+    /* ── Deploy project accent ──────────────────────── */
+    .note-card.n8 { --card-glow: linear-gradient(135deg, rgba(249,115,22,0.07), rgba(225,29,72,0.03)); }
+    .note-card.n8:hover { box-shadow: 0 18px 50px rgba(249,115,22,0.18); }
+    .n-icon.n8 { background: linear-gradient(135deg,#f97316,#e11d48); box-shadow: 0 5px 18px rgba(249,115,22,0.35); }
+
+    .project.deploy { animation-delay: 0.65s; }
+    .project.deploy .project-head { background: linear-gradient(135deg, rgba(249,115,22,0.07) 0%, rgba(225,29,72,0.03) 100%); }
+    .project.deploy .p-icon { background: linear-gradient(135deg,#f97316,#e11d48); box-shadow: 0 0 30px rgba(249,115,22,0.35); }
+    .project.deploy .p-eyebrow { color: #fb923c; }
+    .project.deploy .badge { background: rgba(249,115,22,0.08); border-color: rgba(249,115,22,0.18); color: #fdba74; }
+    .project.deploy .sec-dot { background: radial-gradient(circle,#f97316,rgba(249,115,22,0.3)); box-shadow: 0 0 8px rgba(249,115,22,0.28); }
+    .project.deploy .sec-title { color: #fb923c; }
+    .project.deploy .open-btn { background: rgba(249,115,22,0.08); border-color: rgba(249,115,22,0.18); color: #fdba74; }
+    .project.deploy .note-card:hover .open-btn { background: rgba(249,115,22,0.18); border-color: rgba(249,115,22,0.45); box-shadow: 0 0 14px rgba(249,115,22,0.2); }
+
+    /* ── Focus banner ──────────────────────────────── */
+    .focus-banner {
+      background: linear-gradient(135deg, rgba(249,115,22,0.09) 0%, rgba(225,29,72,0.04) 100%);
+      border: 1px solid rgba(249,115,22,0.22);
+      border-radius: 20px;
+      padding: 1.2rem 1.5rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      animation: fade-up 0.5s 0.28s ease both;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .focus-banner::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, #f97316, #e11d48);
+      border-radius: 999px;
+    }
+
+    .focus-icon {
+      width: 50px; height: 50px;
+      border-radius: 15px;
+      background: linear-gradient(135deg, #f97316, #e11d48);
+      box-shadow: 0 0 28px rgba(249,115,22,0.4);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+      flex-shrink: 0;
+    }
+
+    .focus-body { flex: 1; min-width: 0; }
+
+    .focus-label {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #fb923c;
+      margin-bottom: 0.3rem;
+    }
+
+    .focus-title {
+      font-family: var(--heading);
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.6rem;
+    }
+
+    .track-dots { display: flex; gap: 0.3rem; align-items: center; }
+
+    .track-dot {
+      height: 5px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.1);
+      transition: background 0.2s, width 0.2s;
+    }
+
+    .track-dot.done { background: linear-gradient(90deg, #f97316, #e11d48); }
+    .track-dot.done:last-of-type { width: 28px; }
+    .track-dot { width: 20px; }
+
+    .focus-right { flex-shrink: 0; text-align: right; }
+
+    .focus-stat {
+      font-family: var(--heading);
+      font-size: 1.75rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #fb923c, #f43f5e);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+    }
+
+    .focus-stat-label {
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    /* ── Lab badge ──────────────────────────────────── */
+    .lab-badge {
+      position: absolute;
+      top: 0.75rem; right: 0.75rem;
+      font-family: var(--mono);
+      font-size: 0.5rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 0.18rem 0.52rem;
+      border-radius: 999px;
+      pointer-events: none;
+      z-index: 2;
+      color: #fff;
+    }
+    .lab-badge.claude { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+    .lab-badge.gemini { background: linear-gradient(135deg, #06b6d4, #3b82f6); }
+    .lab-badge.openai { background: linear-gradient(135deg, #10b981, #059669); }
+
+    /* ── New badge ──────────────────────────────────── */
+    .new-badge {
+      position: absolute;
+      top: 0.75rem; right: 0.75rem;
+      background: linear-gradient(135deg, #f97316, #e11d48);
+      color: #fff;
+      font-family: var(--mono);
+      font-size: 0.5rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 0.16rem 0.48rem;
+      border-radius: 999px;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* ── Day-track pips in project header ─────────── */
+    .day-track {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      margin-top: 0.65rem;
+    }
+
+    .day-pip {
+      width: 26px; height: 5px;
+      border-radius: 999px;
+      background: rgba(249,115,22,0.12);
+      border: 1px solid rgba(249,115,22,0.2);
+    }
+
+    .day-pip.done {
+      background: linear-gradient(90deg, #f97316, #e11d48);
+      border-color: transparent;
+      box-shadow: 0 0 6px rgba(249,115,22,0.3);
+    }
+
+    .day-pip-label {
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      color: #fb923c;
+      margin-left: 0.35rem;
+    }
+
+    /* ── Docker for AI project accent ──────────────────── */
+    .note-card.n9 { --card-glow: linear-gradient(135deg, rgba(37,99,235,0.07), rgba(99,102,241,0.03)); }
+    .note-card.n9:hover { box-shadow: 0 18px 50px rgba(37,99,235,0.18); }
+    .n-icon.n9 { background: linear-gradient(135deg,#2563eb,#6366f1); box-shadow: 0 5px 18px rgba(37,99,235,0.35); }
+
+    .project.docker { animation-delay: 0.75s; }
+    .project.docker .project-head { background: linear-gradient(135deg, rgba(37,99,235,0.07) 0%, rgba(99,102,241,0.03) 100%); }
+    .project.docker .p-icon { background: linear-gradient(135deg,#2563eb,#6366f1); box-shadow: 0 0 30px rgba(37,99,235,0.35); }
+    .project.docker .p-eyebrow { color: #60a5fa; }
+    .project.docker .badge { background: rgba(37,99,235,0.08); border-color: rgba(37,99,235,0.18); color: #93c5fd; }
+    .project.docker .sec-dot { background: radial-gradient(circle,#3b82f6,rgba(37,99,235,0.3)); box-shadow: 0 0 8px rgba(37,99,235,0.28); }
+    .project.docker .sec-title { color: #60a5fa; }
+    .project.docker .open-btn { background: rgba(37,99,235,0.08); border-color: rgba(37,99,235,0.18); color: #93c5fd; }
+    .project.docker .note-card:hover .open-btn { background: rgba(37,99,235,0.18); border-color: rgba(37,99,235,0.45); box-shadow: 0 0 14px rgba(37,99,235,0.2); }
+    .project.docker .project-head:hover { background: linear-gradient(135deg, rgba(37,99,235,0.10) 0%, rgba(99,102,241,0.05) 100%); }
+    .project.docker .p-note-dot.filled { background: #3b82f6; }
+    [data-theme="light"] .project.docker .project-head { background: linear-gradient(135deg, rgba(37,99,235,0.05) 0%, rgba(99,102,241,0.02) 100%); }
+    [data-theme="light"] .note-card.n9:hover { box-shadow: 0 10px 32px rgba(37,99,235,0.14); }
+
+    /* ── AWS AI Practitioner project accent ─────────────── */
+    .note-card.n10 { --card-glow: linear-gradient(135deg, rgba(234,179,8,0.07), rgba(245,158,11,0.03)); }
+    .note-card.n10:hover { box-shadow: 0 18px 50px rgba(234,179,8,0.18); }
+    .n-icon.n10 { background: linear-gradient(135deg,#d97706,#f59e0b); box-shadow: 0 5px 18px rgba(234,179,8,0.35); }
+
+    .project.aws { animation-delay: 0.8s; }
+    .project.aws .project-head { background: linear-gradient(135deg, rgba(234,179,8,0.07) 0%, rgba(245,158,11,0.03) 100%); }
+    .project.aws .p-icon { background: linear-gradient(135deg,#d97706,#f59e0b); box-shadow: 0 0 30px rgba(234,179,8,0.35); }
+    .project.aws .p-eyebrow { color: #fbbf24; }
+    .project.aws .badge { background: rgba(234,179,8,0.08); border-color: rgba(234,179,8,0.18); color: #fde68a; }
+    .project.aws .sec-dot { background: radial-gradient(circle,#d97706,rgba(234,179,8,0.3)); box-shadow: 0 0 8px rgba(234,179,8,0.28); }
+    .project.aws .sec-title { color: #fbbf24; }
+    .project.aws .open-btn { background: rgba(234,179,8,0.08); border-color: rgba(234,179,8,0.18); color: #fde68a; }
+    .project.aws .note-card:hover .open-btn { background: rgba(234,179,8,0.18); border-color: rgba(234,179,8,0.45); box-shadow: 0 0 14px rgba(234,179,8,0.2); }
+    .project.aws .project-head:hover { background: linear-gradient(135deg, rgba(234,179,8,0.10) 0%, rgba(245,158,11,0.05) 100%); }
+    .project.aws .p-note-dot.filled { background: #d97706; }
+    [data-theme="light"] .project.aws .project-head { background: linear-gradient(135deg, rgba(234,179,8,0.05) 0%, rgba(245,158,11,0.02) 100%); }
+    [data-theme="light"] .note-card.n10:hover { box-shadow: 0 10px 32px rgba(234,179,8,0.14); }
+
+    /* ── AI for Leaders & PM project accent ─────────────── */
+    .note-card.n11 { --card-glow: linear-gradient(135deg, rgba(20,184,166,0.07), rgba(8,145,178,0.03)); }
+    .note-card.n11:hover { box-shadow: 0 18px 50px rgba(20,184,166,0.18); }
+    .n-icon.n11 { background: linear-gradient(135deg,#14b8a6,#0891b2); box-shadow: 0 5px 18px rgba(20,184,166,0.35); }
+
+    .project.leaders-pm { animation-delay: 0.85s; }
+    .project.leaders-pm .project-head { background: linear-gradient(135deg, rgba(20,184,166,0.07) 0%, rgba(8,145,178,0.03) 100%); }
+    .project.leaders-pm .p-icon { background: linear-gradient(135deg,#14b8a6,#0891b2); box-shadow: 0 0 30px rgba(20,184,166,0.35); }
+    .project.leaders-pm .p-eyebrow { color: #2dd4bf; }
+    .project.leaders-pm .badge { background: rgba(20,184,166,0.08); border-color: rgba(20,184,166,0.18); color: #99f6e4; }
+    .project.leaders-pm .sec-dot { background: radial-gradient(circle,#14b8a6,rgba(20,184,166,0.3)); box-shadow: 0 0 8px rgba(20,184,166,0.28); }
+    .project.leaders-pm .sec-title { color: #2dd4bf; }
+    .project.leaders-pm .open-btn { background: rgba(20,184,166,0.08); border-color: rgba(20,184,166,0.18); color: #99f6e4; }
+    .project.leaders-pm .note-card:hover .open-btn { background: rgba(20,184,166,0.18); border-color: rgba(20,184,166,0.45); box-shadow: 0 0 14px rgba(20,184,166,0.2); }
+    .project.leaders-pm .project-head:hover { background: linear-gradient(135deg, rgba(20,184,166,0.10) 0%, rgba(8,145,178,0.05) 100%); }
+    .project.leaders-pm .p-note-dot.filled { background: #14b8a6; }
+    [data-theme="light"] .project.leaders-pm .project-head { background: linear-gradient(135deg, rgba(20,184,166,0.05) 0%, rgba(8,145,178,0.02) 100%); }
+    [data-theme="light"] .note-card.n11:hover { box-shadow: 0 10px 32px rgba(20,184,166,0.14); }
+
+    /* ── AI Leader GenAI & Agentic AI project accent ─────────────── */
+    .note-card.n12 { --card-glow: linear-gradient(135deg, rgba(219,39,119,0.07), rgba(147,51,234,0.03)); }
+    .note-card.n12:hover { box-shadow: 0 18px 50px rgba(219,39,119,0.18); }
+    .n-icon.n12 { background: linear-gradient(135deg,#db2777,#9333ea); box-shadow: 0 5px 18px rgba(219,39,119,0.35); }
+
+    .project.ai-leader { animation-delay: 0.9s; }
+    .project.ai-leader .project-head { background: linear-gradient(135deg, rgba(219,39,119,0.07) 0%, rgba(147,51,234,0.03) 100%); }
+    .project.ai-leader .p-icon { background: linear-gradient(135deg,#db2777,#9333ea); box-shadow: 0 0 30px rgba(219,39,119,0.35); }
+    .project.ai-leader .p-eyebrow { color: #f472b6; }
+    .project.ai-leader .badge { background: rgba(219,39,119,0.08); border-color: rgba(219,39,119,0.18); color: #fbcfe8; }
+    .project.ai-leader .sec-dot { background: radial-gradient(circle,#db2777,rgba(219,39,119,0.3)); box-shadow: 0 0 8px rgba(219,39,119,0.28); }
+    .project.ai-leader .sec-title { color: #f472b6; }
+    .project.ai-leader .open-btn { background: rgba(219,39,119,0.08); border-color: rgba(219,39,119,0.18); color: #fbcfe8; }
+    .project.ai-leader .note-card:hover .open-btn { background: rgba(219,39,119,0.18); border-color: rgba(219,39,119,0.45); box-shadow: 0 0 14px rgba(219,39,119,0.2); }
+    .project.ai-leader .project-head:hover { background: linear-gradient(135deg, rgba(219,39,119,0.10) 0%, rgba(147,51,234,0.05) 100%); }
+    .project.ai-leader .p-note-dot.filled { background: #db2777; }
+    [data-theme="light"] .project.ai-leader .project-head { background: linear-gradient(135deg, rgba(219,39,119,0.05) 0%, rgba(147,51,234,0.02) 100%); }
+    [data-theme="light"] .note-card.n12:hover { box-shadow: 0 10px 32px rgba(219,39,119,0.14); }
+
+    /* ── AI Governance project accent ─────────────────── */
+    .note-card.n13 { --card-glow: linear-gradient(135deg, rgba(3,105,161,0.07), rgba(67,56,202,0.03)); }
+    .note-card.n13:hover { box-shadow: 0 18px 50px rgba(3,105,161,0.18); }
+    .n-icon.n13 { background: linear-gradient(135deg,#0369a1,#4338ca); box-shadow: 0 5px 18px rgba(3,105,161,0.35); }
+
+    .project.gov { animation-delay: 0.95s; }
+    .project.gov .project-head { background: linear-gradient(135deg, rgba(3,105,161,0.07) 0%, rgba(67,56,202,0.03) 100%); }
+    .project.gov .p-icon { background: linear-gradient(135deg,#0369a1,#4338ca); box-shadow: 0 0 30px rgba(3,105,161,0.35); }
+    .project.gov .p-eyebrow { color: #38bdf8; }
+    .project.gov .badge { background: rgba(3,105,161,0.08); border-color: rgba(3,105,161,0.18); color: #7dd3fc; }
+    .project.gov .sec-dot { background: radial-gradient(circle,#0369a1,rgba(3,105,161,0.3)); box-shadow: 0 0 8px rgba(3,105,161,0.28); }
+    .project.gov .sec-title { color: #38bdf8; }
+    .project.gov .open-btn { background: rgba(3,105,161,0.08); border-color: rgba(3,105,161,0.18); color: #7dd3fc; }
+    .project.gov .note-card:hover .open-btn { background: rgba(3,105,161,0.18); border-color: rgba(3,105,161,0.45); box-shadow: 0 0 14px rgba(3,105,161,0.2); }
+    .project.gov .project-head:hover { background: linear-gradient(135deg, rgba(3,105,161,0.10) 0%, rgba(67,56,202,0.05) 100%); }
+    .project.gov .p-note-dot.filled { background: #0369a1; }
+    [data-theme="light"] .project.gov .project-head { background: linear-gradient(135deg, rgba(3,105,161,0.05) 0%, rgba(67,56,202,0.02) 100%); }
+    [data-theme="light"] .note-card.n13:hover { box-shadow: 0 10px 32px rgba(3,105,161,0.14); }
+
+    /* ── AI Guardrails project accent ────────────────── */
+    .note-card.n14 { --card-glow: linear-gradient(135deg, rgba(225,29,72,0.07), rgba(124,58,237,0.03)); }
+    .note-card.n14:hover { box-shadow: 0 18px 50px rgba(225,29,72,0.18); }
+    .n-icon.n14 { background: linear-gradient(135deg,#e11d48,#7c3aed); box-shadow: 0 5px 18px rgba(225,29,72,0.35); }
+
+    .project.guardrails { animation-delay: 1.0s; }
+    .project.guardrails .project-head { background: linear-gradient(135deg, rgba(225,29,72,0.07) 0%, rgba(124,58,237,0.03) 100%); }
+    .project.guardrails .p-icon { background: linear-gradient(135deg,#e11d48,#7c3aed); box-shadow: 0 0 30px rgba(225,29,72,0.35); }
+    .project.guardrails .p-eyebrow { color: #fb7185; }
+    .project.guardrails .badge { background: rgba(225,29,72,0.08); border-color: rgba(225,29,72,0.18); color: #fda4af; }
+    .project.guardrails .sec-dot { background: radial-gradient(circle,#e11d48,rgba(225,29,72,0.3)); box-shadow: 0 0 8px rgba(225,29,72,0.28); }
+    .project.guardrails .sec-title { color: #fb7185; }
+    .project.guardrails .open-btn { background: rgba(225,29,72,0.08); border-color: rgba(225,29,72,0.18); color: #fda4af; }
+    .project.guardrails .note-card:hover .open-btn { background: rgba(225,29,72,0.18); border-color: rgba(225,29,72,0.45); box-shadow: 0 0 14px rgba(225,29,72,0.2); }
+    .project.guardrails .project-head:hover { background: linear-gradient(135deg, rgba(225,29,72,0.10) 0%, rgba(124,58,237,0.05) 100%); }
+    .project.guardrails .p-note-dot.filled { background: #e11d48; }
+    [data-theme="light"] .project.guardrails .project-head { background: linear-gradient(135deg, rgba(225,29,72,0.05) 0%, rgba(124,58,237,0.02) 100%); }
+    [data-theme="light"] .note-card.n14:hover { box-shadow: 0 10px 32px rgba(225,29,72,0.14); }
+
+    /* ── Category headers (grouping) ──────────────── */
+    .category-header {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      margin: 2.75rem 0 1.25rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+      animation: fade-up 0.5s ease both;
+      cursor: pointer;
+      user-select: none;
+    }
+    .category-header:first-of-type { margin-top: 0.5rem; }
+    .category-header:hover { border-bottom-color: var(--border-hover); }
+    .cat-chevron {
+      flex-shrink: 0;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      transition: transform 0.25s ease, color 0.2s ease;
+    }
+    .category-header:hover .cat-chevron { color: var(--text-dim); }
+    .category-header.cat-open .cat-chevron { transform: rotate(180deg); }
+    .category-group {
+      display: block;
+      overflow: hidden;
+    }
+    .category-group.cat-collapsed { display: none; }
+    .cat-num {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--bg);
+      background: var(--cat-color, var(--primary));
+      border-radius: 7px;
+      padding: 0.28rem 0.55rem;
+      flex-shrink: 0;
+      box-shadow: 0 0 16px var(--cat-glow, var(--primary-glow));
+    }
+    .cat-text { flex: 1; min-width: 0; }
+    .cat-title {
+      font-family: var(--heading);
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+    .cat-sub {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    /* notes width expansion - matches learning plan box */
+  .wrap,.container,main,header.hero,header.masthead,nav.toc,section.block,footer{max-width:100%!important;padding-left:24px!important;padding-right:24px!important;}
+
+    /* ── Build 10 AI Agents project accent ─────────── */
+    .note-card.n15 { --card-glow: linear-gradient(135deg, rgba(168,85,247,0.07), rgba(124,58,237,0.03)); }
+    .note-card.n15:hover { box-shadow: 0 18px 50px rgba(168,85,247,0.18); }
+    .n-icon.n15 { background: linear-gradient(135deg,#a855f7,#7c3aed); box-shadow: 0 5px 18px rgba(168,85,247,0.35); }
+
+    .project.agents10 { animation-delay: 1.05s; }
+    .project.agents10 .project-head { background: linear-gradient(135deg, rgba(168,85,247,0.07) 0%, rgba(124,58,237,0.03) 100%); }
+    .project.agents10 .p-icon { background: linear-gradient(135deg,#a855f7,#7c3aed); box-shadow: 0 0 30px rgba(168,85,247,0.35); }
+    .project.agents10 .p-eyebrow { color: #c084fc; }
+    .project.agents10 .badge { background: rgba(168,85,247,0.08); border-color: rgba(168,85,247,0.18); color: #e9d5ff; }
+    .project.agents10 .sec-dot { background: radial-gradient(circle,#a855f7,rgba(168,85,247,0.3)); box-shadow: 0 0 8px rgba(168,85,247,0.28); }
+    .project.agents10 .sec-title { color: #c084fc; }
+    .project.agents10 .open-btn { background: rgba(168,85,247,0.08); border-color: rgba(168,85,247,0.18); color: #e9d5ff; }
+    .project.agents10 .note-card:hover .open-btn { background: rgba(168,85,247,0.18); border-color: rgba(168,85,247,0.45); box-shadow: 0 0 14px rgba(168,85,247,0.2); }
+    .project.agents10 .project-head:hover { background: linear-gradient(135deg, rgba(168,85,247,0.10) 0%, rgba(124,58,237,0.05) 100%); }
+    .project.agents10 .p-note-dot.filled { background: #a855f7; }
+    [data-theme="light"] .project.agents10 .project-head { background: linear-gradient(135deg, rgba(168,85,247,0.05) 0%, rgba(124,58,237,0.02) 100%); }
+    [data-theme="light"] .note-card.n15:hover { box-shadow: 0 10px 32px rgba(168,85,247,0.14); }
+
+    /* ── GitHub Copilot project accent ──────────────── */
+    .note-card.n16 { --card-glow: linear-gradient(135deg, rgba(31,111,235,0.07), rgba(14,165,233,0.03)); }
+    .note-card.n16:hover { box-shadow: 0 18px 50px rgba(31,111,235,0.18); }
+    .n-icon.n16 { background: linear-gradient(135deg,#1f6feb,#0ea5e9); box-shadow: 0 5px 18px rgba(31,111,235,0.35); }
+
+    .project.copilot { animation-delay: 1.1s; }
+    .project.copilot .project-head { background: linear-gradient(135deg, rgba(31,111,235,0.07) 0%, rgba(14,165,233,0.03) 100%); }
+    .project.copilot .p-icon { background: linear-gradient(135deg,#1f6feb,#0ea5e9); box-shadow: 0 0 30px rgba(31,111,235,0.35); }
+    .project.copilot .p-eyebrow { color: #60a5fa; }
+    .project.copilot .badge { background: rgba(31,111,235,0.08); border-color: rgba(31,111,235,0.18); color: #bfdbfe; }
+    .project.copilot .sec-dot { background: radial-gradient(circle,#1f6feb,rgba(31,111,235,0.3)); box-shadow: 0 0 8px rgba(31,111,235,0.28); }
+    .project.copilot .sec-title { color: #60a5fa; }
+    .project.copilot .open-btn { background: rgba(31,111,235,0.08); border-color: rgba(31,111,235,0.18); color: #bfdbfe; }
+    .project.copilot .note-card:hover .open-btn { background: rgba(31,111,235,0.18); border-color: rgba(31,111,235,0.45); box-shadow: 0 0 14px rgba(31,111,235,0.2); }
+    .project.copilot .project-head:hover { background: linear-gradient(135deg, rgba(31,111,235,0.10) 0%, rgba(14,165,233,0.05) 100%); }
+    .project.copilot .p-note-dot.filled { background: #1f6feb; }
+    [data-theme="light"] .project.copilot .project-head { background: linear-gradient(135deg, rgba(31,111,235,0.05) 0%, rgba(14,165,233,0.02) 100%); }
+    [data-theme="light"] .note-card.n16:hover { box-shadow: 0 10px 32px rgba(31,111,235,0.14); }
+</style>
+</head>
+<body>
+
+  <!-- ── Reading progress ─────────────────────── -->
+  <div id="reading-progress"></div>
+
+  <!-- ── Animated neural network ─────────────── -->
+  <canvas id="neural-bg"></canvas>
+
+  <!-- ── Back to top ───────────────────────────── -->
+  <button id="back-top" aria-label="Back to top">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+  </button>
+
+  <!-- ── Header ───────────────────────────────── -->
+  <header class="z1">
+    <div class="header-row">
+      <div class="logo">
+        <!-- AI node icon -->
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="2.5" fill="white"/>
+          <circle cx="12" cy="4"  r="1.5" fill="white" opacity="0.7"/>
+          <circle cx="12" cy="20" r="1.5" fill="white" opacity="0.7"/>
+          <circle cx="4"  cy="12" r="1.5" fill="white" opacity="0.7"/>
+          <circle cx="20" cy="12" r="1.5" fill="white" opacity="0.7"/>
+          <circle cx="6.4"  cy="6.4"  r="1.2" fill="white" opacity="0.5"/>
+          <circle cx="17.6" cy="6.4"  r="1.2" fill="white" opacity="0.5"/>
+          <circle cx="6.4"  cy="17.6" r="1.2" fill="white" opacity="0.5"/>
+          <circle cx="17.6" cy="17.6" r="1.2" fill="white" opacity="0.5"/>
+          <line x1="12" y1="9.5"  x2="12" y2="5.5"  stroke="white" stroke-width="0.8" opacity="0.4"/>
+          <line x1="12" y1="14.5" x2="12" y2="18.5" stroke="white" stroke-width="0.8" opacity="0.4"/>
+          <line x1="9.5" y1="12"  x2="5.5"  y2="12" stroke="white" stroke-width="0.8" opacity="0.4"/>
+          <line x1="14.5" y1="12" x2="18.5" y2="12" stroke="white" stroke-width="0.8" opacity="0.4"/>
+        </svg>
+      </div>
+      <div class="brand">
+        <h1>AI Knowledge Vault</h1>
+        <p>// personal learning compendium</p>
+      </div>
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle light/dark theme">
+        <svg class="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon-sun"  width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </button>
+      <div class="clock z1" id="clock">—</div>
+    </div>
+  </header>
+
+  <!-- ── Page content ──────────────────────────── -->
+  <div class="wrap z1">
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="pill">
+        <span class="live-dot"></span>
+        Active Knowledge Base
+      </div>
+      <h2 class="hero-heading">
+        Your <span class="grad">AI Learning</span><br>Universe
+      </h2>
+      <p class="hero-sub">Structured notes from AI engineering bootcamps, projects, and research — all in one place.</p>
+    </section>
+
+    <!-- Upcoming Courses -->
+
+
+    <!-- ── Category 1: Core AI Development ──────── -->
+    <div class="category-header" data-cat-target="cat-group-1" style="--cat-color:var(--primary); --cat-glow:var(--primary-glow);">
+      <span class="cat-num">CAT 01</span>
+      <div class="cat-text">
+        <div class="cat-title">Core AI Development</div>
+        <div class="cat-sub">LLM Engineering &amp; RAG · Prompt Engineering · RAG · MCP</div>
+      </div>
+      <span class="cat-chevron">▾</span>
+    </div>
+    <div class="category-group cat-collapsed" id="cat-group-1">
+
+    <!-- ── Project: LLM Engineering ─────────────── -->
+    <article class="project" id="proj-llm">
+
+      <div class="project-head">
+        <div class="p-icon">🧠</div>
+        <div class="p-meta">
+          <div class="p-eyebrow">Project · 01</div>
+          <div class="p-name">LLM Engineering, RAG, &amp; AI Agents</div>
+          <div class="tags">
+            <span class="tag t-i">LLM</span>
+            <span class="tag t-c">RAG</span>
+            <span class="tag t-v">AI Agents</span>
+            <span class="tag t-e">Bootcamp</span>
+            <span class="tag t-i">Fine-tuning</span>
+          </div>
+          <p class="p-desc">Closed &amp; open-source APIs, agentic frameworks, fine-tuning, eval and production infra — the complete AI engineering stack across 10 bootcamp days.</p>
+        </div>
+        <div class="p-badges">
+          <span class="badge">17 notes</span>
+        </div>
+        <div class="p-chevron">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      </div>
+
+      <div class="project-body">
+
+      <!-- Section: Closed Source LLM -->
+      <div class="section">
+        <div class="sec-header">
+          <span class="sec-dot"></span>
+          <span class="sec-title">Closed Source LLM</span>
+          <span class="sec-badge">5 notes</span>
+        </div>
+
+        <div class="notes-grid">
+
+          <!-- Note 1: Bootcamp Overview -->
+          <div class="note-card n1"
+               data-title="LLM & Agentic AI Engineer Bootcamp Notes"
+               data-topics="LM Studio Local LLM 14-Day Structure Active Recall Bootcamp"
+               data-file="llm_engineering_rag_ai_agents/Closed Source LLM/day0-welcome-to-bootcamp.html">
+            <div class="note-top">
+              <div class="n-icon n1">🚀</div>
+              <div class="n-meta">
+                <div class="n-num">Note 01 · Sec 1</div>
+                <div class="n-title">LLM &amp; Agentic AI Engineer — Bootcamp Notes</div>
+              </div>
+            </div>
+            <p class="n-desc">14-day roadmap across closed-source LLM APIs, open-source models &amp; fine-tuning, and agentic AI frameworks. Your launchpad into AI engineering.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <!-- Note 2: Character Chatbot -->
+          <div class="note-card n2"
+               data-title="Project 1 Character AI Chatbot Full Notes"
+               data-topics="Setup API First Call Response Anatomy Persona Engineering Chatbot"
+               data-file="llm_engineering_rag_ai_agents/Closed Source LLM/day1-intro-full-notes-character-chatbot.html">
+            <div class="note-top">
+              <div class="n-icon n2">🤖</div>
+              <div class="n-meta">
+                <div class="n-num">Note 02 · Sec 1</div>
+                <div class="n-title">Project 1 — Character AI Chatbot | Full Notes</div>
+              </div>
+            </div>
+            <p class="n-desc">Build a character AI chatbot: first API call, response anatomy deep-dive, and persona engineering techniques to give your bot a unique personality.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <!-- Note 3: Calorie Tracker -->
+          <div class="note-card n3"
+               data-title="Project 2 AI Calorie Tracker Vision API Prompt Engineering"
+               data-topics="Vision API Prompt Engineering Calorie Tracker Task Walkthrough Active Recall"
+               data-file="llm_engineering_rag_ai_agents/Closed Source LLM/day2-calorie-tracker-notes.html">
+            <div class="note-top">
+              <div class="n-icon n3">👁️</div>
+              <div class="n-meta">
+                <div class="n-num">Note 03 · Sec 1</div>
+                <div class="n-title">Project 2 — AI Calorie Tracker | Vision API &amp; Prompt Engineering</div>
+              </div>
+            </div>
+            <p class="n-desc">Build an AI calorie tracker using the Vision API. Master prompt engineering patterns and image-to-nutrition analysis with active recall exercises.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <!-- Note 4: AI Tutor with Gradio -->
+          <div class="note-card n1"
+               data-title="Project 3 AI Tutor with Gradio Streaming UI"
+               data-topics="Gradio Interface System Prompt Streaming Temperature Slider Persona"
+               data-file="llm_engineering_rag_ai_agents/Closed Source LLM/day3-ai-tutor-gradio-notes.html">
+            <div class="note-top">
+              <div class="n-icon n1">🎓</div>
+              <div class="n-meta">
+                <div class="n-num">Note 04 · Sec 1</div>
+                <div class="n-title">Project 3 — AI Tutor with Gradio</div>
+              </div>
+            </div>
+            <p class="n-desc">Build an AI tutor UI with Gradio: wire up system prompts, add an explanation-level slider, and stream responses — from bare function to polished web app.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <!-- Note 5: Multi-LLM Master -->
+          <div class="note-card n2"
+               data-title="Multi-LLM Master Notes Compare Call Build OpenAI Claude Gemini"
+               data-topics="Multi-LLM Open vs Closed Models Token Math Benchmarks Risk Management SDK"
+               data-file="llm_engineering_rag_ai_agents/Closed Source LLM/day4_benchmarking_llms.html">
+            <div class="note-top">
+              <div class="n-icon n2">⚖️</div>
+              <div class="n-meta">
+                <div class="n-num">Note 05 · Sec 1</div>
+                <div class="n-title">Multi-LLM Master Notes — Compare, Call, Build</div>
+              </div>
+            </div>
+            <p class="n-desc">Master the full multi-LLM landscape: open vs closed models, nine key benchmark numbers, token math, calling multiple provider SDKs, and risk-proofing your stack.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+        </div><!-- /notes-grid -->
+      </div><!-- /section -->
+
+
+      <!-- Section: Open Source LLM -->
+      <div class="section">
+        <div class="sec-header">
+          <span class="sec-dot"></span>
+          <span class="sec-title">Open Source LLM</span>
+          <span class="sec-badge">5 notes</span>
+        </div>
+
+        <div class="notes-grid">
+
+          <!-- Note 6: Open-Source LLMs -->
+          <div class="note-card n3"
+               data-title="Open-Source LLMs Hugging Face Quantization Document QA"
+               data-topics="Hugging Face Quantization Pipeline Local Models Document QA Architecture"
+               data-file="llm_engineering_rag_ai_agents/Open Source LLM/day5-open-source-llms.html">
+            <div class="note-top">
+              <div class="n-icon n3">🤗</div>
+              <div class="n-meta">
+                <div class="n-num">Day 05 · Open Source LLM</div>
+                <div class="n-title">Open-Source LLMs — Hugging Face, Quantization &amp; Document Q&amp;A</div>
+              </div>
+            </div>
+            <p class="n-desc">Download instead of rent: covers Hugging Face pipelines, quantization mechanics (GGUF/GPTQ), and building a local Document Q&amp;A system — turning you from an API consumer into someone making architecture decisions.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <!-- Note 6: Day 6 - Reasoning Models & LLM Selection -->
+          <div class="note-card n1"
+               data-title="Reasoning Models LLM Selection Day 6 o1 o3 DeepSeek Chain-of-Thought"
+               data-topics="Reasoning Models Chain-of-Thought LLM Selection Benchmarks o1 o3 DeepSeek Thinking Models"
+               data-file="llm_engineering_rag_ai_agents/Open Source LLM/day6-reasoning-models-llm-selection-notes.html">
+            <div class="note-top">
+              <div class="n-icon n1">🧩</div>
+              <div class="n-meta">
+                <div class="n-num">Day 06 · Open Source LLM</div>
+                <div class="n-title">Reasoning Models &amp; LLM Selection</div>
+              </div>
+            </div>
+            <p class="n-desc">When to reach for a reasoning model vs a standard LLM — covers o1/o3 and open-source thinking models, selection frameworks, and the benchmarks that actually predict task performance.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <!-- Note 7: Day 7 - RAG with LangChain -->
+          <div class="note-card n2"
+               data-title="RAG LangChain Day 7 Document Loaders Vector Stores Retrieval Chains"
+               data-topics="RAG LangChain Document Loaders Text Splitters Embeddings Vector Stores Retrieval Chains LCEL"
+               data-file="llm_engineering_rag_ai_agents/Open Source LLM/day7-rag-langchain-notes.html">
+            <div class="note-top">
+              <div class="n-icon n2">🔗</div>
+              <div class="n-meta">
+                <div class="n-num">Day 07 · Open Source LLM</div>
+                <div class="n-title">RAG with LangChain</div>
+              </div>
+            </div>
+            <p class="n-desc">Build a full RAG pipeline with LangChain: document loaders, text splitters, embedding models, vector stores, retrieval chains — wired together with LCEL for production-ready retrieval.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <!-- Note: Day 8 - AI Resume Assistant -->
+          <div class="note-card n1"
+               data-title="AI Resume Cover Letter Assistant Day 8 Pydantic OpenAI Gemini Structured Output"
+               data-topics="AI Resume Assistant Pydantic Structured Output OpenAI Gemini Multi-Provider Cover Letter Parser"
+               data-file="llm_engineering_rag_ai_agents/Open Source LLM/day8-ai-resume-assistant-notes.html">
+            <div class="note-top">
+              <div class="n-icon n1">📄</div>
+              <div class="n-meta">
+                <div class="n-num">Day 08 · Open Source LLM</div>
+                <div class="n-title">AI Resume &amp; Cover Letter Assistant</div>
+              </div>
+            </div>
+            <p class="n-desc">Build an AI resume assistant with Pydantic structured output and multi-provider LLMs (OpenAI/Gemini): parse resumes, generate tailored cover letters, and extract structured career insights from unstructured text.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <!-- Note: Day 9 - Fine-tuning with LoRA/PEFT -->
+          <div class="note-card n3"
+               data-title="Fine-tuning LoRA PEFT QLoRA Day 9 Open Source Models Custom Dataset"
+               data-topics="LoRA QLoRA PEFT Fine-Tuning Open Source Models Custom Dataset Adapters Hugging Face Transformers"
+               data-file="llm_engineering_rag_ai_agents/Open Source LLM/day9-finetuning-lora-peft-notes.html">
+            <div class="note-top">
+              <div class="n-icon n3">🎯</div>
+              <div class="n-meta">
+                <div class="n-num">Day 09 · Open Source LLM</div>
+                <div class="n-title">Fine-Tuning Open Source Models — LoRA &amp; PEFT</div>
+              </div>
+            </div>
+            <p class="n-desc">Hands-on fine-tuning with LoRA and PEFT on open-source models: adapter layers, QLoRA memory optimisation, custom dataset prep, and the full Hugging Face Trainer loop.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+        </div><!-- /notes-grid -->
+      </div><!-- /section -->
+
+      <!-- Section: Agentic AI -->
+      <div class="section">
+        <div class="sec-header">
+          <span class="sec-dot"></span>
+          <span class="sec-title">Agentic AI</span>
+          <span class="sec-badge">5 notes</span>
+        </div>
+
+        <div class="notes-grid">
+
+          <!-- Day 10: AutoGen Multi-Agent -->
+          <div class="note-card n1"
+               data-title="AutoGen Multi-Agent Teams Orchestration Roles Communication"
+               data-topics="AutoGen Multi-Agent Team Orchestration Agent Roles Communication Patterns"
+               data-file="llm_engineering_rag_ai_agents/Agentic_AI/day10-autogen-multi-agent.html">
+            <div class="note-top">
+              <div class="n-icon n1">🤝</div>
+              <div class="n-meta">
+                <div class="n-num">Day 10 · Agentic AI</div>
+                <div class="n-title">AutoGen &amp; Multi-Agent Teams</div>
+              </div>
+            </div>
+            <p class="n-desc">Build multi-agent teams with AutoGen: define agent roles, wire up communication patterns, and orchestrate complex task flows where agents collaborate rather than just respond.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <!-- Day 11: LangGraph Agentic Workflows -->
+          <div class="note-card n2"
+               data-title="LangGraph Agentic Workflows State Machines Graph Routing"
+               data-topics="LangGraph State Machines Agentic Workflows Cycles Conditional Routing Persistence"
+               data-file="llm_engineering_rag_ai_agents/Agentic_AI/day11-langgraph-agentic-workflows.html">
+            <div class="note-top">
+              <div class="n-icon n2">🔄</div>
+              <div class="n-meta">
+                <div class="n-num">Day 11 · Agentic AI</div>
+                <div class="n-title">LangGraph &amp; Agentic Workflows</div>
+              </div>
+            </div>
+            <p class="n-desc">Build stateful agentic workflows with LangGraph: model control flow as a graph, add cycles and conditional routing, and persist agent state across multi-step tasks.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <!-- Day 12: CrewAI Data Scientist Agent -->
+          <div class="note-card n3"
+               data-title="CrewAI Data Scientist Agent Automating Data Science with AI Crews"
+               data-topics="CrewAI Data Science Automation Crew Agents Tasks Tools Predictive Analytics Role-based AI"
+               data-file="llm_engineering_rag_ai_agents/Agentic_AI/day12_crewai-data-scientist-agent-notes.html">
+            <span class="new-badge">New</span>
+            <div class="note-top">
+              <div class="n-icon n3">🧑‍🔬</div>
+              <div class="n-meta">
+                <div class="n-num">Day 12 · Agentic AI</div>
+                <div class="n-title">Building a Data Scientist Agent with CrewAI</div>
+              </div>
+            </div>
+            <p class="n-desc">Automate the full data science workflow with CrewAI: define specialist agents (analyst, engineer, modeller), wire tasks with shared context, and let the crew drive predictive analytics end-to-end.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <!-- Day 13: n8n Low-Code Agentic Workflows -->
+          <div class="note-card n1"
+               data-title="n8n Low-Code Agentic AI Workflows Visual Automation"
+               data-topics="n8n Low-Code Workflow Automation Agentic AI Visual Builder Triggers Integrations No-Code"
+               data-file="llm_engineering_rag_ai_agents/Agentic_AI/day13-n8n-agentic-workflows-notes.html">
+            <span class="new-badge">New</span>
+            <div class="note-top">
+              <div class="n-icon n1">⚡</div>
+              <div class="n-meta">
+                <div class="n-num">Day 13 · Agentic AI</div>
+                <div class="n-title">Low-Code Agentic AI Workflows with n8n</div>
+              </div>
+            </div>
+            <p class="n-desc">Build powerful agentic AI workflows visually with n8n: connect LLMs to real-world triggers, chain multi-step automations, and integrate with hundreds of services — no boilerplate needed.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <!-- Day 14: MCP + OpenAI Agents SDK AI Tutor -->
+          <div class="note-card n2"
+               data-title="Advanced AI Tutor MCP OpenAI Agents SDK Multi-Tool Agent"
+               data-topics="MCP OpenAI Agents SDK AI Tutor Multi-Tool Context Protocol Function Calling Agentic Loop"
+               data-file="llm_engineering_rag_ai_agents/Agentic_AI/day14-mcp-ai-tutor-agents-sdk-notes.html">
+            <span class="new-badge">New</span>
+            <div class="note-top">
+              <div class="n-icon n2">🎓</div>
+              <div class="n-meta">
+                <div class="n-num">Day 14 · Agentic AI</div>
+                <div class="n-title">Advanced AI Tutor — MCP &amp; OpenAI Agents SDK</div>
+              </div>
+            </div>
+            <p class="n-desc">Build an advanced AI tutor that uses MCP to pull context from external tools and the OpenAI Agents SDK to run a robust agentic loop — tool calling, context injection, and multi-step reasoning.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+        </div><!-- /notes-grid -->
+      </div><!-- /section -->
+
+      <!-- Section: Fine-Tuning & Customization -->
+      <div class="section">
+        <div class="sec-header">
+          <span class="sec-dot"></span>
+          <span class="sec-title">Fine-Tuning &amp; Customization</span>
+          <span class="sec-badge">1 note</span>
+        </div>
+
+        <div class="notes-grid">
+
+          <!-- Note 9: Fine-Tuning -->
+          <div class="note-card n3"
+               data-title="Fine-Tuning Customization LoRA QLoRA PEFT Instruction Tuning"
+               data-topics="Fine-Tuning LoRA QLoRA PEFT Instruction Tuning Full Fine-Tuning Dataset RAG vs Fine-Tuning"
+               data-file="fine_tuning_customization/finetuning-notes.html">
+            <div class="note-top">
+              <div class="n-icon n3">🎯</div>
+              <div class="n-meta">
+                <div class="n-num">Note 09 · Fine-Tuning</div>
+                <div class="n-title">Fine-Tuning &amp; Customization</div>
+              </div>
+            </div>
+            <p class="n-desc">When prompting isn't enough: LoRA, QLoRA, and PEFT explained — plus instruction tuning, dataset quality criteria, and a decision framework for choosing fine-tuning vs RAG vs prompt engineering.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+        </div><!-- /notes-grid -->
+      </div><!-- /section -->
+
+      <!-- Section: Eval, Safety & AI Infra -->
+      <div class="section">
+        <div class="sec-header">
+          <span class="sec-dot"></span>
+          <span class="sec-title">Eval, Safety &amp; AI Infra</span>
+          <span class="sec-badge">1 note</span>
+        </div>
+
+        <div class="notes-grid">
+
+          <!-- Note 10: Eval & Infra -->
+          <div class="note-card n1"
+               data-title="LLM Eval Safety Guardrails AI Infra Ops vLLM Observability CI CD"
+               data-topics="LLM Evaluation Benchmarks LLM-as-Judge Hallucination Guardrails Adversarial Testing RLHF vLLM Observability CI/CD Infra"
+               data-file="llm-infra/llm-eval-infra-notes.html">
+            <div class="note-top">
+              <div class="n-icon n1">🛡️</div>
+              <div class="n-meta">
+                <div class="n-num">Note 10 · Eval &amp; Infra</div>
+                <div class="n-title">Eval &amp; Safety / AI Infra &amp; Ops</div>
+              </div>
+            </div>
+            <p class="n-desc">Knowing if your LLM system is actually good — benchmarks, LLM-as-judge, hallucination detection, and guardrails — then keeping it fast with vLLM, KV-cache, and a proper observability stack.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+        </div><!-- /notes-grid -->
+      </div><!-- /section -->
+
+      </div><!-- /project-body -->
+    </article>
+
+    <!-- ── Project: Prompt Engineering ───────────── -->
+    <article class="project pe" id="proj-pe">
+
+      <div class="project-head">
+        <div class="p-icon">✍️</div>
+        <div class="p-meta">
+          <div class="p-eyebrow">Project · 02</div>
+          <div class="p-name">Prompt Engineering</div>
+          <div class="tags">
+            <span class="tag t-c">Prompting</span>
+            <span class="tag t-i">LLM Mechanics</span>
+            <span class="tag t-v">Chain-of-Thought</span>
+            <span class="tag t-e">Zero-Shot</span>
+            <span class="tag t-c">Few-Shot</span>
+          </div>
+          <p class="p-desc">Token mechanics, prompting fundamentals, seven techniques from zero-shot to tree-of-thought, and sampler control — everything to engineer reliable outputs.</p>
+        </div>
+        <div class="p-badges">
+          <span class="badge">6 notes</span>
+        </div>
+        <div class="p-chevron">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      </div>
+
+      <div class="project-body">
+
+      <!-- Section: Prompt Engineering -->
+      <div class="section">
+        <div class="sec-header">
+          <span class="sec-dot"></span>
+          <span class="sec-title">Prompt Engineering</span>
+          <span class="sec-badge">6 notes</span>
+        </div>
+
+        <div class="notes-grid">
+
+          <!-- Note PE1: LLM Mechanics -->
+          <div class="note-card n4"
+               data-title="How LLMs Work Tokens Model Landscape Benchmarks"
+               data-topics="Token Prediction Attention Mechanics Model Landscape Benchmarks Context Window Closed vs Open"
+               data-file="prompt_engineering/llm-mechanics-tokens-landscape.html">
+            <div class="note-top">
+              <div class="n-icon n4">⚙️</div>
+              <div class="n-meta">
+                <div class="n-num">Note 01 · PE</div>
+                <div class="n-title">How LLMs Work — Tokens &amp; The Model Landscape</div>
+              </div>
+            </div>
+            <p class="n-desc">Understand token prediction, attention, and how the model landscape breaks down — closed vs open, capabilities vs cost, and the benchmarks that actually matter.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <!-- Note PE2: Foundations -->
+          <div class="note-card n5"
+               data-title="Prompt Engineering Foundations System Prompt Context Window Roles Temperature"
+               data-topics="System Prompt Context Window Instruction Structure Roles Temperature First Principles"
+               data-file="prompt_engineering/prompt-engineering-foundations.html">
+            <div class="note-top">
+              <div class="n-icon n5">🧱</div>
+              <div class="n-meta">
+                <div class="n-num">Note 02 · PE</div>
+                <div class="n-title">Prompt Engineering — Foundations</div>
+              </div>
+            </div>
+            <p class="n-desc">The context window is your only lever. Learn how system prompts, user turns, and instruction structure shape model behaviour from first principles.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <!-- Note PE3: Types & Techniques -->
+          <div class="note-card n4"
+               data-title="Prompt Engineering Types Zero-Shot Few-Shot Chain-of-Thought Tree-of-Thought ReAct"
+               data-topics="Zero-Shot Few-Shot Chain-of-Thought Tree-of-Thought ReAct Role Prompting Reasoning"
+               data-file="prompt_engineering/prompt-engineering-types.html">
+            <div class="note-top">
+              <div class="n-icon n4">🗂️</div>
+              <div class="n-meta">
+                <div class="n-num">Note 03 · PE</div>
+                <div class="n-title">Prompt Engineering — Types &amp; Techniques</div>
+              </div>
+            </div>
+            <p class="n-desc">Seven prompting types — zero-shot to tree-of-thought — mapped to three dials and one reasoning loop. Know when to reach for each and why it works.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <!-- Note PE4: Crafting Effective Prompts -->
+          <div class="note-card n5"
+               data-title="Crafting Effective Prompts Specificity Format Constraints Iteration Output Control"
+               data-topics="Specificity Format Anchoring Constraints Iteration Output Control Prompt Construction"
+               data-file="prompt_engineering/crafting-effective-prompts.html">
+            <div class="note-top">
+              <div class="n-icon n5">🔨</div>
+              <div class="n-meta">
+                <div class="n-num">Note 04 · PE</div>
+                <div class="n-title">Crafting Effective Prompts</div>
+              </div>
+            </div>
+            <p class="n-desc">Practical prompt construction: specificity, format anchoring, constraint design, and iteration discipline — the craft layer on top of the theory.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <!-- Note PE5: Transformers & Attention -->
+          <div class="note-card n4"
+               data-title="Transformers Attention Why It Changes Your Prompts Architecture Self-Attention"
+               data-topics="Transformer Architecture Attention Self-Attention Positional Encoding Prompting Implications Encoder Decoder"
+               data-file="prompt_engineering/transformers-attention-prompting.html">
+            <div class="note-top">
+              <div class="n-icon n4">🔬</div>
+              <div class="n-meta">
+                <div class="n-num">Note 05 · PE</div>
+                <div class="n-title">Transformers &amp; Attention — Why It Changes Your Prompts</div>
+              </div>
+            </div>
+            <p class="n-desc">Half the transformer diagram isn't in the models you use. Learn what actually remains, how attention shapes what the model sees, and why that directly changes how you should prompt.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <!-- Note PE6: Prompt Tuning & Optimization -->
+          <div class="note-card n5"
+               data-title="Prompt Tuning Optimization Temperature Sampling Top-P Top-K Iteration"
+               data-topics="Temperature Sampling Top-P Top-K Sampler Control Optimization Iteration Output Quality"
+               data-file="prompt_engineering/prompt-tuning-and-optimization.html">
+            <div class="note-top">
+              <div class="n-icon n5">🎛️</div>
+              <div class="n-meta">
+                <div class="n-num">Note 06 · PE</div>
+                <div class="n-title">Prompt Tuning &amp; Optimization</div>
+              </div>
+            </div>
+            <p class="n-desc">Stop eyeballing outputs — start controlling the sampler. Covers temperature, top-p/top-k, and systematic iteration techniques to reliably improve prompt output quality.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+        </div><!-- /notes-grid -->
+      </div><!-- /section -->
+
+      </div><!-- /project-body -->
+    </article>
+
+    <!-- ── Project: MCP ──────────────────────────── -->
+    <article class="project mcp" id="proj-mcp">
+
+      <div class="project-head">
+        <div class="p-icon">🔌</div>
+        <div class="p-meta">
+          <div class="p-eyebrow">Project · 03</div>
+          <div class="p-name">Model Context Protocol (MCP)</div>
+          <div class="tags">
+            <span class="tag t-e">MCP</span>
+            <span class="tag t-c">Protocol</span>
+            <span class="tag t-i">AI Integration</span>
+            <span class="tag t-e">Enterprise</span>
+            <span class="tag t-v">Architecture</span>
+          </div>
+          <p class="p-desc">Universal AI connectivity layer — protocol primitives (tools, resources, prompts), server/client/host model, and enterprise-scale deployment patterns.</p>
+        </div>
+        <div class="p-badges">
+          <span class="badge">2 notes</span>
+        </div>
+        <div class="p-chevron">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      </div>
+
+      <div class="project-body">
+
+      <!-- Section: MCP -->
+      <div class="section">
+        <div class="sec-header">
+          <span class="sec-dot"></span>
+          <span class="sec-title">Model Context Protocol</span>
+          <span class="sec-badge">2 notes</span>
+        </div>
+
+        <div class="notes-grid">
+
+          <!-- Note MCP1: Deep Dive -->
+          <div class="note-card n6"
+               data-title="MCP The Universal Port Deep Dive Protocol Tools Resources"
+               data-topics="MCP Protocol Tools Resources Prompts Server Client Host Universal Port AI Integration"
+               data-file="mcp/mcp-deep-dive.html">
+            <div class="note-top">
+              <div class="n-icon n6">🔌</div>
+              <div class="n-meta">
+                <div class="n-num">Note 01 · MCP</div>
+                <div class="n-title">MCP — The Universal Port</div>
+              </div>
+            </div>
+            <p class="n-desc">MCP as the universal port for AI applications: the server/client/host model, tools vs resources vs prompts, and why standardising the connection layer changes how you build with AI.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <!-- Note MCP2: Enterprise Patterns -->
+          <div class="note-card n6"
+               data-title="MCP Enterprise Patterns Architecture Banking Floor Tradeoffs Scale"
+               data-topics="Enterprise Patterns Architecture Tradeoffs Scale Security Multi-Tenant MCP Design"
+               data-file="mcp/mcp-enterprise-patterns.html">
+            <div class="note-top">
+              <div class="n-icon n6">🏗️</div>
+              <div class="n-meta">
+                <div class="n-num">Note 02 · MCP</div>
+                <div class="n-title">MCP — Enterprise Patterns &amp; Architecture</div>
+              </div>
+            </div>
+            <p class="n-desc">MCP at enterprise scale: patterns, tradeoffs, and real-world architecture decisions — from multi-tenant server design to security boundaries on the banking floor.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+        </div><!-- /notes-grid -->
+      </div><!-- /section -->
+
+      </div><!-- /project-body -->
+    </article>
+
+    <!-- ── Project: RAG ────────────────────────── -->
+    <article class="project rag" id="proj-rag">
+
+      <div class="project-head">
+        <div class="p-icon">🔍</div>
+        <div class="p-meta">
+          <div class="p-eyebrow">Project · 04</div>
+          <div class="p-name">Retrieval-Augmented Generation (RAG)</div>
+          <div class="tags">
+            <span class="tag t-c">RAG</span>
+            <span class="tag t-i">Embeddings</span>
+            <span class="tag t-v">Vector DB</span>
+            <span class="tag t-e">Retrieval</span>
+            <span class="tag t-c">Architecture</span>
+          </div>
+          <p class="p-desc">End-to-end retrieval pipeline — chunking strategies, embedding models, vector indexing, retrieval reranking, and hallucination evaluation techniques.</p>
+        </div>
+        <div class="p-badges">
+          <span class="badge">1 note</span>
+        </div>
+        <div class="p-chevron">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      </div>
+
+      <div class="project-body">
+
+      <!-- Section: RAG -->
+      <div class="section">
+        <div class="sec-header">
+          <span class="sec-dot"></span>
+          <span class="sec-title">Retrieval-Augmented Generation</span>
+          <span class="sec-badge">1 note</span>
+        </div>
+
+        <div class="notes-grid">
+
+          <!-- Note RAG1: RAG Deep Dive -->
+          <div class="note-card n7"
+               data-title="RAG Retrieval-Augmented Generation Deep Dive Embeddings Vector DB Pipeline"
+               data-topics="RAG Pipeline Embeddings Vector Database Chunking Retrieval Reranking Evaluation Hallucination"
+               data-file="rag/rag-notes.html">
+            <div class="note-top">
+              <div class="n-icon n7">🔍</div>
+              <div class="n-meta">
+                <div class="n-num">Note 01 · RAG</div>
+                <div class="n-title">RAG — Retrieval-Augmented Generation</div>
+              </div>
+            </div>
+            <p class="n-desc">End-to-end RAG pipeline: chunking strategies, embedding models, vector database indexing, retrieval &amp; reranking, and evaluation techniques for reducing hallucinations.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+        </div><!-- /notes-grid -->
+      </div><!-- /section -->
+
+      </div><!-- /project-body -->
+    </article>
+
+    </div>
+    <!-- ── Category 2: AI Infrastructure & Deployment (MLOps) ── -->
+    <div class="category-header" data-cat-target="cat-group-2" style="--cat-color:var(--amber); --cat-glow:rgba(245,158,11,0.28);">
+      <span class="cat-num">CAT 02</span>
+      <div class="cat-text">
+        <div class="cat-title">AI Infrastructure &amp; Deployment (MLOps)</div>
+        <div class="cat-sub">Deploy AI to Cloud · Ultimate Docker for ML, GenAI &amp; Agentic AI · AWS Certified AI Practitioner (AIF-C01)</div>
+      </div>
+      <span class="cat-chevron">▾</span>
+    </div>
+    <div class="category-group cat-collapsed" id="cat-group-2">
+
+    <!-- ── Project: Deploy AI to Cloud ──────────────── -->
+    <article class="project deploy" id="proj-deploy">
+
+      <div class="project-head">
+        <div class="p-icon">☁️</div>
+        <div class="p-meta">
+          <div class="p-eyebrow">Project · 05</div>
+          <div class="p-name">Deploy AI to Cloud — Architects Lab</div>
+          <div class="tags">
+            <span class="tag t-e">AWS</span>
+            <span class="tag t-c">Docker</span>
+            <span class="tag t-i">Vercel</span>
+            <span class="tag t-v">SaaS</span>
+            <span class="tag t-e">Full-Stack</span>
+          </div>
+          <div class="day-track">
+            <div class="day-pip done"></div>
+            <div class="day-pip done"></div>
+            <div class="day-pip done"></div>
+            <div class="day-pip done"></div>
+            <div class="day-pip done"></div>
+            <span class="day-pip-label">5 / 5 days</span>
+          </div>
+          <p class="p-desc">Zero-config deploys through AWS production — auth, Stripe payments, SaaS multi-tenant patterns, and container orchestration via Docker + App Runner.</p>
+        </div>
+        <div class="p-badges">
+          <span class="badge">5 notes</span>
+        </div>
+        <div class="p-chevron">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      </div>
+
+      <div class="project-body">
+
+      <!-- Section: Deploy Series -->
+      <div class="section">
+        <div class="sec-header">
+          <span class="sec-dot"></span>
+          <span class="sec-title">Instant Deploy → AWS Production</span>
+          <span class="sec-badge">5 notes</span>
+        </div>
+
+        <div class="notes-grid">
+
+          <!-- Note D1: Instant Gratification Deploy -->
+          <div class="note-card n8"
+               data-title="Day 1 Instant Gratification Deploy Vercel Railway Zero Config"
+               data-topics="Vercel Railway Zero-Config Deploy Frontend CI/CD One-Click Deployment"
+               data-file="deploy_ai/day1-instant-gratification-notes.html">
+            <span class="new-badge">New</span>
+            <div class="note-top">
+              <div class="n-icon n8">🚀</div>
+              <div class="n-meta">
+                <div class="n-num">Day 01 · Deploy</div>
+                <div class="n-title">Instant Gratification Deploy</div>
+              </div>
+            </div>
+            <p class="n-desc">Zero to live in minutes: deploy AI apps with Vercel and Railway using zero-config pipelines. Learn the fastest paths from local to production before touching a single cloud console.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <!-- Note D2: Frontend Meets Backend -->
+          <div class="note-card n8"
+               data-title="Day 2 Frontend Backend Full Stack Deploy API Integration Environment Variables"
+               data-topics="Full-Stack API Routes Environment Variables Build Config Frontend Backend Integration"
+               data-file="deploy_ai/day2-frontend-backend-notes.html">
+            <span class="new-badge">New</span>
+            <div class="note-top">
+              <div class="n-icon n8">🔗</div>
+              <div class="n-meta">
+                <div class="n-num">Day 02 · Deploy</div>
+                <div class="n-title">Front End Meets Back End</div>
+              </div>
+            </div>
+            <p class="n-desc">Wire a React frontend to a Python/Node backend and deploy them as a cohesive unit. Covers API routes, environment variable management, build config, and CORS across environments.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <!-- Note D3: Auth & Subscription -->
+          <div class="note-card n8"
+               data-title="Day 3 Authentication Subscription Clerk Auth Stripe Webhooks"
+               data-topics="Clerk Auth Stripe Subscriptions Webhooks JWT Middleware Subscription Tiers Payments"
+               data-file="deploy_ai/day3-auth-subscription-notes.html">
+            <span class="new-badge">New</span>
+            <div class="note-top">
+              <div class="n-icon n8">🔐</div>
+              <div class="n-meta">
+                <div class="n-num">Day 03 · Deploy</div>
+                <div class="n-title">Authentication &amp; Subscription</div>
+              </div>
+            </div>
+            <p class="n-desc">Add production-grade auth and payments to AI apps: Clerk for user management, Stripe for subscription tiers, and webhook handling to keep billing state in sync with your backend.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <!-- Note D4: Healthcare SaaS -->
+          <div class="note-card n8"
+               data-title="Day 4 Healthcare SaaS App Production Architecture Multi-Tenant HIPAA"
+               data-topics="SaaS Architecture Healthcare Multi-Tenant Production HIPAA Compliance Data Isolation"
+               data-file="deploy_ai/day4-healthcare-saas-notes.html">
+            <span class="new-badge">New</span>
+            <div class="note-top">
+              <div class="n-icon n8">🏥</div>
+              <div class="n-meta">
+                <div class="n-num">Day 04 · Deploy</div>
+                <div class="n-title">The Healthcare SaaS App</div>
+              </div>
+            </div>
+            <p class="n-desc">Build a real-world SaaS application for healthcare: multi-tenant architecture, data isolation, compliance guardrails, and production deploy patterns for regulated domains.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <!-- Note D5: AWS Deploy -->
+          <div class="note-card n8"
+               data-title="Day 5 First AWS Deploy IAM Docker App Runner ECR Container"
+               data-topics="AWS IAM Docker App Runner ECR Container Registry Roles Policies Cloud Deploy"
+               data-file="deploy_ai/day5-aws-docker-notes.html">
+            <span class="new-badge">New</span>
+            <div class="note-top">
+              <div class="n-icon n8">🐳</div>
+              <div class="n-meta">
+                <div class="n-num">Day 05 · Deploy</div>
+                <div class="n-title">First AWS Deploy — IAM, Docker &amp; App Runner</div>
+              </div>
+            </div>
+            <p class="n-desc">Container-first AWS deployment: set up IAM roles, build and push a Docker image to ECR, then deploy it via App Runner. The production-safe path from local Docker to AWS cloud.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+        </div><!-- /notes-grid -->
+      </div><!-- /section -->
+
+      </div><!-- /project-body -->
+    </article>
+
+    <!-- ── Project: Docker for AI ─────────────────── -->
+    <article class="project docker" id="proj-docker">
+
+      <div class="project-head">
+        <div class="p-icon">🐳</div>
+        <div class="p-meta">
+          <div class="p-eyebrow">Project · 06</div>
+          <div class="p-name">Ultimate Docker for ML, GenAI &amp; Agentic AI</div>
+          <div class="tags">
+            <span class="tag t-c">Docker</span>
+            <span class="tag t-i">ML Pipelines</span>
+            <span class="tag t-v">MLflow</span>
+            <span class="tag t-e">GenAI</span>
+            <span class="tag t-c">Containers</span>
+          </div>
+          <p class="p-desc">Container-first ML engineering: running AI/ML workflows with Docker Compose, MLflow experiment tracking, JupyterLab environments, and GPU-ready container setups.</p>
+        </div>
+        <div class="p-badges">
+          <span class="badge">2 notes</span>
+        </div>
+        <div class="p-chevron">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      </div>
+
+      <div class="project-body">
+
+      <div class="section">
+        <div class="sec-header">
+          <span class="sec-dot"></span>
+          <span class="sec-title">Docker for AI/ML &amp; Agentic Workflows</span>
+          <span class="sec-badge">2 notes</span>
+        </div>
+
+        <div class="notes-grid">
+
+          <div class="note-card n9"
+               data-title="Docker AI ML Agentic Workflows Containers Compose Networking Volumes GPU"
+               data-topics="Docker Compose Containers ML Pipelines Networking Volumes GPU AI Workflows Agentic"
+               data-file="ultimate_docker_for_ai/docker-for-ai-ml-notes.html">
+            <span class="new-badge">New</span>
+            <div class="note-top">
+              <div class="n-icon n9">🐳</div>
+              <div class="n-meta">
+                <div class="n-num">Note 01 · Docker AI</div>
+                <div class="n-title">Docker for AI/ML &amp; Agentic Workflows</div>
+              </div>
+            </div>
+            <p class="n-desc">Container fundamentals for AI engineers: Docker Compose multi-service stacks, networking, volume mounts, environment configs, and GPU passthrough for ML workloads.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <div class="note-card n9"
+               data-title="Docker MLflow JupyterLab Project Running ML Containers Experiment Tracking"
+               data-topics="MLflow JupyterLab Docker Compose Experiment Tracking ML Containers Project"
+               data-file="ultimate_docker_for_ai/docker-mlflow-jupyter-project-notes.html">
+            <span class="new-badge">New</span>
+            <div class="note-top">
+              <div class="n-icon n9">🔬</div>
+              <div class="n-meta">
+                <div class="n-num">Note 02 · Docker AI</div>
+                <div class="n-title">Project 1 — Running ML Containers (MLflow + JupyterLab)</div>
+              </div>
+            </div>
+            <p class="n-desc">Hands-on project: spin up MLflow experiment tracking and JupyterLab in Docker Compose, connect them over a shared network, and persist runs with mounted volumes.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+        </div><!-- /notes-grid -->
+      </div><!-- /section -->
+
+      </div><!-- /project-body -->
+    </article>
+
+    <!-- ── Project: AWS AI Practitioner ──────────────── -->
+    <article class="project aws" id="proj-aws">
+
+      <div class="project-head">
+        <div class="p-icon">☁️</div>
+        <div class="p-meta">
+          <div class="p-eyebrow">Project · 07</div>
+          <div class="p-name">AWS Certified AI Practitioner (AIF-C01)</div>
+          <div class="tags">
+            <span class="tag t-e">AWS</span>
+            <span class="tag t-c">AI Practitioner</span>
+            <span class="tag t-i">AIF-C01</span>
+            <span class="tag t-v">Cloud Fundamentals</span>
+            <span class="tag t-e">Certification</span>
+          </div>
+          <p class="p-desc">AWS AI Practitioner exam prep — cloud fundamentals, global infrastructure, IAM, key AWS services, and the account setup you need before the first lab.</p>
+        </div>
+        <div class="p-badges">
+          <span class="badge">2 notes</span>
+        </div>
+        <div class="p-chevron">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      </div>
+
+      <div class="project-body">
+
+      <div class="section">
+        <div class="sec-header">
+          <span class="sec-dot"></span>
+          <span class="sec-title">AWS AI Practitioner — AIF-C01</span>
+          <span class="sec-badge">2 notes</span>
+        </div>
+
+        <div class="notes-grid">
+
+          <div class="note-card n10"
+               data-title="AWS Account Activation Troubleshooting Free Tier IAM Setup"
+               data-topics="AWS Account Activation Free Tier IAM Root User Billing Troubleshooting Setup"
+               data-file="ultimate_aws_certified_ai_practitioner_AIF-C01/aws-account-activation-troubleshooting.html">
+            <span class="new-badge">New</span>
+            <div class="note-top">
+              <div class="n-icon n10">🔑</div>
+              <div class="n-meta">
+                <div class="n-num">Note 01 · AWS AIF-C01</div>
+                <div class="n-title">AWS Account Activation Troubleshooting</div>
+              </div>
+            </div>
+            <p class="n-desc">Common AWS account activation issues and fixes: credit card verification, phone validation, free tier activation delays, and getting root access working before your first lab.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <div class="note-card n10"
+               data-title="AWS Cloud Fundamentals AI Practitioner Exam Regions Availability Zones S3 EC2 IAM Shared Responsibility"
+               data-topics="AWS Cloud Fundamentals Regions AZs S3 EC2 IAM Shared Responsibility Model Global Infrastructure Exam Prep"
+               data-file="ultimate_aws_certified_ai_practitioner_AIF-C01/aws-cloud-fundamentals-notes.html">
+            <span class="new-badge">New</span>
+            <div class="note-top">
+              <div class="n-icon n10">☁️</div>
+              <div class="n-meta">
+                <div class="n-num">Note 02 · AWS AIF-C01</div>
+                <div class="n-title">AWS Cloud Fundamentals — AI Practitioner Exam</div>
+              </div>
+            </div>
+            <p class="n-desc">Core AWS cloud concepts mapped to the AIF-C01 exam: global infrastructure (Regions, AZs, Edge), IAM, S3, EC2, shared responsibility model, and well-architected framework foundations.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+        </div><!-- /notes-grid -->
+      </div><!-- /section -->
+
+      </div><!-- /project-body -->
+    </article>
+
+    </div>
+    <!-- ── Category 3: AI Leadership & Strategy ────── -->
+    <div class="category-header" data-cat-target="cat-group-3" style="--cat-color:var(--rose); --cat-glow:rgba(244,63,94,0.28);">
+      <span class="cat-num">CAT 03</span>
+      <div class="cat-text">
+        <div class="cat-title">AI Leadership &amp; Strategy</div>
+        <div class="cat-sub">AI for Leaders and Program Managers · AI Leaders: Generative AI and Agentic AI</div>
+      </div>
+      <span class="cat-chevron">▾</span>
+    </div>
+    <div class="category-group cat-collapsed" id="cat-group-3">
+
+    <!-- ── Project: AI for Leaders & Program Managers ─── -->
+    <article class="project leaders-pm" id="proj-leaders-pm">
+
+      <div class="project-head">
+        <div class="p-icon">🎯</div>
+        <div class="p-meta">
+          <div class="p-eyebrow">Project · 08</div>
+          <div class="p-name">AI for Leaders &amp; Program Managers</div>
+          <div class="tags">
+            <span class="tag t-e">AI Strategy</span>
+            <span class="tag t-c">Program Mgmt</span>
+            <span class="tag t-i">Leadership</span>
+            <span class="tag t-v">Deployment</span>
+          </div>
+          <p class="p-desc">Strategic AI frameworks for leaders and program managers — from lifecycle planning to production deployment, governance, and stakeholder alignment.</p>
+        </div>
+        <div class="p-badges">
+          <span class="badge">4 notes</span>
+        </div>
+        <div class="p-chevron">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      </div>
+
+      <div class="project-body">
+
+      <div class="section">
+        <div class="sec-header">
+          <span class="sec-dot"></span>
+          <span class="sec-title">AI Lifecycle &amp; Strategy</span>
+          <span class="sec-badge">4 notes</span>
+        </div>
+
+        <div class="notes-grid">
+
+          <div class="note-card n11"
+               data-title="AI Lifecycle Mastery Strategy Deployment Leaders Program Managers Governance"
+               data-topics="AI Lifecycle Strategy Deployment Program Management Governance Stakeholders Leadership"
+               data-file="ai_for_leaders_program_managers/ai-lifecycle-mastery.html">
+            <div class="note-top">
+              <div class="n-icon n11">🏗️</div>
+              <div class="n-meta">
+                <div class="n-num">Note 01 · AI Leaders &amp; PM</div>
+                <div class="n-title">AI Lifecycle Mastery — Strategy to Deployment</div>
+              </div>
+            </div>
+            <p class="n-desc">End-to-end AI project lifecycle for leaders: ideation, business case, team structure, delivery phases, governance checkpoints, and production rollout strategies.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <div class="note-card n11"
+               data-title="AI Project Management Inception Vision Feasibility Scope SMART Goals Stakeholders Waterfall Agile CRISP-DM SAFe Risk Budget"
+               data-topics="Project Management Vision Feasibility Scope SMART Goals Roles Methodology Waterfall Agile CRISP-DM SAFe Risk Budget"
+               data-file="ai_for_leaders_program_managers/ai-project-management.html">
+            <div class="note-top">
+              <div class="n-icon n11">📋</div>
+              <div class="n-meta">
+                <div class="n-num">Note 02 · AI Leaders &amp; PM</div>
+                <div class="n-title">AI Project Management &amp; Inception</div>
+              </div>
+            </div>
+            <p class="n-desc">Everything that has to be right before a line of model code gets written — vision, feasibility, SMART goals, roles, Agile vs Waterfall, CRISP-DM, SAFe, risk categories, and budgeting with the GPT-4 case study.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <div class="note-card n11"
+               data-title="Data Strategy Preparation Structured Unstructured Data Sources Quality Labeling Feature Engineering Data Lake Warehouse Pipeline"
+               data-topics="Data Strategy Data Types Sourcing Quality Labeling Feature Engineering Data Lake Warehouse ETL Pipeline"
+               data-file="ai_for_leaders_program_managers/data-strategy-preparation.html">
+            <span class="new-badge">New</span>
+            <div class="note-top">
+              <div class="n-icon n11">🗄️</div>
+              <div class="n-meta">
+                <div class="n-num">Note 03 · AI Leaders &amp; PM</div>
+                <div class="n-title">Data Strategy &amp; Preparation</div>
+              </div>
+            </div>
+            <p class="n-desc">Why 80% of AI project time lives here — data strategy components, structured vs unstructured, sourcing, quality, labeling cost, feature engineering, data lakes vs warehouses, and cleaning a real dataset with Pandas.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <div class="note-card n11"
+               data-title="Model Development Validation Neural Networks Deep Learning TensorFlow Evaluation Metrics GPU TPU Transfer Learning LLM Leaderboards"
+               data-topics="Neural Networks Deep Learning Evaluation Metrics Training Infrastructure Transfer Learning Fine-tuning LLM Selection"
+               data-file="ai_for_leaders_program_managers/model-development-validation.html">
+            <span class="new-badge">New</span>
+            <div class="note-top">
+              <div class="n-icon n11">🧠</div>
+              <div class="n-meta">
+                <div class="n-num">Note 04 · AI Leaders &amp; PM</div>
+                <div class="n-title">Model Development &amp; Validation</div>
+              </div>
+            </div>
+            <p class="n-desc">From "a model is just math" through neural architectures, evaluation metrics, GPU/TPU/CPU tradeoffs, transfer learning, experiment tracking, LLM leaderboards, and choosing the right model for your use case.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+        </div><!-- /notes-grid -->
+      </div><!-- /section -->
+
+      </div><!-- /project-body -->
+    </article>
+
+    <!-- ═══ PROJECT 09 — AI Leader: GenAI & Agentic AI ═══ -->
+    <article class="project ai-leader" id="proj-ai-leader">
+
+      <div class="project-head">
+        <div class="p-icon">🚀</div>
+        <div class="p-meta">
+          <div class="p-eyebrow">Project · 09</div>
+          <div class="p-name">AI Leader: Generative AI &amp; Agentic AI</div>
+          <div class="tags">
+            <span class="tag t-i">GenAI</span>
+            <span class="tag t-c">Agentic AI</span>
+            <span class="tag t-v">Leadership</span>
+            <span class="tag t-e">Strategy</span>
+          </div>
+          <p class="p-desc">The strategic layer above the engineering — LLM landscape, deployment approaches, RAG vs fine-tuning, agents demystified, talent strategy, AI roadmaps, and provable ROI frameworks for leaders and founders.</p>
+        </div>
+        <div class="p-badges">
+          <span class="badge">3 notes</span>
+        </div>
+        <div class="p-chevron">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      </div>
+
+      <div class="project-body">
+
+      <div class="section">
+        <div class="sec-header">
+          <span class="sec-dot"></span>
+          <span class="sec-title">GenAI, Agents &amp; Leadership Strategy</span>
+          <span class="sec-badge">3 notes</span>
+        </div>
+
+        <div class="notes-grid">
+
+          <div class="note-card n12"
+               data-title="GenAI LLMs Executive Briefing AI Agents Workforce Revolution LLM Landscape Benchmarks Deployment Business Drivers Risk Investment"
+               data-topics="AI Agents LLM Landscape Benchmarks Deployment Approaches Business Strategy Risk Investment Framework"
+               data-file="ai_leader_generative_ai_agentic_ai/genai-llms-executive-briefing.html">
+            <span class="new-badge">New</span>
+            <div class="note-top">
+              <div class="n-icon n12">🧩</div>
+              <div class="n-meta">
+                <div class="n-num">Note 01 · GenAI &amp; Agentic AI</div>
+                <div class="n-title">GenAI &amp; LLMs — Executive Briefing</div>
+              </div>
+            </div>
+            <p class="n-desc">The strategic layer above the engineering — AI agents as workforce revolution, LLM landscape, leaderboards, three deployment approaches, business drivers, risk, and a five-phase investment framework.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <div class="note-card n12"
+               data-title="AI Project Execution Rollout Culture RISEN Framework RAG Fine-tuning Agents Cross-functional Decision Framework Case Studies"
+               data-topics="AI Rollout Culture RISEN Prompting RAG Fine-tuning Agents Decision Framework Case Studies"
+               data-file="ai_leader_generative_ai_agentic_ai/ai-project-execution.html">
+            <span class="new-badge">New</span>
+            <div class="note-top">
+              <div class="n-icon n12">⚙️</div>
+              <div class="n-meta">
+                <div class="n-num">Note 02 · GenAI &amp; Agentic AI</div>
+                <div class="n-title">AI Project Execution</div>
+              </div>
+            </div>
+            <p class="n-desc">From leading by example through RISEN prompting, real-world case studies, training vs inference optimizations, RAG deep dive, RAG vs fine-tuning, and the cross-functional decision framework.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <div class="note-card n12"
+               data-title="AI Leadership Initiatives Ideation Use Cases Good Ideas Traps Talent Org Models Governance AI Roadmap Uncertainty Change Management ROI"
+               data-topics="Ideation Use Cases Evaluation Talent Strategy Org Models Governance AI Roadmap Managing Uncertainty Change Management ROI"
+               data-file="ai_leader_generative_ai_agentic_ai/ai-leadership-initiatives.html">
+            <span class="new-badge">New</span>
+            <div class="note-top">
+              <div class="n-icon n12">🎯</div>
+              <div class="n-meta">
+                <div class="n-num">Note 03 · GenAI &amp; Agentic AI</div>
+                <div class="n-title">AI Leadership Initiatives</div>
+              </div>
+            </div>
+            <p class="n-desc">The capstone: how good ideas get found and killed, talent strategy as a supply-chain problem, the 5-phase AI roadmap, managing genuine unknowability, and why the McDonald's/Klarna failures were organizational — not technical.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+        </div><!-- /notes-grid -->
+      </div><!-- /section -->
+
+      </div><!-- /project-body -->
+    </article>
+
+    </div>
+    <!-- ── Category 4: AI Governance & Responsible AI ── -->
+    <div class="category-header" data-cat-target="cat-group-4" style="--cat-color:#0ea5e9; --cat-glow:rgba(14,165,233,0.28);">
+      <span class="cat-num">CAT 04</span>
+      <div class="cat-text">
+        <div class="cat-title">AI Governance &amp; Responsible AI</div>
+        <div class="cat-sub">As organizations adopt AI, governance becomes critical · Fundamentals of AI Governance · AI Guardrails &amp; Cybersecurity</div>
+      </div>
+      <span class="cat-chevron">▾</span>
+    </div>
+    <div class="category-group cat-collapsed" id="cat-group-4">
+
+    <!-- ── Project: AI Governance ─────────────── -->
+    <article class="project gov" id="proj-gov">
+
+      <div class="project-head">
+        <div class="p-icon">⚖️</div>
+        <div class="p-meta">
+          <div class="p-eyebrow">Project · 10</div>
+          <div class="p-name">Fundamentals of AI Governance</div>
+          <div class="tags">
+            <span class="tag t-c">AI Governance</span>
+            <span class="tag t-i">Regulation</span>
+            <span class="tag t-v">Ethics</span>
+            <span class="tag t-e">Compliance</span>
+          </div>
+          <p class="p-desc">End-to-end AI governance: risk frameworks, data governance, inherent AI risks, organizational structures, regulation landscapes (GDPR, EU AI Act, US), and practical implementation playbooks.</p>
+        </div>
+        <div class="p-badges">
+          <span class="badge">6 notes</span>
+        </div>
+        <div class="p-chevron">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      </div>
+
+      <div class="project-body">
+
+      <div class="section">
+        <div class="sec-header">
+          <span class="sec-dot"></span>
+          <span class="sec-title">Governance, Risk &amp; Compliance</span>
+          <span class="sec-badge">6 notes</span>
+        </div>
+
+        <div class="notes-grid">
+
+          <div class="note-card n13"
+               data-title="AI Governance Structurally Risk-Based Proportionality Responsible Design EU AI Act Traditional IT Governance"
+               data-topics="AI Governance Risk-Based Governance Proportionality Responsible Design Risk Classification EU AI Act"
+               data-file="fundamentals_of_ai_governance/ai-governance-notes.html">
+            <span class="new-badge">New</span>
+            <div class="note-top">
+              <div class="n-icon n13">🏛️</div>
+              <div class="n-meta">
+                <div class="n-num">Note 01 · AI Governance</div>
+                <div class="n-title">AI Governance, Structurally</div>
+              </div>
+            </div>
+            <p class="n-desc">What it really means to govern AI — how it differs from traditional IT governance, risk-based proportionality as the compass, and the four pillars of responsible design.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <div class="note-card n13"
+               data-title="Data Governance Deep Dive Data Origin Licensing Bias Detection Mitigation GDPR Consent Traceability"
+               data-topics="Data Origin Licensing Bias Detection Mitigation Consent GDPR Data Protection Traceability"
+               data-file="fundamentals_of_ai_governance/data-governance-notes.html">
+            <span class="new-badge">New</span>
+            <div class="note-top">
+              <div class="n-icon n13">🗄️</div>
+              <div class="n-meta">
+                <div class="n-num">Note 02 · AI Governance</div>
+                <div class="n-title">Data Governance, Deep Dive</div>
+              </div>
+            </div>
+            <p class="n-desc">Know where your data comes from — licensing pitfalls, bias types and detection, mitigation techniques, consent under GDPR, and the legal-operational trinity of data protection.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <div class="note-card n13"
+               data-title="Inherent Risks AI Security Operational Ethical Social Legal Fundamental Rights Bias Discrimination Surveillance"
+               data-topics="Security Risks Ethical Risks Social Risks Legal Risks Fundamental Rights Bias Discrimination"
+               data-file="fundamentals_of_ai_governance/inherent-risks-notes.html">
+            <span class="new-badge">New</span>
+            <div class="note-top">
+              <div class="n-icon n13">⚠️</div>
+              <div class="n-meta">
+                <div class="n-num">Note 03 · AI Governance</div>
+                <div class="n-title">Inherent Risks of AI</div>
+              </div>
+            </div>
+            <p class="n-desc">Beyond traditional cybersecurity — security &amp; operational control risks, ethical risk categories, the collective social impact of AI, and legal/fundamental rights risks.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <div class="note-card n13"
+               data-title="Organizational Structure Stakeholders Core Quartet IT Governance Integration Extended Ecosystem Decision-Making Conflict Resolution"
+               data-topics="Core Quartet Roles IT Governance Integration Stakeholder Ecosystem Decision Flows Conflict Resolution"
+               data-file="fundamentals_of_ai_governance/organizational-structure-notes.html">
+            <span class="new-badge">New</span>
+            <div class="note-top">
+              <div class="n-icon n13">🏢</div>
+              <div class="n-meta">
+                <div class="n-num">Note 04 · AI Governance</div>
+                <div class="n-title">Organizational Structure &amp; Stakeholders</div>
+              </div>
+            </div>
+            <p class="n-desc">The core quartet of AI governance roles, integrating with existing data &amp; IT governance, the extended stakeholder ecosystem, and designing decision-making flows with conflict resolution.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <div class="note-card n13"
+               data-title="Practical Implementation Real-World Cases AI Policies Version Control Decision Logs Agile Governance Templates Checklists"
+               data-topics="AI Policies Version Control Decision Logs Agile Governance Templates Checklists Scaling"
+               data-file="fundamentals_of_ai_governance/practical-implementation-notes.html">
+            <span class="new-badge">New</span>
+            <div class="note-top">
+              <div class="n-icon n13">🔧</div>
+              <div class="n-meta">
+                <div class="n-num">Note 05 · AI Governance</div>
+                <div class="n-title">Practical Implementation &amp; Real-World Cases</div>
+              </div>
+            </div>
+            <p class="n-desc">Writing AI policies that stick, version control and decision logs for traceability, agile governance tools without the bureaucracy, and standardizing templates to scale governance.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <div class="note-card n13"
+               data-title="Regulation Compliance Landscape GDPR EU AI Act United States Sector-Driven Risk Categories Federal Regulators State Laws"
+               data-topics="GDPR EU AI Act US Regulation Risk Categories Federal Regulators State Laws DPIA Compliance"
+               data-file="fundamentals_of_ai_governance/regulation-compliance-notes.html">
+            <span class="new-badge">New</span>
+            <div class="note-top">
+              <div class="n-icon n13">📜</div>
+              <div class="n-meta">
+                <div class="n-num">Note 06 · AI Governance</div>
+                <div class="n-title">Regulation &amp; Compliance Landscape</div>
+              </div>
+            </div>
+            <p class="n-desc">GDPR as the cornerstone, the EU AI Act's risk-based revolution with four categories, and the US decentralized sector-driven approach — federal regulators, state leadership, and preparing for compliance.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+        </div><!-- /notes-grid -->
+      </div><!-- /section -->
+
+      </div><!-- /project-body -->
+    </article>
+
+    <!-- ── Project: AI Guardrails ───────────────────── -->
+    <article class="project guardrails" id="proj-guardrails">
+
+      <div class="project-head">
+        <div class="p-icon">🛡️</div>
+        <div class="p-meta">
+          <div class="p-eyebrow">Project · 11</div>
+          <div class="p-name">AI Guardrails, Cybersecurity &amp; AI Agents</div>
+          <div class="tags">
+            <span class="tag t-i">AI Safety</span>
+            <span class="tag t-c">Prompt Injection</span>
+            <span class="tag t-v">Guardrails AI</span>
+            <span class="tag t-e">AWS Bedrock</span>
+          </div>
+          <p class="p-desc">Vulnerabilities and defenses around Foundation Models — prompt injection, hallucination detection, PII filtering with Microsoft Presidio, and managed safety layers via AWS Bedrock Guardrails and Meta Llama Guard.</p>
+        </div>
+        <div class="p-badges">
+          <span class="badge">3 notes</span>
+        </div>
+        <div class="p-chevron">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      </div>
+
+      <div class="project-body">
+
+      <div class="section">
+        <div class="sec-header">
+          <span class="sec-dot"></span>
+          <span class="sec-title">Guardrails, Safety &amp; Defenses</span>
+          <span class="sec-badge">3 notes</span>
+        </div>
+
+        <div class="notes-grid">
+
+          <div class="note-card n14"
+               data-title="AI Guardrails for Generative AI Applications Vulnerabilities Checkpoints Defenses Output Filtering Content Policy"
+               data-topics="Foundation Model Vulnerabilities Guardrail Checkpoints Output Filtering Content Policy Defensive Design"
+               data-file="ai_guardrails_cybersecurity_ai_agents/ai-guardrails-part1-slides.html">
+            <span class="new-badge">New</span>
+            <div class="note-top">
+              <div class="n-icon n14">🛡️</div>
+              <div class="n-meta">
+                <div class="n-num">Note 01 · AI Guardrails</div>
+                <div class="n-title">AI Guardrails for Generative AI Applications</div>
+              </div>
+            </div>
+            <p class="n-desc">The vulnerabilities, checkpoints, and defenses that sit around a Foundation Model — how to architect safety layers and apply content-policy filtering to GenAI outputs.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <div class="note-card n14"
+               data-title="AI Guardrails Mechanics Prompt Injection Defensive Models Meta Prompt Guard Llama Guard"
+               data-topics="Prompt Anatomy Injection Attacks Jailbreaks Meta Prompt Guard Llama Guard Defensive Models"
+               data-file="ai_guardrails_cybersecurity_ai_agents/ai-guardrails-part2-slides.html">
+            <span class="new-badge">New</span>
+            <div class="note-top">
+              <div class="n-icon n14">🔐</div>
+              <div class="n-meta">
+                <div class="n-num">Note 02 · AI Guardrails</div>
+                <div class="n-title">Mechanics, Prompt Injection &amp; Defensive Models</div>
+              </div>
+            </div>
+            <p class="n-desc">How guardrails work under the hood: prompt anatomy, injection attack vectors and jailbreaks, and the Meta Prompt Guard / Llama Guard model family as defensive classifiers.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+          <div class="note-card n14"
+               data-title="Hallucination Detection Microsoft Presidio PII Filtering AWS Bedrock Guardrails Safety Privacy Grounding"
+               data-topics="Hallucination Detection Presidio PII Filtering AWS Bedrock Managed Safety Privacy Grounding"
+               data-file="ai_guardrails_cybersecurity_ai_agents/ai-guardrails-part3-slides.html">
+            <span class="new-badge">New</span>
+            <div class="note-top">
+              <div class="n-icon n14">🔍</div>
+              <div class="n-meta">
+                <div class="n-num">Note 03 · AI Guardrails</div>
+                <div class="n-title">Hallucination Detection, Presidio &amp; AWS Bedrock Guardrails</div>
+              </div>
+            </div>
+            <p class="n-desc">Why models hallucinate and how to measure and catch it, how Microsoft Presidio strips PII before it reaches an LLM, and how AWS Bedrock ties safety, privacy, and grounding into one managed layer.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open →</div>
+            </div>
+          </div>
+
+        </div><!-- /notes-grid -->
+      </div><!-- /section -->
+
+      </div><!-- /project-body -->
+    </article>
+
+    </div>
+
+    <!-- ── Category 5: AI Coding Tools & Workflows ── -->
+    <div class="category-header" data-cat-target="cat-group-5" style="--cat-color:#a855f7; --cat-glow:rgba(168,85,247,0.28);">
+      <span class="cat-num">CAT 05</span>
+      <div class="cat-text">
+        <div class="cat-title">AI Coding Tools &amp; Workflows</div>
+        <div class="cat-sub">Build 10 AI Agents with Claude Code Cowork · GitHub Copilot Coding Agent</div>
+      </div>
+      <span class="cat-chevron">▾</span>
+    </div>
+    <div class="category-group cat-collapsed" id="cat-group-5">
+
+    <!-- ── Project: Build 10 AI Agents with Claude Code ── -->
+    <article class="project agents10" id="proj-agents10">
+
+      <div class="project-head">
+        <div class="p-icon">🤖</div>
+        <div class="p-meta">
+          <div class="p-eyebrow">Project · 12</div>
+          <div class="p-name">Build 10 AI Agents with Claude Code Cowork</div>
+          <div class="tags">
+            <span class="tag t-i">Claude Code</span>
+            <span class="tag t-v">AI Agents</span>
+            <span class="tag t-c">Cowork AI</span>
+            <span class="tag t-e">Masterclass</span>
+          </div>
+          <p class="p-desc">8-module masterclass: Claude Code foundations, financial dashboards, automated workflows, Chrome agents, agent skills, and Claude plugins — building real software with Claude as a coworker.</p>
+        </div>
+        <div class="p-badges">
+          <span class="badge">8 modules</span>
+        </div>
+        <div class="p-chevron">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      </div>
+
+      <div class="project-body">
+
+      <!-- Section: Claude Code Foundations -->
+      <div class="section">
+        <div class="sec-header">
+          <span class="sec-dot"></span>
+          <span class="sec-title">Claude Code Foundations</span>
+          <span class="sec-badge">4 modules</span>
+        </div>
+
+        <div class="notes-grid">
+
+          <div class="note-card n15">
+            <div class="note-top">
+              <div class="n-icon n15">🚀</div>
+              <div class="n-meta">
+                <div class="n-num">Module 00 · Foundations</div>
+                <div class="n-title">Orientation &amp; Setup</div>
+              </div>
+            </div>
+            <p class="n-desc">Course structure, tools setup, and the Claude Code cowork mental model — what it means to build software with an AI that can see, plan, and write code alongside you.</p>
+            <div class="note-foot">
+              <div class="open-btn">Notes Pending</div>
+            </div>
+          </div>
+
+          <div class="note-card n15">
+            <div class="note-top">
+              <div class="n-icon n15">💻</div>
+              <div class="n-meta">
+                <div class="n-num">Module 01 · Claude Code</div>
+                <div class="n-title">Claude Code Demo</div>
+              </div>
+            </div>
+            <p class="n-desc">Live walkthrough of Claude Code: the CLI interface, file awareness, agentic edit loops, and how to have a productive back-and-forth with Claude as your coding partner.</p>
+            <div class="note-foot">
+              <div class="open-btn">Notes Pending</div>
+            </div>
+          </div>
+
+          <div class="note-card n15">
+            <div class="note-top">
+              <div class="n-icon n15">📊</div>
+              <div class="n-meta">
+                <div class="n-num">Module 02 · Claude Code</div>
+                <div class="n-title">Financial Dashboard with Claude Code</div>
+              </div>
+            </div>
+            <p class="n-desc">Build a real financial dashboard end-to-end with Claude Code — data modelling, UI components, charting, and iterative refinement in a genuine cowork session.</p>
+            <div class="note-foot">
+              <div class="open-btn">Notes Pending</div>
+            </div>
+          </div>
+
+          <div class="note-card n15">
+            <div class="note-top">
+              <div class="n-icon n15">⚡</div>
+              <div class="n-meta">
+                <div class="n-num">Module 03 · Claude Code</div>
+                <div class="n-title">Create Automated Workflow</div>
+              </div>
+            </div>
+            <p class="n-desc">Design and implement an automated workflow with Claude Code — from spec to working code, testing, and refinement using agentic loops.</p>
+            <div class="note-foot">
+              <div class="open-btn">Notes Pending</div>
+            </div>
+          </div>
+
+        </div><!-- /notes-grid -->
+      </div><!-- /section -->
+
+      <!-- Section: Claude Cowork Foundations -->
+      <div class="section">
+        <div class="sec-header">
+          <span class="sec-dot"></span>
+          <span class="sec-title">Claude Cowork Foundations</span>
+          <span class="sec-badge">4 modules</span>
+        </div>
+
+        <div class="notes-grid">
+
+          <div class="note-card n15">
+            <div class="note-top">
+              <div class="n-icon n15">🌐</div>
+              <div class="n-meta">
+                <div class="n-num">Module 04 · Cowork</div>
+                <div class="n-title">Chrome Agent Testing</div>
+              </div>
+            </div>
+            <p class="n-desc">Build and test a Chrome-based AI agent: browser automation, Claude-driven task execution, and the feedback loop for iterating on agent behaviour in a real browser environment.</p>
+            <div class="note-foot">
+              <div class="open-btn">Notes Pending</div>
+            </div>
+          </div>
+
+          <div class="note-card n15">
+            <div class="note-top">
+              <div class="n-icon n15">🧩</div>
+              <div class="n-meta">
+                <div class="n-num">Module 05 · Cowork</div>
+                <div class="n-title">Agent Skills</div>
+              </div>
+            </div>
+            <p class="n-desc">Define, register, and chain Claude agent skills — the building blocks that let your AI execute multi-step tasks across tools, APIs, and browser sessions.</p>
+            <div class="note-foot">
+              <div class="open-btn">Notes Pending</div>
+            </div>
+          </div>
+
+          <div class="note-card n15">
+            <div class="note-top">
+              <div class="n-icon n15">🔌</div>
+              <div class="n-meta">
+                <div class="n-num">Module 06 · Cowork</div>
+                <div class="n-title">Claude Plugins</div>
+              </div>
+            </div>
+            <p class="n-desc">Extend Claude with custom plugins: connecting tools, exposing APIs as actions, and building the integration layer that makes Claude aware of your own systems and data.</p>
+            <div class="note-foot">
+              <div class="open-btn">Notes Pending</div>
+            </div>
+          </div>
+
+          <div class="note-card n15">
+            <div class="note-top">
+              <div class="n-icon n15">🎯</div>
+              <div class="n-meta">
+                <div class="n-num">Module 07 · Capstone</div>
+                <div class="n-title">Personal OS &amp; Capstone</div>
+              </div>
+            </div>
+            <p class="n-desc">Bring it all together in a personal AI OS — combine Claude Code, cowork agents, and custom plugins into a cohesive system that automates your own workflows.</p>
+            <div class="note-foot">
+              <div class="open-btn">Notes Pending</div>
+            </div>
+          </div>
+
+        </div><!-- /notes-grid -->
+      </div><!-- /section -->
+
+      </div><!-- /project-body -->
+    </article>
+
+    <!-- ── Project: GitHub Copilot Coding Agent ─────── -->
+    <article class="project copilot" id="proj-copilot">
+
+      <div class="project-head">
+        <div class="p-icon">🐙</div>
+        <div class="p-meta">
+          <div class="p-eyebrow">Project · 13</div>
+          <div class="p-name">GitHub Copilot Coding Agent</div>
+          <div class="tags">
+            <span class="tag t-i">GitHub Copilot</span>
+            <span class="tag t-c">Coding Agent</span>
+            <span class="tag t-v">AI Pair Programming</span>
+            <span class="tag t-e">Agentic</span>
+          </div>
+          <p class="p-desc">GitHub Copilot's agentic coding mode — autonomous PR creation, multi-file edits, issue resolution, and how it compares to traditional AI pair programming workflows.</p>
+        </div>
+        <div class="p-badges">
+          <span class="badge">1 resource</span>
+        </div>
+        <div class="p-chevron">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      </div>
+
+      <div class="project-body">
+
+      <div class="section">
+        <div class="sec-header">
+          <span class="sec-dot"></span>
+          <span class="sec-title">Copilot Coding Agent</span>
+          <span class="sec-badge">1 resource</span>
+        </div>
+
+        <div class="notes-grid">
+
+          <div class="note-card n16"
+               data-title="Meet the GitHub Copilot Coding Agent"
+               data-topics="GitHub Copilot Coding Agent Autonomous PRs Multi-File Edits Issue Resolution Agentic AI"
+               data-file="github-copilot-coding-agent/Meet+the+GitHub+Copilot+Coding+Agent.pdf">
+            <span class="new-badge">New</span>
+            <div class="note-top">
+              <div class="n-icon n16">🐙</div>
+              <div class="n-meta">
+                <div class="n-num">Resource 01 · Copilot</div>
+                <div class="n-title">Meet the GitHub Copilot Coding Agent</div>
+              </div>
+            </div>
+            <p class="n-desc">Introduction to GitHub Copilot's agentic mode — autonomous coding, pull request generation, multi-file context, and how Copilot moves from suggestion tool to coding agent.</p>
+            <div class="note-foot">
+              <div class="open-btn">Open PDF →</div>
+            </div>
+          </div>
+
+        </div><!-- /notes-grid -->
+      </div><!-- /section -->
+
+      </div><!-- /project-body -->
+    </article>
+
+    </div>
+
+    <!-- Up Next — Queued Courses (bottom, collapsed by default) -->
+    <div class="upcoming-section">
+      <div class="upcoming-header" id="upcoming-toggle-btn">
+        <span class="upcoming-dot"></span>
+        <span class="upcoming-eyebrow">Up Next — Queued Courses</span>
+        <span class="upcoming-toggle" id="upcoming-toggle-label">show ▾</span>
+      </div>
+      <div class="upcoming-body" id="upcoming-body">
+        <div class="upcoming-grid" style="margin-top:0.75rem;">
+          <a class="course-card cc6"
+             href="https://www.udemy.com/course/ai-for-business-leaders/?couponCode=PMNVD2025"
+             target="_blank" rel="noopener">
+            <div class="cc-num">02 / 03</div>
+            <div class="cc-top">
+              <span class="cc-icon">💼</span>
+              <span class="cc-platform">Udemy</span>
+            </div>
+            <div class="cc-title">AI for Business Leaders</div>
+            <div class="cc-tags">
+              <span>Business Strategy</span><span>Leadership</span><span>AI Adoption</span><span>ROI</span>
+            </div>
+            <div class="cc-go">View Course →</div>
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /wrap -->
+
+  <!-- ── Footer ───────────────────────────────── -->
+  <footer class="z1">
+    <p>AI Knowledge Vault &mdash; <span class="hl">51 notes</span> across <span class="hl">13 modules</span> &mdash; Updated <span class="hl">August 2026</span></p>
+    <p style="margin-top:0.35rem;font-size:0.6rem;opacity:0.5">Click any card to open note · Neural network reacts to your cursor</p>
+  </footer>
+
+  <script>
+  /* ─── 1. Neural network canvas ─────────────────── */
+  (function () {
+    const cvs = document.getElementById('neural-bg');
+    const ctx = cvs.getContext('2d');
+    let W, H, pts = [];
+    const N = 65, LINK_D = 148;
+    const mouse = { x: -9999, y: -9999 };
+    const COLORS = ['#6366f1','#8b5cf6','#06b6d4','#38bdf8'];
+
+    function resize() {
+      W = cvs.width  = window.innerWidth;
+      H = cvs.height = window.innerHeight;
+    }
+
+    function mkPt() {
+      return {
+        x: Math.random() * W, y: Math.random() * H,
+        vx: (Math.random() - 0.5) * 0.35,
+        vy: (Math.random() - 0.5) * 0.35,
+        r: Math.random() * 1.8 + 0.8,
+        c: COLORS[Math.floor(Math.random() * COLORS.length)]
+      };
+    }
+
+    function init() { pts = Array.from({ length: N }, mkPt); }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+
+      for (let i = 0; i < N; i++) {
+        const p = pts[i];
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0 || p.x > W) p.vx *= -1;
+        if (p.y < 0 || p.y > H) p.vy *= -1;
+
+        /* particle */
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = p.c;
+        ctx.fill();
+
+        /* inter-particle links */
+        for (let j = i + 1; j < N; j++) {
+          const q = pts[j];
+          const dx = p.x - q.x, dy = p.y - q.y;
+          const d = Math.sqrt(dx * dx + dy * dy);
+          if (d < LINK_D) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y);
+            ctx.strokeStyle = `rgba(99,102,241,${0.18 * (1 - d / LINK_D)})`;
+            ctx.lineWidth = 0.7;
+            ctx.stroke();
+          }
+        }
+
+        /* mouse proximity links */
+        const mdx = p.x - mouse.x, mdy = p.y - mouse.y;
+        const md = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (md < 130) {
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y); ctx.lineTo(mouse.x, mouse.y);
+          ctx.strokeStyle = `rgba(6,182,212,${0.3 * (1 - md / 130)})`;
+          ctx.lineWidth = 0.9;
+          ctx.stroke();
+        }
+      }
+      requestAnimationFrame(draw);
+    }
+
+    window.addEventListener('resize', () => { resize(); init(); });
+    window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+    resize(); init(); draw();
+  })();
+
+  /* ─── 2. Animated stat counters ────────────────── */
+  (function () {
+    function ease(t) { return 1 - Math.pow(1 - t, 3); }
+
+    function run(el, target, dur) {
+      const start = performance.now();
+      (function step(now) {
+        const p = Math.min((now - start) / dur, 1);
+        el.textContent = Math.round(ease(p) * target).toLocaleString();
+        if (p < 1) requestAnimationFrame(step);
+      })(performance.now());
+    }
+
+    const io = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        document.querySelectorAll('.s-num[data-target]').forEach(el => {
+          run(el, +el.dataset.target, 1400);
+        });
+        io.disconnect();
+      }
+    }, { threshold: 0.4 });
+
+    const statsEl = document.querySelector('.stats');
+    if (statsEl) io.observe(statsEl);
+  })();
+
+  /* ─── 3. Live clock ─────────────────────────────── */
+  (function () {
+    const el = document.getElementById('clock');
+    function tick() {
+      el.textContent = new Date().toLocaleTimeString('en-US', {
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+    }
+    tick(); setInterval(tick, 1000);
+  })();
+
+
+  /* ─── 6. Card click → open note ────────────────── */
+  (function () {
+    document.querySelectorAll('.note-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const raw = card.dataset.file;
+        if (!raw) return;
+        /* encode each path segment individually */
+        const encoded = raw.split('/').map(s => encodeURIComponent(s)).join('/');
+        window.location.href = encoded;
+      });
+    });
+  })();
+
+  /* ─── 7. Project collapse ──────────────────────── */
+  (function () {
+    /* start all collapsed */
+    document.querySelectorAll('.project').forEach(p => p.classList.add('collapsed'));
+
+    document.querySelectorAll('.project-head').forEach(head => {
+      head.addEventListener('click', () => {
+        head.closest('.project').classList.toggle('collapsed');
+      });
+    });
+
+  })();
+
+  /* ─── 7b. Category group collapse (default collapsed) ─ */
+  (function () {
+    document.querySelectorAll('.category-header').forEach(header => {
+      header.addEventListener('click', () => {
+        const target = document.getElementById(header.dataset.catTarget);
+        if (!target) return;
+        target.classList.toggle('cat-collapsed');
+        header.classList.toggle('cat-open', !target.classList.contains('cat-collapsed'));
+      });
+    });
+  })();
+
+
+  /* ─── 10. Upcoming courses toggle ─────────────── */
+  (function () {
+    const btn   = document.getElementById('upcoming-toggle-btn');
+    const body  = document.getElementById('upcoming-body');
+    const label = document.getElementById('upcoming-toggle-label');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      const open = body.classList.toggle('open');
+      label.textContent = open ? 'hide ▴' : 'show ▾';
+    });
+  })();
+
+  /* ─── 11. Theme toggle ─────────────────────────── */
+  (function () {
+    const html  = document.documentElement;
+    const btn   = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('ai-vault-theme') || 'dark';
+    html.dataset.theme = saved;
+
+    btn.addEventListener('click', () => {
+      const next = html.dataset.theme === 'dark' ? 'light' : 'dark';
+      html.dataset.theme = next;
+      localStorage.setItem('ai-vault-theme', next);
+    });
+  })();
+
+  /* ─── 12. Reading progress bar ─────────────────── */
+  (function () {
+    const bar = document.getElementById('reading-progress');
+    window.addEventListener('scroll', () => {
+      const s   = document.documentElement;
+      const pct = s.scrollTop / (s.scrollHeight - s.clientHeight) * 100;
+      bar.style.width = Math.min(pct, 100) + '%';
+    }, { passive: true });
+  })();
+
+  /* ─── 13. Back to top ───────────────────────────── */
+  (function () {
+    const btn = document.getElementById('back-top');
+    window.addEventListener('scroll', () => {
+      btn.classList.toggle('visible', window.scrollY > 420);
+    }, { passive: true });
+    btn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  })();
+
+  /* ─── 8. 3-D tilt on note cards ──────────────────*/
+  (function () {
+    document.querySelectorAll('.note-card').forEach(card => {
+      card.addEventListener('mousemove', e => {
+        const r  = card.getBoundingClientRect();
+        const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        const dx = (e.clientX - cx) / (r.width  / 2);
+        const dy = (e.clientY - cy) / (r.height / 2);
+        card.style.transform =
+          `translateY(-5px) perspective(700px) rotateY(${dx * 5}deg) rotateX(${-dy * 5}deg)`;
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = '';
+      });
+    });
+  })();
+  </script>
+
+</body>
+</html>

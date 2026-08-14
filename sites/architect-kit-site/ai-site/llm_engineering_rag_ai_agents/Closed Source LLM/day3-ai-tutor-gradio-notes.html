@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project 3 — AI Tutor with Gradio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0e14; --panel: #10151d; --panel-2: #151b25; --grid: #1c2430;
+    --ink: #c7d0dc; --ink-dim: #7c8898; --ink-bright: #eef2f7;
+    --blueprint: #3fb6ff; --blueprint-dim: #1f4a63; --amber: #ffb454; --green: #5fd9a0; --violet: #b78dff;
+    --radius: 3px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      linear-gradient(var(--grid) 1px, transparent 1px) 0 0/40px 40px,
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0/40px 40px,
+      var(--bg);
+    color:var(--ink); font-family:'Inter',sans-serif; line-height:1.6; padding:0 0 80px 0;
+  }
+  a{color:var(--blueprint);}
+  code{font-family:'JetBrains Mono',monospace;background:var(--panel-2);padding:1px 6px;border-radius:3px;color:var(--amber);font-size:12.5px;}
+
+  .course-box{margin:28px auto 0 auto;max-width:920px;padding:20px 26px;background:var(--panel-2);border:1px solid var(--blueprint-dim);border-left:4px solid var(--blueprint);border-radius:var(--radius);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;}
+  .course-box .label{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--amber);}
+  .course-box .title{font-size:15px;color:var(--ink-bright);font-weight:600;margin-top:4px;}
+  .course-box .link-btn{font-family:'JetBrains Mono',monospace;font-size:12px;padding:9px 16px;border:1px solid var(--blueprint);color:var(--blueprint);text-decoration:none;border-radius:var(--radius);white-space:nowrap;transition:all .15s ease;}
+  .course-box .link-btn:hover{background:var(--blueprint);color:var(--bg);}
+  .course-box .note{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink-dim);width:100%;margin-top:2px;}
+
+  header.masthead{max-width:920px;margin:34px auto 6px auto;padding:0 6px;}
+  header.masthead .kicker{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--violet);letter-spacing:3px;text-transform:uppercase;}
+  header.masthead h1{font-size:clamp(26px,4vw,38px);color:var(--ink-bright);margin:8px 0 6px 0;font-weight:700;letter-spacing:-0.5px;}
+  header.masthead p.sub{color:var(--ink-dim);font-size:14.5px;max-width:660px;margin:0;}
+
+  .arch-banner{max-width:920px;margin:18px auto 0 auto;padding:14px 18px;background:linear-gradient(90deg, rgba(183,141,255,0.09), transparent);border-left:3px solid var(--violet);border-radius:0 var(--radius) var(--radius) 0;font-size:13px;color:var(--ink);}
+  .arch-banner b{color:var(--violet);}
+
+  main{max-width:920px;margin:0 auto;padding:0 6px;}
+  section{margin-top:38px;}
+  .section-head{display:flex;align-items:baseline;gap:10px;border-bottom:1px solid var(--grid);padding-bottom:10px;margin-bottom:16px;}
+  .section-head .tag{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blueprint);border:1px solid var(--blueprint-dim);padding:2px 8px;border-radius:var(--radius);}
+  .section-head h2{font-size:19px;color:var(--ink-bright);margin:0;font-weight:700;}
+
+  .task{background:var(--panel);border:1px solid var(--grid);border-radius:var(--radius);margin-bottom:14px;overflow:hidden;}
+  .task-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;cursor:pointer;user-select:none;}
+  .task-head:hover{background:var(--panel-2);}
+  .task-head .left{display:flex;align-items:center;gap:14px;}
+  .task-num{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--bg);background:var(--blueprint);width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-weight:700;flex-shrink:0;}
+  .task-title{color:var(--ink-bright);font-weight:600;font-size:14.5px;}
+  .task-sub{color:var(--ink-dim);font-size:12px;margin-top:2px;}
+  .chevron{color:var(--ink-dim);font-family:'JetBrains Mono',monospace;transition:transform .2s ease;}
+  .task.open .chevron{transform:rotate(90deg);color:var(--blueprint);}
+  .task-body{max-height:0;overflow:hidden;transition:max-height .35s ease;border-top:1px solid var(--grid);}
+  .task.open .task-body{max-height:3200px;}
+  .task-body-inner{padding:18px 20px 20px 20px;font-size:13.5px;color:var(--ink);}
+  .task-body-inner p{margin:6px 0;}
+  .task-body-inner ul{padding-left:18px;margin:8px 0;}
+  .task-body-inner li{margin:4px 0;}
+
+  .code-block{background:#0d1119;border:1px solid var(--grid);border-radius:var(--radius);padding:12px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--green);overflow-x:auto;margin:10px 0;white-space:pre;}
+  .code-block .c2{color:var(--amber);}
+  .code-block .c1{color:var(--ink-dim);}
+
+  .callout{margin-top:14px;background:linear-gradient(90deg, rgba(63,182,255,0.08), transparent);border-left:3px solid var(--blueprint);padding:12px 16px;font-size:13.5px;color:var(--ink);border-radius:0 var(--radius) var(--radius) 0;}
+  .callout b{color:var(--blueprint);}
+  .callout.violet{background:linear-gradient(90deg, rgba(183,141,255,0.09), transparent);border-left-color:var(--violet);}
+  .callout.violet b{color:var(--violet);}
+  .callout.amber{background:linear-gradient(90deg, rgba(255,180,84,0.08), transparent);border-left-color:var(--amber);}
+  .callout.amber b{color:var(--amber);}
+  .callout.green{background:linear-gradient(90deg, rgba(95,217,160,0.09), transparent);border-left-color:var(--green);}
+  .callout.green b{color:var(--green);}
+
+  .anatomy-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
+  @media(max-width:640px){.anatomy-grid{grid-template-columns:1fr;}}
+  .cap{background:var(--panel-2);border:1px solid var(--grid);border-left:3px solid var(--green);border-radius:var(--radius);padding:12px 14px;cursor:pointer;}
+  .cap.blue{border-left-color:var(--blueprint);}
+  .cap.amber{border-left-color:var(--amber);}
+  .cap.violet{border-left-color:var(--violet);}
+  .cap .cap-title{font-size:13.5px;color:var(--ink-bright);font-weight:600;display:flex;justify-content:space-between;align-items:center;}
+  .cap .cap-title::after{content:"+";font-family:'JetBrains Mono',monospace;color:var(--ink-dim);font-size:16px;}
+  .cap.open .cap-title::after{content:"–";color:var(--green);}
+  .cap .cap-body{max-height:0;overflow:hidden;transition:max-height .25s ease;font-size:12.5px;color:var(--ink-dim);}
+  .cap.open .cap-body{max-height:260px;margin-top:8px;}
+
+  /* slider mock */
+  .slider-mock{margin:14px 0;background:var(--panel-2);border:1px solid var(--grid);border-radius:var(--radius);padding:16px 18px;}
+  .slider-track{position:relative;height:6px;background:var(--grid);border-radius:4px;margin:20px 6px 10px 6px;}
+  .slider-fill{position:absolute;left:0;top:0;height:100%;width:60%;background:var(--blueprint);border-radius:4px;}
+  .slider-labels{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink-dim);}
+  .slider-labels span{text-align:center;flex:1;}
+  .slider-labels span.active{color:var(--blueprint);font-weight:700;}
+
+  /* UI mock component list */
+  .ui-mock{display:flex;flex-direction:column;gap:8px;margin:12px 0;}
+  .ui-row{display:flex;align-items:center;gap:10px;background:var(--panel-2);border:1px solid var(--grid);border-radius:var(--radius);padding:10px 14px;}
+  .ui-row .kind{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--bg);background:var(--amber);padding:3px 8px;border-radius:12px;flex-shrink:0;}
+  .ui-row .desc{font-size:12.5px;color:var(--ink);}
+
+  .recap-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;}
+  @media(max-width:640px){.recap-grid{grid-template-columns:1fr;}}
+  .recap-card{background:var(--panel);border:1px solid var(--grid);border-radius:var(--radius);padding:16px 18px;}
+  .recap-card .num{font-family:'JetBrains Mono',monospace;color:var(--amber);font-size:11px;letter-spacing:1px;}
+  .recap-card p{font-size:13px;color:var(--ink);margin:6px 0 0 0;}
+
+  .recall-wrap{background:var(--panel);border:1px dashed var(--blueprint-dim);border-radius:var(--radius);padding:20px 22px;}
+  .recall-card{background:var(--panel-2);border:1px solid var(--grid);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;cursor:pointer;}
+  .recall-card:last-child{margin-bottom:0;}
+  .recall-q{font-size:13.5px;color:var(--ink-bright);display:flex;justify-content:space-between;gap:10px;}
+  .recall-q .qmark{font-family:'JetBrains Mono',monospace;color:var(--amber);flex-shrink:0;}
+  .recall-a{max-height:0;overflow:hidden;transition:max-height .25s ease;font-size:13px;color:var(--green);}
+  .recall-card.open .recall-a{max-height:220px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--grid);}
+  .recall-hint{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink-dim);text-align:right;margin-bottom:14px;letter-spacing:1px;text-transform:uppercase;}
+
+  footer{max-width:920px;margin:50px auto 0 auto;padding:16px 6px 0 6px;border-top:1px solid var(--grid);color:var(--ink-dim);font-size:12px;font-family:'JetBrains Mono',monospace;}
+  /* notes width expansion - matches learning plan box */
+  .wrap,.container,main,header.hero,header.masthead,nav.toc,section.block,footer{max-width:100%!important;padding-left:24px!important;padding-right:24px!important;}
+</style>
+</head>
+<body>
+<!-- LEARNING PLAN -->
+<div style="margin:24px;background:#0f1520;border:1px solid #1e2836;border-left:4px solid #e0a030;border-radius:8px;padding:24px 28px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;">
+  <div style="color:#e0a030;font-size:13px;font-weight:700;letter-spacing:.08em;margin-bottom:14px;">&#9670; LEARNING PLAN — 2.5 HOURS DAILY</div>
+  <div style="overflow-x:auto;">
+  <table style="width:100%;border-collapse:collapse;font-size:13px;color:#c8d3e0;margin-bottom:18px;white-space:nowrap;">
+    <thead><tr style="color:#7c8ba0;border-bottom:1px solid #1e2836;">
+      <th style="padding:6px 10px;text-align:left;width:48px;">Step</th>
+      <th style="padding:6px 10px;text-align:left;">Activity</th>
+      <th style="padding:6px 10px;text-align:left;">Outcome</th>
+    </tr></thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">1</td><td style="padding:7px 10px;"><b>Complete the Udemy Course</b> — watch videos, understand concepts, don't rush</td><td style="padding:7px 10px;color:#5fbf7f;">Build strong fundamentals</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">2</td><td style="padding:7px 10px;"><b>Practice Everything</b> — complete exercises, assignments, and source code</td><td style="padding:7px 10px;color:#5fbf7f;">Gain hands-on experience</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">3</td><td style="padding:7px 10px;"><b>Revise with these notes</b></td><td style="padding:7px 10px;color:#5fbf7f;">Reinforce concepts and fill knowledge gaps</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">4</td><td style="padding:7px 10px;"><b>Earn the Udemy Certificate</b></td><td style="padding:7px 10px;color:#5fbf7f;">Ensure the course is completed end-to-end</td></tr>
+      <tr><td style="padding:7px 10px;color:#e0a030;font-weight:700;">5</td><td style="padding:7px 10px;"><b>Practise real world tough scenario</b> — scenario-based questions &amp; interview problems</td><td style="padding:7px 10px;color:#5fbf7f;">Develop practical and interview-ready skills</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">1.5 HRS</div>
+      <div style="font-size:12px;color:#c8d3e0;">Udemy Videos + Exercises + Source Code</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Notes Revision</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Scenario-Based Questions &amp; Practical Problems</div>
+    </div>
+  </div>
+  <div style="color:#f0f4f8;font-size:12px;font-weight:600;letter-spacing:.04em;">GOAL: <span style="color:#e0a030;">Learn &#8594; Practice &#8594; Revise &#8594; Complete &#8594; Apply</span></div>
+</div>
+<!-- END LEARNING PLAN -->
+<a href="https://ai.shivawithin.in" id="home-return-btn" title="Back to Home" style="position:fixed;bottom:24px;right:24px;z-index:99999;display:inline-flex;align-items:center;gap:6px;background:#0d1b2a;color:#3fb6ff;border:1px solid #3fb6ff;padding:9px 15px;border-radius:8px;text-decoration:none;font-family:system-ui,-apple-system,sans-serif;font-size:13px;font-weight:600;box-shadow:0 2px 16px rgba(0,0,0,0.5);transition:background 0.2s,box-shadow 0.2s;" onmouseover="this.style.background='#1a2f47';this.style.boxShadow='0 4px 20px rgba(63,182,255,0.25)'" onmouseout="this.style.background='#0d1b2a';this.style.boxShadow='0 2px 16px rgba(0,0,0,0.5)'">&#8592; Home</a>
+
+  <header class="masthead">
+    <div class="kicker">Section 04 — Project 3</div>
+    <h1>AI Tutor with Gradio</h1>
+    <p class="sub">First real UI layer on top of the API fundamentals: wrap a Python function in a shareable web interface, add real-time streaming, and layer in a slider that dynamically adjusts the AI's explanation complexity.</p>
+  </header>
+
+  <div class="arch-banner">
+    <b>Reading lens —</b> Gradio is a <b>declarative UI framework</b> — you describe a function's input/output shape (textbox, slider) and it generates the interface, closer to Swagger/OpenAPI auto-generating a UI from a schema than to hand-rolling frontend code. Streaming is the same <b>chunked-response / SSE pattern</b> you already know from any server pushing partial data before a full response completes — here expressed via Python's <code>yield</code> generator keyword.
+  </div>
+
+  <main>
+
+    <section id="tasks">
+      <div class="section-head">
+        <span class="tag">PROJECT 03</span>
+        <h2>Task Walkthrough</h2>
+      </div>
+
+      <!-- TASK 1 -->
+      <div class="task open">
+        <div class="task-head" onclick="this.parentElement.classList.toggle('open')">
+          <div class="left">
+            <div class="task-num">1</div>
+            <div>
+              <div class="task-title">Project Overview</div>
+              <div class="task-sub">Adaptive tutor + complexity slider + Gradio + streaming</div>
+            </div>
+          </div>
+          <span class="chevron">›</span>
+        </div>
+        <div class="task-body"><div class="task-body-inner">
+          <p>Goal: an AI tutor that (1) has a real, shareable web UI (not just a Jupyter cell), (2) streams its answer token-by-token like ChatGPT, and (3) exposes a <b style="color:var(--ink-bright)">complexity slider</b> — same question, explanation adjusts from "explain like I'm 5" to PhD-expert level.</p>
+          <div class="anatomy-grid">
+            <div class="cap open"><div class="cap-title">Master Gradio</div><div class="cap-body">Build shareable web interfaces around any Python/AI function in a few lines.</div></div>
+            <div class="cap open"><div class="cap-title">Streaming responses</div><div class="cap-body">Display output incrementally rather than making the user wait for the full response.</div></div>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- TASK 2 -->
+      <div class="task">
+        <div class="task-head" onclick="this.parentElement.classList.toggle('open')">
+          <div class="left">
+            <div class="task-num">2</div>
+            <div>
+              <div class="task-title">What is Gradio, and setup</div>
+              <div class="task-sub"><code>pip install gradio</code> + OpenAI client config (same as before)</div>
+            </div>
+          </div>
+          <span class="chevron">›</span>
+        </div>
+        <div class="task-body"><div class="task-body-inner">
+          <p><a href="https://www.gradio.app" target="_blank" rel="noopener"><b style="color:var(--ink-bright)">Gradio ↗</b></a> — an open-source library (backed by Hugging Face; used at Amazon, Facebook, Cisco, etc.) that turns a Python function into a web interface in ~5 lines. Three key properties:</p>
+          <ul>
+            <li><b>Easy setup</b> — <code>pip install gradio</code>, then <code>import gradio as gr</code>.</li>
+            <li><b>Instant sharing</b> — runs embedded in a notebook or as a separate tab with a shareable link.</li>
+            <li><b>Permanent hosting</b> — deployable to <a href="https://huggingface.co/spaces" target="_blank" rel="noopener">Hugging Face Spaces ↗</a> for a persistent public URL.</li>
+          </ul>
+          <div class="code-block">import gradio as gr
+
+<span class="c1">def</span> greet(name):
+    <span class="c1">return</span> <span class="c2">f"Hello {name}!"</span>
+
+demo = gr.Interface(fn=greet, inputs=<span class="c2">"text"</span>, outputs=<span class="c2">"text"</span>)
+demo.launch()</div>
+          <p>OpenAI client setup is unchanged from prior projects — <code>.env</code> key, <code>load_dotenv()</code>, configure the client, sanity-check the key prefix.</p>
+          <div class="callout"><b>Note —</b> Gradio's <a href="https://www.gradio.app/demos" target="_blank" rel="noopener">example gallery ↗</a> includes maps, streaming chatbots, and image-generation demos — same <code>Interface(fn, inputs, outputs)</code> pattern scales from "hello world" to fairly complex apps.</div>
+          <div class="callout violet"><b>AI Philosophy —</b> Gradio is an early instance of a shift that's accelerating across the whole stack: <b>function signatures becoming the API surface for UI generation.</b> The same pattern recurs at every layer — prompts becoming the API surface for reasoning, JSON schemas becoming the API surface for agent tool-use. The unit of composition keeps moving up the abstraction ladder, trading raw expressiveness for speed of iteration. The skill to develop is knowing which layer is the right one for each job, and resisting the pull to drop a level when the current one is sufficient.</div>
+        </div></div>
+      </div>
+
+      <!-- TASK 3 -->
+      <div class="task">
+        <div class="task-head" onclick="this.parentElement.classList.toggle('open')">
+          <div class="left">
+            <div class="task-num">3</div>
+            <div>
+              <div class="task-title">Basic AI Tutor Function (no UI yet)</div>
+              <div class="task-sub"><code>get_ai_tutor_response()</code> — system persona + temperature</div>
+            </div>
+          </div>
+          <span class="chevron">›</span>
+        </div>
+        <div class="task-body"><div class="task-body-inner">
+          <p>Build the core logic first, decoupled from any interface — a reusable, testable function before wiring UI on top.</p>
+          <div class="code-block">def get_ai_tutor_response(question: str) -> str:
+    <span class="c2">"""Sends the question to OpenAI, asking it to respond as an AI tutor."""</span>
+    system_prompt = <span class="c2">"You are a helpful and patient AI tutor. Explain things clearly and concisely."</span>
+    <span class="c1">try:</span>
+        response = client.chat.completions.create(
+            model=<span class="c2">"gpt-4o-mini"</span>,
+            messages=[
+                {<span class="c2">"role"</span>: <span class="c2">"system"</span>, <span class="c2">"content"</span>: system_prompt},
+                {<span class="c2">"role"</span>: <span class="c2">"user"</span>,   <span class="c2">"content"</span>: question},
+            ],
+            temperature=<span class="c2">0.7</span>,
+        )
+        <span class="c1">return</span> response.choices[0].message.content
+    <span class="c1">except</span> Exception:
+        <span class="c1">return</span> <span class="c2">"Sorry, I encountered an error trying to get an answer."</span></div>
+          <p><b style="color:var(--ink-bright)">temperature</b> — a knob between 0–2 controlling output randomness/creativity. Higher = more varied/creative; lower = more deterministic/focused. <code>0.7</code> is a moderate default here.</p>
+          <div class="callout violet"><b>Architect angle —</b> <code>try/except</code> around the API call is basic fault tolerance for an external dependency — same instinct as wrapping any third-party network call, since the API can fail, time out, or rate-limit independently of your code.</div>
+          <div class="callout violet"><b>AI Philosophy —</b> Building the core logic function <i>before</i> adding any UI is more than a code-organisation preference — it's a <b>testability discipline</b>. A function decoupled from its interface can be unit-tested, swapped between providers, benchmarked on a prompt eval set, and handed to a teammate without requiring them to run a notebook. In AI engineering, where iteration on the logic layer is constant, that seam between "what the model does" and "how the user reaches it" pays for itself faster than almost any other structural choice.</div>
+        </div></div>
+      </div>
+
+      <!-- TASK 4-5 -->
+      <div class="task">
+        <div class="task-head" onclick="this.parentElement.classList.toggle('open')">
+          <div class="left">
+            <div class="task-num">4·5</div>
+            <div>
+              <div class="task-title">Practice — new topic + change the persona</div>
+              <div class="task-sub">Grumpy/impatient tutor, guardrail note</div>
+            </div>
+          </div>
+          <span class="chevron">›</span>
+        </div>
+        <div class="task-body"><div class="task-body-inner">
+          <p>Exercise: swap the test question (e.g. gravity, photosynthesis), then edit only the <code>system_prompt</code> string to change personality (e.g. "impatient and unhelpful," "angry and sad"). Function signature and call logic stay identical — persona is purely a config-string swap.</p>
+          <p>Same modular function called with a new question produces a curt, low-detail "just Google it" style answer matching the impatient persona — the only change was one string.</p>
+          <div class="callout amber"><b>Guardrail note —</b> OpenAI will refuse/block prompts that push toward genuinely harmful personas (political extremism, hate speech, etc.) regardless of the "just roleplay" framing — a reminder that the <code>system</code> message can shape tone but doesn't override the provider's safety policies underneath it.</div>
+        </div></div>
+      </div>
+
+      <!-- TASK 6 -->
+      <div class="task">
+        <div class="task-head" onclick="this.parentElement.classList.toggle('open')">
+          <div class="left">
+            <div class="task-num">6</div>
+            <div>
+              <div class="task-title">Wrapping the Function in a Gradio Interface</div>
+              <div class="task-sub"><code>gr.Interface(fn, inputs, outputs, title, description)</code></div>
+            </div>
+          </div>
+          <span class="chevron">›</span>
+        </div>
+        <div class="task-body"><div class="task-body-inner">
+          <p>Gradio needs exactly four things to turn a function into a UI:</p>
+          <div class="ui-mock">
+            <div class="ui-row"><span class="kind">fn</span><span class="desc">The Python function to call — here, <code>get_ai_tutor_response</code>.</span></div>
+            <div class="ui-row"><span class="kind">inputs</span><span class="desc"><code>gr.Textbox(lines=2, placeholder="Ask the AI tutor anything", label="Your question")</code></span></div>
+            <div class="ui-row"><span class="kind">outputs</span><span class="desc"><code>gr.Textbox(label="AI Tutor's Answer")</code></span></div>
+            <div class="ui-row"><span class="kind">title/desc</span><span class="desc">Optional display text above the interface.</span></div>
+          </div>
+          <div class="code-block">tutor_interface = gr.Interface(
+    fn=get_ai_tutor_response,
+    inputs=gr.Textbox(lines=2, placeholder=<span class="c2">"Ask the AI tutor anything"</span>, label=<span class="c2">"Your question"</span>),
+    outputs=gr.Textbox(label=<span class="c2">"AI Tutor's Answer"</span>),
+    title=<span class="c2">"Simple AI Tutor"</span>,
+    description=<span class="c2">"Enter your question and the AI tutor will explain it, powered by OpenAI."</span>,
+)
+tutor_interface.launch()</div>
+          <p>Launch produces a real, shareable link — no more "open Jupyter, hit Shift+Enter" for a non-technical user to try the app.</p>
+          <div class="callout violet"><b>Architect angle —</b> This is UI generated purely from a function signature's input/output <i>shape</i>, not hand-built markup — think of it as the lowest-effort way to put an internal tool or POC in front of a stakeholder, roughly the AI-engineering equivalent of an auto-generated admin panel. The shareable link also matters: a non-technical stakeholder can interact with your prototype without installing anything, which compresses the feedback loop from days to hours.</div>
+        </div></div>
+      </div>
+
+      <!-- TASK 7-8 -->
+      <div class="task">
+        <div class="task-head" onclick="this.parentElement.classList.toggle('open')">
+          <div class="left">
+            <div class="task-num">7·8</div>
+            <div>
+              <div class="task-title">Practice — customize title, description, textbox size</div>
+              <div class="task-sub"><code>lines=5</code>, new title/description, relaunch</div>
+            </div>
+          </div>
+          <span class="chevron">›</span>
+        </div>
+        <div class="task-body"><div class="task-body-inner">
+          <p>Change <code>title</code>, <code>description</code>, and input <code>lines</code> (e.g. 2 → 5, taller textbox); relaunch — may require interrupting the kernel first if the previous Gradio instance is still bound. Only presentation params change; the underlying function and its behavior (including whatever persona is currently set) stay identical.</p>
+        </div></div>
+      </div>
+
+      <!-- TASK 9 -->
+      <div class="task">
+        <div class="task-head" onclick="this.parentElement.classList.toggle('open')">
+          <div class="left">
+            <div class="task-num">9</div>
+            <div>
+              <div class="task-title">Enabling Streaming</div>
+              <div class="task-sub"><code>stream=True</code> + <code>yield</code> → the function becomes a generator</div>
+            </div>
+          </div>
+          <span class="chevron">›</span>
+        </div>
+        <div class="task-body"><div class="task-body-inner">
+          <p>Three changes turn the plain function into a streaming one:</p>
+          <div class="anatomy-grid">
+            <div class="cap blue"><div class="cap-title">1 · stream=True</div><div class="cap-body">Tells the OpenAI API to return the response as a series of chunks instead of one complete payload.</div></div>
+            <div class="cap blue"><div class="cap-title">2 · yield instead of return</div><div class="cap-body">Turns the function into a Python <b>generator</b> — each <code>yield</code> hands a partial result back to the caller without ending the function.</div></div>
+            <div class="cap blue"><div class="cap-title">3 · Gradio handles the rest</div><div class="cap-body">Point <code>gr.Interface</code>'s <code>fn</code> at the generator function — Gradio automatically re-renders the output as new chunks arrive.</div></div>
+          </div>
+          <div class="code-block">def stream_ai_tutor_response(question: str):
+    system_prompt = <span class="c2">"You are a helpful and patient AI tutor. Explain concepts clearly and concisely."</span>
+    stream = client.chat.completions.create(
+        model=<span class="c2">"gpt-4o-mini"</span>,
+        messages=[
+            {<span class="c2">"role"</span>: <span class="c2">"system"</span>, <span class="c2">"content"</span>: system_prompt},
+            {<span class="c2">"role"</span>: <span class="c2">"user"</span>,   <span class="c2">"content"</span>: question},
+        ],
+        temperature=<span class="c2">0.7</span>,
+        stream=<span class="c2">True</span>,
+    )
+    full_response = <span class="c2">""</span>
+    <span class="c1">for</span> chunk <span class="c1">in</span> stream:
+        <span class="c1">if</span> chunk.choices[0].delta.content:
+            full_response += chunk.choices[0].delta.content
+            <span class="c1">yield</span> full_response   <span class="c1"># hand the growing string back each time</span></div>
+          <p>Note <code>full_response</code> accumulates and is re-yielded in full each time (not just the new delta) — Gradio expects each yield to be the complete current output, not an incremental diff.</p>
+          <div class="callout violet"><b>Architect angle —</b> This is the same mechanic as Server-Sent Events or HTTP chunked transfer encoding — the server (OpenAI) pushes partial data as it's produced instead of buffering the full response. <code>yield</code> is Python's native tool for exposing that as an iterable stream to the caller.</div>
+          <div class="callout violet"><b>AI Philosophy —</b> Perceived latency and actual latency are separate engineering problems, and they often deserve separate solutions. Streaming is effectively <b>free UX improvement</b> — same compute, same cost, dramatically better perceived responsiveness. But it also changes what "done" means in your state model: instead of a single completion event, you now have a live stream that must be displayed, possibly interrupted, and error-handled mid-flight. That complexity is worth it at any non-trivial response length. Get comfortable with the generator pattern early — agentic pipelines, tool-call loops, and multi-step reasoning chains all produce output the same way.</div>
+        </div></div>
+      </div>
+
+      <!-- TASK 10-11 -->
+      <div class="task">
+        <div class="task-head" onclick="this.parentElement.classList.toggle('open')">
+          <div class="left">
+            <div class="task-num">10·11</div>
+            <div>
+              <div class="task-title">Practice — streaming vs. non-streaming UX</div>
+              <div class="task-sub">Same long prompt, both interfaces, compare perceived latency</div>
+            </div>
+          </div>
+          <span class="chevron">›</span>
+        </div>
+        <div class="task-body"><div class="task-body-inner">
+          <p>Send an identical multi-paragraph prompt (e.g. "explain in detail how EVs work") to both the streaming and non-streaming interfaces. Non-streaming takes roughly <b style="color:var(--ink-bright)">~6 seconds of dead wait</b> before any text appears; streaming shows text within roughly a second and keeps building — same total generation time, dramatically different <i>perceived</i> latency.</p>
+          <div class="callout green"><b>Takeaway —</b> Total response time is identical either way; only perceived responsiveness changes. This is the same principle behind progress bars and skeleton screens in traditional UI — streaming is effectively free UX improvement for any non-trivial LLM response length.</div>
+        </div></div>
+      </div>
+
+      <!-- TASK 12 -->
+      <div class="task">
+        <div class="task-head" onclick="this.parentElement.classList.toggle('open')">
+          <div class="left">
+            <div class="task-num">12</div>
+            <div>
+              <div class="task-title">The Explanation-Level Slider</div>
+              <div class="task-sub">Dict-mapped levels 1–5 → dynamic system prompt</div>
+            </div>
+          </div>
+          <span class="chevron">›</span>
+        </div>
+        <div class="task-body"><div class="task-body-inner">
+          <p>Three-part pattern, same lookup-table shape as the Project 1 personas:</p>
+          <div class="code-block">explanation_levels = {
+    <span class="c2">1</span>: <span class="c2">"as if I'm 5 years old"</span>,
+    <span class="c2">2</span>: <span class="c2">"as if I'm 10 years old"</span>,
+    <span class="c2">3</span>: <span class="c2">"clearly and concisely"</span>,
+    <span class="c2">4</span>: <span class="c2">"in more technical depth"</span>,
+    <span class="c2">5</span>: <span class="c2">"at an expert level"</span>,
+}</div>
+          <p>The streaming function now takes <b>two</b> inputs — <code>question</code> and <code>explanation_level</code> (an <code>int</code>) — and interpolates the mapped description straight into the system prompt:</p>
+          <div class="code-block">def stream_ai_tutor_response_with_level(question: str, explanation_level: int):
+    level_description = explanation_levels.get(explanation_level, <span class="c2">"clearly and concisely"</span>)
+    system_prompt = <span class="c2">f"You are a helpful AI tutor. Explain the following concept {level_description}."</span>
+    <span class="c1"># ...same client.chat.completions.create(..., stream=True) + yield loop as Task 9</span></div>
+          <p>Gradio side adds a <code>gr.Slider</code> alongside the existing textbox:</p>
+          <div class="slider-mock">
+            <div class="slider-track"><div class="slider-fill"></div></div>
+            <div class="slider-labels">
+              <span>1<br>5yo</span><span>2<br>10yo</span><span class="active">3<br>Clear</span><span>4<br>Technical</span><span>5<br>Expert</span>
+            </div>
+          </div>
+          <div class="code-block">gr.Interface(
+    fn=stream_ai_tutor_response_with_level,
+    inputs=[
+        gr.Textbox(lines=3, placeholder=<span class="c2">"Ask the AI tutor anything"</span>, label=<span class="c2">"Your question"</span>),
+        gr.Slider(minimum=<span class="c2">1</span>, maximum=<span class="c2">5</span>, step=<span class="c2">1</span>, value=<span class="c2">3</span>, label=<span class="c2">"Explanation level"</span>),
+    ],
+    outputs=gr.Markdown(label=<span class="c2">"AI Tutor's Explanation"</span>),
+    title=<span class="c2">"Advanced AI Tutor"</span>,
+    allow_flagging=<span class="c2">"never"</span>,
+).launch()</div>
+          <p><code>.get(explanation_level, "clearly and concisely")</code> provides a safe fallback if an unmapped value ever arrives — the same defensive-default pattern as Task 3's <code>try/except</code>.</p>
+          <div class="callout violet"><b>Architect angle —</b> <code>inputs</code> is now a <b>list</b> of components matching the function's positional arguments in order — Gradio wires UI components to function parameters purely by position, the same convention as unpacking args into a call.</div>
+          <div class="callout violet"><b>AI Philosophy —</b> A dict mapping levels to prompt fragments is a primitive <b>behavior manifest</b> — configuration that describes what the AI should do, separated from the code that calls it. This separation scales. LLM applications increasingly split into two distinct layers: the behavior layer (prompts, personas, level descriptions), which domain experts and product managers can own and iterate on, and the infrastructure layer (API calls, streaming logic, routing), which engineers own. Teams that establish this boundary early can change AI behavior without touching code — and hand the behavior layer to the people who actually understand the domain, regardless of whether they can write Python.</div>
+        </div></div>
+      </div>
+
+      <!-- TASK 13-14 -->
+      <div class="task">
+        <div class="task-head" onclick="this.parentElement.classList.toggle('open')">
+          <div class="left">
+            <div class="task-num">13·14</div>
+            <div>
+              <div class="task-title">Practice — extend to level 6</div>
+              <div class="task-sub">"PhD-level Einstein mad scientist" + relaunch</div>
+            </div>
+          </div>
+          <span class="chevron">›</span>
+        </div>
+        <div class="task-body"><div class="task-body-inner">
+          <p>Two coordinated changes required — both the data <i>and</i> the UI config must extend together:</p>
+          <div class="anatomy-grid">
+            <div class="cap amber"><div class="cap-title">1 · Extend the dict</div><div class="cap-body"><code>explanation_levels[6] = "as an Einstein-level PhD mad scientist"</code></div></div>
+            <div class="cap amber"><div class="cap-title">2 · Extend the slider range</div><div class="cap-body"><code>gr.Slider(minimum=1, maximum=6, ...)</code> — the dict key alone isn't enough; the slider's own <code>maximum</code> must be raised or level 6 is simply unreachable in the UI.</div></div>
+          </div>
+          <p>Level 6 produces noticeably denser, more ornate language ("let's embark on a journey through the electric ether...") versus level 1's toy-box simplicity — the prompt-level lever scales smoothly across the whole range.</p>
+          <div class="callout amber"><b>Common gotcha —</b> Forgetting to bump the slider's <code>maximum</code> alongside a new dict entry is an easy mismatch bug — the config (UI bounds) and the data (lookup table) have to be kept in sync manually since nothing here derives one from the other automatically.</div>
+        </div></div>
+      </div>
+
+    </section>
+
+    <!-- MODULE RECAP -->
+    <section id="recap">
+      <div class="section-head">
+        <span class="tag">RECAP</span>
+        <h2>What Project 3 Demonstrates</h2>
+      </div>
+      <div class="recap-grid">
+        <div class="recap-card"><div class="num">01</div><p><b style="color:var(--ink-bright)">Gradio</b> deploys powerful, shareable UIs around any Python function in a handful of lines.</p></div>
+        <div class="recap-card"><div class="num">02</div><p><b style="color:var(--ink-bright)">Streaming</b> (<code>stream=True</code> + <code>yield</code>) gives a "someone is typing" feel — same total latency, far better perceived UX.</p></div>
+        <div class="recap-card"><div class="num">03</div><p>Gradio components — <b style="color:var(--ink-bright)">textboxes, sliders, markdown outputs</b> — compose declaratively to build genuinely interactive AI apps.</p></div>
+        <div class="recap-card"><div class="num">04</div><p>A dict-based lookup table (levels → prompt fragments) is a reusable pattern for <b style="color:var(--ink-bright)">any</b> "select a mode, change the AI's behavior" feature.</p></div>
+      </div>
+      <div class="callout"><b>Build sequence —</b> (1) Overview → (2) Gradio + API setup → (3) core tutor function, no UI → (4) swap question/persona → (5) UI wrap with <code>gr.Interface</code> → (6) customize title/description/size → (7) streaming via generator → (8) streaming vs. non-streaming UX → (9) explanation-level slider → (10) extend to level 6.</div>
+    </section>
+
+    <!-- ACTIVE RECALL -->
+    <section id="recall">
+      <div class="section-head">
+        <span class="tag">RECALL</span>
+        <h2>Active Recall Check</h2>
+      </div>
+      <div class="recall-wrap">
+        <div class="recall-hint">Click a card to reveal the answer</div>
+
+        <div class="recall-card" onclick="this.classList.toggle('open')">
+          <div class="recall-q"><span>What four things does <code>gr.Interface</code> minimally need to turn a function into a web UI?</span><span class="qmark">?</span></div>
+          <div class="recall-a"><code>fn</code> (the Python function), <code>inputs</code> (component(s) matching its parameters), <code>outputs</code> (component(s) matching its return value), and optionally <code>title</code>/<code>description</code>.</div>
+        </div>
+
+        <div class="recall-card" onclick="this.classList.toggle('open')">
+          <div class="recall-q"><span>What two code changes convert a normal response function into a streaming one?</span><span class="qmark">?</span></div>
+          <div class="recall-a">Set <code>stream=True</code> in the API call, and replace <code>return</code> with <code>yield</code> (turning the function into a generator that hands back the growing response incrementally).</div>
+        </div>
+
+        <div class="recall-card" onclick="this.classList.toggle('open')">
+          <div class="recall-q"><span>Does streaming reduce total response time?</span><span class="qmark">?</span></div>
+          <div class="recall-a">No — total generation time is roughly the same. What improves is <i>perceived</i> latency: text appears within ~1 second instead of a multi-second blank wait.</div>
+        </div>
+
+        <div class="recall-card" onclick="this.classList.toggle('open')">
+          <div class="recall-q"><span>How does the explanation-level slider actually change the AI's behavior under the hood?</span><span class="qmark">?</span></div>
+          <div class="recall-a">The selected integer is looked up in a dict mapping level → description phrase, which is string-interpolated into the <code>system</code> prompt sent to the API — no model or code logic changes, only the prompt text.</div>
+        </div>
+
+        <div class="recall-card" onclick="this.classList.toggle('open')">
+          <div class="recall-q"><span>When adding a new level 6 to the dictionary, what second change is also required?</span><span class="qmark">?</span></div>
+          <div class="recall-a">The Gradio slider's <code>maximum</code> parameter must also be raised (e.g. 5 → 6) — otherwise the new dict entry is unreachable from the UI.</div>
+        </div>
+
+        <div class="recall-card" onclick="this.classList.toggle('open')">
+          <div class="recall-q"><span>How does <code>inputs=[...]</code> map to a function's parameters when there are multiple?</span><span class="qmark">?</span></div>
+          <div class="recall-a">By position — the first component in the list feeds the function's first parameter, the second component feeds the second parameter, and so on.</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    Architects Lab · Study Notes — Section 04 · Project 3: AI Tutor with Gradio (UI, Streaming, Adaptive Complexity)
+  </footer>
+
+<script>
+  document.querySelectorAll('.cap').forEach(el=>{
+    el.addEventListener('click', ()=> el.classList.toggle('open'));
+  });
+</script>
+</body>
+</html>

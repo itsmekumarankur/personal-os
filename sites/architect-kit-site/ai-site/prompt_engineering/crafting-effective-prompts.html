@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crafting Effective Prompts — Architects Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070a11; --panel:#0e131d; --panel2:#131a27; --border:#212b3e;
+  --text:#dae1ee; --dim:#98a4bb; --faint:#6b7893;
+  --blue:#5b8cff; --amber:#ffa63d; --violet:#c07bff; --green:#3ecf9a; --rose:#ff6b81;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --disp:'Space Grotesk',system-ui,sans-serif;
+  --serif:'Newsreader',Georgia,serif;
+  --bar:52px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:calc(var(--bar) + 18px)}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--serif);font-size:17.5px;line-height:1.72;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(91,140,255,.3)}
+a:hover{border-bottom-color:var(--blue)}
+p{margin:0 0 1.05em}
+strong{color:#eef2f9;font-weight:600}
+em{color:var(--dim)}
+code{font-family:var(--mono);font-size:.82em;background:#111826;border:1px solid var(--border);
+  border-radius:4px;padding:1px 5px;color:#c8d3e6}
+.wrap{max-width:1040px;margin:0 auto;padding:0 26px 140px}
+
+/* ---------- sticky bar ---------- */
+.topbar{position:sticky;top:0;z-index:60;height:var(--bar);
+  background:rgba(7,10,17,.93);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;
+  padding:0 20px;overflow:hidden}
+.brandmark{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--faint);white-space:nowrap;flex:0 0 auto}
+.brandmark b{color:var(--blue);font-weight:500}
+.navchips{display:flex;gap:6px;overflow-x:auto;flex:1 1 auto;scrollbar-width:none;padding:2px 0}
+.navchips::-webkit-scrollbar{display:none}
+.chip{font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--dim);background:var(--panel);border:1px solid var(--border);border-radius:999px;
+  padding:5px 11px;white-space:nowrap;cursor:pointer;transition:.15s}
+.chip:hover{color:var(--text);border-color:#33415c}
+.chip.on{color:var(--blue);border-color:rgba(91,140,255,.5);background:rgba(91,140,255,.08)}
+.barbtns{display:flex;gap:6px;flex:0 0 auto}
+.barbtn{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--dim);background:transparent;border:1px solid var(--border);border-radius:5px;
+  padding:6px 9px;cursor:pointer;transition:.15s}
+.barbtn:hover{color:var(--text);border-color:#3a4a68;background:var(--panel)}
+#progress{position:fixed;top:var(--bar);left:0;height:2px;width:0;z-index:61;
+  background:linear-gradient(90deg,var(--blue),var(--violet));transition:width .1s linear}
+
+/* ---------- type ---------- */
+.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--faint);margin:0 0 10px}
+h1{font-family:var(--disp);font-weight:700;letter-spacing:-.035em;font-size:clamp(2.4rem,6vw,3.9rem);
+  line-height:1.02;margin:0 0 18px;color:#f2f6fc}
+h2{font-family:var(--disp);font-weight:700;letter-spacing:-.02em;font-size:1.72rem;margin:0;color:#eaf0f9}
+h3{font-family:var(--disp);font-weight:600;letter-spacing:-.015em;font-size:1.24rem;margin:0;color:#e4ebf6}
+h4{font-family:var(--disp);font-weight:600;font-size:1rem;letter-spacing:.01em;margin:26px 0 10px;color:var(--text)}
+
+/* ---------- hero ---------- */
+.hero{padding:74px 0 44px;border-bottom:1px solid var(--border)}
+.lede{font-size:1.22rem;color:var(--dim);max-width:62ch;margin:0 0 30px}
+.lede b{color:var(--text);font-weight:500}
+.metagrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1px;
+  background:var(--border);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.metacell{background:var(--panel);padding:14px 16px}
+.metacell .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--faint);display:block;margin-bottom:5px}
+.metacell .v{font-family:var(--mono);font-size:13px;color:var(--text)}
+.metacell .v.b{color:var(--blue)} .metacell .v.g{color:var(--green)} .metacell .v.a{color:var(--amber)}
+
+/* ---------- parts & sections ---------- */
+.part{margin:64px 0 0;opacity:0;transform:translateY(14px);transition:opacity .5s,transform .5s}
+.part.seen{opacity:1;transform:none}
+.parthead{display:flex;align-items:flex-start;gap:16px;cursor:pointer;user-select:none;
+  border-top:2px solid var(--border);padding:22px 0 14px;background:none;width:100%;text-align:left;
+  border-left:0;border-right:0;border-bottom:0;color:inherit;font:inherit}
+.parthead:focus-visible{outline:2px solid var(--blue);outline-offset:4px}
+.partnum{font-family:var(--mono);font-size:11px;letter-spacing:.15em;color:var(--violet);
+  border:1px solid rgba(192,123,255,.35);border-radius:4px;padding:4px 8px;flex:0 0 auto;margin-top:5px}
+.parthead .htxt{flex:1 1 auto}
+.parthead .sub{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--faint);margin-top:7px;display:block}
+.badge{flex:0 0 auto;width:24px;height:24px;border:1px solid var(--border);border-radius:5px;
+  display:grid;place-items:center;font-family:var(--mono);font-size:14px;color:var(--dim);
+  background:var(--panel);margin-top:6px;transition:.15s}
+.parthead:hover .badge,.sechead:hover .badge{color:var(--blue);border-color:rgba(91,140,255,.45)}
+
+.sec{border-bottom:1px solid var(--border)}
+.sechead{display:flex;align-items:center;gap:14px;cursor:pointer;user-select:none;
+  padding:18px 0;background:none;border:0;width:100%;text-align:left;color:inherit;font:inherit}
+.sechead:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+.sechead .tag{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--faint);
+  flex:0 0 auto;min-width:38px}
+.sechead h3{flex:1 1 auto}
+.secbody{padding:2px 0 30px}
+.sec.collapsed .secbody{display:none}
+.part.collapsed .sec{display:none}
+
+/* ---------- callouts ---------- */
+.call{border:1px solid var(--border);border-left-width:3px;border-radius:7px;
+  background:var(--panel);padding:15px 18px 4px;margin:22px 0}
+.call .lbl{font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;
+  display:block;margin-bottom:8px}
+.call p:last-child{margin-bottom:1.05em}
+.call.note{border-left-color:var(--blue)} .call.note .lbl{color:var(--blue)}
+.call.warn{border-left-color:var(--amber)} .call.warn .lbl{color:var(--amber)}
+.call.trap{border-left-color:var(--rose)} .call.trap .lbl{color:var(--rose)}
+.call.good{border-left-color:var(--green)} .call.good .lbl{color:var(--green)}
+
+/* ---------- foldable blocks (code / ascii / table) ---------- */
+.blk{border:1px solid var(--border);border-radius:8px;background:var(--panel);margin:22px 0;overflow:hidden}
+.blkbar{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--panel2);
+  border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+.blkbar:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+.blkbar .bt{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--faint);flex:0 0 auto}
+.blkbar .bd{font-family:var(--mono);font-size:11px;color:var(--dim);flex:1 1 auto;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.blkbar .bc{font-family:var(--mono);font-size:10px;color:var(--faint);flex:0 0 auto}
+.minibtn{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+  background:transparent;border:1px solid var(--border);color:var(--dim);border-radius:4px;
+  padding:4px 7px;cursor:pointer;flex:0 0 auto}
+.minibtn:hover{color:var(--green);border-color:rgba(62,207,154,.4)}
+.blkbody{padding:0}
+.blk.collapsed .blkbody{display:none}
+pre{margin:0;padding:16px;overflow-x:auto;font-family:var(--mono);font-size:12.6px;
+  line-height:1.62;color:#c6d1e4}
+pre.ascii{font-size:12px;line-height:1.34;color:var(--dim)}
+@media(max-width:720px){pre.ascii{font-size:9px;line-height:1.3}}
+/* syntax spans */
+.k{color:#c07bff} .s{color:#3ecf9a} .c{color:#5a6880;font-style:italic} .n{color:#ffa63d}
+.f{color:#5b8cff} .b{color:#e4ebf6} .d{color:#ff6b81}
+
+/* ---------- tables ---------- */
+table{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:12.2px}
+th,td{border-bottom:1px solid var(--border);padding:9px 12px;text-align:left;vertical-align:top;
+  color:var(--dim);line-height:1.5}
+th{color:var(--faint);font-weight:500;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;
+  background:var(--panel2)}
+td:first-child{color:var(--text)}
+tr:last-child td{border-bottom:0}
+
+/* ---------- active recall ---------- */
+.recall{border:1px dashed rgba(91,140,255,.35);border-radius:8px;background:rgba(91,140,255,.04);
+  padding:15px 18px;margin:26px 0}
+.recall .lbl{font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--blue);display:block;margin-bottom:9px}
+.recall .q{margin:0 0 12px;color:var(--text)}
+.recall .a{display:none;border-top:1px solid var(--border);padding-top:12px;color:var(--dim)}
+.recall.open .a{display:block}
+.recall .a p:last-child{margin-bottom:0}
+
+/* ---------- tools ---------- */
+.tool{border:1px solid rgba(91,140,255,.28);border-radius:10px;background:var(--panel);
+  margin:28px 0;overflow:hidden}
+.toolbar{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--panel2);
+  border-bottom:1px solid var(--border)}
+.toolbar .lbl{font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--blue)}
+.toolbar .nm{font-family:var(--disp);font-weight:600;font-size:.95rem;color:var(--text)}
+.toolbody{padding:18px}
+.ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.ctrl label{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--faint);display:block;margin-bottom:6px}
+.ctrl input[type=number],.ctrl select,.ctrl input[type=text]{width:100%;background:#0a0f18;
+  border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:var(--mono);
+  font-size:12.5px;padding:8px 10px}
+.ctrl input:focus,.ctrl select:focus{outline:1px solid var(--blue);border-color:var(--blue)}
+.ctrl input[type=range]{width:100%;accent-color:var(--blue)}
+.rngval{font-family:var(--mono);font-size:11px;color:var(--blue);float:right}
+.checkrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.checkrow label{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;
+  letter-spacing:.04em;text-transform:none;color:var(--dim);background:#0a0f18;border:1px solid var(--border);
+  border-radius:5px;padding:6px 10px;cursor:pointer;margin:0}
+.checkrow label:hover{border-color:#3a4a68}
+.checkrow input{accent-color:var(--blue)}
+.out{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1px;
+  background:var(--border);border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-top:18px}
+.outcell{background:#0a0f18;padding:12px 14px}
+.outcell .k2{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--faint);display:block;margin-bottom:5px}
+.outcell .v2{font-family:var(--mono);font-size:17px;color:var(--text)}
+.outcell .v2.b{color:var(--blue)} .outcell .v2.g{color:var(--green)}
+.outcell .v2.a{color:var(--amber)} .outcell .v2.r{color:var(--rose)}
+.outcell .u{font-family:var(--mono);font-size:9.5px;color:var(--faint);margin-left:3px}
+.est{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--faint);margin-top:12px;display:block}
+.bench{display:grid;grid-template-columns:1fr;gap:1px;background:var(--border);
+  border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-top:16px}
+.benchrow{display:grid;grid-template-columns:150px 1fr 1fr;background:#0a0f18;gap:1px}
+.benchrow>div{padding:10px 13px;font-family:var(--mono);font-size:11.5px;color:var(--dim);line-height:1.5}
+.benchrow .rk{color:var(--faint);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;
+  background:var(--panel2)}
+.benchrow.hd>div{color:var(--blue);font-size:10px;letter-spacing:.14em;text-transform:uppercase}
+@media(max-width:640px){.benchrow{grid-template-columns:1fr}.benchrow .rk{background:#0c111b}}
+.meter{height:5px;background:#141b29;border-radius:3px;overflow:hidden;margin-top:6px}
+.meter i{display:block;height:100%;background:var(--blue)}
+.warnlist{margin-top:14px;display:flex;flex-direction:column;gap:7px}
+.wchip{font-family:var(--mono);font-size:10.5px;line-height:1.5;padding:8px 11px;border-radius:5px;
+  border:1px solid;background:#0a0f18}
+.wchip.w{color:var(--amber);border-color:rgba(255,166,61,.35)}
+.wchip.e{color:var(--rose);border-color:rgba(255,107,129,.35)}
+.wchip.o{color:var(--green);border-color:rgba(62,207,154,.3)}
+
+/* ---------- misc ---------- */
+.pill{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;
+  border:1px solid;border-radius:3px;padding:2px 6px;margin-left:8px;vertical-align:middle}
+.pill.new{color:var(--violet);border-color:rgba(192,123,255,.4)}
+.pill.fix{color:var(--rose);border-color:rgba(255,107,129,.4)}
+.gloss{display:grid;grid-template-columns:190px 1fr;gap:1px;background:var(--border);
+  border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.gloss>div{background:var(--panel);padding:11px 14px;font-size:14px;color:var(--dim);line-height:1.6}
+.gloss>div:nth-child(odd){font-family:var(--mono);font-size:11.5px;color:var(--text);background:var(--panel2)}
+@media(max-width:640px){.gloss{grid-template-columns:1fr}}
+footer{margin-top:80px;padding-top:26px;border-top:1px solid var(--border);
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--faint);line-height:1.9}
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+  html{scroll-behavior:auto}
+  .part{opacity:1;transform:none}
+}
+  /* notes width expansion - matches learning plan box */
+  .wrap,.container,main,header.hero,header.masthead,nav.toc,section.block,footer{max-width:100%!important;padding-left:24px!important;padding-right:24px!important;}
+</style>
+</head>
+<body>
+<!-- LEARNING PLAN -->
+<div style="margin:24px;background:#0f1520;border:1px solid #1e2836;border-left:4px solid #e0a030;border-radius:8px;padding:24px 28px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;">
+  <div style="color:#e0a030;font-size:13px;font-weight:700;letter-spacing:.08em;margin-bottom:14px;">&#9670; LEARNING PLAN — 2.5 HOURS DAILY</div>
+  <div style="overflow-x:auto;">
+  <table style="width:100%;border-collapse:collapse;font-size:13px;color:#c8d3e0;margin-bottom:18px;white-space:nowrap;">
+    <thead><tr style="color:#7c8ba0;border-bottom:1px solid #1e2836;">
+      <th style="padding:6px 10px;text-align:left;width:48px;">Step</th>
+      <th style="padding:6px 10px;text-align:left;">Activity</th>
+      <th style="padding:6px 10px;text-align:left;">Outcome</th>
+    </tr></thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">1</td><td style="padding:7px 10px;"><b>Complete the Udemy Course</b> — watch videos, understand concepts, don't rush</td><td style="padding:7px 10px;color:#5fbf7f;">Build strong fundamentals</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">2</td><td style="padding:7px 10px;"><b>Practice Everything</b> — complete exercises, assignments, and source code</td><td style="padding:7px 10px;color:#5fbf7f;">Gain hands-on experience</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">3</td><td style="padding:7px 10px;"><b>Revise with these notes</b></td><td style="padding:7px 10px;color:#5fbf7f;">Reinforce concepts and fill knowledge gaps</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">4</td><td style="padding:7px 10px;"><b>Earn the Udemy Certificate</b></td><td style="padding:7px 10px;color:#5fbf7f;">Ensure the course is completed end-to-end</td></tr>
+      <tr><td style="padding:7px 10px;color:#e0a030;font-weight:700;">5</td><td style="padding:7px 10px;"><b>Practise real world tough scenario</b> — scenario-based questions &amp; interview problems</td><td style="padding:7px 10px;color:#5fbf7f;">Develop practical and interview-ready skills</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">1.5 HRS</div>
+      <div style="font-size:12px;color:#c8d3e0;">Udemy Videos + Exercises + Source Code</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Notes Revision</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Scenario-Based Questions &amp; Practical Problems</div>
+    </div>
+  </div>
+  <div style="color:#f0f4f8;font-size:12px;font-weight:600;letter-spacing:.04em;">GOAL: <span style="color:#e0a030;">Learn &#8594; Practice &#8594; Revise &#8594; Complete &#8594; Apply</span></div>
+</div>
+<!-- END LEARNING PLAN -->
+<a href="https://ai.shivawithin.in" id="home-return-btn" title="Back to Home" style="position:fixed;bottom:24px;right:24px;z-index:99999;display:inline-flex;align-items:center;gap:6px;background:#0d1b2a;color:#3fb6ff;border:1px solid #3fb6ff;padding:9px 15px;border-radius:8px;text-decoration:none;font-family:system-ui,-apple-system,sans-serif;font-size:13px;font-weight:600;box-shadow:0 2px 16px rgba(0,0,0,0.5);transition:background 0.2s,box-shadow 0.2s;" onmouseover="this.style.background='#1a2f47';this.style.boxShadow='0 4px 20px rgba(63,182,255,0.25)'" onmouseout="this.style.background='#0d1b2a';this.style.boxShadow='0 2px 16px rgba(0,0,0,0.5)'">&#8592; Home</a>
+<div id="progress"></div>
+<div class="topbar">
+  <span class="brandmark"><b>ARCHITECTS</b> LAB</span>
+  <div class="navchips" id="nav"></div>
+  <div class="barbtns">
+    <button class="barbtn" id="xall">Expand all</button>
+    <button class="barbtn" id="call">Collapse all</button>
+  </div>
+</div>
+<div class="wrap">
+
+<header class="hero">
+  <p class="eyebrow">Module 05 · Crafting Effective Prompts · Sessions 1–3</p>
+  <h1>Every Prompt<br>Is A Ledger Of<br>Things You<br>Didn't Say.</h1>
+  <p class="lede">The course teaches two rules — be clear, give context — as if they were separate skills. They are the same operation performed on opposite ends of the pipe: <b>closing degrees of freedom</b>. What you leave open, the model fills in, and it will fill it in plausibly rather than correctly.</p>
+  <div class="metagrid">
+    <div class="metacell"><span class="k">Source</span><span class="v">3 lecture transcripts</span></div>
+    <div class="metacell"><span class="k">Tagged additions</span><span class="v b">6</span></div>
+    <div class="metacell"><span class="k">Tagged corrections</span><span class="v a">4</span></div>
+    <div class="metacell"><span class="k">Tools</span><span class="v g">3 interactive</span></div>
+    <div class="metacell"><span class="k">Read time</span><span class="v">~30 min</span></div>
+  </div>
+  <div class="call note">
+    <span class="lbl">Reading contract</span>
+    <p>By the end you can: name the eight dimensions every prompt either pins or gambles on; convert an unmeasurable adjective into a checkable constraint; tell the difference between context that helps and context that only costs tokens; and prove — with an ablation, not an opinion — which clause of your prompt is actually doing the work.</p>
+  </div>
+  <div class="call warn">
+    <span class="lbl">Marking convention</span>
+    <p><span class="pill new">beyond transcript</span> means the lecture never said this. <span class="pill fix">correction</span> means I am contradicting the lecture on purpose.</p>
+  </div>
+</header>
+
+<!-- ============ PART 0 ============ -->
+<section class="part" id="p0" data-nav="The ledger">
+<button class="parthead"><span class="partnum">00</span><span class="htxt"><h2>The Ambiguity Ledger</h2><span class="sub">A prompt is a specification · vagueness is an unpinned dimension</span></span><span class="badge">−</span></button>
+
+<div class="sec" id="s0-1">
+<button class="sechead"><span class="tag">0.1</span><h3>Clarity and context are one operation, not two</h3><span class="badge">−</span></button>
+<div class="secbody">
+<p>The lecture gives you two sessions and two rules. Useful, but it hides the structure. Both rules do exactly one thing: they remove choices the model would otherwise make on your behalf.</p>
+<p>The difference is only <em>which end</em> of the pipe they act on. <strong>Clarity closes the output side</strong> — how many, how long, what shape, what tone. <strong>Context closes the input side</strong> — who is asking, what this material is, who will read the result, where it will end up. Same operation. Opposite ends.</p>
+
+<div class="blk" data-type="ascii" data-desc="The two rules, seen as one mechanism">
+<pre class="ascii">
+   INPUT SIDE                                       OUTPUT SIDE
+   ── context ──────────────────▶ [ MODEL ] ──────────── clarity ──
+
+   who is asking                                    how many items
+   what this material is                            how long
+   who will read the answer                         what shape
+   where the answer will be used                    what register
+   what may be assumed known                        what to do at the edges
+         │                                                │
+         └────────────────┐                ┌──────────────┘
+                          ▼                ▼
+              ┌─────────────────────────────────────┐
+              │  EVERY DIMENSION YOU DO NOT PIN,    │
+              │  THE MODEL PINS FOR YOU — using the │
+              │  most statistically ordinary value  │
+              │  it has ever seen for that slot.    │
+              └─────────────────────────────────────┘
+
+   That is the whole subject. "Be clearer" is a feeling.
+   "Which dimension did I leave open?" is a question with an answer.
+</pre>
+</div>
+
+<div class="call good">
+<span class="lbl">The reframe worth keeping</span>
+<p>Stop asking "is this prompt clear?" — you wrote it, so it is clear to you. Ask instead: <strong>"what will the model have to invent?"</strong> That question is answerable by inspection, it is answerable by someone else on your team, and it converts prompt review from taste into a checklist.</p>
+</div>
+
+<h4>The eight dimensions</h4>
+<p>Almost every prompt failure I have traced back to a wording problem was actually one of these left open. Not all eight matter every time — but you should be <em>choosing</em> to leave one open, not discovering later that you did.</p>
+
+<div class="blk" data-type="table" data-name="The eight dimensions">
+<table>
+<thead><tr><th>Dimension</th><th>The question</th><th>What the model defaults to if you skip it</th></tr></thead>
+<tbody>
+<tr><td>Task</td><td>What verb? Summarise, explain, classify, rewrite, critique?</td><td>A blended answer that does a bit of several</td></tr>
+<tr><td>Scope</td><td>How much of the subject is in bounds?</td><td>Everything it knows, in encyclopaedia order</td></tr>
+<tr><td>Audience</td><td>Who reads this, with what prior knowledge?</td><td>A generic literate adult with no context</td></tr>
+<tr><td>Form</td><td>Prose, bullets, table, dialogue, code?</td><td>Headed sections with bullets — the house style of the internet</td></tr>
+<tr><td>Length</td><td>How many words, items, sentences?</td><td>Medium. Always medium.</td></tr>
+<tr><td>Register</td><td>Formal, warm, dry, playful?</td><td>Mildly enthusiastic corporate neutral</td></tr>
+<tr><td>Grounding</td><td>Answer from what — the pasted text, or its own memory?</td><td>Both, mixed together, unmarked</td></tr>
+<tr><td>Destination</td><td>Where does this output go next?</td><td>Nowhere — so nothing is tuned for the real use</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="call note">
+<span class="lbl">Why the defaults are so consistent <span class="pill new">beyond transcript</span></span>
+<p>An unpinned dimension is not filled randomly. The model resolves it toward the <em>most typical</em> value in its training distribution for that kind of request. That is why unspecified prompts across the whole world converge on the same shape — headings, three-to-five bullets, a summary sentence, cautious optimism. Your generic output is not a bug in your prompt. It is the average of the internet, which is exactly what you asked for.</p>
+</div>
+
+<div class="recall">
+<span class="lbl">Active recall</span>
+<p class="q">You ask for "a short professional summary of this incident report" and get something usable but wrong in tone. Which dimensions did you actually pin, and which did you only appear to?</p>
+<button class="minibtn reveal">Reveal</button>
+<div class="a"><p>Pinned: task (summarise) and grounding (this report). Only <em>apparently</em> pinned: length — "short" is a feeling, not a number; register — "professional" covers everything from a legal filing to a LinkedIn post. Entirely unpinned: audience, form, scope, destination. The tone complaint is really a destination complaint: a summary for the on-call engineer and one for the regulator are different documents, and you named neither.</p></div>
+</div>
+</div>
+</div>
+
+<div class="sec" id="s0-2">
+<button class="sechead"><span class="tag">0.2</span><h3>Tool — the ambiguity ledger</h3><span class="badge">−</span></button>
+<div class="secbody">
+<p>Tick what your prompt actually states. The ledger tells you what is left for the model to invent, and what it will most likely invent instead.</p>
+
+<div class="tool" id="toolA">
+<div class="toolbar"><span class="lbl">Tool 01</span><span class="nm">Ambiguity ledger</span></div>
+<div class="toolbody">
+<div class="ctrl"><label>Preset</label>
+  <select id="A_preset">
+    <option value="vague">"Tell me about Ottawa"</option>
+    <option value="clear" selected>"List 3 historical facts about Ottawa for kids, in 100 words"</option>
+    <option value="abstract">"Summarise the abstract below"</option>
+    <option value="prod">Science-magazine editor prompt (lecture 2)</option>
+    <option value="custom">Custom — tick your own</option>
+  </select></div>
+<div class="checkrow" style="margin-top:14px" id="A_boxes"></div>
+<div class="out">
+  <div class="outcell"><span class="k2">Pinned</span><span class="v2 g" id="A_p">0<span class="u">/8</span></span></div>
+  <div class="outcell"><span class="k2">Left to the model</span><span class="v2 r" id="A_u">8</span></div>
+  <div class="outcell"><span class="k2">Output variance</span><span class="v2 a" id="A_v">—</span></div>
+</div>
+<div class="warnlist" id="A_warn"></div>
+<span class="est">"Output variance" is a directional judgement, not a measurement — it weights the dimensions that empirically move output the most (form, length, audience) above those that move it least.</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- ============ PART I ============ -->
+<section class="part" id="p1" data-nav="Clarity">
+<button class="parthead"><span class="partnum">01</span><span class="htxt"><h2>Clarity</h2><span class="sub">Constraints, adjectives that lie, and the limit of adding more</span></span><span class="badge">−</span></button>
+
+<div class="sec" id="s1-1">
+<button class="sechead"><span class="tag">1.1</span><h3>The Ottawa demo, correctly diagnosed</h3><span class="badge">−</span></button>
+<div class="secbody">
+<p>The lecture runs <em>"Tell me about Ottawa"</em>, gets a sprawling answer covering government, culture, technology and quality of life, and concludes the prompt was <strong>unclear</strong>.</p>
+
+<div class="call warn">
+<span class="lbl">Correction <span class="pill fix">correction</span></span>
+<p>"Tell me about Ottawa" is perfectly clear. It is an unambiguous instruction, and the model executed it faithfully — it told you about Ottawa. What it lacked was not clarity. It lacked <strong>scope, form, length and audience</strong>. The distinction matters because "be clearer" gives you nothing to do, while "you left four dimensions open" tells you exactly what to write next.</p>
+</div>
+
+<p>Watch what the improved prompt actually changes. The lecturer describes it as one small tweak. It is four separate acts of closure, and each one is worth naming.</p>
+
+<div class="blk" data-type="ascii" data-desc="Four dimensions closed, one clause at a time">
+<pre class="ascii">
+   "Tell me about Ottawa"
+    └─ task pinned. everything else open.
+
+   "List  three  historical facts  about Ottawa  for kids  in 100 words"
+     │     │       │                              │          │
+     │     │       │                              │          └─ LENGTH
+     │     │       │                              └─ AUDIENCE
+     │     │       └─ SCOPE   (history, not geography or industry)
+     │     └─ LENGTH-as-count (3 items, not "a few")
+     └─ FORM   (a list, not an essay)
+
+   ┌──────────────────────────────────────────────────────────┐
+   │ five closures, ~9 extra words                            │
+   │ the "small tweak" framing hides that this is a           │
+   │ SPECIFICATION, and specifications are written, not tuned │
+   └──────────────────────────────────────────────────────────┘
+
+   Note what is STILL open, and deliberately so:
+     · which three facts        ← you want the model to choose
+     · register within "for kids"
+     · whether to use dates
+   Leaving a dimension open is fine. Not knowing you left it
+   open is the failure mode.
+</pre>
+</div>
+
+<div class="recall">
+<span class="lbl">Active recall</span>
+<p class="q">Why is "be more specific" bad advice to give a junior on your team?</p>
+<button class="minibtn reveal">Reveal</button>
+<div class="a"><p>Because it names a direction without naming an action, so they will add words rather than close dimensions — usually adjectives, which close nothing. "Which of the eight dimensions did you leave to the model, and which of those do you actually care about?" is the same advice made executable, and it produces a shorter prompt as often as a longer one.</p></div>
+</div>
+</div>
+</div>
+
+<div class="sec" id="s1-2">
+<button class="sechead"><span class="tag">1.2</span><h3>Adjectives that feel like constraints and aren't</h3><span class="badge">−</span></button>
+<div class="secbody">
+<p><span class="pill new">beyond transcript</span> This is the single most common way an experienced person writes a bad prompt. You add a word that carries a strong preference in your head and no information in the prompt. It <em>feels</em> specified. Nothing was specified.</p>
+<p>The test is simple: <strong>could two competent people disagree about whether the output satisfies it?</strong> If yes, it is a preference, not a constraint — and the model is now guessing at your taste.</p>
+
+<div class="blk" data-type="table" data-name="Operationalising the liars">
+<table>
+<thead><tr><th>Feels specified</th><th>Actually checkable</th></tr></thead>
+<tbody>
+<tr><td>Short</td><td>80–120 words. Or: at most four sentences.</td></tr>
+<tr><td>Detailed</td><td>Cover each of these four points, one paragraph each, with a concrete number in every paragraph.</td></tr>
+<tr><td>Engaging</td><td>Open with a question. Include one everyday analogy and one fact most readers would not expect.</td></tr>
+<tr><td>Professional</td><td>No contractions, no exclamation marks, no second person, no jokes. State facts before recommendations.</td></tr>
+<tr><td>Simple</td><td>No word longer than three syllables unless you define it in the same sentence. Sentences under 18 words.</td></tr>
+<tr><td>Comprehensive</td><td>Address all of: X, Y, Z. Say explicitly if any is not covered by the source.</td></tr>
+<tr><td>Accurate</td><td>Every claim traceable to the text between the tags. Anything else marked "not in source".</td></tr>
+<tr><td>Age-appropriate</td><td>Reading level around grade 8. No chemical formulae. Assume no chemistry beyond "atoms exist".</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="call trap">
+<span class="lbl">Trap</span>
+<p>The right-hand column is longer, and people resist it for that reason. But look at what you get: every one of those is something you or a script can <strong>verify</strong> after the fact. The left-hand column can only be reviewed by re-reading and feeling vaguely dissatisfied — which is exactly how prompts end up being tweaked forever without improving.</p>
+</div>
+
+<div class="call good">
+<span class="lbl">When you genuinely cannot specify it <span class="pill new">beyond transcript</span></span>
+<p>Sometimes you know the thing you want when you see it and cannot describe it — house voice, a particular dryness, the right level of hedging. Do not keep rewording. <strong>Prompt by discrimination instead of specification:</strong> ask for three deliberately different versions, pick the one that is right, then work backwards and write down what made it right. That written-down thing is your constraint, and you now have it in words. Half the time you also discover the example is easier to paste than the rule — which is the moment to reach for one-shot prompting.</p>
+</div>
+</div>
+</div>
+
+<div class="sec" id="s1-3">
+<button class="sechead"><span class="tag">1.3</span><h3>Where adding constraints stops helping</h3><span class="badge">−</span></button>
+<div class="secbody">
+<p>The lecture says: add a fourth constraint, a fifth, and so on. Presented as monotonic — more constraints, better output. It is not monotonic, and the failure is quiet.</p>
+
+<div class="call warn">
+<span class="lbl">Correction <span class="pill fix">correction</span></span>
+<p>Constraints compete for the same output budget. Three bullet points, 100 words, for kids, covering the full history of the city, with dates and an analogy each — that specification has no satisfying solution. The model will not tell you so. It silently drops the constraint it judges least important and returns something that looks fine until you check.</p>
+</div>
+
+<div class="blk" data-type="ascii" data-desc="The constraint budget and where it breaks">
+<pre class="ascii">
+   OUTPUT BUDGET: 100 words
+
+   ├── 3 items                    → ~33 words each
+   ├── each needs a date          → ~3 words
+   ├── each needs an analogy      → ~15 words
+   ├── each explained for a 9-y-o → needs MORE words, not fewer
+   └── "cover the full history"   → needs 10 items, not 3
+                                     ▲
+                                     └─ this one cannot fit.
+                                        it will be dropped, silently,
+                                        and the answer will still
+                                        read well.
+
+   THE RULE THAT FIXES IT
+   ┌──────────────────────────────────────────────────────────┐
+   │ Rank your constraints and say which wins.                │
+   │                                                          │
+   │   "Length is a hard limit. If you cannot fit all three    │
+   │    facts within 100 words, use two facts and say so."     │
+   │                                                          │
+   │ Now the trade-off is YOUR decision, made once, in         │
+   │ writing — instead of the model's decision, made silently, │
+   │ differently, on every call.                               │
+   └──────────────────────────────────────────────────────────┘
+</pre>
+</div>
+
+<div class="call trap">
+<span class="lbl">Counts are requests, not guarantees</span>
+<p>"Exactly 100 words" is followed approximately. Models do not count reliably while generating — length emerges from the shape of the text, not from a counter. Two practical consequences: give a <strong>range</strong> rather than a point ("80–120 words"), because a range is achievable and a point invites padding; and if the limit is load-bearing — an SMS, a meta description, a UI string — validate it in code and regenerate. A constraint that costs money when violated does not belong solely in a prompt.</p>
+</div>
+
+<div class="recall">
+<span class="lbl">Active recall</span>
+<p class="q">Your prompt has nine constraints. Outputs are inconsistent — sometimes constraint 3 is honoured, sometimes constraint 7. Nothing is obviously contradictory. What do you do first?</p>
+<button class="minibtn reveal">Reveal</button>
+<div class="a"><p>Assume they <em>are</em> contradictory and you have not spotted it — inconsistent honouring across calls is the signature of an over-subscribed budget, not of a weak model. Work out the implied cost of each constraint against your length limit. Then rank them explicitly and state the tie-break rule in the prompt. If nothing conflicts on inspection, the second move is ablation: drop one clause at a time and score, which will show you which pair is fighting. There is a harness for that in section 4.2.</p></div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- ============ PART II ============ -->
+<section class="part" id="p2" data-nav="Context">
+<button class="parthead"><span class="partnum">02</span><span class="htxt"><h2>Context</h2><span class="sub">Four kinds · which one earned the credit · and where context becomes waste</span></span><span class="badge">−</span></button>
+
+<div class="sec" id="s2-1">
+<button class="sechead"><span class="tag">2.1</span><h3>Four kinds of context, doing four different jobs</h3><span class="badge">−</span></button>
+<div class="secbody">
+<p>The lecture treats context as one thing — "who the user is, what role the model plays, what data it's looking at, what task you want" — and then demonstrates all four at once. Bundled together they look like a single trick. Separated, they have very different value per token, and you should know which one you are buying.</p>
+
+<div class="blk" data-type="ascii" data-desc="The four contexts and what each one resolves">
+<pre class="ascii">
+   1  ROLE — who speaks
+      "You are an editor of a science magazine."
+      resolves: vocabulary, rhythm, level of hedging
+      does NOT resolve: what the model knows, or accuracy
+      value per token: LOW.  overrated almost everywhere.
+
+   2  AUDIENCE — who reads
+      "for high school students"
+      resolves: assumed prior knowledge, jargon budget,
+                sentence length, what needs defining
+      value per token: HIGHEST. this is the one that works.
+
+   3  PROVENANCE — what the material is
+      "this is a 500-word abstract on load forecasting"
+      resolves: how to treat the input — a paper is
+                compressed and must be expanded; a transcript
+                is padded and must be cut
+      value per token: MEDIUM, and only for what the model
+                cannot see for itself. see 2.3.
+
+   4  DESTINATION — where the answer goes
+      "as it will be used in a business proposal"
+      resolves: length, formality, hedging, whether to
+                include a recommendation, whether to cite,
+                whether it must stand alone
+      value per token: HIGH — and almost never taught.
+
+   ┌───────────────────────────────────────────────────────┐
+   │ One clause of DESTINATION silently settles a dozen    │
+   │ decisions you would otherwise have to write out.      │
+   │ It is the highest-compression sentence in prompting.  │
+   └───────────────────────────────────────────────────────┘
+</pre>
+</div>
+
+<div class="call warn">
+<span class="lbl">Who actually earned the credit <span class="pill fix">correction</span></span>
+<p>In the magazine-editor demo the lecturer changes four things at once and attributes the improvement to the role. Look at the two prompts again: the good one added a role <em>and</em> an audience <em>and</em> a format <em>and</em> a topic label. On a summarisation task, "for high school students, in three bullet points" is doing nearly all of the work, and "you are an editor of a science magazine" is doing very little. This is not a matter of opinion — it is a two-minute ablation, and section 4.2 runs it. Change one clause at a time or you will spend years carrying clauses that do nothing.</p>
+</div>
+
+<div class="recall">
+<span class="lbl">Active recall</span>
+<p class="q">You have budget for exactly one extra sentence of context in a prompt that rewrites internal announcements. Which do you spend it on?</p>
+<button class="minibtn reveal">Reveal</button>
+<div class="a"><p>Destination, and it should carry the audience with it: "This will be posted in a company-wide Slack channel and read on phones by people who were not in the meeting." That one sentence settles length, formality, whether context must be restated, whether a call to action is needed, and whether jargon from the meeting can survive. A role sentence would have settled only the vocabulary.</p></div>
+</div>
+</div>
+</div>
+
+<div class="sec" id="s2-2">
+<button class="sechead"><span class="tag">2.2</span><h3>Tool — the destination switcher</h3><span class="badge">−</span></button>
+<div class="secbody">
+<p>One task, six destinations. Same facts, same audience knowledge, entirely different artefact — and none of the differences below were stated by the person writing the prompt. They were <em>implied</em> by where the text was going.</p>
+
+<div class="tool" id="toolB">
+<div class="toolbar"><span class="lbl">Tool 02</span><span class="nm">Destination switcher</span></div>
+<div class="toolbody">
+<div class="ctrl"><label>Task</label>
+  <select id="B_task">
+    <option value="delay" selected>Explain a two-week project delay</option>
+    <option value="photo">Explain photosynthesis</option>
+    <option value="outage">Report a payment outage</option>
+  </select></div>
+<div class="checkrow" style="margin-top:14px" id="B_tabs"></div>
+<div class="bench" id="B_out"></div>
+<span class="est">The right-hand column is what the destination decides <em>for</em> you. Every row you do not state is a row the model guesses.</span>
+</div>
+</div>
+</div>
+</div>
+
+<div class="sec" id="s2-3">
+<button class="sechead"><span class="tag">2.3</span><h3>Context that costs and does not pay</h3><span class="badge">−</span></button>
+<div class="secbody">
+<p>"Add context" is advice that scales badly, because the obvious way to follow it — write more preamble — hits three problems the lecture never mentions.</p>
+
+<h4>Problem one: describing data is not providing data</h4>
+<p><span class="pill new">beyond transcript</span> This is the important one. "This is an abstract on load forecasting" is a <strong>label</strong>. Pasting the abstract is <strong>grounding</strong>. The lecture's examples always paste the text, so the distinction never surfaces — and then people write prompts like "considering our refund policy, answer this customer" and wonder why the answer is invented. The model has no refund policy. It has a sentence claiming one exists.</p>
+
+<div class="blk" data-type="ascii" data-desc="Label versus ground">
+<pre class="ascii">
+   LABEL                                GROUND
+   "considering our refund policy…"     &lt;policy&gt;
+                                          Refunds within 30 days of
+                                          delivery. Opened items:
+                                          store credit only. …
+                                        &lt;/policy&gt;
+
+   model has: a topic hint              model has: the actual rule
+   model does: invent a plausible       model does: apply the rule,
+               policy                                or say it is silent
+
+   TEST: delete the label from your prompt. If nothing about the
+   answer could change, you wrote a label. Labels cost tokens and
+   buy framing. Ground costs tokens and buys correctness.
+</pre>
+</div>
+
+<h4>Problem two: context the model can already see</h4>
+<p>Telling a model "the following is a scientific abstract" when you have pasted a scientific abstract is close to free of information — it can see that. Spend those tokens on what is <em>not</em> recoverable from the input: who will read the output, why they care, what they will do with it, what they already believe that is wrong. That last one is the highest-value context sentence in existence and almost nobody writes it.</p>
+
+<div class="call good">
+<span class="lbl">The rule</span>
+<p>Context earns its tokens when it is <strong>not inferable from the input and not inferable from the task</strong>. Everything else is padding that pushes your real instruction further from the end of the prompt.</p>
+</div>
+
+<h4>Problem three: burying the instruction</h4>
+<p>A long preamble puts your actual request in the middle of the prompt, which is the position models attend to least reliably. If your context block runs long, restate the task in one line at the very bottom. It costs eight words and it measurably improves compliance on long prompts.</p>
+
+<div class="blk" data-type="code" data-desc="Same context, two layouts — the second one gets followed">
+<pre><span class="c"># BURIED — task stated once, in the middle, under 300 words of setup</span>
+You are an editor at a science magazine. Our readership skews
+young... [long preamble] ...and we have historically found that
+readers disengage when we use equations.
+Summarise the abstract below.
+[500-word abstract]
+
+<span class="c"># ANCHORED — same words, task stated at the top AND restated last</span>
+Summarise the abstract below for our readers.
+
+&lt;context&gt;
+You are an editor at a science magazine. Readers are 13-17...
+[the same preamble, now clearly marked as setting, not instruction]
+&lt;/context&gt;
+
+&lt;abstract&gt;
+[500-word abstract]
+&lt;/abstract&gt;
+
+Three bullet points. No equations. 100-140 words total.</pre>
+</div>
+
+<div class="recall">
+<span class="lbl">Active recall</span>
+<p class="q">A teammate's prompt opens with 200 words about the company's mission and values before asking the model to categorise support tickets. Is that context or padding?</p>
+<button class="minibtn reveal">Reveal</button>
+<div class="a"><p>Padding, on this task. Apply the deletion test: remove it and ask whether any ticket would be categorised differently. Mission statements do not change a label. It costs tokens on every call, pushes the real instruction into the low-attention middle, and — if it sits in the cached prefix and someone edits a comma — invalidates the cache. The context that <em>would</em> pay here is the label definitions and a boundary example for the two labels people confuse.</p></div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- ============ PART III ============ -->
+<section class="part" id="p3" data-nav="Exercise">
+<button class="parthead"><span class="partnum">03</span><span class="htxt"><h2>The Exercise, Redone</h2><span class="sub">Photosynthesis for 13–17 · three questions are not enough</span></span><span class="badge">−</span></button>
+
+<div class="sec" id="s3-1">
+<button class="sechead"><span class="tag">3.1</span><h3>The brief, and the course's rubric</h3><span class="badge">−</span></button>
+<div class="secbody">
+<p>Rewrite <em>"Explain photosynthesis"</em> for students aged 13–17. The output must be accurate, age-appropriate and engaging. The course says a good answer settles three questions: <strong>who is the audience, what tone, what format</strong> — and that any prompt answering all three is correct.</p>
+<p>Here is a prompt that satisfies the rubric completely.</p>
+
+<div class="blk" data-type="code" data-desc="A rubric-satisfying answer">
+<pre>You are a science teacher writing for students aged 13-17.
+Explain photosynthesis in a friendly, encouraging tone.
+Use four short bullet points and one everyday analogy.</pre>
+</div>
+
+<div class="call warn">
+<span class="lbl">Correction <span class="pill fix">correction</span></span>
+<p>The course concludes: no unique answer, and if you answered the three questions your prompt is correct. The first half is true. The second half is where the exercise stops being an exercise and starts being wrong about the job. <strong>"No unique answer" does not mean "no better answer."</strong> Two prompts can both satisfy that rubric and produce outputs that differ enormously in quality — and the prompt above has four specific holes that will show up in the output every time.</p>
+</div>
+
+<div class="blk" data-type="table" data-name="What the three questions miss">
+<table>
+<thead><tr><th>#</th><th>Hole</th><th>What you get</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><strong>"13–17" is not an audience</strong></td><td>It is a four-year span across the biggest change in scientific vocabulary a student ever undergoes. A 13-year-old may not have met a chemical equation; a 17-year-old may be revising for board exams. The model will average them and satisfy neither.</td></tr>
+<tr><td>2</td><td>No accuracy contract</td><td>The brief demands accuracy, but every explanation for teenagers simplifies. Which simplifications are allowed? Unstated, so the model picks the most common ones on the internet — which include the famous wrong ones.</td></tr>
+<tr><td>3</td><td>"Engaging" is unmeasurable</td><td>You get exclamation marks and the word "amazing". That is the model's best guess at engaging, because it is the average of every children's science page ever written.</td></tr>
+<tr><td>4</td><td>No length, no verification</td><td>Nothing states how long, and nothing checks whether the result is actually readable by a 13-year-old rather than merely <em>described</em> as being for one.</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="call trap">
+<span class="lbl">Hole 2 is the interesting one <span class="pill new">beyond transcript</span></span>
+<p>Ask any model for photosynthesis "for kids" and you will very often get: plants make their food from sunlight (omitting that the carbon comes from CO₂ — the actual point); plants breathe in CO₂ and breathe out oxygen as a tidy exchange (implying respiration doesn't happen in plants, which it does, constantly); and chlorophyll "absorbs sunlight" with no mention that it reflects green, which is why leaves look green. These are not the model being careless. They are the most common phrasings in the source material, and an unspecified prompt reproduces the most common phrasing. <strong>If accuracy matters, name the specific errors you are refusing.</strong> That is one sentence and it is worth more than every tone instruction combined.</p>
+</div>
+</div>
+</div>
+
+<div class="sec" id="s3-2">
+<button class="sechead"><span class="tag">3.2</span><h3>The architect's version</h3><span class="badge">−</span></button>
+<div class="secbody">
+<p>Same task. Every dimension from section 0.1 either pinned or deliberately left open, an accuracy contract, engagement operationalised, and a check that does not rely on the model's own judgement.</p>
+
+<div class="blk" data-type="code" data-desc="Production prompt — photosynthesis explainer">
+<pre><span class="c"># TASK</span>
+Explain photosynthesis.
+
+<span class="c"># AUDIENCE  (narrowed — a 4-year band is not an audience)</span>
+Students aged 13-14, first year of secondary science.
+Assume they know: living things need energy; air contains
+different gases; plants have leaves and roots.
+Assume they do NOT know: chemical equations, the words
+molecule, glucose, chloroplast, or respiration.
+Define any word outside that list in the same sentence you use it.
+
+<span class="c"># ACCURACY CONTRACT  (the clause that does the real work)</span>
+Simplify freely, but these four things must be right:
+- The carbon in the plant's food comes from carbon dioxide in
+  the air, not from the soil and not from sunlight.
+- Sunlight supplies the energy; it is not an ingredient.
+- Leaves look green because chlorophyll reflects green light
+  and absorbs red and blue.
+- Plants also use oxygen and release carbon dioxide, all the
+  time. Photosynthesis is not the reverse of breathing.
+Do not write that plants "make food out of sunlight" and do
+not present gas exchange as a simple one-way swap.
+
+<span class="c"># FORM AND LENGTH</span>
+Four short paragraphs, 30-45 words each. No bullet points,
+no headings, no equations, no bold text.
+
+<span class="c"># REGISTER  ("engaging", made checkable)</span>
+- Open with a question the reader can answer from memory.
+- Include exactly one everyday analogy, drawn from cooking,
+  building, or money - not from factories or machines.
+- Include one fact most 13-year-olds would find surprising.
+- No exclamation marks. Do not use the words amazing,
+  incredible, fascinating or journey.
+
+<span class="c"># SELF-CHECK  (cheap, and catches the common failure)</span>
+Before answering, list any word you used that is not in the
+"assume they know" list and is not defined in place. If that
+list is not empty, rewrite first. Do not show me the list.</pre>
+</div>
+
+<div class="call good">
+<span class="lbl">What changed, and why it is worth the extra words</span>
+<p>Every instruction above is <em>verifiable by someone who is not you</em>. Word counts, paragraph counts, a banned-word list, a named set of misconceptions, a defined vocabulary floor. A second person can review the output against the prompt and reach the same verdict you would — which is the actual definition of a good specification, and the thing "make it engaging" can never give you.</p>
+</div>
+
+<div class="blk" data-type="table" data-name="Scoring rubric for the output">
+<table>
+<thead><tr><th>Check</th><th>How</th><th>Automatable</th></tr></thead>
+<tbody>
+<tr><td>Four paragraphs, 30–45 words each</td><td>Split and count</td><td>Yes</td></tr>
+<tr><td>No banned words</td><td>Substring match</td><td>Yes</td></tr>
+<tr><td>Reading level near grade 8</td><td>Flesch–Kincaid on the output</td><td>Yes — with the caveat in 4.1</td></tr>
+<tr><td>None of the four misconceptions present</td><td>Keyword pass, then human read</td><td>Partly</td></tr>
+<tr><td>Undefined vocabulary</td><td>Token list minus allowed set</td><td>Yes</td></tr>
+<tr><td>The analogy actually illuminates</td><td>A human reads it</td><td>No — and pretending otherwise is how bad explainers ship</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="recall">
+<span class="lbl">Active recall</span>
+<p class="q">Your explainer scores grade 7.2 on Flesch–Kincaid, uses no banned words, and hits every length target. A teacher reads it and says students won't follow it. Who is wrong?</p>
+<button class="minibtn reveal">Reveal</button>
+<div class="a"><p>Nobody. Flesch–Kincaid counts syllables per word and words per sentence — it measures surface simplicity, not conceptual load. "The energy is stored in the bonds that hold the parts of the sugar to each other" is short-worded, short-sentenced, and completely opaque to someone who has never thought about bonds. The metric is a cheap regression guard, not a definition of comprehensibility. Keep it for catching drift; keep the teacher for deciding whether it works.</p></div>
+</div>
+</div>
+</div>
+
+<div class="sec" id="s3-3">
+<button class="sechead"><span class="tag">3.3</span><h3>Tool — explainer prompt builder</h3><span class="badge">−</span></button>
+<div class="secbody">
+<p>Set the dimensions, get the prompt, copy it. The warnings below fire on the exact holes this section just described.</p>
+
+<div class="tool" id="toolC">
+<div class="toolbar"><span class="lbl">Tool 03</span><span class="nm">Explainer builder</span></div>
+<div class="toolbody">
+<div class="ctrls">
+  <div class="ctrl"><label>Subject</label><input type="text" id="C_subj" value="photosynthesis"></div>
+  <div class="ctrl"><label>Audience</label>
+    <select id="C_aud">
+      <option value="wide">Students aged 13-17</option>
+      <option value="y1" selected>Aged 13-14, first year secondary science</option>
+      <option value="y4">Aged 16-17, exam revision</option>
+      <option value="adult">Curious adult, no science since school</option>
+    </select></div>
+  <div class="ctrl"><label>Destination</label>
+    <select id="C_dest">
+      <option value="worksheet" selected>Printed classroom worksheet</option>
+      <option value="slide">One presentation slide</option>
+      <option value="revision">Revision notes before an exam</option>
+      <option value="parent">Letter home to parents</option>
+    </select></div>
+  <div class="ctrl"><label>Form</label>
+    <select id="C_form">
+      <option value="para" selected>Short paragraphs</option>
+      <option value="bullets">Bullet points</option>
+      <option value="qa">Question and answer</option>
+    </select></div>
+  <div class="ctrl"><label>Length <span class="rngval" id="C_len_v">150</span></label>
+    <input type="range" id="C_len" min="50" max="400" step="10" value="150"></div>
+  <div class="ctrl"><label>Register</label>
+    <select id="C_reg">
+      <option value="vague">"Engaging and friendly"</option>
+      <option value="ops" selected>Operationalised (question + analogy + surprise)</option>
+      <option value="plain">Plain and neutral</option>
+    </select></div>
+</div>
+<div class="checkrow" style="margin-top:14px">
+  <label><input type="checkbox" id="C_prior" checked> state prior knowledge</label>
+  <label><input type="checkbox" id="C_acc" checked> accuracy contract</label>
+  <label><input type="checkbox" id="C_ban" checked> banned words</label>
+  <label><input type="checkbox" id="C_check" checked> vocabulary self-check</label>
+  <label><input type="checkbox" id="C_rank"> constraint tie-break</label>
+</div>
+<div class="blk" style="margin-top:18px" data-nofold="1">
+  <div class="blkbar"><span class="bt">Prompt</span><span class="bd" id="C_meta">— tokens</span>
+    <button class="minibtn" id="C_copy">Copy</button></div>
+  <div class="blkbody"><pre id="C_out_pre"></pre></div>
+</div>
+<div class="warnlist" id="C_warn"></div>
+<span class="est">Token figure is a ≈4 chars/token estimate. The accuracy contract shown is specific to photosynthesis; for another subject, replace it with the misconceptions that actually plague that topic — that list is the part you cannot generate generically.</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- ============ PART IV ============ -->
+<section class="part" id="p4" data-nav="Measuring">
+<button class="parthead"><span class="partnum">04</span><span class="htxt"><h2>Measuring</h2><span class="sub">Which clause is doing the work · and how you would know</span></span><span class="badge">−</span></button>
+
+<div class="sec" id="s4-1">
+<button class="sechead"><span class="tag">4.1</span><h3>What a machine can check</h3><span class="badge">−</span></button>
+<div class="secbody">
+<p><span class="pill new">beyond transcript</span> Both lectures evaluate the same way: run it once, read it, say "this is exactly what I wanted". That is how you form a hypothesis, not how you test one. Here is the cheap end of testing — the checks that cost nothing and catch the drift you would otherwise notice three months later.</p>
+
+<div class="blk" data-type="table" data-name="Checks by cost">
+<table>
+<thead><tr><th>Check</th><th>Cost</th><th>Catches</th></tr></thead>
+<tbody>
+<tr><td>Length, item counts, structure</td><td>Free — a few lines of Python</td><td>The most frequently violated constraints, by a wide margin</td></tr>
+<tr><td>Banned and required vocabulary</td><td>Free</td><td>Register drift; the words models reach for when unconstrained</td></tr>
+<tr><td>Reading level (Flesch–Kincaid)</td><td>Free, no dependencies</td><td>Surface complexity drift across prompt or model changes</td></tr>
+<tr><td>Schema validity</td><td>Free</td><td>Everything downstream of the model</td></tr>
+<tr><td>A second model scoring a rubric</td><td>One extra call</td><td>Broad quality regressions — but see the caveat below</td></tr>
+<tr><td>A human reading twenty outputs</td><td>Twenty minutes</td><td>Everything that actually matters</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="call trap">
+<span class="lbl">Two caveats you should state out loud before anyone quotes your numbers</span>
+<p><strong>Flesch–Kincaid measures syllables per word and words per sentence.</strong> That is all. It cannot see that a short sentence contains an idea the reader has never met. Use it as a regression guard — "grade level moved from 7 to 12 after that edit" is a real signal — never as a definition of comprehensibility.</p>
+<p><strong>A model scoring another model's output is not ground truth.</strong> It correlates with human judgement, which makes it useful for triage across hundreds of outputs. It also has known biases: toward longer answers, toward answers that sound like its own writing, and toward whichever option is listed first. Calibrate it against human scores on a sample before you trust its verdicts, and re-calibrate when you change models.</p>
+</div>
+</div>
+</div>
+
+<div class="sec" id="s4-2">
+<button class="sechead"><span class="tag">4.2</span><h3>Ablation — the two-minute experiment nobody runs</h3><span class="badge">−</span></button>
+<div class="secbody">
+<p>Your prompt has eight clauses. Which ones matter? Almost every prompt in production carries clauses that do nothing — inherited from a blog post, added during a bad afternoon, never removed because removing things feels risky. The method for finding them is old, simple, and takes minutes.</p>
+<p><strong>Leave one out.</strong> Build the full prompt, then build one variant per clause with that clause deleted. Run each over the same inputs. Score each. The drop in score when a clause is removed <em>is</em> that clause's contribution.</p>
+
+<div class="blk" data-type="ascii" data-desc="Leave-one-out ablation, and how to read the result">
+<pre class="ascii">
+   FULL PROMPT           score 0.91
+   ├── − role            0.90   Δ 0.01   ← carrying this for nothing
+   ├── − audience        0.61   Δ 0.30   ← this is the prompt
+   ├── − format          0.72   Δ 0.19   ← real
+   ├── − length          0.78   Δ 0.13   ← real
+   ├── − accuracy list   0.66   Δ 0.25   ← real, and invisible to
+   │                                        anyone reading the output
+   │                                        casually
+   ├── − banned words    0.88   Δ 0.03   ← marginal; keep only if
+   │                                        the failure is expensive
+   └── − self-check      0.85   Δ 0.06   ← marginal
+
+   READING IT
+   Δ ≈ 0        dead clause. delete it. it costs tokens on every
+                call and it is one more thing to maintain.
+   Δ small      keep only if the failure it prevents is costly.
+   Δ large      this is your prompt. protect it. never edit it
+                casually — and if it sits in a cached prefix,
+                remember an edit invalidates the cache.
+
+   NEGATIVE Δ   removing the clause made things BETTER. rare,
+                real, and always worth the ten minutes to find.
+</pre>
+</div>
+
+<div class="call good">
+<span class="lbl">The specific experiment this module owes you</span>
+<p>Run it on the lecture's own magazine-editor prompt. Four clauses: role, audience, format, topic label. My prediction — and it is a prediction, not a claim, which is the point of running it — is that audience and format carry nearly all of the improvement and the role clause lands under Δ 0.03. The script in the next part does exactly this. If I am wrong, you will find out in about ninety seconds, which is far better than either of us being confident.</p>
+</div>
+
+<div class="call warn">
+<span class="lbl">Two conditions or the numbers are noise</span>
+<p><strong>Temperature at 0</strong>, or you are measuring sampling variation rather than clause contribution. And <strong>more than one input</strong> — a single item makes every Δ either 0 or 1. Ten to twenty inputs is enough to rank clauses, which is all you need; it is not enough to publish.</p>
+</div>
+
+<div class="recall">
+<span class="lbl">Active recall</span>
+<p class="q">Ablation says your "you are a world-class expert" clause has Δ 0.00. A colleague objects that it obviously helps and everyone uses it. What is the strongest version of their objection, and does it survive?</p>
+<button class="minibtn reveal">Reveal</button>
+<div class="a"><p>The strongest version: your rubric may only measure what is easy to measure — length, structure, banned words — and the role clause may be improving something the rubric is blind to, like how the prose actually reads. That objection is legitimate and it is a criticism of your rubric, not a defence of the clause. It survives only if they can name the quality being missed and add a check for it. If they cannot name it, the clause is decoration, and decoration in a cached prefix is decoration you pay for on every call forever.</p></div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- ============ PART V ============ -->
+<section class="part" id="p5" data-nav="Harness">
+<button class="parthead"><span class="partnum">05</span><span class="htxt"><h2>The Harness</h2><span class="sub">One runnable script that ablates a prompt and scores every variant</span></span><span class="badge">−</span></button>
+
+<div class="sec" id="s5-1">
+<button class="sechead"><span class="tag">5.1</span><h3>Setup</h3><span class="badge">−</span></button>
+<div class="secbody">
+<div class="blk" data-type="code" data-desc="Setup">
+<pre>pip install anthropic          <span class="c"># the only dependency</span>
+export ANTHROPIC_API_KEY=<span class="s">"sk-ant-..."</span>
+python clarity_lab.py</pre>
+</div>
+<p>It builds the photosynthesis explainer from named clauses, generates one leave-one-out variant per clause, runs each over several subjects, and scores the outputs on length, structure, banned vocabulary, reading level and the four named misconceptions. It prints a contribution table you can act on.</p>
+<div class="call note">
+<span class="lbl">Before you copy the model ID</span>
+<p>Model identifiers change between generations. The script pins one in a single constant and prints it in the report, so any result you paste into a document stays attributable. Check the current list at <a href="https://docs.claude.com/en/api/overview">docs.claude.com</a> before a real run.</p>
+</div>
+</div>
+</div>
+
+<div class="sec" id="s5-2">
+<button class="sechead"><span class="tag">5.2</span><h3>clarity_lab.py</h3><span class="badge">−</span></button>
+<div class="secbody">
+
+<div class="blk" data-type="code" data-desc="Complete runnable script — copy to clarity_lab.py">
+<pre><span class="s">"""
+clarity_lab.py - find out which clause of your prompt is doing the work.
+
+Builds a prompt from named clauses, generates one leave-one-out variant
+per clause, scores every output on checks a machine can run, and prints
+each clause's contribution.
+
+Requires: pip install anthropic   and   ANTHROPIC_API_KEY in the environment.
+"""</span>
+<span class="k">from</span> __future__ <span class="k">import</span> annotations
+
+<span class="k">import</span> os
+<span class="k">import</span> re
+<span class="k">from</span> dataclasses <span class="k">import</span> dataclass
+
+<span class="k">from</span> anthropic <span class="k">import</span> Anthropic
+
+MODEL = <span class="s">"claude-sonnet-5"</span>
+MAX_TOKENS = <span class="n">700</span>
+TEMPERATURE = <span class="n">0.0</span>   <span class="c"># mandatory: at t&gt;0 you measure sampling, not clauses</span>
+
+client = <span class="f">Anthropic</span>()
+
+<span class="c"># ---------------------------------------------------------------------------</span>
+<span class="c"># 1. THE PROMPT, AS NAMED CLAUSES</span>
+<span class="c">#</span>
+<span class="c"># A prompt kept as one string cannot be ablated. Keeping it as an ordered</span>
+<span class="c"># dict of clauses costs nothing and makes the experiment a for-loop.</span>
+<span class="c"># ---------------------------------------------------------------------------</span>
+CLAUSES: <span class="k">dict</span>[<span class="k">str</span>, <span class="k">str</span>] = {
+    <span class="s">"role"</span>: <span class="s">"You are a science teacher."</span>,
+
+    <span class="s">"audience"</span>: (
+        <span class="s">"Write for students aged 13-14, in their first year of secondary "</span>
+        <span class="s">"science. Assume they know that living things need energy and that "</span>
+        <span class="s">"air contains different gases. Assume they do not know the words "</span>
+        <span class="s">"molecule, glucose, chloroplast or respiration. Define any word "</span>
+        <span class="s">"outside that list in the same sentence you use it."</span>
+    ),
+
+    <span class="s">"accuracy"</span>: (
+        <span class="s">"Simplify freely, but these must be right: the carbon in the "</span>
+        <span class="s">"plant's food comes from carbon dioxide in the air, not the soil "</span>
+        <span class="s">"and not sunlight; sunlight supplies energy and is not an "</span>
+        <span class="s">"ingredient; leaves look green because chlorophyll reflects green "</span>
+        <span class="s">"light; plants use oxygen too, all the time. Do not write that "</span>
+        <span class="s">"plants make food out of sunlight."</span>
+    ),
+
+    <span class="s">"form"</span>: <span class="s">"Write four short paragraphs. No bullet points, no headings, "</span>
+            <span class="s">"no equations, no bold text."</span>,
+
+    <span class="s">"length"</span>: <span class="s">"Each paragraph must be 30-45 words."</span>,
+
+    <span class="s">"register"</span>: (
+        <span class="s">"Open with a question the reader can answer from memory. Include "</span>
+        <span class="s">"exactly one everyday analogy drawn from cooking, building or "</span>
+        <span class="s">"money. Include one fact most 13-year-olds would find surprising. "</span>
+        <span class="s">"Do not use exclamation marks."</span>
+    ),
+
+    <span class="s">"banned"</span>: <span class="s">"Do not use the words amazing, incredible, fascinating or journey."</span>,
+}
+
+<span class="c"># Several subjects, because a single input makes every delta 0 or 1.</span>
+SUBJECTS = [
+    <span class="s">"photosynthesis"</span>,
+    <span class="s">"how vaccines work"</span>,
+    <span class="s">"why the sky is blue"</span>,
+    <span class="s">"how a fridge makes things cold"</span>,
+]
+
+BANNED = (<span class="s">"amazing"</span>, <span class="s">"incredible"</span>, <span class="s">"fascinating"</span>, <span class="s">"journey"</span>)
+JARGON = (<span class="s">"molecule"</span>, <span class="s">"glucose"</span>, <span class="s">"chloroplast"</span>, <span class="s">"respiration"</span>)
+
+<span class="c"># Phrasings that indicate a known misconception survived. Crude on purpose:</span>
+<span class="c"># a keyword pass is a smoke alarm, not a fire inspection. It catches the</span>
+<span class="c"># common wording, and a human still reads the finalists.</span>
+MISCONCEPTIONS = (
+    <span class="s">"food from sunlight"</span>,
+    <span class="s">"food out of sunlight"</span>,
+    <span class="s">"food from the sun"</span>,
+    <span class="s">"energy from the soil"</span>,
+    <span class="s">"absorbs green"</span>,
+)
+
+
+<span class="k">def</span> <span class="f">build</span>(skip: <span class="k">str</span> | <span class="k">None</span>, subject: <span class="k">str</span>) -&gt; <span class="k">str</span>:
+    <span class="s">"""Assemble the prompt, optionally omitting one named clause."""</span>
+    body = [v <span class="k">for</span> k, v <span class="k">in</span> CLAUSES.<span class="f">items</span>() <span class="k">if</span> k != skip]
+    <span class="c"># Task first and restated last: a long prompt buries a middle</span>
+    <span class="c"># instruction, and eight words at the bottom measurably fix that.</span>
+    <span class="k">return</span> (<span class="f">f</span><span class="s">"Explain {subject}.\n\n"</span> + <span class="s">"\n\n"</span>.<span class="f">join</span>(body) +
+            <span class="f">f</span><span class="s">"\n\nNow explain {subject}. Output the explanation alone."</span>)
+
+
+<span class="c"># ---------------------------------------------------------------------------</span>
+<span class="c"># 2. SCORING - only things a machine can decide</span>
+<span class="c">#</span>
+<span class="c"># Every check below is objective. Nothing here judges whether the writing</span>
+<span class="c"># is good; that is what the twenty-minute human read is for. The point of</span>
+<span class="c"># this rubric is to catch DRIFT cheaply, on every change, forever.</span>
+<span class="c"># ---------------------------------------------------------------------------</span>
+<span class="k">def</span> <span class="f">syllables</span>(word: <span class="k">str</span>) -&gt; <span class="k">int</span>:
+    <span class="s">"""Vowel-group heuristic. Wrong on maybe 5% of English words, which is</span>
+<span class="s">    fine for a relative measure and useless for an absolute claim."""</span>
+    w = <span class="f">re</span>.<span class="f">sub</span>(<span class="s">r"[^a-z]"</span>, <span class="s">""</span>, word.<span class="f">lower</span>())
+    <span class="k">if</span> <span class="k">not</span> w:
+        <span class="k">return</span> <span class="n">0</span>
+    groups = <span class="f">re</span>.<span class="f">findall</span>(<span class="s">r"[aeiouy]+"</span>, w)
+    count = <span class="f">len</span>(groups)
+    <span class="k">if</span> w.<span class="f">endswith</span>(<span class="s">"e"</span>) <span class="k">and</span> <span class="k">not</span> w.<span class="f">endswith</span>((<span class="s">"le"</span>, <span class="s">"ee"</span>)) <span class="k">and</span> count &gt; <span class="n">1</span>:
+        count -= <span class="n">1</span>          <span class="c"># silent terminal e</span>
+    <span class="k">return</span> <span class="f">max</span>(count, <span class="n">1</span>)
+
+
+<span class="k">def</span> <span class="f">flesch_kincaid</span>(text: <span class="k">str</span>) -&gt; <span class="k">float</span>:
+    <span class="s">"""US grade level. Measures syllables per word and words per sentence -</span>
+<span class="s">    NOT conceptual difficulty. A regression guard, not a definition."""</span>
+    sentences = [s <span class="k">for</span> s <span class="k">in</span> <span class="f">re</span>.<span class="f">split</span>(<span class="s">r"[.!?]+"</span>, text) <span class="k">if</span> s.<span class="f">strip</span>()]
+    words = <span class="f">re</span>.<span class="f">findall</span>(<span class="s">r"[A-Za-z']+"</span>, text)
+    <span class="k">if</span> <span class="k">not</span> sentences <span class="k">or</span> <span class="k">not</span> words:
+        <span class="k">return</span> <span class="n">0.0</span>
+    syl = <span class="f">sum</span>(<span class="f">syllables</span>(w) <span class="k">for</span> w <span class="k">in</span> words)
+    <span class="k">return</span> (<span class="n">0.39</span> * <span class="f">len</span>(words) / <span class="f">len</span>(sentences)
+            + <span class="n">11.8</span> * syl / <span class="f">len</span>(words) - <span class="n">15.59</span>)
+
+
+<span class="k">def</span> <span class="f">score</span>(text: <span class="k">str</span>) -&gt; <span class="k">float</span>:
+    <span class="s">"""Six equally weighted checks. Equal weighting is a choice, not a</span>
+<span class="s">    truth - reweight it to match what actually costs you when it fails."""</span>
+    low = text.<span class="f">lower</span>()
+    paras = [p <span class="k">for</span> p <span class="k">in</span> text.<span class="f">split</span>(<span class="s">"\n\n"</span>) <span class="k">if</span> p.<span class="f">strip</span>()]
+    counts = [<span class="f">len</span>(p.<span class="f">split</span>()) <span class="k">for</span> p <span class="k">in</span> paras]
+
+    checks = [
+        <span class="f">len</span>(paras) == <span class="n">4</span>,
+        <span class="f">bool</span>(counts) <span class="k">and</span> <span class="f">all</span>(<span class="n">30</span> &lt;= c &lt;= <span class="n">45</span> <span class="k">for</span> c <span class="k">in</span> counts),
+        <span class="k">not</span> <span class="f">any</span>(b <span class="k">in</span> low <span class="k">for</span> b <span class="k">in</span> BANNED),
+        <span class="k">not</span> <span class="f">any</span>(j <span class="k">in</span> low <span class="k">for</span> j <span class="k">in</span> JARGON),
+        <span class="k">not</span> <span class="f">any</span>(m <span class="k">in</span> low <span class="k">for</span> m <span class="k">in</span> MISCONCEPTIONS),
+        <span class="n">6.0</span> &lt;= <span class="f">flesch_kincaid</span>(text) &lt;= <span class="n">9.0</span>,
+    ]
+    <span class="k">return</span> <span class="f">sum</span>(checks) / <span class="f">len</span>(checks)
+
+
+<span class="c"># ---------------------------------------------------------------------------</span>
+<span class="c"># 3. THE ABLATION</span>
+<span class="c"># ---------------------------------------------------------------------------</span>
+<span class="k">@dataclass</span>
+<span class="k">class</span> <span class="f">Variant</span>:
+    label: <span class="k">str</span>
+    skip: <span class="k">str</span> | <span class="k">None</span>
+    mean: <span class="k">float</span> = <span class="n">0.0</span>
+
+
+<span class="k">def</span> <span class="f">ask</span>(prompt: <span class="k">str</span>) -&gt; <span class="k">str</span>:
+    resp = client.messages.<span class="f">create</span>(
+        model=MODEL,
+        max_tokens=MAX_TOKENS,
+        temperature=TEMPERATURE,
+        messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}],
+    )
+    <span class="k">return</span> resp.content[<span class="n">0</span>].text
+
+
+<span class="k">def</span> <span class="f">run</span>() -&gt; <span class="k">None</span>:
+    <span class="k">if</span> <span class="k">not</span> os.environ.<span class="f">get</span>(<span class="s">"ANTHROPIC_API_KEY"</span>):
+        <span class="k">raise</span> <span class="f">SystemExit</span>(<span class="s">"Set ANTHROPIC_API_KEY first."</span>)
+
+    variants = [<span class="f">Variant</span>(<span class="s">"FULL PROMPT"</span>, <span class="k">None</span>)]
+    variants += [<span class="f">Variant</span>(<span class="f">f</span><span class="s">"- {name}"</span>, name) <span class="k">for</span> name <span class="k">in</span> CLAUSES]
+
+    <span class="k">for</span> v <span class="k">in</span> variants:
+        scores = []
+        <span class="k">for</span> subject <span class="k">in</span> SUBJECTS:
+            scores.<span class="f">append</span>(<span class="f">score</span>(<span class="f">ask</span>(<span class="f">build</span>(v.skip, subject))))
+        v.mean = <span class="f">sum</span>(scores) / <span class="f">len</span>(scores)
+        <span class="f">print</span>(<span class="f">f</span><span class="s">"ran {v.label}"</span>)
+
+    baseline = variants[<span class="n">0</span>].mean
+    <span class="f">print</span>(<span class="f">f</span><span class="s">"\nmodel: {MODEL}   subjects: {len(SUBJECTS)}   temp: {TEMPERATURE}\n"</span>)
+    <span class="f">print</span>(<span class="f">f</span><span class="s">"{'variant':&lt;18}{'score':&gt;8}{'delta':&gt;8}   verdict"</span>)
+    <span class="f">print</span>(<span class="s">"-"</span> * <span class="n">58</span>)
+
+    <span class="k">for</span> v <span class="k">in</span> variants:
+        <span class="k">if</span> v.skip <span class="k">is</span> <span class="k">None</span>:
+            <span class="f">print</span>(<span class="f">f</span><span class="s">"{v.label:&lt;18}{v.mean:&gt;8.2f}{'':&gt;8}   baseline"</span>)
+            <span class="k">continue</span>
+        delta = baseline - v.mean
+        <span class="k">if</span> delta &lt;= <span class="n">0.02</span>:
+            verdict = <span class="s">"DEAD - delete it"</span>
+        <span class="k">elif</span> delta &lt; <span class="n">0.10</span>:
+            verdict = <span class="s">"marginal - keep only if failure is costly"</span>
+        <span class="k">else</span>:
+            verdict = <span class="s">"LOAD-BEARING - protect it"</span>
+        <span class="f">print</span>(<span class="f">f</span><span class="s">"{v.label:&lt;18}{v.mean:&gt;8.2f}{delta:&gt;8.2f}   {verdict}"</span>)
+
+    <span class="f">print</span>(<span class="s">"\nA negative delta means removing the clause HELPED. Rare, real,"</span>
+          <span class="s">"\nand always worth the ten minutes to investigate."</span>)
+
+
+<span class="k">if</span> __name__ == <span class="s">"__main__"</span>:
+    <span class="f">run</span>()</pre>
+</div>
+
+<h4>What I changed from the course material, and why</h4>
+<div class="blk" data-type="table" data-name="Changes from the transcripts">
+<table>
+<thead><tr><th>Change</th><th>Reason</th></tr></thead>
+<tbody>
+<tr><td>The prompt is a dict of named clauses, not a string</td><td>A prompt kept as one blob cannot be ablated, diffed clause-by-clause, or reasoned about. This costs nothing and makes the whole experiment a for-loop.</td></tr>
+<tr><td>Four subjects, not one</td><td>The lectures evaluate on a single example. With one input every delta is 0 or 1 and the ranking is meaningless.</td></tr>
+<tr><td>Temperature pinned to 0</td><td>Never mentioned in the transcripts. At default temperature an ablation measures sampling noise as much as clause contribution.</td></tr>
+<tr><td>Reading level computed locally, with the caveat in the docstring</td><td>It is the only cheap objective proxy for "age-appropriate", and the caveat belongs next to the code so nobody quotes the number as comprehension.</td></tr>
+<tr><td>Misconception keywords, not just tone checks</td><td>The exercise demands accuracy and then measures none of it. This is crude — deliberately labelled as a smoke alarm — but a crude accuracy check beats an eloquent tone check.</td></tr>
+<tr><td>Task restated at the end of the prompt</td><td>Long prompts bury the middle. Eight words at the bottom is the cheapest compliance fix available.</td></tr>
+<tr><td>Verdict strings, not just numbers</td><td>A table of deltas gets admired. A column that says "DEAD — delete it" gets acted on.</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</section>
+
+<!-- ============ GLOSSARY ============ -->
+<section class="part" id="p6" data-nav="Glossary">
+<button class="parthead"><span class="partnum">06</span><span class="htxt"><h2>Glossary</h2><span class="sub">Terms used above</span></span><span class="badge">−</span></button>
+<div class="sec" id="s6-1">
+<button class="sechead"><span class="tag">6.1</span><h3>Terms</h3><span class="badge">−</span></button>
+<div class="secbody">
+<div class="gloss">
+<div>LLM</div><div>Large Language Model. A model trained to predict the next token over very large text corpora.</div>
+<div>Token</div><div>The unit a model reads and writes — roughly ¾ of an English word. Cost, context limits and latency are all measured in these.</div>
+<div>Degree of freedom</div><div>A dimension of the output your prompt does not fix, and which the model therefore fixes for you.</div>
+<div>Constraint</div><div>A requirement two competent reviewers would agree on. If they could disagree, it is a preference, not a constraint.</div>
+<div>Grounding</div><div>Placing the actual source material in the prompt, as opposed to describing that it exists.</div>
+<div>Destination</div><div>Where the output will be used. The highest-compression context sentence available, because it silently settles length, register, hedging and structure at once.</div>
+<div>Ablation</div><div>Removing one component at a time and re-scoring, to measure what each component contributes.</div>
+<div>Leave-one-out</div><div>The specific ablation pattern used here: one variant per clause, each missing exactly that clause.</div>
+<div>Flesch–Kincaid</div><div>A readability formula returning a US grade level from syllables per word and words per sentence. Measures surface complexity only.</div>
+<div>LLM-as-judge</div><div>Using a model to score another model's output against a rubric. Useful for triage, biased toward length and toward its own style, and never ground truth.</div>
+<div>Golden set</div><div>A small fixed set of inputs with known-good properties, re-run on every prompt or model change.</div>
+<div>Prompt caching</div><div>Provider-side reuse of a byte-identical prompt prefix at a fraction of input price. Any edit to the prefix invalidates it.</div>
+<div>Temperature</div><div>The sampling parameter controlling randomness. 0 is near-deterministic and is required for any prompt comparison to mean anything.</div>
+<div>One-shot prompting</div><div>Including a single worked example. Reach for it when the target is easier to show than to describe.</div>
+</div>
+</div>
+</div>
+</section>
+
+<footer>
+ARCHITECTS LAB · CRAFTING EFFECTIVE PROMPTS<br>
+SOURCE: 3 LECTURE TRANSCRIPTS · ADDITIONS AND CORRECTIONS MARKED INLINE<br>
+COMPANION TO: PROMPT ENGINEERING TYPES<br>
+NO BROWSER STORAGE USED · ALL TOOLS RUN IN MEMORY
+</footer>
+</div>
+<script>
+(function(){
+"use strict";
+var $=function(s,r){return (r||document).querySelector(s);};
+var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));};
+
+/* ---------- fold helpers ---------- */
+function setFold(el,btn,collapsed){
+  el.classList.toggle("collapsed",collapsed);
+  btn.setAttribute("aria-expanded",String(!collapsed));
+  var b=btn.querySelector(".badge");
+  if(b) b.textContent=collapsed?"+":"\u2212";
+}
+
+/* parts + sections */
+$$(".parthead").forEach(function(btn){
+  var part=btn.closest(".part");
+  btn.setAttribute("aria-expanded","true");
+  btn.addEventListener("click",function(){
+    var next=!part.classList.contains("collapsed");
+    setFold(part,btn,next);
+    $$(".sec",part).forEach(function(sec){
+      var sb=sec.querySelector(".sechead");
+      setFold(sec,sb,next);
+    });
+  });
+});
+$$(".sechead").forEach(function(btn){
+  var sec=btn.closest(".sec");
+  btn.setAttribute("aria-expanded","true");
+  btn.addEventListener("click",function(){
+    setFold(sec,btn,!sec.classList.contains("collapsed"));
+  });
+});
+
+/* ---------- generated bars on code / ascii / table blocks ---------- */
+$$(".blk").forEach(function(blk){
+  if(blk.getAttribute("data-nofold")==="1"){
+    var bb=blk.querySelector(".blkbar");
+    if(bb) wireBar(blk,bb);
+    return;
+  }
+  var pre=blk.querySelector("pre");
+  var tbl=blk.querySelector("table");
+  var kind=blk.getAttribute("data-type")||(tbl?"table":"code");
+  var bar=document.createElement("div");
+  bar.className="blkbar";
+  var label=kind==="ascii"?"Diagram":(kind==="table"?"Table":"Code");
+  var desc,count="";
+  if(tbl){
+    desc=blk.getAttribute("data-name")||"Table";
+    var rows=tbl.querySelectorAll("tbody tr").length;
+    count=rows+" rows";
+  }else{
+    desc=blk.getAttribute("data-desc")||"";
+    count=(pre?pre.textContent.split("\n").length:0)+" lines";
+  }
+  bar.innerHTML='<span class="bt">'+label+'</span><span class="bd"></span><span class="bc">'+count+'</span>';
+  bar.querySelector(".bd").textContent=desc;
+  if(kind==="code"||kind==="ascii"){
+    var cp=document.createElement("button");
+    cp.className="minibtn";cp.type="button";cp.textContent="Copy";
+    cp.addEventListener("click",function(e){
+      e.stopPropagation();
+      copy(pre.textContent,cp);
+    });
+    bar.appendChild(cp);
+  }
+  var body=document.createElement("div");
+  body.className="blkbody";
+  while(blk.firstChild) body.appendChild(blk.firstChild);
+  blk.appendChild(bar);blk.appendChild(body);
+  wireBar(blk,bar);
+});
+function wireBar(blk,bar){
+  bar.setAttribute("role","button");
+  bar.setAttribute("tabindex","0");
+  bar.setAttribute("aria-expanded","true");
+  function t(){
+    var c=!blk.classList.contains("collapsed");
+    blk.classList.toggle("collapsed",c);
+    bar.setAttribute("aria-expanded",String(!c));
+  }
+  bar.addEventListener("click",function(e){
+    if(e.target.classList.contains("minibtn"))return;
+    t();
+  });
+  bar.addEventListener("keydown",function(e){
+    if(e.key==="Enter"||e.key===" "){e.preventDefault();t();}
+  });
+}
+function copy(text,btn){
+  var done=function(){var o=btn.textContent;btn.textContent="Copied";
+    setTimeout(function(){btn.textContent=o;},1200);};
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done,function(){fallback(text);done();});
+  }else{fallback(text);done();}
+}
+function fallback(text){
+  var ta=document.createElement("textarea");ta.value=text;
+  ta.style.position="fixed";ta.style.opacity="0";
+  document.body.appendChild(ta);ta.select();
+  try{document.execCommand("copy");}catch(e){}
+  document.body.removeChild(ta);
+}
+
+/* ---------- expand / collapse all ---------- */
+function setAll(collapsed){
+  $$(".part").forEach(function(p){setFold(p,p.querySelector(".parthead"),collapsed);});
+  $$(".sec").forEach(function(s){setFold(s,s.querySelector(".sechead"),collapsed);});
+  $$(".blk").forEach(function(b){
+    var bar=b.querySelector(".blkbar");
+    b.classList.toggle("collapsed",collapsed);
+    if(bar)bar.setAttribute("aria-expanded",String(!collapsed));
+  });
+}
+$("#xall").addEventListener("click",function(){setAll(false);});
+$("#call").addEventListener("click",function(){setAll(true);window.scrollTo({top:0});});
+
+/* ---------- nav chips ---------- */
+var parts=$$(".part[data-nav]");
+var nav=$("#nav");
+parts.forEach(function(p){
+  var c=document.createElement("button");
+  c.className="chip";c.type="button";
+  c.textContent=p.getAttribute("data-nav");
+  c.addEventListener("click",function(){
+    setFold(p,p.querySelector(".parthead"),false);
+    $$(".sec",p).forEach(function(s){setFold(s,s.querySelector(".sechead"),false);});
+    p.scrollIntoView({behavior:"smooth",block:"start"});
+  });
+  nav.appendChild(c);
+  p._chip=c;
+});
+
+/* ---------- progress + active chip + reveal on scroll ---------- */
+var bar=$("#progress");
+function onScroll(){
+  var h=document.documentElement;
+  var max=h.scrollHeight-h.clientHeight;
+  bar.style.width=(max>0?(h.scrollTop/max*100):0)+"%";
+  var best=null;
+  parts.forEach(function(p){
+    var r=p.getBoundingClientRect();
+    if(r.top<160) best=p;
+  });
+  parts.forEach(function(p){p._chip.classList.toggle("on",p===best);});
+}
+window.addEventListener("scroll",onScroll,{passive:true});onScroll();
+
+var reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+if(reduce||!("IntersectionObserver" in window)){
+  parts.forEach(function(p){p.classList.add("seen");});
+}else{
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("seen");io.unobserve(e.target);}});
+  },{rootMargin:"0px 0px -60px 0px"});
+  $$(".part").forEach(function(p){io.observe(p);});
+}
+
+/* ---------- active recall ---------- */
+$$(".recall .reveal").forEach(function(b){
+  b.addEventListener("click",function(){
+    var r=b.closest(".recall");
+    var open=r.classList.toggle("open");
+    b.textContent=open?"Hide":"Reveal";
+  });
+});
+
+/* ================= TOOL 01 — ambiguity ledger ================= */
+(function(){
+  var DIM=[
+    {id:"task",     n:"Task",        w:3,  d:"A blended answer that does a bit of several verbs at once."},
+    {id:"scope",    n:"Scope",       w:14, d:"Everything it knows about the subject, in encyclopaedia order."},
+    {id:"audience", n:"Audience",    w:18, d:"A generic literate adult, so jargon is neither used nor explained."},
+    {id:"form",     n:"Form",        w:20, d:"Headed sections with three to five bullets \u2014 the house style of the internet."},
+    {id:"length",   n:"Length",      w:18, d:"Medium. It is always medium."},
+    {id:"register", n:"Register",    w:12, d:"Mildly enthusiastic corporate neutral."},
+    {id:"ground",   n:"Grounding",   w:5,  d:"Its own memory blended with your text, unmarked, so you cannot tell which is which."},
+    {id:"dest",     n:"Destination", w:10, d:"Nowhere \u2014 so nothing is tuned for how the output will actually be used."}
+  ];
+  var PRESET={
+    vague:["task"],
+    clear:["task","scope","audience","form","length"],
+    abstract:["task","ground"],
+    prod:["task","audience","form","register","ground"],
+    custom:["task"]
+  };
+  var box=$("#A_boxes"),sel=$("#A_preset"),silent=false;
+  DIM.forEach(function(d){
+    var l=document.createElement("label");
+    l.innerHTML='<input type="checkbox" data-d="'+d.id+'"> '+d.n;
+    box.appendChild(l);
+  });
+  var inputs=$$("input[data-d]",box);
+  inputs.forEach(function(i){
+    i.addEventListener("change",function(){
+      if(!silent) sel.value="custom";
+      render();
+    });
+  });
+  function apply(){
+    silent=true;
+    var on=PRESET[sel.value]||[];
+    inputs.forEach(function(i){i.checked=on.indexOf(i.getAttribute("data-d"))>-1;});
+    silent=false;render();
+  }
+  sel.addEventListener("change",apply);
+  function render(){
+    var open=[],pinned=0,variance=0;
+    DIM.forEach(function(d){
+      var i=inputs.filter(function(x){return x.getAttribute("data-d")===d.id;})[0];
+      if(i.checked){pinned++;}else{open.push(d);variance+=d.w;}
+    });
+    $("#A_p").innerHTML=pinned+'<span class="u">/8</span>';
+    $("#A_u").textContent=open.length;
+    var band=variance>=55?"Extreme":variance>=35?"High":variance>=15?"Moderate":"Low";
+    $("#A_v").textContent=band;
+    open.sort(function(a,b){return b.w-a.w;});
+    var w=open.slice(0,4).map(function(d){
+      return ['w',"<b>"+d.n+" is open.</b> "+d.d];
+    });
+    if(!open.length) w=[["o","Every dimension pinned. That is not automatically good \u2014 check you have not over-constrained the output budget. See 1.3."]];
+    else if(open.length<=2) w.push(["o","Only "+open.length+" dimension"+(open.length>1?"s":"")+" left open. If that is deliberate, this prompt is in good shape."]);
+    $("#A_warn").innerHTML=w.map(function(x){
+      return '<div class="wchip '+x[0]+'">'+x[1]+'</div>';}).join("");
+  }
+  apply();
+})();
+
+/* ================= TOOL 02 — destination switcher ================= */
+(function(){
+  var DEST={
+    "Slack post":{len:"40\u201380 words. It competes with 30 other messages.",
+      form:"Two or three short paragraphs. No headings. A link, not an attachment.",
+      reg:"Direct, first person, plain. Contractions fine.",
+      cut:"Background everyone already has. Anything that only matters to one team."},
+    "Email to client":{len:"120\u2013200 words. Long enough to be taken seriously, short enough to be read.",
+      form:"Greeting, three paragraphs, a clear next step, sign-off.",
+      reg:"Warm but formal. No contractions. No internal shorthand.",
+      cut:"Internal names, internal blame, anything you would not want forwarded."},
+    "One slide":{len:"Under 40 words on the slide itself.",
+      form:"A headline that states the conclusion, then at most four fragments.",
+      reg:"Declarative. No verbs of hedging.",
+      cut:"Everything that belongs in the spoken version. The slide is not the script."},
+    "Board paper":{len:"250\u2013400 words plus a one-line summary at the top.",
+      form:"Conclusion first, then evidence, then the decision being asked for.",
+      reg:"Neutral, unemotional, specific about numbers and dates.",
+      cut:"Process detail. Optimism. Anything that reads as reassurance rather than fact."},
+    "SMS":{len:"Under 160 characters. This is a hard limit, not a preference.",
+      form:"One sentence. Optionally one link.",
+      reg:"Plain and unambiguous. No irony \u2014 it does not survive this format.",
+      cut:"Everything except the fact and the action."}
+  };
+  var TASK={
+    delay:{
+      "Slack post":["The new date and who is affected.","You bury the date in paragraph three and half the team keeps the old one."],
+      "Email to client":["The new date, what caused it in one clause, and what you are doing about it.","You over-explain the cause and it reads as excuse-making."],
+      "One slide":["Old date, new date, the single reason.","You put the whole narrative on the slide and nobody reads either it or you."],
+      "Board paper":["Cost of the delay, revised date, the decision you need from them.","You report the delay without naming a decision, and the meeting invents one."],
+      "SMS":["New date only.","You try to include the reason and it truncates mid-sentence."]},
+    photo:{
+      "Slack post":["Why anyone in this channel should care today.","You write a textbook paragraph into a chat and nobody finishes it."],
+      "Email to client":["Almost never the right destination \u2014 ask why this is an email.","You send an explainer nobody asked for."],
+      "One slide":["The one mechanism, in a diagram, with under 40 words.","You write the paragraph on the slide and read it aloud."],
+      "Board paper":["Not applicable \u2014 if this is going to a board, the subject is the business case, not the biology.","You explain the science to people who wanted the numbers."],
+      "SMS":["Not a viable destination for an explainer.","You try anyway and produce something true and useless."]},
+    outage:{
+      "Slack post":["What is broken, whether it is still broken, and who is on it.","You lead with the root cause and people cannot tell if it is over."],
+      "Email to client":["Impact window, whether their data was affected, what you are doing next.","You use internal severity language and it means nothing to them."],
+      "One slide":["Duration, transactions affected, single root cause.","You show a timeline nobody can read from the back of the room."],
+      "Board paper":["Financial and regulatory exposure, and whether it can recur.","You describe the incident and omit whether it can happen again \u2014 the only question they have."],
+      "SMS":["Service is down or restored, plus a status link.","You include an apology and lose the status link to truncation."]}
+  };
+  var names=Object.keys(DEST),cur=names[0];
+  var tabs=$("#B_tabs");
+  names.forEach(function(n){
+    var l=document.createElement("label");
+    l.innerHTML='<input type="radio" name="bdest" value="'+n+'"'+(n===cur?" checked":"")+'> '+n;
+    tabs.appendChild(l);
+  });
+  $$("input[name=bdest]",tabs).forEach(function(r){
+    r.addEventListener("change",function(){cur=r.value;render();});
+  });
+  $("#B_task").addEventListener("change",render);
+  function row(k,v){
+    return '<div class="benchrow" style="grid-template-columns:150px 1fr">'+
+      '<div class="rk">'+k+'</div><div>'+v+'</div></div>';
+  }
+  function render(){
+    var d=DEST[cur],t=TASK[$("#B_task").value][cur];
+    $("#B_out").innerHTML=
+      '<div class="benchrow hd" style="grid-template-columns:150px 1fr"><div>Decided by</div><div>'+cur+'</div></div>'+
+      row("Length",d.len)+row("Form",d.form)+row("Register",d.reg)+
+      row("Must include",t[0])+row("Must cut",d.cut)+
+      row("If you skip it",t[1]);
+  }
+  render();
+})();
+
+/* ================= TOOL 03 — explainer builder ================= */
+(function(){
+  var AUD={
+    wide:{line:"Write for students aged 13-17.",narrow:false},
+    y1:{line:"Write for students aged 13-14, in their first year of secondary science.\nAssume they know: living things need energy; air contains different gases.\nAssume they do NOT know: chemical equations, or the words molecule,\nglucose, chloroplast, respiration.",narrow:true},
+    y4:{line:"Write for students aged 16-17 revising for a final school exam.\nAssume they know basic chemical notation and the words molecule and\nenzyme. Assume they confuse photosynthesis with respiration.",narrow:true},
+    adult:{line:"Write for a curious adult who has not studied science since school.\nAssume no formulae and no retained vocabulary, but full patience for\na long sentence.",narrow:true}
+  };
+  var DEST={
+    worksheet:"This will be printed on a classroom worksheet and read without a\nteacher present, so it must stand alone.",
+    slide:"This will go on a single presentation slide and be spoken over, so\nit must be readable from the back of a room.",
+    revision:"This will be read the night before an exam, so lead with the thing\nmost likely to be tested.",
+    parent:"This will be sent home to parents, some of whom did not enjoy\nscience at school and will stop reading if it feels like a lesson."
+  };
+  var FORM={para:"Write short paragraphs. No bullet points, no headings, no equations.",
+            bullets:"Write bullet points, one idea each. No headings, no equations.",
+            qa:"Write as questions and answers. One question per idea."};
+  var REG={
+    vague:"Make it engaging and friendly.",
+    ops:"Open with a question the reader can answer from memory.\nInclude exactly one everyday analogy drawn from cooking, building\nor money. Include one fact most readers would find surprising.\nDo not use exclamation marks.",
+    plain:"Write plainly. No rhetorical questions, no analogies, no asides."
+  };
+  var ACC="Simplify freely, but these must be right:\n- The carbon in the plant's food comes from carbon dioxide in the air,\n  not from the soil and not from sunlight.\n- Sunlight supplies the energy; it is not an ingredient.\n- Leaves look green because chlorophyll reflects green light.\n- Plants use oxygen too, constantly. This is not the reverse of breathing.\nDo not write that plants \"make food out of sunlight\".";
+  var C={};
+  ["C_subj","C_aud","C_dest","C_form","C_len","C_reg","C_prior","C_acc","C_ban","C_check","C_rank"]
+    .forEach(function(i){C[i]=$("#"+i);});
+
+  function build(){
+    var len=parseInt(C.C_len.value,10);
+    $("#C_len_v").textContent=len;
+    var subj=C.C_subj.value.trim()||"the subject";
+    var aud=AUD[C.C_aud.value],L=[];
+
+    L.push("# TASK","","Explain "+subj+".","");
+    L.push("# AUDIENCE","");
+    L.push(C.C_prior.checked?aud.line:aud.line.split("\n")[0]);
+    if(C.C_prior.checked&&aud.narrow)
+      L.push("Define any word outside that list in the same sentence you use it.");
+    L.push("");
+    L.push("# DESTINATION","",DEST[C.C_dest.value],"");
+    if(C.C_acc.checked) L.push("# ACCURACY","",ACC,"");
+    L.push("# FORM AND LENGTH","");
+    L.push(FORM[C.C_form.value]);
+    L.push("Total length: "+Math.round(len*0.85)+"-"+Math.round(len*1.15)+" words.");
+    L.push("");
+    L.push("# REGISTER","",REG[C.C_reg.value]);
+    if(C.C_ban.checked)
+      L.push("Do not use the words amazing, incredible, fascinating or journey.");
+    L.push("");
+    if(C.C_rank.checked){
+      L.push("# IF CONSTRAINTS CONFLICT","");
+      L.push("Length is the hard limit. If everything above will not fit, drop\ncontent rather than exceeding the word count, and say what you dropped.","");
+    }
+    if(C.C_check.checked){
+      L.push("# BEFORE ANSWERING","");
+      L.push("List any word you used that the audience is not assumed to know and\nthat you did not define in place. If that list is not empty, rewrite.\nDo not show me the list.","");
+    }
+    L.push("Now explain "+subj+". Output the explanation alone.");
+
+    var text=L.join("\n");
+    $("#C_out_pre").textContent=text;
+    $("#C_meta").textContent="\u2248"+Math.round(text.length/4)+" tokens";
+
+    var w=[];
+    if(C.C_aud.value==="wide")
+      w.push(["e","\u201cAged 13-17\u201d is a four-year band spanning the largest change in scientific vocabulary a student undergoes. The model will average across it and satisfy neither end. Narrow it."]);
+    if(C.C_reg.value==="vague")
+      w.push(["e","\u201cEngaging and friendly\u201d is unmeasurable, so the model substitutes its own average: exclamation marks and the word amazing. Operationalise it or drop it."]);
+    if(!C.C_acc.checked)
+      w.push(["e","No accuracy contract. The brief asks for accuracy and nothing here defines it, so expect the most common phrasings on the internet \u2014 which include the well-known wrong ones."]);
+    if(!C.C_prior.checked)
+      w.push(["w","No prior-knowledge floor. The model has to guess which words need defining, and it will guess differently every run."]);
+    if(C.C_form.value==="para"&&len<80)
+      w.push(["w","Under 80 words is tight for paragraphs. Either raise the length or switch the form \u2014 otherwise the model quietly drops one of your requirements."]);
+    if(C.C_dest.value==="slide"&&len>120)
+      w.push(["w","A single slide and "+len+" words are in conflict. Nothing here says which wins, so the model will decide for you. Turn on the tie-break rule."]);
+    if(C.C_reg.value==="ops"&&len<80)
+      w.push(["w","A question, an analogy and a surprising fact will not fit in "+len+" words alongside the actual explanation. This is the over-subscribed budget from 1.3."]);
+    if(!C.C_ban.checked)
+      w.push(["w","No banned words. Register drift is the easiest thing to check automatically and the easiest to let slide."]);
+    if(!C.C_rank.checked)
+      w.push(["w","No tie-break rule. When constraints compete the model drops one silently, and it will not be the same one every call."]);
+    if(!w.length)
+      w.push(["o","Every dimension pinned and no obvious conflicts. Next: run it four times on four different subjects and score the outputs \u2014 the harness in part 05 does exactly that."]);
+    $("#C_warn").innerHTML=w.map(function(x){
+      return '<div class="wchip '+x[0]+'">'+x[1]+'</div>';}).join("");
+  }
+  Object.keys(C).forEach(function(k){
+    C[k].addEventListener("input",build);C[k].addEventListener("change",build);
+  });
+  $("#C_copy").addEventListener("click",function(e){
+    e.stopPropagation();copy($("#C_out_pre").textContent,$("#C_copy"));
+  });
+  build();
+})();
+})();
+</script>
+</body>
+</html>

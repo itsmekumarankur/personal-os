@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Architects Lab — Project 1: Running ML Containers (MLflow + JupyterLab)</title>
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#121821; --panel2:#161d28; --border:#22303f;
+    --text:#dbe4ee; --muted:#7d92a8; --accent:#39d3ac; --accent2:#f2b84b;
+    --danger:#ef6a6a; --code:#0d1319; --tag:#1c2a3a;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    line-height:1.6; padding:0 0 80px 0;
+  }
+  header{
+    padding:36px 24px 24px; border-bottom:1px solid var(--border);
+    background:linear-gradient(180deg,#0e141c,#0b0f14);
+  }
+  .eyebrow{color:var(--accent); font-size:12px; letter-spacing:2px; text-transform:uppercase; font-weight:600;}
+  h1{margin:8px 0 6px; font-size:28px; color:#f2f6fa;}
+  .sub{color:var(--muted); font-size:14px; max-width:780px;}
+  .course-link{
+    display:inline-block; margin-top:14px; font-size:13px; font-weight:600;
+    color:var(--accent); text-decoration:none; border:1px solid var(--border);
+    background:var(--panel2); padding:8px 14px; border-radius:6px;
+  }
+  .course-link:hover{border-color:var(--accent); background:#152030;}
+  .toolbar{
+    display:flex; gap:10px; padding:16px 24px; position:sticky; top:0;
+    background:rgba(11,15,20,0.95); backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--border); z-index:10; flex-wrap:wrap;
+  }
+  button.ctrl{
+    background:var(--panel2); color:var(--text); border:1px solid var(--border);
+    padding:8px 14px; border-radius:6px; cursor:pointer; font-size:13px;
+  }
+  button.ctrl:hover{border-color:var(--accent); color:var(--accent);}
+  .wrap{max-width:920px; margin:0 auto; padding:24px;}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    margin-bottom:16px; overflow:hidden;
+  }
+  .card-head{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:16px 20px; cursor:pointer; user-select:none;
+  }
+  .card-head:hover{background:var(--panel2);}
+  .card-title{font-size:16px; font-weight:600; color:#f2f6fa; display:flex; align-items:center; gap:10px;}
+  .tag{
+    font-size:10px; text-transform:uppercase; letter-spacing:1px;
+    background:var(--tag); color:var(--accent); padding:3px 8px; border-radius:4px; font-weight:700;
+  }
+  .tag.arch{color:var(--accent2);}
+  .tag.risk{color:var(--danger);}
+  .chevron{color:var(--muted); transition:transform .2s;}
+  .card.open .chevron{transform:rotate(90deg);}
+  .card-body{
+    max-height:0; overflow:hidden; transition:max-height .25s ease;
+    padding:0 20px;
+  }
+  .card.open .card-body{ max-height:5000px; padding:0 20px 20px; }
+  p{margin:8px 0;}
+  .questions{
+    background:var(--code); border-left:3px solid var(--accent);
+    border-radius:6px; padding:12px 16px; margin:14px 0;
+  }
+  .questions h4{margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--accent);}
+  .questions ul{margin:0; padding-left:18px;}
+  .questions li{margin:6px 0; color:#c8d6e2;}
+  .archnote{
+    background:var(--code); border-left:3px solid var(--accent2);
+    border-radius:6px; padding:12px 16px; margin:14px 0;
+  }
+  .archnote h4{margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--accent2);}
+  .risknote{
+    background:var(--code); border-left:3px solid var(--danger);
+    border-radius:6px; padding:12px 16px; margin:14px 0;
+  }
+  .risknote h4{margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--danger);}
+  pre{
+    background:var(--code); border:1px solid var(--border); border-radius:8px;
+    padding:14px; overflow-x:auto; font-size:12.5px; color:#a9e6c9; line-height:1.5;
+  }
+  code{color:var(--accent2); font-family:'Cascadia Code',Consolas,monospace;}
+  .recall{
+    margin-top:12px; border:1px dashed var(--border); border-radius:6px; padding:10px 14px;
+    cursor:pointer; background:#0e1620;
+  }
+  .recall .q{color:var(--accent2); font-weight:600; font-size:13.5px;}
+  .recall .a{display:none; margin-top:8px; color:var(--muted); font-size:13.5px; border-top:1px solid var(--border); padding-top:8px;}
+  .recall.show .a{display:block;}
+  .recall .hint{font-size:11px; color:var(--muted); float:right;}
+  ul.plain li{margin:4px 0;}
+  table{width:100%; border-collapse:collapse; margin:12px 0; font-size:13px;}
+  th,td{border:1px solid var(--border); padding:8px 10px; text-align:left;}
+  th{background:var(--panel2); color:var(--accent2);}
+  .foot{color:var(--muted); text-align:center; padding:30px; font-size:12px;}
+  .progress{font-size:11px; color:var(--muted);}
+  /* notes width expansion - matches learning plan box */
+  .wrap,.container,main,header.hero,header.masthead,nav.toc,section.block,footer{max-width:100%!important;padding-left:24px!important;padding-right:24px!important;}
+</style>
+</head>
+<body>
+<!-- LEARNING PLAN -->
+<div style="margin:24px;background:#0f1520;border:1px solid #1e2836;border-left:4px solid #e0a030;border-radius:8px;padding:24px 28px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;">
+  <div style="color:#e0a030;font-size:13px;font-weight:700;letter-spacing:.08em;margin-bottom:14px;">&#9670; LEARNING PLAN — 2.5 HOURS DAILY</div>
+  <div style="overflow-x:auto;">
+  <table style="width:100%;border-collapse:collapse;font-size:13px;color:#c8d3e0;margin-bottom:18px;white-space:nowrap;">
+    <thead><tr style="color:#7c8ba0;border-bottom:1px solid #1e2836;">
+      <th style="padding:6px 10px;text-align:left;width:48px;">Step</th>
+      <th style="padding:6px 10px;text-align:left;">Activity</th>
+      <th style="padding:6px 10px;text-align:left;">Outcome</th>
+    </tr></thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">1</td><td style="padding:7px 10px;"><b>Complete the Udemy Course</b> — watch videos, understand concepts, don't rush</td><td style="padding:7px 10px;color:#5fbf7f;">Build strong fundamentals</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">2</td><td style="padding:7px 10px;"><b>Practice Everything</b> — complete exercises, assignments, and source code</td><td style="padding:7px 10px;color:#5fbf7f;">Gain hands-on experience</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">3</td><td style="padding:7px 10px;"><b>Revise with these notes</b></td><td style="padding:7px 10px;color:#5fbf7f;">Reinforce concepts and fill knowledge gaps</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">4</td><td style="padding:7px 10px;"><b>Earn the Udemy Certificate</b></td><td style="padding:7px 10px;color:#5fbf7f;">Ensure the course is completed end-to-end</td></tr>
+      <tr><td style="padding:7px 10px;color:#e0a030;font-weight:700;">5</td><td style="padding:7px 10px;"><b>Practise real world tough scenario</b> — scenario-based questions &amp; interview problems</td><td style="padding:7px 10px;color:#5fbf7f;">Develop practical and interview-ready skills</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">1.5 HRS</div>
+      <div style="font-size:12px;color:#c8d3e0;">Udemy Videos + Exercises + Source Code</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Notes Revision</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Scenario-Based Questions &amp; Practical Problems</div>
+    </div>
+  </div>
+  <div style="color:#f0f4f8;font-size:12px;font-weight:600;letter-spacing:.04em;">GOAL: <span style="color:#e0a030;">Learn &#8594; Practice &#8594; Revise &#8594; Complete &#8594; Apply</span></div>
+</div>
+<!-- END LEARNING PLAN -->
+<a href="https://ai.shivawithin.in" id="home-return-btn" title="Back to Home" style="position:fixed;bottom:24px;right:24px;z-index:99999;display:inline-flex;align-items:center;gap:6px;background:#0d1b2a;color:#3fb6ff;border:1px solid #3fb6ff;padding:9px 15px;border-radius:8px;text-decoration:none;font-family:system-ui,-apple-system,sans-serif;font-size:13px;font-weight:600;box-shadow:0 2px 16px rgba(0,0,0,0.5);transition:background 0.2s,box-shadow 0.2s;" onmouseover="this.style.background='#1a2f47';this.style.boxShadow='0 4px 20px rgba(63,182,255,0.25)'" onmouseout="this.style.background='#0d1b2a';this.style.boxShadow='0 2px 16px rgba(0,0,0,0.5)'">&#8592; Home</a>
+
+<header>
+  <div class="eyebrow">Architects Lab · Hands-On Docker Project</div>
+  <h1>Project 1 — Running ML Containers: JupyterLab + MLflow with Docker</h1>
+  <div class="sub">Notes from the hands-on lab: pulling real ML tooling images, running them as containers
+  with port mapping and persistent volumes, and connecting two separate containers (a notebook and an
+  experiment tracker) to talk to each other. Structured as both a conceptual walkthrough and a command
+  reference you can use directly at the terminal.</div>
+  <a class="course-link" href="https://www.udemy.com/course/mastering-aiml-with-docker/learn/lecture/50574855#overview" target="_blank" rel="noopener noreferrer">
+    ↗ Open on Udemy — Mastering AI/ML with Docker
+  </a>
+</header>
+
+<div class="toolbar">
+  <button class="ctrl" onclick="expandAll()">▾ Expand All</button>
+  <button class="ctrl" onclick="collapseAll()">▸ Collapse All</button>
+  <button class="ctrl" onclick="revealAllRecall()">💡 Reveal All Recall Answers</button>
+  <span class="progress" id="progressLabel"></span>
+</div>
+
+<div class="wrap">
+
+  <!-- SECTION 1 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Goal</span> What This Project Actually Builds</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>Two ML tools, run as containers instead of local installs, then connected to each other:</p>
+      <ul class="plain">
+        <li><strong>MLflow</strong> — experiment tracking (what algorithm, what hyperparameters, what evaluation metrics, per run)</li>
+        <li><strong>JupyterLab</strong> — the actual notebook development environment where you write and run code</li>
+      </ul>
+      <p>End state: a notebook running inside one container executes a training experiment and logs the
+      results (metrics, model artifact) to an MLflow instance running in a <em>separate</em> container —
+      two independently running, independently manageable pieces of infrastructure, talking to each other
+      over a network connection, exactly like two microservices would.</p>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>This is a small-scale, local rehearsal of exactly the kind of service-to-service communication
+        pattern you deal with across your 80+ microservices — one container's job isn't to know how the other
+        was built, only how to reach it over a known port. Getting comfortable with this pattern locally
+        (two containers, one connection) is the same mental model that scales up to production service mesh
+        communication, just without the complexity of service discovery, load balancing, or TLS yet.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Anatomy</span> Decoding an Image Name — It's Like a Fully Qualified Domain Name</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <pre>
+ghcr.io  /  mlflow  /  mlflow  :  latest
+  │          │          │           │
+registry   org/user   repo name    tag
+(GitHub    (mlflow)   (mlflow)    (version)
+Container
+Registry)
+
+Defaults when fields are omitted:
+  registry  → docker.io       (Docker Hub, if unspecified)
+  org/user  → library         (official Docker images)
+  tag       → latest
+      </pre>
+      <p>Docker Hub isn't the only registry — <strong>GitHub itself now serves as a container registry</strong>
+      (<code>ghcr.io</code>), a genuinely surprising fact for many, meaning GitHub is simultaneously a code
+      host and an image registry. Both MLflow and the Jupyter notebook images used in this lab come from
+      different registries (GHCR and Docker Hub respectively) — the four-part naming scheme is what makes
+      that transparent and unambiguous regardless of source.</p>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: What are the four components of a fully-qualified image name, and what are the default values if the shorter fields are omitted? <span class="hint">tap to reveal</span></div>
+        <div class="a">Registry / organization-or-user / repository / tag. If unspecified, registry defaults to docker.io (Docker Hub), organization defaults to "library" (official images), and tag defaults to "latest".</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Pulling</span> Images Are Layered, Not Monolithic</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <pre>docker pull ghcr.io/mlflow/mlflow:latest</pre>
+      <p>Watching the pull happen shows Docker fetching the image as multiple separate <strong>layers</strong>,
+      not one giant file. Each layer roughly corresponds to a stage of the image's build (base OS, runtime,
+      dependencies, application code) — meaning that upgrading just the application (MLflow itself) to a new
+      version typically only requires re-downloading the top layer or two, while the OS and dependency layers
+      stay cached and unchanged. This layering is why container image distribution is efficient at scale —
+      versioned incrementally, not as full re-downloads every time.</p>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>This is directly the same principle behind the multi-stage Dockerfile from the AWS App Runner
+        deployment in the Vercel production course — layer caching is why that Day 5 Docker build was
+        "instant the second time" after the first full build. Understanding layers isn't trivia; it directly
+        explains observed build/pull speed behavior you've already seen firsthand.</p>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: Why does upgrading just an application's version inside an image usually only require downloading 1-2 new layers instead of the whole image again? <span class="hint">tap to reveal</span></div>
+        <div class="a">Because images are built from layered, cacheable stages — the base OS, runtime, and dependency layers typically stay identical between versions, so only the layer(s) containing the actual application code that changed need to be re-downloaded; the unchanged layers are reused from what's already cached locally.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 4 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Running</span> Port Mapping — Why You Can't Just Connect Directly to a Container</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <pre>
+Your laptop (Mac/Windows)
+  └── Docker host (a lightweight Linux VM Docker creates)
+        └── Container (running MLflow, listening on port 5000 INSIDE the container)
+
+You (the browser on your laptop) can reach the Docker host VM,
+but NOT the container directly — there's a boundary in between.
+
+  -p 5555:5000
+      │     │
+   host   container
+   port    port
+
+"Traffic hitting port 5555 on my host gets forwarded
+ to port 5000 inside the container."
+      </pre>
+      <p>This is called port mapping (or port forwarding). Without it, a service running inside a container
+      is completely unreachable from outside — the container's internal network is isolated by design.</p>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: In `-p 5555:5000`, which number is the host port and which is the container's internal port? <span class="hint">tap to reveal</span></div>
+        <div class="a">5555 is the host port (what you connect to from your browser, e.g. localhost:5555) and 5000 is the container's internal port (what the application inside the container is actually listening on). The syntax is always host_port:container_port.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 5 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Running</span> Attached vs. Detached — And Why -d Is What You Actually Want</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <pre>
+docker run -p 5555:5000 ghcr.io/mlflow/mlflow:latest mlflow server --host 0.0.0.0
+  → runs ATTACHED: your terminal is now "stuck" showing the
+    container's live logs. Ctrl+C doesn't just detach — it
+    STOPS the container entirely.
+
+docker run -d -p 5555:5000 --name mlflow ghcr.io/mlflow/mlflow:latest mlflow server --host 0.0.0.0
+  → runs DETACHED (-d): container keeps running in the
+    background, terminal is immediately free, container
+    survives after you move on to other commands.
+      </pre>
+      <p>A crucial early lesson: attached mode's Ctrl+C is not a "step back" — it kills the container.
+      Detached mode (<code>-d</code>) plus a readable <code>--name</code> (instead of Docker's
+      auto-generated adjective-noun names) is the practical default for anything you want to keep running
+      while you continue working.</p>
+
+      <div class="risknote">
+        <h4>Risk Flag — Easy Early Mistake</h4>
+        <p>Running attached and pressing Ctrl+C thinking you're just "getting your terminal back" actually
+        terminates the container. If you need your terminal back without stopping the service, you must run
+        detached from the start (<code>-d</code>) — there's no clean way to detach from an already-attached
+        foreground run without a separate detach key sequence that this course doesn't rely on; it just
+        recommends always using <code>-d</code> for anything long-running.</p>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: What actually happens if you press Ctrl+C while attached to a container's foreground logs? <span class="hint">tap to reveal</span></div>
+        <div class="a">The container is stopped entirely — Ctrl+C in this attached mode doesn't just return you to your shell, it terminates the running process inside the container, which stops the container. This is why detached mode (-d) is the recommended default for anything meant to keep running.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 6 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Reference</span> Container Lifecycle Command Cheat Sheet</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <table>
+        <tr><th>Command</th><th>What it does</th></tr>
+        <tr><td><code>docker ps</code></td><td>List only RUNNING containers</td></tr>
+        <tr><td><code>docker ps -a</code></td><td>List ALL containers, running or stopped</td></tr>
+        <tr><td><code>docker ps -l</code></td><td>Show only the most recently run container</td></tr>
+        <tr><td><code>docker ps -n 2</code></td><td>Show the last N containers</td></tr>
+        <tr><td><code>docker start &lt;name/id&gt;</code></td><td>Restart a stopped (not deleted) container — its data/state is preserved</td></tr>
+        <tr><td><code>docker stop &lt;name/id&gt;</code></td><td>Gracefully stop a running container</td></tr>
+        <tr><td><code>docker rm &lt;name/id&gt;</code></td><td>Delete a stopped container (permanently — unlike stop)</td></tr>
+        <tr><td><code>docker rm -f &lt;name/id&gt;</code></td><td>Force-remove a container even if it's currently running</td></tr>
+        <tr><td><code>docker container prune</code></td><td>Bulk-delete ALL stopped containers at once — use carefully</td></tr>
+        <tr><td><code>docker logs &lt;name/id&gt;</code></td><td>View a container's output/logs</td></tr>
+        <tr><td><code>docker logs -f &lt;name/id&gt;</code></td><td>Follow logs live (like `tail -f`) — Ctrl+C just exits the log view, doesn't stop the container</td></tr>
+        <tr><td><code>docker exec -it &lt;name/id&gt; sh</code></td><td>Open an interactive shell INSIDE a running container</td></tr>
+      </table>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>The distinction between <code>stop</code> and <code>rm</code> is the one most worth internalizing
+        precisely: "exited" or "died" does NOT mean gone — a stopped container retains its filesystem state
+        and can be restarted with <code>docker start</code>. Only <code>rm</code> actually deletes it. This
+        matters operationally: if you're debugging a crashed container, don't reflexively `rm` it — `docker
+        logs` on the stopped container first, since the evidence is still there until you explicitly delete it.</p>
+      </div>
+
+      <div name="you can reference by ID or name or a unique prefix"></div>
+      <p>Containers can be referenced by full ID, container name, or even a <strong>unique ID prefix</strong>
+      (e.g. <code>docker start 799</code> works if no other container ID starts with those digits) — useful
+      for quick terminal work without copy-pasting full IDs.</p>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: If a container shows as "Exited" in `docker ps -a`, is its data gone? <span class="hint">tap to reveal</span></div>
+        <div class="a">No — "Exited" just means the container is stopped, not deleted. Its filesystem state is preserved and it can be restarted with `docker start`. Data is only actually lost once the container is explicitly removed with `docker rm` (or `docker container prune`).</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 7 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Persistence</span> Volumes — Making Your Notebooks Survive Container Deletion</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <pre>
+mkdir -p ~/ml-docker/notebooks
+
+docker run -d -p 8888:8888 --name notebook \
+  -v ~/ml-docker/notebooks:/home/jovyan/work \
+  jupyter/scipy-notebook
+             │                          │
+        host directory          container directory
+      (survives container       (where Jupyter is
+       deletion)                 configured to save
+                                  notebooks — the "work" dir)
+      </pre>
+      <p>Without a volume mount, anything created inside a container disappears the moment that container
+      is deleted — containers are meant to be disposable/replaceable, so persistent data must live outside
+      them. The <code>-v host_path:container_path</code> flag bind-mounts a real directory on your machine
+      into a path inside the container; files created in either location are immediately visible in the
+      other, since it's the same underlying storage, not a copy.</p>
+      <p>On Windows specifically: relative paths (like <code>~</code> for home) don't work reliably —
+      always use an absolute path for volume mounts there.</p>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>"Containers are disposable, data that matters lives outside them" is one of the most important
+        operational principles in all of container-based infrastructure — it's the same reasoning behind
+        why production databases run on managed persistent storage (EBS volumes, RDS) rather than inside
+        ephemeral application containers. Getting this instinct right locally (notebooks in a mounted volume,
+        not baked into the container) is good practice for the same discipline at production scale.</p>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: What happens to a notebook file saved inside a Jupyter container if that container is later deleted, WITHOUT a volume mount configured? <span class="hint">tap to reveal</span></div>
+        <div class="a">The file is permanently lost — containers are ephemeral by design, and anything written only to the container's own filesystem (not a mounted volume) disappears when the container is deleted. This is exactly why the -v volume mount to a host directory is used, so notebook files persist independently of the container's lifecycle.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 8 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Access</span> Finding the Jupyter Access Token — Don't Guess, Check the Logs</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>JupyterLab's container starts with token-based authentication enabled by default (a security
+      measure) — the token isn't shown anywhere obvious; you have to check
+      <code>docker logs notebook</code>, which prints a full URL with the token embedded
+      (<code>http://127.0.0.1:8888/lab?token=...</code>). Visiting that exact URL (or copying just the
+      token into the login prompt) is the only way in.</p>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: Where do you find the access token needed to log into a freshly-launched Jupyter container? <span class="hint">tap to reveal</span></div>
+        <div class="a">In the container's logs — running `docker logs <container_name>` prints a startup message containing the full access URL with the token embedded as a query parameter, which you either visit directly or copy the token from into the login page.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 9 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Connecting</span> Two Containers Talking to Each Other — host.docker.internal</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <pre>
+Both containers run on the SAME laptop, but each is its own
+isolated environment. From inside the Jupyter container, you
+can't reach the MLflow container by "localhost" — that would
+mean localhost INSIDE the Jupyter container itself, not your
+actual machine.
+
+Solution: host.docker.internal
+  → a special DNS name Docker provides specifically so a
+    container can reach services running on ITS HOST machine
+    (including other containers' mapped ports).
+
+mlflow.set_tracking_uri("http://host.docker.internal:5555")
+      </pre>
+      <p>This connects back to the same host port (5555) that was mapped to MLflow's container earlier —
+      the Jupyter container reaches out through the host, to the mapped port, back down into the MLflow
+      container. Two independently running, independently manageable containers, connected purely via
+      network addressing — no shared filesystem, no special container-to-container link required.</p>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p><code>host.docker.internal</code> is a Docker Desktop convenience specific to local development —
+        it does not exist the same way in a real Kubernetes or multi-host production environment, where
+        service discovery is handled differently (DNS via service names, service mesh, etc.). Worth flagging
+        explicitly: this exact hostname is a "local dev only" pattern, not something to hardcode into
+        anything meant to run in production — a good example of where local-Docker convenience diverges from
+        production container orchestration.</p>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: Why can't the Jupyter container simply use "localhost:5555" to reach the MLflow container? <span class="hint">tap to reveal</span></div>
+        <div class="a">Because "localhost" inside the Jupyter container refers to the Jupyter container's OWN internal network namespace, not the actual host machine — the two containers are isolated from each other's localhost. host.docker.internal is the special DNS name Docker provides specifically to let a container reach services on its host machine (including other containers' host-mapped ports) instead.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 10 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Code</span> The Actual Experiment-Logging Code — What Each Line Does</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <pre>
+mlflow.set_tracking_uri("http://host.docker.internal:5555")  # where to send logs
+mlflow.set_experiment("simple-linear-demo")                   # groups runs together
+
+with mlflow.start_run():
+    X, y = make_regression(n_samples=100, n_features=1, noise=10, random_state=42)
+    model = LinearRegression()
+    model.fit(X, y)
+
+    y_pred = model.predict(X)
+    mse = mean_squared_error(y, y_pred)
+
+    mlflow.log_param("model_type", "LinearRegression")   # records a config value
+    mlflow.log_metric("mse", mse)                          # records an evaluation number
+    mlflow.sklearn.log_model(model, artifact_path="model") # saves the trained model itself
+      </pre>
+      <p>Each run inside the <code>with mlflow.start_run():</code> block is automatically tracked as a
+      distinct, timestamped experiment entry — visible in the MLflow UI with its parameters, metrics, and a
+      downloadable model artifact (a pickled model file). Running the same notebook cell multiple times
+      creates multiple separate tracked runs, letting you compare them side by side later.</p>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: What three distinct pieces of information does MLflow capture for each run in this example? <span class="hint">tap to reveal</span></div>
+        <div class="a">A logged parameter (the model type/configuration, via log_param), a logged metric (the evaluation score — mean squared error, via log_metric), and the trained model artifact itself (a downloadable, versioned pickle file, via log_model) — together giving a full record of what was run, how it performed, and the resulting model.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 11 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag arch">Reference</span> Docker Essentials Glossary + Cleanup Commands</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <table>
+        <tr><th>Concept</th><th>Meaning</th></tr>
+        <tr><td>Image</td><td>Blueprint for containers (e.g. jupyter/scipy-notebook)</td></tr>
+        <tr><td>Container</td><td>A running instance of an image</td></tr>
+        <tr><td>Tag</td><td>Versioned label for an image (e.g. latest, 2.4.1)</td></tr>
+        <tr><td>-p (Port Mapping)</td><td>Connects a host port to a container port</td></tr>
+        <tr><td>-d (Detached Mode)</td><td>Runs the container in the background</td></tr>
+        <tr><td>-it (Interactive Terminal)</td><td>Keeps a terminal attached for CLI-based, interactive containers</td></tr>
+        <tr><td>-v (Volume Mount)</td><td>Bind-mounts a host directory into the container for persistence</td></tr>
+      </table>
+      <pre>
+docker ps                              # running containers
+docker ps -a                           # all containers
+docker stop &lt;container_id&gt;             # stop
+docker start &lt;container_id&gt;            # restart a stopped one
+docker rm &lt;container_id&gt;               # remove (permanent)
+docker logs &lt;container_id&gt;             # view logs
+docker exec -it &lt;container_id&gt; bash    # interactive shell
+      </pre>
+    </div>
+  </div>
+
+  <!-- SECTION 12: NEXT UP -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag arch">Preview</span> What the Next Module Covers</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>Stated next step: <strong>"Build Your Own ML Development Environment with a Dockerfile"</strong> —
+      moving from pulling and running pre-built third-party images (MLflow, Jupyter) to writing your own
+      Dockerfile that defines a custom image with your own specific Python dependencies pre-installed.</p>
+
+      <div class="questions">
+        <h4>Questions to answer once you reach the Dockerfile module</h4>
+        <ul>
+          <li>Does the custom Dockerfile build on top of one of these same base images (e.g. extending
+          jupyter/scipy-notebook), or start from a more minimal Python base image and add Jupyter/MLflow
+          dependencies manually?</li>
+          <li>Will Docker Compose be introduced to manage both containers (Jupyter + MLflow) together as one
+          unit, instead of launching each with separate `docker run` commands and manually wiring them via
+          host.docker.internal?</li>
+          <li>Given host.docker.internal was flagged as a local-dev-only pattern — does the next module
+          address how container-to-container communication is actually handled once you move beyond a
+          single Docker Desktop host (e.g. Docker Compose's automatic internal networking, or Kubernetes
+          service discovery)?</li>
+        </ul>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: What's the key shift in skill level signaled by the next module's title? <span class="hint">tap to reveal</span></div>
+        <div class="a">Moving from consuming pre-built third-party images (pulling and running MLflow/Jupyter as-is) to authoring your own Dockerfile — defining exactly which base image, dependencies, and configuration a custom image should contain, rather than relying entirely on someone else's published image.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="foot">Architects Lab · Study Notes · Source: "Running ML Containers with Docker" — Project 1 (School of DevOps)</div>
+
+<script>
+  function toggleCard(headEl){
+    const card = headEl.parentElement;
+    card.classList.toggle('open');
+    updateProgress();
+  }
+  function toggleRecall(el){
+    el.classList.toggle('show');
+  }
+  function expandAll(){
+    document.querySelectorAll('.card').forEach(c=>c.classList.add('open'));
+    updateProgress();
+  }
+  function collapseAll(){
+    document.querySelectorAll('.card').forEach(c=>c.classList.remove('open'));
+    updateProgress();
+  }
+  function revealAllRecall(){
+    document.querySelectorAll('.recall').forEach(r=>r.classList.add('show'));
+  }
+  function updateProgress(){
+    const total = document.querySelectorAll('.card').length;
+    const open = document.querySelectorAll('.card.open').length;
+    document.getElementById('progressLabel').textContent = open + ' / ' + total + ' sections expanded';
+  }
+  updateProgress();
+</script>
+
+</body>
+</html>

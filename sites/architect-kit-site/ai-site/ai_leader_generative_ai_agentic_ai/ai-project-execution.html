@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Project Execution — Decision Making for Executives · Architects Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0e14; --panel: #10151d; --panel-2: #151b25; --panel-3: #192132;
+    --grid: #1c2430; --line: #212b3a; --ink: #c7d0dc; --ink-dim: #7c8898; --ink-bright: #eef2f7;
+    --blueprint: #3fb6ff; --blueprint-dim: #1f4a63; --amber: #ffb454; --green: #5fd9a0; --red: #ff6b6b; --violet: #c07bff;
+    --radius: 4px;
+    --display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+    --body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background: linear-gradient(var(--grid) 1px, transparent 1px) 0 0/42px 42px, linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0/42px 42px, var(--bg);
+    color:var(--ink); font-family:var(--body); line-height:1.65; padding:0 0 90px 0;
+  }
+  a{color:var(--blueprint);}
+
+  .top-link-banner{
+    max-width:952px; margin:24px auto 0 auto; padding:14px 26px;
+    background:linear-gradient(90deg, rgba(63,182,255,.12), rgba(192,123,255,.08));
+    border:1px solid var(--blueprint); border-radius:var(--radius);
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  }
+  .top-link-banner .tlb-tag{font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--amber); font-weight:700; white-space:nowrap;}
+  .top-link-banner a{font-family:var(--mono); font-size:13px; color:var(--ink-bright); text-decoration:none; border-bottom:1px dashed var(--blueprint);}
+  .top-link-banner a:hover{color:var(--blueprint);}
+
+  .course-box{
+    margin:10px auto 0 auto; max-width:952px; padding:18px 26px;
+    background:var(--panel-2); border:1px solid var(--blueprint-dim); border-left:4px solid var(--blueprint);
+    border-radius:var(--radius); display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:14px;
+  }
+  .course-box .label{font-family:var(--mono); font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--blueprint);}
+  .course-box .sub{font-family:var(--mono); font-size:12px; color:var(--ink-dim);}
+
+  header.hero{max-width:952px; margin:22px auto 0 auto; padding:44px 26px 24px;}
+  header.hero h1{font-family:var(--display); font-size:clamp(28px,4.2vw,44px); font-weight:700; color:var(--ink-bright); margin:0 0 10px 0; letter-spacing:-.01em; line-height:1.12;}
+  header.hero .tagline{font-family:var(--mono); color:var(--amber); font-size:14px; letter-spacing:.04em; margin-bottom:16px;}
+  header.hero p.lede{max-width:720px; color:var(--ink-dim); font-size:16px;}
+
+  nav.toc{max-width:952px; margin:0 auto 20px; padding:18px 26px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);}
+  nav.toc .cap{font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-dim); margin-bottom:10px;}
+  nav.toc ol{margin:0; padding-left:20px; columns:2; gap:24px;}
+  nav.toc li{font-size:13.5px; margin-bottom:7px;}
+  nav.toc a{color:var(--ink); text-decoration:none;}
+  nav.toc a:hover{color:var(--blueprint);}
+  .toc-code{font-family:var(--mono); font-size:10px; color:var(--ink-dim); letter-spacing:.04em;}
+
+  section.block{max-width:952px; margin:0 auto; padding:36px 26px; border-top:1px solid var(--line);}
+  .kicker{display:flex; align-items:center; gap:12px; margin-bottom:6px;}
+  .kicker .num{font-family:var(--mono); font-size:12px; color:var(--bg); background:var(--blueprint); padding:3px 9px; border-radius:3px; font-weight:700; letter-spacing:.03em;}
+  .kicker .layer-tag{font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-dim);}
+  .kicker .code{margin-left:auto; font-family:var(--mono); font-size:10px; letter-spacing:.06em; color:var(--bg); background:var(--violet); padding:2px 8px; border-radius:3px; font-weight:700;}
+  h2.title{font-family:var(--display); font-size:25px; color:var(--ink-bright); margin:4px 0 14px 0; font-weight:600;}
+  h3.subtitle{font-family:var(--display); font-size:16.5px; color:var(--ink-bright); margin:22px 0 10px 0; font-weight:600;}
+  p{margin:0 0 14px 0; font-size:15.5px;}
+  ul{margin:0 0 14px 0; padding-left:20px;}
+  li{margin-bottom:6px; font-size:15px;}
+  strong{color:var(--ink-bright);}
+  code{font-family:var(--mono); background:var(--panel-3); padding:1px 6px; border-radius:3px; font-size:.87em; color:var(--blueprint); border:1px solid var(--line);}
+
+  .diagram-frame{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:18px 14px 10px; margin:18px 0 22px 0; overflow-x:auto;}
+  .diagram-frame .cap{font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-dim); padding:0 6px 12px; display:flex; justify-content:space-between;}
+  .diagram-frame svg{display:block; width:100%; height:auto; min-width:560px;}
+
+  .prime-box{background:linear-gradient(180deg, rgba(192,123,255,.07), transparent); border:1px solid var(--violet); border-radius:var(--radius); padding:16px 18px; margin:6px 0 26px 0;}
+  .prime-box .ptag{font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--violet); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:8px;}
+  .prime-box .ptag::before{content:"◆"; font-size:9px;}
+  .prime-box ol{margin:0; padding-left:20px;}
+  .prime-box li{font-family:var(--mono); font-size:13px; color:var(--ink); margin-bottom:8px;}
+
+  .recap{background:var(--panel-2); border:1px solid var(--green); border-left:4px solid var(--green); border-radius:var(--radius); padding:16px 20px; margin:26px 0 18px 0;}
+  .recap .rtag{font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--green); font-weight:700; margin-bottom:8px;}
+  .recap p{margin:0; font-size:14.5px; color:var(--ink);}
+
+  .persp-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:14px; margin:0 0 8px 0;}
+  .persp-card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px;}
+  .persp-card.cto{border-top:3px solid var(--amber);}
+  .persp-card.arch{border-top:3px solid var(--blueprint);}
+  .persp-card.pm{border-top:3px solid var(--violet);}
+  .persp-card .ptitle{font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:8px;}
+  .persp-card.cto .ptitle{color:var(--amber);}
+  .persp-card.arch .ptitle{color:var(--blueprint);}
+  .persp-card.pm .ptitle{color:var(--violet);}
+  .persp-card p{font-size:13.8px; color:var(--ink-dim); margin:0;}
+
+  table{width:100%; border-collapse:collapse; margin:16px 0 22px 0; font-size:13.5px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
+  th,td{text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top;}
+  th{font-family:var(--mono); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--blueprint); background:var(--panel-2);}
+  td{color:var(--ink);}
+  tr:last-child td{border-bottom:none;}
+  td.mono{font-family:var(--mono); font-size:12.5px;}
+  .yes{color:var(--green); font-weight:600;}
+  .no{color:var(--red); font-weight:600;}
+  .warn{color:var(--amber); font-weight:600;}
+
+  .card-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:14px; margin:18px 0;}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px;}
+  .card .n{font-family:var(--mono); color:var(--blueprint); font-size:12px; font-weight:700; margin-bottom:6px;}
+  .card h4{font-family:var(--display); color:var(--ink-bright); font-size:15px; margin:0 0 8px 0;}
+  .card p{font-size:13.8px; color:var(--ink-dim); margin:0;}
+  .card ul{margin:6px 0 0 0; padding-left:16px;}
+  .card li{font-size:12.8px; color:var(--ink-dim); margin-bottom:3px;}
+
+  .two-col{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;}
+  @media (max-width:640px){.two-col{grid-template-columns:1fr;}}
+  .col-panel{border-radius:var(--radius); padding:16px 18px; border:1px solid var(--line); background:var(--panel);}
+  .col-panel.in{border-left:3px solid var(--green);}
+  .col-panel.out{border-left:3px solid var(--red);}
+  .col-panel .ctag{font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; font-weight:700; margin-bottom:8px;}
+  .col-panel.in .ctag{color:var(--green);}
+  .col-panel.out .ctag{color:var(--red);}
+  .col-panel ul{margin:0; padding-left:18px;}
+  .col-panel li{font-size:13.5px; margin-bottom:5px;}
+
+  .callout{background:var(--panel-2); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin:16px 0;}
+  .callout.amber{border-left:3px solid var(--amber);}
+  .callout.green{border-left:3px solid var(--green);}
+  .callout .ctitle{font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.08em; font-weight:700; margin-bottom:6px;}
+  .callout.amber .ctitle{color:var(--amber);}
+  .callout.green .ctitle{color:var(--green);}
+
+  .quote-box{background:var(--panel-2); border:1px solid var(--blueprint-dim); border-radius:var(--radius); padding:18px 22px; margin:16px 0; font-style:italic; color:var(--ink-bright); font-size:16px;}
+
+  .recall{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:14px 18px; margin:10px 0; cursor:pointer;}
+  .recall .rq{font-family:var(--mono); font-size:13.5px; color:var(--violet); display:flex; align-items:flex-start; gap:8px;}
+  .recall .rq::before{content:"Q ›"; color:var(--ink-dim); flex-shrink:0;}
+  .recall .ra{display:none; margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); font-size:14px; color:var(--ink-dim);}
+  .recall.open .ra{display:block;}
+  .recall .ra::before{content:"A › "; color:var(--green); font-family:var(--mono);}
+
+  footer{max-width:952px; margin:40px auto 0; padding:22px 26px 0; font-family:var(--mono); font-size:11px; color:var(--ink-dim); letter-spacing:.06em; text-align:center;}
+  /* notes width expansion - matches learning plan box */
+  .wrap,.container,main,header.hero,header.masthead,nav.toc,section.block,footer{max-width:100%!important;padding-left:24px!important;padding-right:24px!important;}
+</style>
+</head>
+<body>
+<!-- LEARNING PLAN -->
+<div style="margin:24px;background:#0f1520;border:1px solid #1e2836;border-left:4px solid #e0a030;border-radius:8px;padding:24px 28px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;">
+  <div style="color:#e0a030;font-size:13px;font-weight:700;letter-spacing:.08em;margin-bottom:14px;">&#9670; LEARNING PLAN — 2.5 HOURS DAILY</div>
+  <div style="overflow-x:auto;">
+  <table style="width:100%;border-collapse:collapse;font-size:13px;color:#c8d3e0;margin-bottom:18px;white-space:nowrap;">
+    <thead><tr style="color:#7c8ba0;border-bottom:1px solid #1e2836;">
+      <th style="padding:6px 10px;text-align:left;width:48px;">Step</th>
+      <th style="padding:6px 10px;text-align:left;">Activity</th>
+      <th style="padding:6px 10px;text-align:left;">Outcome</th>
+    </tr></thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">1</td><td style="padding:7px 10px;"><b>Complete the Udemy Course</b> — watch videos, understand concepts, don't rush</td><td style="padding:7px 10px;color:#5fbf7f;">Build strong fundamentals</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">2</td><td style="padding:7px 10px;"><b>Practice Everything</b> — complete exercises, assignments, and source code</td><td style="padding:7px 10px;color:#5fbf7f;">Gain hands-on experience</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">3</td><td style="padding:7px 10px;"><b>Revise with these notes</b></td><td style="padding:7px 10px;color:#5fbf7f;">Reinforce concepts and fill knowledge gaps</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">4</td><td style="padding:7px 10px;"><b>Earn the Udemy Certificate</b></td><td style="padding:7px 10px;color:#5fbf7f;">Ensure the course is completed end-to-end</td></tr>
+      <tr><td style="padding:7px 10px;color:#e0a030;font-weight:700;">5</td><td style="padding:7px 10px;"><b>Practise real world tough scenario</b> — scenario-based questions &amp; interview problems</td><td style="padding:7px 10px;color:#5fbf7f;">Develop practical and interview-ready skills</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">1.5 HRS</div>
+      <div style="font-size:12px;color:#c8d3e0;">Udemy Videos + Exercises + Source Code</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Notes Revision</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Scenario-Based Questions &amp; Practical Problems</div>
+    </div>
+  </div>
+  <div style="color:#f0f4f8;font-size:12px;font-weight:600;letter-spacing:.04em;">GOAL: <span style="color:#e0a030;">Learn &#8594; Practice &#8594; Revise &#8594; Complete &#8594; Apply</span></div>
+</div>
+<!-- END LEARNING PLAN -->
+<a href="https://ai.shivawithin.in" id="home-return-btn" title="Back to Home" style="position:fixed;bottom:24px;right:24px;z-index:99999;display:inline-flex;align-items:center;gap:6px;background:#0d1b2a;color:#3fb6ff;border:1px solid #3fb6ff;padding:9px 15px;border-radius:8px;text-decoration:none;font-family:system-ui,-apple-system,sans-serif;font-size:13px;font-weight:600;box-shadow:0 2px 16px rgba(0,0,0,0.5);transition:background 0.2s,box-shadow 0.2s;" onmouseover="this.style.background='#1a2f47';this.style.boxShadow='0 4px 20px rgba(63,182,255,0.25)'" onmouseout="this.style.background='#0d1b2a';this.style.boxShadow='0 2px 16px rgba(0,0,0,0.5)'">&#8592; Home</a>
+
+<div class="top-link-banner">
+  <span class="tlb-tag">📎 SOURCE LECTURE</span>
+  <a href="https://www.udemy.com/course/executive-briefing-generative-ai-and-large-language-models-llm/learn/lecture/50336715#overview" target="_blank" rel="noopener">Executive Briefing: Generative AI &amp; Large Language Models (LLM) — Udemy ↗</a>
+</div>
+
+<div class="course-box">
+  <div class="label">Architects Lab · Study Note 027</div>
+  <div class="sub">Domain: AI Project Execution — Decision Making for Executives · Format: Prime → Learn → Recap → Perspective</div>
+</div>
+
+<header class="hero">
+  <div class="tagline">TECHNICAL DECISIONS WITH COMMERCIAL IMPLICATIONS</div>
+  <h1>AI Project Execution — Decision Making for Executives</h1>
+  <p class="lede">From leading by example through RAG vs fine-tuning, agents demystified, and the cross-functional decision framework that gets the right people in the room. Same rhythm throughout: prime with a few questions, learn the concept, recap what stuck, then view it from the CTO's, the Architect's, and the PM's seat.</p>
+</header>
+
+<nav class="toc">
+  <div class="cap">Contents</div>
+  <ol>
+    <li><a href="#t1">Three Use Cases for AI Rollout</a> <span class="toc-code">J5R8N43</span></li>
+    <li><a href="#t2">Leading by Example</a> <span class="toc-code">T2M9K76</span></li>
+    <li><a href="#t3">Prompting Like a Pro — RISEN</a> <span class="toc-code">W6C4X21</span></li>
+    <li><a href="#t4">Real-World AI Case Studies</a> <span class="toc-code">N8H3Y59</span></li>
+    <li><a href="#t5">Training-Time vs Inference-Time</a> <span class="toc-code">B4Q7L18</span></li>
+    <li><a href="#t6">RAG — Deep Dive</a> <span class="toc-code">K9F2D65</span></li>
+    <li><a href="#t7">Fine Tuning — High Risk, High Reward</a> <span class="toc-code">R1T6M84</span></li>
+    <li><a href="#t8">RAG vs Fine Tuning</a> <span class="toc-code">H7W3B92</span></li>
+    <li><a href="#t9">AI Agents — Definitions &amp; Workflows</a> <span class="toc-code">D5N8Q17</span></li>
+    <li><a href="#t10">Tool Use / Function Calling</a> <span class="toc-code">Y2K6C43</span></li>
+    <li><a href="#t11">Agent Frameworks &amp; Risk Mitigation</a> <span class="toc-code">M8R4H59</span></li>
+    <li><a href="#t12">Cross-Functional Decision Making</a> <span class="toc-code">C3T7N26</span></li>
+    <li><a href="#t13">Executive Toolkit — Decision Framework</a> <span class="toc-code">F9L2W64</span></li>
+    <li><a href="#t14">Module Summary, Final Word &amp; Glossary</a> <span class="toc-code">Q4B8K37</span></li>
+    <li><a href="#recall">Active Recall Deck</a> <span class="toc-code">X1D5R92</span></li>
+  </ol>
+</nav>
+
+<!-- ============ TOPIC 1 ============ -->
+<section class="block" id="t1">
+  <div class="kicker"><span class="num">01</span><span class="layer-tag">Rollout</span><span class="code">J5R8N43</span></div>
+  <h2 class="title">Three Use Cases for AI Rollout</h2>
+
+  <div class="prime-box">
+    <div class="ptag">Prime yourself — answer before reading on</div>
+    <ol>
+      <li>If you only had budget for one AI initiative this year, would you lean toward internal efficiency or external differentiation — and why?</li>
+    </ol>
+  </div>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="n">01</div>
+      <h4>Adopt AI products internally</h4>
+      <p>ChatGPT, Claude, Gemini, Microsoft Copilot, GitHub Copilot/Cursor, Adobe Firefly.</p>
+      <ul><li class="yes">Fastest time-to-value</li><li class="yes">Low investment</li><li class="warn">Generic, not specialized</li></ul>
+    </div>
+    <div class="card">
+      <div class="n">02</div>
+      <h4>Build proprietary AI for employees</h4>
+      <p>Meeting summarizers, IT support copilots, knowledge management systems.</p>
+      <ul><li class="yes">Tailored to your business</li><li class="yes">Data stays in-house (if built right)</li><li class="warn">Requires investment &amp; expertise</li></ul>
+    </div>
+    <div class="card">
+      <div class="n">03</div>
+      <h4>Build proprietary AI for customers</h4>
+      <p>AI-powered products/services, customer-facing chatbots, differentiated offerings.</p>
+      <ul><li class="yes">Competitive advantage</li><li class="yes">Revenue potential</li><li class="no">Highest investment &amp; risk</li></ul>
+    </div>
+  </div>
+
+  <div class="recap">
+    <div class="rtag">What we just learned</div>
+    <p>The three use cases sit on a single risk/investment gradient: adopting existing tools is fast and cheap but generic, internal proprietary AI trades investment for a tailored efficiency gain, and customer-facing proprietary AI carries the highest cost and risk but also the only path to genuine competitive differentiation. Most organizations should move through them roughly in order, not start at the top.</p>
+  </div>
+
+  <div class="persp-grid">
+    <div class="persp-card cto">
+      <div class="ptitle">🎯 CTO view</div>
+      <p>Use Case 1 isn't just a warm-up — it's how the organization builds the AI literacy and workflow muscle that Use Cases 2 and 3 actually depend on. Skipping straight to a customer-facing AI product without that foundation raises execution risk substantially.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TOPIC 2 ============ -->
+<section class="block" id="t2">
+  <div class="kicker"><span class="num">02</span><span class="layer-tag">Culture</span><span class="code">T2M9K76</span></div>
+  <h2 class="title">Leading by Example</h2>
+
+  <div class="prime-box">
+    <div class="ptag">Prime yourself — answer before reading on</div>
+    <ol>
+      <li>Why would a leader being visibly proud of using AI actually change adoption rates across a whole team?</li>
+    </ol>
+  </div>
+
+  <div class="quote-box">"You should be proud of using AI, not shy about it."</div>
+
+  <div class="card-grid">
+    <div class="card"><div class="n">01</div><h4>Use AI tools openly</h4><p>Draft documents, contracts, RFPs with ChatGPT. Use Claude/Gemini for research. Be transparent, show teams how you use it.</p></div>
+    <div class="card"><div class="n">02</div><h4>Be an early adopter</h4><p>Microsoft Copilot, AI meeting note generators. Share efficiency gains. Make AI usage a positive example.</p></div>
+    <div class="card"><div class="n">03</div><h4>Encourage your teams</h4><p>Tech → GitHub Copilot/Cursor. Creative → Adobe Firefly. Sales → Salesforce Einstein. Everyone → ChatGPT/Claude.</p></div>
+    <div class="card"><div class="n">04</div><h4>Recognize early adopters</h4><p>Call out AI wins in meetings. Make positive examples of early adopters. Reward experimentation. Create AI champions.</p></div>
+  </div>
+
+  <div class="recap">
+    <div class="rtag">What we just learned</div>
+    <p>Visible leadership usage removes the social risk that otherwise suppresses adoption — employees who see AI use treated as shameful or a shortcut hide it, while employees who see it modeled and rewarded openly experiment and share what works, which is exactly the behavior that made Morgan Stanley's 98% adoption number (Topic 4) possible.</p>
+  </div>
+
+  <div class="persp-grid">
+    <div class="persp-card pm">
+      <div class="ptitle">📋 PM view</div>
+      <p>"Recognize early adopters" needs an actual mechanism (a channel, a meeting agenda item, a small reward) — good intentions without a repeatable ritual tend to fade within a quarter.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TOPIC 3 ============ -->
+<section class="block" id="t3">
+  <div class="kicker"><span class="num">03</span><span class="layer-tag">Prompting</span><span class="code">W6C4X21</span></div>
+  <h2 class="title">Prompting Like a Pro — the RISEN Framework</h2>
+
+  <div class="prime-box">
+    <div class="ptag">Prime yourself — answer before reading on</div>
+    <ol>
+      <li>RISEN is described as an inference-time optimization. What does that tell you about who can use it — does it require any technical setup at all?</li>
+    </ol>
+  </div>
+
+  <div class="diagram-frame">
+    <div class="cap"><span>FIG 3.1 — RISEN: FIVE PARTS OF A GOOD PROMPT</span><span>inference-time optimization — no code required</span></div>
+    <svg viewBox="0 0 820 150" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="a1" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L7,4 L0,7 Z" fill="#3fb6ff"/></marker></defs>
+      <rect x="10" y="20" width="145" height="70" rx="6" fill="#151b25" stroke="#3fb6ff"/><text x="82" y="50" text-anchor="middle" fill="#eef2f7" font-family="Space Grotesk" font-size="14" font-weight="700">R</text><text x="82" y="68" text-anchor="middle" fill="#7c8898" font-family="JetBrains Mono" font-size="9.5">Role</text>
+      <line x1="155" y1="55" x2="175" y2="55" stroke="#3fb6ff" marker-end="url(#a1)"/>
+      <rect x="177" y="20" width="145" height="70" rx="6" fill="#151b25" stroke="#3fb6ff"/><text x="249" y="50" text-anchor="middle" fill="#eef2f7" font-family="Space Grotesk" font-size="14" font-weight="700">I</text><text x="249" y="68" text-anchor="middle" fill="#7c8898" font-family="JetBrains Mono" font-size="9.5">Information</text>
+      <line x1="322" y1="55" x2="342" y2="55" stroke="#3fb6ff" marker-end="url(#a1)"/>
+      <rect x="344" y="20" width="145" height="70" rx="6" fill="#151b25" stroke="#ffb454"/><text x="416" y="50" text-anchor="middle" fill="#eef2f7" font-family="Space Grotesk" font-size="14" font-weight="700">S</text><text x="416" y="68" text-anchor="middle" fill="#7c8898" font-family="JetBrains Mono" font-size="9.5">Steps</text>
+      <line x1="489" y1="55" x2="509" y2="55" stroke="#3fb6ff" marker-end="url(#a1)"/>
+      <rect x="511" y="20" width="145" height="70" rx="6" fill="#151b25" stroke="#5fd9a0"/><text x="583" y="50" text-anchor="middle" fill="#eef2f7" font-family="Space Grotesk" font-size="14" font-weight="700">E</text><text x="583" y="68" text-anchor="middle" fill="#7c8898" font-family="JetBrains Mono" font-size="9.5">End Goal</text>
+      <line x1="656" y1="55" x2="676" y2="55" stroke="#3fb6ff" marker-end="url(#a1)"/>
+      <rect x="678" y="20" width="135" height="70" rx="6" fill="#151b25" stroke="#c07bff"/><text x="745" y="50" text-anchor="middle" fill="#eef2f7" font-family="Space Grotesk" font-size="14" font-weight="700">N</text><text x="745" y="68" text-anchor="middle" fill="#7c8898" font-family="JetBrains Mono" font-size="9.5">Narrowing</text>
+    </svg>
+  </div>
+
+  <table>
+    <tr><th>Letter</th><th>Purpose</th><th>Example</th></tr>
+    <tr><td class="mono">R</td><td>Sets the model's persona/context</td><td>"You are an expert writer of RFPs..."</td></tr>
+    <tr><td class="mono">I</td><td>Provides necessary background</td><td>"Here is background information about our company."</td></tr>
+    <tr><td class="mono">S</td><td>Lays out specific instructions</td><td>"First analyze requirements, then draft section by section..."</td></tr>
+    <tr><td class="mono">E</td><td>Clarifies what success looks like</td><td>"The final output should cover X, Y, Z."</td></tr>
+    <tr><td class="mono">N</td><td>Sets constraints and formatting</td><td>"Keep it to two paragraphs, formal business tone."</td></tr>
+  </table>
+
+  <div class="recap">
+    <div class="rtag">What we just learned</div>
+    <p>RISEN is entirely an inference-time technique — it changes nothing about the model itself, only how you talk to it, which means anyone with prompt access (no engineering setup, no budget approval) can use it immediately. That's exactly what makes it the cheapest, fastest lever in the whole optimization toolkit, and why it's worth mastering before reaching for RAG or fine-tuning.</p>
+  </div>
+
+  <div class="persp-grid">
+    <div class="persp-card pm">
+      <div class="ptitle">📋 PM view</div>
+      <p>RISEN is the right first thing to teach every employee adopting AI tools (Topic 2) — it's zero-cost, immediately actionable, and often closes most of the gap between a mediocre and a genuinely useful output.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TOPIC 4 ============ -->
+<section class="block" id="t4">
+  <div class="kicker"><span class="num">04</span><span class="layer-tag">Evidence</span><span class="code">N8H3Y59</span></div>
+  <h2 class="title">Real-World AI Case Studies</h2>
+
+  <div class="prime-box">
+    <div class="ptag">Prime yourself — answer before reading on</div>
+    <ol>
+      <li>Which do you think is the stronger signal of AI success — a high adoption rate, or a large number of queries handled? Why might they measure different things?</li>
+    </ol>
+  </div>
+
+  <table>
+    <tr><th>Company</th><th>Type</th><th>Application</th><th>Result</th></tr>
+    <tr><td>Morgan Stanley</td><td>Internal</td><td>Meeting summarizer for advisors (GPT-4 behind the scenes)</td><td class="mono">98% adoption, 10–15 hrs/week saved per advisor</td></tr>
+    <tr><td>Uber</td><td>Internal</td><td>IT support copilot in Slack, tied to docs &amp; tickets</td><td class="mono">45,000 queries/month, 13,000 eng. hours saved</td></tr>
+    <tr><td>Mass General Brigham</td><td>External</td><td>Platform for doctors responding to patient queries</td><td class="mono">58% of responses needed no editing</td></tr>
+    <tr><td>Duolingo</td><td>External</td><td>AI tutor with video calls &amp; explainers (GPT-4 behind the scenes)</td><td class="mono">+51% DAU, +43% paid subs, +40% revenue</td></tr>
+  </table>
+
+  <div class="recap">
+    <div class="rtag">What we just learned</div>
+    <p>Adoption rate (Morgan Stanley's 98%) measures whether people actually trust and use the tool; query volume (Uber's 45K/month) measures scale of impact; edit rate (Mass General Brigham's 58% unedited) measures output quality; and business metrics (Duolingo's revenue uplift) measure whether it moved the number that actually matters. A strong AI initiative usually needs to show more than one of these — adoption without quality, or scale without a business outcome, is a weaker story on its own.</p>
+  </div>
+
+  <div class="persp-grid">
+    <div class="persp-card cto">
+      <div class="ptitle">🎯 CTO view</div>
+      <p>Notice three of these four cases run GPT-4 "behind the scenes," not as a visible chat interface — the most successful deployments are often invisible infrastructure inside an existing workflow, not a new tool employees have to remember to open.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TOPIC 5 ============ -->
+<section class="block" id="t5">
+  <div class="kicker"><span class="num">05</span><span class="layer-tag">Optimization</span><span class="code">B4Q7L18</span></div>
+  <h2 class="title">Training-Time vs Inference-Time Optimizations</h2>
+
+  <div class="prime-box">
+    <div class="ptag">Prime yourself — answer before reading on</div>
+    <ol>
+      <li>If inference-time optimizations are faster and lower-risk, why would anyone still invest in training-time optimizations like fine-tuning?</li>
+    </ol>
+  </div>
+
+  <div class="diagram-frame">
+    <div class="cap"><span>FIG 5.1 — TWO OPTIMIZATION SURFACES</span><span>improving the model vs improving how you use it</span></div>
+    <svg viewBox="0 0 820 220" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="a2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L7,4 L0,7 Z" fill="#3fb6ff"/></marker></defs>
+      <rect x="20" y="20" width="360" height="80" rx="6" fill="#151b25" stroke="#c07bff" stroke-width="1.6"/>
+      <text x="200" y="46" text-anchor="middle" fill="#eef2f7" font-family="Space Grotesk" font-size="13" font-weight="700">Training-Time</text>
+      <text x="200" y="64" text-anchor="middle" fill="#7c8898" font-family="JetBrains Mono" font-size="10">Fine tuning — adjusts model weights</text>
+      <text x="200" y="82" text-anchor="middle" fill="#7c8898" font-family="JetBrains Mono" font-size="10">e.g. BloombergGPT · high investment, high reward</text>
+
+      <line x1="380" y1="60" x2="440" y2="60" stroke="#3fb6ff" marker-end="url(#a2)"/>
+
+      <rect x="440" y="20" width="360" height="80" rx="6" fill="#151b25" stroke="#5fd9a0" stroke-width="1.6"/>
+      <text x="620" y="46" text-anchor="middle" fill="#eef2f7" font-family="Space Grotesk" font-size="13" font-weight="700">Inference-Time</text>
+      <text x="620" y="64" text-anchor="middle" fill="#7c8898" font-family="JetBrains Mono" font-size="10">RISEN · RAG · Chain-of-thought · Agents</text>
+      <text x="620" y="82" text-anchor="middle" fill="#7c8898" font-family="JetBrains Mono" font-size="10">weights frozen · lower risk, faster to market</text>
+
+      <text x="410" y="140" text-anchor="middle" fill="#ffb454" font-family="JetBrains Mono" font-size="11" font-weight="700">"improve the model itself" vs "improve how you use it"</text>
+      <text x="410" y="170" text-anchor="middle" fill="#7c8898" font-family="JetBrains Mono" font-size="10">You can do both — a fine-tuned model still benefits from good prompting and RAG</text>
+    </svg>
+  </div>
+
+  <div class="recap">
+    <div class="rtag">What we just learned</div>
+    <p>Training-time optimization changes the model's weights permanently; inference-time optimization leaves weights frozen and works around the model instead. Fine-tuning remains worth the investment specifically when you need the model to internalize a new skill or generalize to novel cases the way BloombergGPT does for finance — inference-time tricks alone can't teach a model a genuinely new capability, only guide how it applies what it already knows.</p>
+  </div>
+
+  <div class="persp-grid">
+    <div class="persp-card arch">
+      <div class="ptitle">🏗️ Architect view</div>
+      <p>Default to exhausting inference-time options (RISEN, then RAG) before considering fine-tuning — it's the lower-cost, lower-risk path, and many "we need to fine-tune" requests turn out to be solvable with better prompting or retrieval alone.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TOPIC 6 ============ -->
+<section class="block" id="t6">
+  <div class="kicker"><span class="num">06</span><span class="layer-tag">RAG</span><span class="code">K9F2D65</span></div>
+  <h2 class="title">RAG — Deep Dive</h2>
+
+  <div class="prime-box">
+    <div class="ptag">Prime yourself — answer before reading on</div>
+    <ol>
+      <li>If RAG is "just adding context to the prompt," why is it treated as such a big deal in the industry?</li>
+      <li>Encoding LLMs turn text into vectors where similar meaning = similar numbers. What does that imply about how these models represent "meaning"?</li>
+    </ol>
+  </div>
+
+  <p><strong>The small idea:</strong> add background information to prompts. <strong>The big idea:</strong> use encoding LLMs to find that background information via semantic search — turning text into vectors (numbers) that represent meaning, not just matching words.</p>
+
+  <div class="diagram-frame">
+    <div class="cap"><span>FIG 6.1 — RAG WORKFLOW</span><span>question → vector → search → retrieve → answer</span></div>
+    <svg viewBox="0 0 820 220" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="a3" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L7,4 L0,7 Z" fill="#3fb6ff"/></marker></defs>
+      <rect x="10" y="20" width="150" height="50" rx="5" fill="#151b25" stroke="#3fb6ff"/><text x="85" y="50" text-anchor="middle" fill="#eef2f7" font-family="JetBrains Mono" font-size="10">User question</text>
+      <line x1="160" y1="45" x2="185" y2="45" stroke="#3fb6ff" marker-end="url(#a3)"/>
+      <rect x="187" y="20" width="150" height="50" rx="5" fill="#151b25" stroke="#3fb6ff"/><text x="262" y="45" text-anchor="middle" fill="#eef2f7" font-family="JetBrains Mono" font-size="9.5">Convert to</text><text x="262" y="59" text-anchor="middle" fill="#eef2f7" font-family="JetBrains Mono" font-size="9.5">vector (encoding LLM)</text>
+      <line x1="337" y1="45" x2="362" y2="45" stroke="#3fb6ff" marker-end="url(#a3)"/>
+      <rect x="364" y="20" width="150" height="50" rx="5" fill="#151b25" stroke="#ffb454"/><text x="439" y="45" text-anchor="middle" fill="#eef2f7" font-family="JetBrains Mono" font-size="9.5">Search vector</text><text x="439" y="59" text-anchor="middle" fill="#eef2f7" font-family="JetBrains Mono" font-size="9.5">database</text>
+      <line x1="514" y1="45" x2="539" y2="45" stroke="#3fb6ff" marker-end="url(#a3)"/>
+      <rect x="541" y="20" width="150" height="50" rx="5" fill="#151b25" stroke="#ffb454"/><text x="616" y="45" text-anchor="middle" fill="#eef2f7" font-family="JetBrains Mono" font-size="9.5">Retrieve closest</text><text x="616" y="59" text-anchor="middle" fill="#eef2f7" font-family="JetBrains Mono" font-size="9.5">chunks</text>
+
+      <line x1="616" y1="70" x2="616" y2="92" stroke="#3fb6ff"/>
+      <line x1="616" y1="92" x2="300" y2="92" stroke="#3fb6ff"/>
+      <line x1="300" y1="92" x2="300" y2="110" stroke="#3fb6ff" marker-end="url(#a3)"/>
+
+      <rect x="150" y="112" width="300" height="46" rx="5" fill="#0e1420" stroke="#5fd9a0"/>
+      <text x="300" y="140" text-anchor="middle" fill="#eef2f7" font-family="JetBrains Mono" font-size="10">Question + retrieved context → LLM</text>
+      <line x1="300" y1="158" x2="300" y2="180" stroke="#3fb6ff" marker-end="url(#a3)"/>
+      <rect x="130" y="182" width="340" height="36" rx="5" fill="#0e1420" stroke="#5fd9a0"/>
+      <text x="300" y="205" text-anchor="middle" fill="#eef2f7" font-family="JetBrains Mono" font-size="10">Accurate, context-aware response</text>
+    </svg>
+  </div>
+
+  <div class="two-col">
+    <div class="col-panel out">
+      <div class="ctag">Without RAG</div>
+      <p style="font-size:13.5px; margin:0;">User: "I can't access Gmail."<br>LLM: "Check your network connection..." <em>(generic)</em></p>
+    </div>
+    <div class="col-panel in">
+      <div class="ctag">With RAG</div>
+      <p style="font-size:13.5px; margin:0;">Context: "Company policy: no personal email. Access denied = firewall."<br>LLM: "You're blocked by the company firewall due to policy. Please request approval..."</p>
+    </div>
+  </div>
+
+  <div class="recap">
+    <div class="rtag">What we just learned</div>
+    <p>RAG really is "just" adding relevant context to a prompt — but the "big idea" that makes it powerful at scale is semantic search: encoding text into vectors lets you retrieve relevant information by meaning rather than exact keyword match, which is what makes it practical to ground answers in thousands of documents instead of one hand-picked paragraph. Whether meaning is "just math" is genuinely debated — what's not in dispute is that the vector representation captures enough of it to make retrieval reliably useful in practice.</p>
+  </div>
+
+  <div class="persp-grid">
+    <div class="persp-card cto">
+      <div class="ptitle">🎯 CTO view</div>
+      <p>RAG is usually the highest-leverage first move for reducing hallucinations in a business context — it's inference-time (low risk, fast), and it directly targets the failure mode (the model not knowing your specific facts) that causes most embarrassing wrong answers.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TOPIC 7 ============ -->
+<section class="block" id="t7">
+  <div class="kicker"><span class="num">07</span><span class="layer-tag">Fine Tuning</span><span class="code">R1T6M84</span></div>
+  <h2 class="title">Fine Tuning — High Risk, High Reward</h2>
+
+  <div class="prime-box">
+    <div class="ptag">Prime yourself — answer before reading on</div>
+    <ol>
+      <li>What's the difference between a model "knowing a fact" and a model "having learned a skill" — and why does that distinction matter for choosing fine-tuning?</li>
+    </ol>
+  </div>
+
+  <p><strong>Definition:</strong> taking a pre-trained model and training it further with your proprietary data (prompts + responses), so it becomes specialized for your domain.</p>
+
+  <div class="two-col">
+    <div class="col-panel out">
+      <div class="ctag">⚠️ High risk</div>
+      <ul>
+        <li>Significant R&amp;D required</li>
+        <li>Outcomes are unclear — might not work</li>
+        <li>Expensive (GPUs, time, expertise)</li>
+        <li>"Catastrophic forgetting" risk if over-trained</li>
+      </ul>
+    </div>
+    <div class="col-panel in">
+      <div class="ctag">✅ High reward</div>
+      <ul>
+        <li>Can outperform GPT on your specific task</li>
+        <li>Real differentiation, competitive advantage</li>
+        <li>Faster inference (no RAG lookup needed)</li>
+        <li>Learns general skills, not just facts</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="subtitle">Example: e-commerce pricing</h3>
+  <table>
+    <tr><th>Without fine-tuning</th><th>With fine-tuning</th></tr>
+    <tr><td>Generic pricing advice, doesn't understand your categories, can't estimate value from descriptions</td><td>Learns your product catalog, estimates prices from descriptions, can value new products it's never seen — outperforms GPT on this specific task</td></tr>
+  </table>
+
+  <div class="recap">
+    <div class="rtag">What we just learned</div>
+    <p>A model "knowing a fact" means it can recall or look up a specific piece of information (which RAG can supply on demand); a model "having learned a skill" means it can generalize a pattern to new, unseen cases — like estimating a price for a product it's never encountered, based on the pattern learned across thousands of examples. That generalization is precisely what RAG can't provide (retrieval only returns what's already written down), which is why fine-tuning is the right tool when the goal is a transferable capability, not just accessible facts.</p>
+  </div>
+
+  <div class="persp-grid">
+    <div class="persp-card arch">
+      <div class="ptitle">🏗️ Architect view</div>
+      <p>Catastrophic forgetting is a real, measurable risk — validate the fine-tuned model against its original general capabilities, not just the new specialized task, before deploying it. A model that's brilliant at pricing but has lost basic language competence is a net loss.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TOPIC 8 ============ -->
+<section class="block" id="t8">
+  <div class="kicker"><span class="num">08</span><span class="layer-tag">Comparison</span><span class="code">H7W3B92</span></div>
+  <h2 class="title">RAG vs Fine Tuning</h2>
+
+  <div class="prime-box">
+    <div class="ptag">Prime yourself — answer before reading on</div>
+    <ol>
+      <li>If you had unlimited budget but limited data, which would you lean toward? What if the reverse — unlimited data but limited budget?</li>
+    </ol>
+  </div>
+
+  <table>
+    <tr><th>Aspect</th><th>RAG</th><th>Fine Tuning</th></tr>
+    <tr><td>Optimization type</td><td>Inference-time</td><td>Training-time</td></tr>
+    <tr><td>Time to market</td><td class="yes">Fast (weeks)</td><td class="no">Slower (months)</td></tr>
+    <tr><td>R&amp;D required</td><td class="yes">Low</td><td class="no">High</td></tr>
+    <tr><td>Risk</td><td class="yes">Low</td><td class="no">High</td></tr>
+    <tr><td>Reward</td><td>Good</td><td class="yes">Excellent</td></tr>
+    <tr><td>Data requirements</td><td>Knowledge base (docs, FAQs)</td><td>Proprietary examples (prompt + response pairs)</td></tr>
+    <tr><td>Learning mechanism</td><td>Reads facts/context (retrieval)</td><td>Learns skills (generalizes)</td></tr>
+    <tr><td>Updating knowledge</td><td class="yes">Easy — add to database</td><td class="no">Hard — retrain</td></tr>
+    <tr><td>Inference speed</td><td class="warn">Slower — lookup + prompt</td><td class="yes">Faster — model ready</td></tr>
+    <tr><td>Best for</td><td>Fixed info, FAQs, customer support</td><td>New skills, differentiation</td></tr>
+    <tr><td>Trade-off</td><td>Can't learn new skills</td><td>Can't easily update facts</td></tr>
+  </table>
+
+  <div class="callout green">
+    <div class="ctitle">💡 Rule of thumb</div>
+    Fixed information → RAG. New skills → Fine Tuning. And you can do both — a fine-tuned model plus RAG on top is the best of both worlds.
+  </div>
+
+  <div class="recap">
+    <div class="rtag">What we just learned</div>
+    <p>RAG and fine-tuning solve genuinely different problems and the comparison table makes the decision almost mechanical: if your gap is "the model doesn't know our current facts," that's RAG; if your gap is "the model can't perform our specific kind of task well," that's fine-tuning. Unlimited budget with limited data points toward RAG (data quality/volume constrains fine-tuning more directly); unlimited data with limited budget points toward fine-tuning being more viable, since the expensive part (compute and expertise) is the actual bottleneck, not the training examples.</p>
+  </div>
+
+  <div class="persp-grid">
+    <div class="persp-card pm">
+      <div class="ptitle">📋 PM view</div>
+      <p>Start every "should we fine-tune" conversation by first asking whether RAG alone solves the problem — it's cheaper, faster, and reversible. Only escalate to fine-tuning once RAG has been tried and genuinely falls short on a skill-generalization gap.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TOPIC 9 ============ -->
+<section class="block" id="t9">
+  <div class="kicker"><span class="num">09</span><span class="layer-tag">Agents</span><span class="code">D5N8Q17</span></div>
+  <h2 class="title">AI Agents — Definitions &amp; Workflows</h2>
+
+  <div class="prime-box">
+    <div class="ptag">Prime yourself — answer before reading on</div>
+    <ol>
+      <li>If "agents are programs where LLM outputs control the workflow," does that mean the LLM is effectively writing the program as it runs? What does that imply for testing?</li>
+      <li>Workflows are predictable; agents are unpredictable. When would a business actually prefer the predictable option?</li>
+    </ol>
+  </div>
+
+  <p><strong>Best definition (Hugging Face):</strong> "AI agents are programs where LLM outputs control the workflow."</p>
+
+  <table>
+    <tr><th>What makes a system "agentic"?</th></tr>
+    <tr><td>1. Multiple LLM calls, chained together</td></tr>
+    <tr><td>2. Tool use — calls external functions</td></tr>
+    <tr><td>3. LLM-to-LLM communication</td></tr>
+    <tr><td>4. A planner LLM coordinating others</td></tr>
+    <tr><td>5. Autonomy — chooses its own path</td></tr>
+  </table>
+
+  <table>
+    <tr><th></th><th>Workflows</th><th>Agents</th></tr>
+    <tr><td>Order</td><td>Preset — code orchestrates the sequence</td><td>Dynamic — LLM decides what happens next</td></tr>
+    <tr><td>Character</td><td class="yes">Predictable, testable</td><td class="warn">Unpredictable, can loop</td></tr>
+    <tr><td>Examples</td><td>Prompt chaining, routing, evaluator-optimizer</td><td>Operator, Deep Research, Manus</td></tr>
+  </table>
+
+  <div class="diagram-frame">
+    <div class="cap"><span>FIG 9.1 — THREE WORKFLOW PATTERNS</span><span>Anthropic's taxonomy — predictable, code-orchestrated</span></div>
+    <svg viewBox="0 0 820 260" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="a4" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L7,4 L0,7 Z" fill="#3fb6ff"/></marker></defs>
+      <text x="20" y="20" fill="#7c8898" font-family="JetBrains Mono" font-size="10.5">1. Prompt chaining</text>
+      <rect x="20" y="28" width="120" height="34" rx="5" fill="#151b25" stroke="#3fb6ff"/><text x="80" y="49" text-anchor="middle" fill="#eef2f7" font-family="JetBrains Mono" font-size="9.5">Prompt 1</text>
+      <line x1="140" y1="45" x2="160" y2="45" stroke="#3fb6ff" marker-end="url(#a4)"/>
+      <rect x="162" y="28" width="120" height="34" rx="5" fill="#151b25" stroke="#3fb6ff"/><text x="222" y="49" text-anchor="middle" fill="#eef2f7" font-family="JetBrains Mono" font-size="9.5">Prompt 2</text>
+      <line x1="282" y1="45" x2="302" y2="45" stroke="#3fb6ff" marker-end="url(#a4)"/>
+      <rect x="304" y="28" width="120" height="34" rx="5" fill="#151b25" stroke="#3fb6ff"/><text x="364" y="49" text-anchor="middle" fill="#eef2f7" font-family="JetBrains Mono" font-size="9.5">Prompt 3</text>
+
+      <text x="20" y="105" fill="#7c8898" font-family="JetBrains Mono" font-size="10.5">2. Routing</text>
+      <rect x="20" y="113" width="110" height="34" rx="5" fill="#151b25" stroke="#212b3a"/><text x="75" y="134" text-anchor="middle" fill="#eef2f7" font-family="JetBrains Mono" font-size="9">Input</text>
+      <line x1="130" y1="130" x2="150" y2="130" stroke="#3fb6ff" marker-end="url(#a4)"/>
+      <rect x="152" y="113" width="130" height="34" rx="5" fill="#151b25" stroke="#ffb454"/><text x="217" y="134" text-anchor="middle" fill="#eef2f7" font-family="JetBrains Mono" font-size="9">Router LLM</text>
+      <line x1="282" y1="122" x2="302" y2="105" stroke="#3fb6ff" marker-end="url(#a4)"/>
+      <line x1="282" y1="130" x2="302" y2="130" stroke="#3fb6ff" marker-end="url(#a4)"/>
+      <line x1="282" y1="138" x2="302" y2="155" stroke="#3fb6ff" marker-end="url(#a4)"/>
+      <rect x="304" y="90" width="100" height="30" rx="5" fill="#151b25" stroke="#212b3a"/><text x="354" y="109" text-anchor="middle" fill="#eef2f7" font-family="JetBrains Mono" font-size="9">LLM A</text>
+      <rect x="304" y="130" width="100" height="30" rx="5" fill="#151b25" stroke="#212b3a"/><text x="354" y="149" text-anchor="middle" fill="#eef2f7" font-family="JetBrains Mono" font-size="9">LLM B</text>
+
+      <text x="20" y="200" fill="#7c8898" font-family="JetBrains Mono" font-size="10.5">3. Evaluator-optimizer</text>
+      <rect x="20" y="208" width="130" height="34" rx="5" fill="#151b25" stroke="#3fb6ff"/><text x="85" y="229" text-anchor="middle" fill="#eef2f7" font-family="JetBrains Mono" font-size="9">Generator LLM</text>
+      <line x1="150" y1="225" x2="170" y2="225" stroke="#3fb6ff" marker-end="url(#a4)"/>
+      <rect x="172" y="208" width="130" height="34" rx="5" fill="#151b25" stroke="#ffb454"/><text x="237" y="229" text-anchor="middle" fill="#eef2f7" font-family="JetBrains Mono" font-size="9">Evaluator LLM</text>
+      <path d="M 172 220 C 130 195, 90 195, 85 208" fill="none" stroke="#ff6b6b" stroke-width="1.2" stroke-dasharray="3 2" marker-end="url(#a4)"/>
+      <text x="127" y="192" text-anchor="middle" fill="#ff6b6b" font-family="JetBrains Mono" font-size="8.5">reroute if fails</text>
+    </svg>
+  </div>
+
+  <div class="recap">
+    <div class="rtag">What we just learned</div>
+    <p>Workflows keep the sequence in code — predictable, testable, and easy to reason about — while agents hand the LLM the wheel to decide what happens next, which is genuinely closer to the LLM "writing the program" step by step, and that's precisely why agent behavior is much harder to exhaustively test than workflow behavior. Businesses should prefer workflows whenever the task has a known, repeatable shape (routing a ticket, evaluating output quality) and reserve agents for genuinely open-ended tasks where the path can't be predetermined.</p>
+  </div>
+
+  <div class="persp-grid">
+    <div class="persp-card arch">
+      <div class="ptitle">🏗️ Architect view</div>
+      <p>Default to a workflow, escalate to an agent only when the task's branching is too varied to encode in advance — most "we need an agent" requirements turn out to be a routing or evaluator-optimizer workflow in disguise, which is far easier to test and monitor.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TOPIC 10 ============ -->
+<section class="block" id="t10">
+  <div class="kicker"><span class="num">10</span><span class="layer-tag">Tool Use</span><span class="code">Y2K6C43</span></div>
+  <h2 class="title">Tool Use / Function Calling — Demystified</h2>
+
+  <div class="prime-box">
+    <div class="ptag">Prime yourself — answer before reading on</div>
+    <ol>
+      <li>If tool use is "just good prompting and an if statement," why wasn't it invented years earlier?</li>
+      <li>Does an LLM that calls a tool actually "understand" what that tool does — or is it pattern-matching from the prompt?</li>
+    </ol>
+  </div>
+
+  <div class="quote-box">"Tool use sounds magical. It's actually just good prompting and an IF statement."</div>
+
+  <div class="diagram-frame">
+    <div class="cap"><span>FIG 10.1 — HOW TOOL USE ACTUALLY WORKS</span><span>five plain steps</span></div>
+    <svg viewBox="0 0 820 260" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="a5" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L7,4 L0,7 Z" fill="#3fb6ff"/></marker></defs>
+      <rect x="20" y="10" width="780" height="42" rx="6" fill="#151b25" stroke="#3fb6ff"/>
+      <text x="40" y="35" fill="#eef2f7" font-family="JetBrains Mono" font-size="10.5">1. Your code sends a prompt: "You can query prices / book flights / query customer data..."</text>
+      <line x1="410" y1="52" x2="410" y2="70" stroke="#3fb6ff" marker-end="url(#a5)"/>
+      <rect x="20" y="72" width="780" height="42" rx="6" fill="#151b25" stroke="#ffb454"/>
+      <text x="40" y="97" fill="#eef2f7" font-family="JetBrains Mono" font-size="10.5">2. LLM responds: "UseTool: query_ticket_prices('London')"</text>
+      <line x1="410" y1="114" x2="410" y2="132" stroke="#3fb6ff" marker-end="url(#a5)"/>
+      <rect x="20" y="134" width="780" height="42" rx="6" fill="#151b25" stroke="#ffb454"/>
+      <text x="40" y="159" fill="#eef2f7" font-family="JetBrains Mono" font-size="10.5">3. Your code executes the tool: prices = query_ticket_prices('London')</text>
+      <line x1="410" y1="176" x2="410" y2="194" stroke="#3fb6ff" marker-end="url(#a5)"/>
+      <rect x="20" y="196" width="780" height="30" rx="6" fill="#151b25" stroke="#5fd9a0"/>
+      <text x="40" y="216" fill="#eef2f7" font-family="JetBrains Mono" font-size="10">4. Your code calls the LLM again with the result: "here's the data: {prices}, now respond"</text>
+      <line x1="410" y1="226" x2="410" y2="242" stroke="#3fb6ff" marker-end="url(#a5)"/>
+      <text x="410" y="256" text-anchor="middle" fill="#5fd9a0" font-family="JetBrains Mono" font-size="10.5">5. LLM gives the final answer to the user</text>
+    </svg>
+  </div>
+
+  <div class="recap">
+    <div class="rtag">What we just learned</div>
+    <p>The mechanism really is that simple: the LLM never executes anything itself, it just outputs text describing what it wants called, your code checks that against an allow-list and runs it, then feeds the result back in. What's genuinely new isn't the mechanism (prompting plus a conditional has existed for years) — it's that a general-purpose LLM can reliably decide which tool to invoke and with what arguments purely from natural-language instructions, without anyone hand-coding that decision logic. Whether that constitutes "understanding" the tool is philosophically debatable, but functionally it's the same pattern-matching-from-context that underlies everything else the model does.</p>
+  </div>
+
+  <div class="persp-grid">
+    <div class="persp-card cto">
+      <div class="ptitle">🎯 CTO view</div>
+      <p>Because tool use is fundamentally "the LLM's text output triggers your code," the security model is entirely on your side of that boundary — validate and constrain every tool call the same way you'd validate any other untrusted input, since a manipulated prompt could induce an unintended tool call.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TOPIC 11 ============ -->
+<section class="block" id="t11">
+  <div class="kicker"><span class="num">11</span><span class="layer-tag">Frameworks &amp; Risk</span><span class="code">M8R4H59</span></div>
+  <h2 class="title">Agent Frameworks &amp; Risk Mitigation</h2>
+
+  <div class="prime-box">
+    <div class="ptag">Prime yourself — answer before reading on</div>
+    <ol>
+      <li>More built-in framework features means less code to write, but also less control. When would you actually want less control?</li>
+    </ol>
+  </div>
+
+  <table>
+    <tr><th>Tier</th><th>Examples</th><th>Trade-off</th></tr>
+    <tr><td>Heavyweight (batteries included)</td><td>AutoGen (Microsoft), LangGraph</td><td>More built-in features, less code, less control</td></tr>
+    <tr><td>Lightweight</td><td>CrewAI, OpenAI Agents SDK</td><td>Less built-in, more code, more control</td></tr>
+    <tr><td>Native (build your own glue)</td><td>Anthropic's recommended approach</td><td>Maximum control, maximum effort</td></tr>
+  </table>
+
+  <table>
+    <tr><th>Risk</th><th>Description</th></tr>
+    <tr><td>Unpredictability</td><td>Different paths chosen each run; output may not meet the business objective; harder to test and validate</td></tr>
+    <tr><td>Unpredictable costs</td><td>Infinite feedback loops possible; each loop consumes compute $$$; "inference-time scaling" can get expensive fast</td></tr>
+  </table>
+
+  <div class="card-grid">
+    <div class="card"><div class="n">Monitoring</div><h4>See what's happening</h4><p>Tools like LangSmith track agent interactions so you can understand the actual path taken.</p></div>
+    <div class="card"><div class="n">Guardrails</div><h4>Code-level constraints</h4><p>Is this action allowed? Has cost exceeded threshold? "Guardrails ensure agents behave with safety and consistency." — OpenAI Agents SDK</p></div>
+  </div>
+
+  <div class="recap">
+    <div class="rtag">What we just learned</div>
+    <p>Framework weight is a control-vs-speed trade-off, not a quality ranking — a heavyweight framework is the right call when you want to ship fast and accept the framework's built-in patterns, while lightweight or native approaches are right when your use case needs precise control over agent behavior that a batteries-included framework would fight against. Either way, unpredictability and runaway cost are structural risks of agents specifically (not workflows), which is why monitoring and guardrails aren't optional extras — they're the mechanism that makes deploying an agent responsible at all.</p>
+  </div>
+
+  <div class="persp-grid">
+    <div class="persp-card cto">
+      <div class="ptitle">🎯 CTO view</div>
+      <p>Never deploy an agent to production without a hard cost ceiling per run and per time window — an infinite feedback loop is not a hypothetical, it's a predictable failure mode of autonomous systems, and the guardrail needs to exist before the first real user interaction, not after an expensive incident.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TOPIC 12 ============ -->
+<section class="block" id="t12">
+  <div class="kicker"><span class="num">12</span><span class="layer-tag">Stakeholders</span><span class="code">C3T7N26</span></div>
+  <h2 class="title">Cross-Functional Decision Making</h2>
+
+  <div class="prime-box">
+    <div class="ptag">Prime yourself — answer before reading on</div>
+    <ol>
+      <li>With potentially 15-20 stakeholders having a viewpoint, how do you avoid decision paralysis while still covering every perspective?</li>
+    </ol>
+  </div>
+
+  <div class="quote-box">"AI decisions are technical decisions with commercial implications. Everyone needs a seat."</div>
+
+  <table>
+    <tr><th>Core teams (driving the decision)</th><th>Supporting teams (have a viewpoint)</th></tr>
+    <tr><td>Executive leadership, Data Science, Engineering, Product, Ops, Finance, Sales &amp; Marketing</td><td>Legal &amp; Compliance, InfoSec, Information Risk Mgmt, HR, Ethics &amp; Responsible AI, Customer Experience/UX, Governance &amp; Audit</td></tr>
+  </table>
+
+  <div class="callout amber">
+    <div class="ctitle">🚀 Startup scenario</div>
+    Even with 3 people, all these hats still need to be worn. Ask explicitly: "Who's wearing the InfoSec hat today?" Ensuring every perspective is considered doesn't require a headcount for every function — it requires deliberately assigning the perspective, even to someone already wearing three other hats.
+  </div>
+
+  <h3 class="subtitle">Decision types that need this team</h3>
+  <ol>
+    <li>Which model? (open source vs paid, size, etc.)</li>
+    <li>Which optimization? (RAG vs fine-tuning vs agents)</li>
+    <li>Managed AI provider? (Bedrock vs Vertex vs Azure)</li>
+    <li>Abstraction layer? (LangChain vs CrewAI vs native)</li>
+    <li>Vector database? (which one for RAG)</li>
+  </ol>
+
+  <div class="recap">
+    <div class="rtag">What we just learned</div>
+    <p>The core/supporting split is itself the answer to decision paralysis — core teams actually make the call, supporting teams are consulted for their specific risk lens (legal, security, ethics) rather than all getting equal decision-making weight. The startup version proves the principle scales down: what matters isn't headcount, it's that every relevant perspective gets deliberately assigned to someone, even if one person covers three "hats" at once.</p>
+  </div>
+
+  <div class="persp-grid">
+    <div class="persp-card pm">
+      <div class="ptitle">📋 PM view</div>
+      <p>Time-box supporting-team input (a review window, not an open-ended veto) — the goal is genuine perspective coverage, not consensus from every stakeholder before any decision can move forward.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TOPIC 13 ============ -->
+<section class="block" id="t13">
+  <div class="kicker"><span class="num">13</span><span class="layer-tag">Toolkit</span><span class="code">F9L2W64</span></div>
+  <h2 class="title">Executive Toolkit — Decision Framework</h2>
+
+  <div class="prime-box">
+    <div class="ptag">Prime yourself — answer before reading on</div>
+    <ol>
+      <li>Beyond making a good decision, what secondary organizational benefit comes from running a structured cross-functional decision process at all?</li>
+    </ol>
+  </div>
+
+  <p>Purpose: drive cross-functional AI decisions. Not prescriptive — just guidance (delivered as a Google Sheet in the course resources).</p>
+
+  <table>
+    <tr><th>Section</th><th>Contents</th></tr>
+    <tr><td>Stakeholders</td><td>List everyone involved; checkbox to confirm all perspectives are covered</td></tr>
+    <tr><td>Data &amp; metrics</td><td>What data is being used? What metric defines success?</td></tr>
+    <tr><td>Decision table</td><td>Options compared side by side — cost (one-time and ongoing), benefits, risks, recommendation</td></tr>
+  </table>
+
+  <table>
+    <tr><th>Sample decision</th><th>Evaluate on</th></tr>
+    <tr><td>Model selection (GPT-4 vs Claude 3.7 vs Llama 3.1)</td><td>Cost, performance, data privacy</td></tr>
+    <tr><td>Optimization approach (RAG vs fine-tuning vs agents)</td><td>Time to market, R&amp;D, differentiation</td></tr>
+    <tr><td>Infrastructure (Bedrock vs Vertex AI vs Azure AI)</td><td>Integration, support, security</td></tr>
+    <tr><td>Vector database (Pinecone vs Weaviate vs Milvus)</td><td>Performance, scalability, cost</td></tr>
+  </table>
+
+  <div class="card-grid">
+    <div class="card"><div class="n">01</div><p>Educates everyone on AI benefits &amp; risks</p></div>
+    <div class="card"><div class="n">02</div><p>Aligns the team on trade-offs</p></div>
+    <div class="card"><div class="n">03</div><p>Builds buy-in and support</p></div>
+    <div class="card"><div class="n">04</div><p>Prepares for rollout challenges</p></div>
+    <div class="card"><div class="n">05</div><p>Fosters a science-first culture</p></div>
+  </div>
+
+  <div class="recap">
+    <div class="rtag">What we just learned</div>
+    <p>Beyond the decision itself, running the process is what builds organizational readiness — walking every stakeholder through the same cost/benefit/risk table simultaneously educates the team, surfaces disagreements early (before rollout, not during it), and builds the buy-in that determines whether adoption actually happens later. The framework's real product is as much shared understanding as it is the final recommendation.</p>
+  </div>
+
+  <div class="persp-grid">
+    <div class="persp-card pm">
+      <div class="ptitle">📋 PM view</div>
+      <p>Run this framework even for decisions that feel "obvious" — the side benefits (alignment, buy-in, education) are lost if the process gets skipped just because the outcome seemed predetermined.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TOPIC 14 : reference ============ -->
+<section class="block" id="t14">
+  <div class="kicker"><span class="layer-tag">Reference</span><span class="code">Q4B8K37</span></div>
+  <h2 class="title">Module Summary, Final Word &amp; Glossary</h2>
+
+  <div class="card-grid">
+    <div class="card"><div class="n">01</div><h4>Three use cases for rollout</h4><p>Adopt existing tools (fastest), build internal proprietary AI, build external customer-facing AI.</p></div>
+    <div class="card"><div class="n">02</div><h4>Lead by example</h4><p>Use AI tools openly, be proud of it, encourage and recognize early adopters.</p></div>
+    <div class="card"><div class="n">03</div><h4>RAG vs fine tuning</h4><p>RAG: inference-time, adds context, low risk. Fine tuning: training-time, learns skills, high risk/reward. Can do both.</p></div>
+    <div class="card"><div class="n">04</div><h4>AI agents</h4><p>"LLM outputs control the workflow." Workflows = preset order. Agents = dynamic. Tool use = prompting + if statements.</p></div>
+    <div class="card"><div class="n">05</div><h4>Cross-functional decisions</h4><p>Many stakeholders need a seat. Technical decisions have commercial impacts. Science-first: experiment, measure, iterate.</p></div>
+    <div class="card"><div class="n">06</div><h4>Risk mitigation</h4><p>Unpredictability → guardrails. Unpredictable costs → monitoring &amp; limits. Data security → enterprise tiers or in-house.</p></div>
+  </div>
+
+  <h3 class="subtitle">Final executive summary</h3>
+  <div class="callout green">
+    <div class="ctitle">🎯 The core message</div>
+    AI decisions are not just technical — they are commercial decisions. As a leader, you must be in the room, not just approving the outcome.
+  </div>
+
+  <h3 class="subtitle">Three immediate actions</h3>
+  <ol>
+    <li><strong>Adopt</strong> — start using AI tools openly today. Be a role model for your team.</li>
+    <li><strong>Educate</strong> — build cross-functional AI literacy. Get everyone thinking about AI implications.</li>
+    <li><strong>Decide</strong> — use the toolkit framework to drive one AI decision this week. Get the right people in the room.</li>
+  </ol>
+
+  <h3 class="subtitle">The science-first mindset</h3>
+  <ol>
+    <li>Build small data sets</li>
+    <li>Define business metrics</li>
+    <li>Prototype approaches</li>
+    <li>Measure cost &amp; benefit</li>
+    <li>Repeat</li>
+  </ol>
+  <p>This is how you turn AI hype into business reality.</p>
+
+  <h3 class="subtitle">Glossary</h3>
+  <table>
+    <tr><th>Term</th><th>Definition</th></tr>
+    <tr><td class="mono">RAG</td><td>Retrieval-Augmented Generation — adds context to prompts at inference time</td></tr>
+    <tr><td class="mono">Fine tuning</td><td>Training a pre-trained model further with proprietary data</td></tr>
+    <tr><td class="mono">Agent</td><td>Program where LLM outputs control the workflow</td></tr>
+    <tr><td class="mono">Workflow</td><td>Preset sequence of LLM calls</td></tr>
+    <tr><td class="mono">Tool use</td><td>LLM tells your code what to do</td></tr>
+    <tr><td class="mono">Function calling</td><td>Same as tool use</td></tr>
+    <tr><td class="mono">Encoding LLM</td><td>Turns text into vectors (numbers)</td></tr>
+    <tr><td class="mono">Vector database</td><td>Stores vectors for semantic search</td></tr>
+    <tr><td class="mono">Guardrails</td><td>Code-level constraints on what agents can do</td></tr>
+    <tr><td class="mono">Prompt chaining</td><td>Sequential LLM calls in preset order</td></tr>
+    <tr><td class="mono">Routing</td><td>LLM decides which specialist LLM to call</td></tr>
+    <tr><td class="mono">Evaluator-optimizer</td><td>One LLM generates, another LLM checks</td></tr>
+    <tr><td class="mono">Autonomy</td><td>Agent's ability to choose its own path</td></tr>
+    <tr><td class="mono">Inference time</td><td>When running a trained model</td></tr>
+    <tr><td class="mono">Training time</td><td>When teaching a model from data</td></tr>
+    <tr><td class="mono">Catastrophic forgetting</td><td>When a model forgets base knowledge from over-training</td></tr>
+  </table>
+
+  <div class="persp-grid">
+    <div class="persp-card arch">
+      <div class="ptitle">🏗️ The one line to remember</div>
+      <p>"Technical decisions have commercial implications. Get the right people in the room, adopt a science-first mindset, and measure everything."</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ACTIVE RECALL ============ -->
+<section class="block" id="recall">
+  <div class="kicker"><span class="layer-tag">Active Recall</span><span class="code">X1D5R92</span></div>
+  <h2 class="title">Test yourself — deep thought questions</h2>
+
+  <div class="recall" onclick="this.classList.toggle('open')">
+    <div class="rq">Morgan Stanley achieved 98% adoption for their meeting summarizer. What factors drove this success? Could your organization replicate it?</div>
+    <div class="ra">Likely drivers: the tool ran invisibly inside an existing workflow (no new interface to learn), it solved a genuinely painful, time-consuming task (meeting notes), and leadership visibly modeled its use — the same "lead by example" pattern from Topic 2. Replicating it means picking a similarly high-friction, low-risk internal task, embedding the AI into the existing tool rather than adding a new one, and having leadership use and endorse it publicly before asking the wider team to adopt it.</div>
+  </div>
+
+  <div class="recall" onclick="this.classList.toggle('open')">
+    <div class="rq">RAG adds context; fine-tuning adds skills. Unlimited budget but limited data — which would you choose? What about unlimited data but limited budget?</div>
+    <div class="ra">Unlimited budget with limited data favors RAG — fine-tuning needs substantial high-quality proprietary examples to work well, and no amount of budget fixes a fundamental data shortage; RAG instead just needs a knowledge base, which is a lower bar to meet. Unlimited data with limited budget still leans toward RAG initially, since fine-tuning's expensive part is compute and specialized expertise, not raw data volume — though at very large data volumes with enough time, a lean, carefully-scoped fine-tuning effort becomes more attractive.</div>
+  </div>
+
+  <div class="recall" onclick="this.classList.toggle('open')">
+    <div class="rq">Agents are unpredictable — they choose their own path. In what business contexts is that acceptable? Where is it not?</div>
+    <div class="ra">Acceptable in low-stakes, exploratory, or research-style tasks where the cost of a suboptimal path is low and there's a human review step before any consequential action (e.g. drafting a research summary). Not acceptable in high-stakes, irreversible, or compliance-sensitive actions — financial transactions, medical decisions, customer-facing commitments — where unpredictability directly translates into risk exposure the business can't easily absorb or reverse.</div>
+  </div>
+
+  <div class="recall" onclick="this.classList.toggle('open')">
+    <div class="rq">Tool use is "just prompting + if statements." If it's so simple, why wasn't it invented earlier? What changed?</div>
+    <div class="ra">The mechanism (prompt, conditional, execute) isn't new — what's new is that a general-purpose LLM can reliably decide, in natural language, which tool to call and with what arguments across a huge range of tasks without anyone hand-coding that decision tree. Earlier NLP systems couldn't generalize that judgment reliably enough to trust with real actions; large, well-instruction-tuned LLMs crossed a reliability threshold that made the old simple mechanism suddenly trustworthy enough to use in production.</div>
+  </div>
+
+  <div class="recall" onclick="this.classList.toggle('open')">
+    <div class="rq">Duolingo saw 40% revenue growth alongside their AI launch. But correlation isn't causation. How would you actually prove AI drove that growth?</div>
+    <div class="ra">A/B testing is the standard tool — randomly holding out a control group without the AI feature and comparing revenue, DAU, and subscription conversion between groups over the same time period isolates the AI's effect from other confounds (seasonality, marketing campaigns, unrelated product changes). Without a controlled comparison, a correlated launch-and-growth story is suggestive but not proof, which is exactly the science-first mindset (Topic 14) the framework recommends applying to every AI claim.</div>
+  </div>
+
+  <div class="recall" onclick="this.classList.toggle('open')">
+    <div class="rq">With 15-20+ potential stakeholders, how do you make decisions quickly without losing quality? What trade-offs exist between speed and inclusivity?</div>
+    <div class="ra">Separate "core" decision-makers from "supporting" consulted perspectives (as Topic 12 does) and time-box the supporting teams' input window rather than requiring universal sign-off before any decision proceeds. The trade-off is real: broader inclusion surfaces more risks and builds more buy-in, but past a certain stakeholder count, marginal perspectives add diminishing insight while adding real delay — the framework's answer is structured, time-boxed consultation rather than either extreme (decide alone, or wait for everyone).</div>
+  </div>
+
+  <div class="recall" onclick="this.classList.toggle('open')">
+    <div class="rq">If InfoSec says "no data leaves the company," is using frontier models like GPT or Claude automatically out of the question?</div>
+    <div class="ra">Not automatically — enterprise-tier agreements with contractual no-training-on-your-data clauses, data processing agreements, and encryption in transit can satisfy many InfoSec requirements without the data being "used" by the vendor in a way that violates the policy's intent. If InfoSec's policy is stricter than that (literally no data crossing the company boundary under any contractual terms), then direct inference with an in-house, open-source model becomes the only compliant path — this is exactly the kind of trade-off the cross-functional decision framework (Topic 13) exists to work through with InfoSec at the table, not around them.</div>
+  </div>
+
+  <div class="recall" onclick="this.classList.toggle('open')">
+    <div class="rq">DeepSeek's training cost ~$5M vs OpenAI's $100M+. If training costs plummet, does fine-tuning become more accessible to smaller companies? What are the implications?</div>
+    <div class="ra">Yes — falling training costs lower the barrier specifically to fine-tuning (which is a smaller training run on top of an existing base model, benefiting from the same cost trends), making the "high risk, high reward" differentiation path in Topic 7 viable for companies that previously couldn't afford it. The competitive implication is that a proprietary fine-tuned model becomes a weaker moat over time as more competitors can afford to build one — pushing sustainable differentiation increasingly toward proprietary data quality and domain expertise rather than the fine-tuning capability itself.</div>
+  </div>
+
+</section>
+
+<footer>ARCHITECTS LAB — Study Note 027 — AI Project Execution — Decision Making for Executives — prime, learn, recap, and view it from every seat at the table<br><br>Source: <a href="https://www.udemy.com/course/executive-briefing-generative-ai-and-large-language-models-llm/learn/lecture/50336715#overview" target="_blank" rel="noopener" style="color:var(--blueprint);">Executive Briefing: Generative AI &amp; Large Language Models (LLM) — Udemy</a></footer>
+
+</body>
+</html>

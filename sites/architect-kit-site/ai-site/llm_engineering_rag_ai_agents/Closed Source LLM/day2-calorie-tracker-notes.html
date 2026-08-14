@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project 2 — AI Calorie Tracker | Vision API &amp; Prompt Engineering</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0e14; --panel: #10151d; --panel-2: #151b25; --grid: #1c2430;
+    --ink: #c7d0dc; --ink-dim: #7c8898; --ink-bright: #eef2f7;
+    --blueprint: #3fb6ff; --blueprint-dim: #1f4a63; --amber: #ffb454; --green: #5fd9a0; --violet: #b78dff;
+    --radius: 3px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      linear-gradient(var(--grid) 1px, transparent 1px) 0 0/40px 40px,
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0/40px 40px,
+      var(--bg);
+    color:var(--ink); font-family:'Inter',sans-serif; line-height:1.6; padding:0 0 80px 0;
+  }
+  a{color:var(--blueprint);}
+  code{font-family:'JetBrains Mono',monospace;background:var(--panel-2);padding:1px 6px;border-radius:3px;color:var(--amber);font-size:12.5px;}
+
+  .course-box{margin:28px auto 0 auto;max-width:920px;padding:20px 26px;background:var(--panel-2);border:1px solid var(--blueprint-dim);border-left:4px solid var(--blueprint);border-radius:var(--radius);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;}
+  .course-box .label{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--amber);}
+  .course-box .title{font-size:15px;color:var(--ink-bright);font-weight:600;margin-top:4px;}
+  .course-box .link-btn{font-family:'JetBrains Mono',monospace;font-size:12px;padding:9px 16px;border:1px solid var(--blueprint);color:var(--blueprint);text-decoration:none;border-radius:var(--radius);white-space:nowrap;transition:all .15s ease;}
+  .course-box .link-btn:hover{background:var(--blueprint);color:var(--bg);}
+  .course-box .note{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink-dim);width:100%;margin-top:2px;}
+
+  header.masthead{max-width:920px;margin:34px auto 6px auto;padding:0 6px;}
+  header.masthead .kicker{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--violet);letter-spacing:3px;text-transform:uppercase;}
+  header.masthead h1{font-size:clamp(26px,4vw,38px);color:var(--ink-bright);margin:8px 0 6px 0;font-weight:700;letter-spacing:-0.5px;}
+  header.masthead p.sub{color:var(--ink-dim);font-size:14.5px;max-width:660px;margin:0;}
+
+  .arch-banner{max-width:920px;margin:18px auto 0 auto;padding:14px 18px;background:linear-gradient(90deg, rgba(183,141,255,0.09), transparent);border-left:3px solid var(--violet);border-radius:0 var(--radius) var(--radius) 0;font-size:13px;color:var(--ink);}
+  .arch-banner b{color:var(--violet);}
+
+  main{max-width:920px;margin:0 auto;padding:0 6px;}
+  section{margin-top:38px;}
+  .section-head{display:flex;align-items:baseline;gap:10px;border-bottom:1px solid var(--grid);padding-bottom:10px;margin-bottom:16px;}
+  .section-head .tag{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blueprint);border:1px solid var(--blueprint-dim);padding:2px 8px;border-radius:var(--radius);}
+  .section-head h2{font-size:19px;color:var(--ink-bright);margin:0;font-weight:700;}
+
+  .task{background:var(--panel);border:1px solid var(--grid);border-radius:var(--radius);margin-bottom:14px;overflow:hidden;}
+  .task-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;cursor:pointer;user-select:none;}
+  .task-head:hover{background:var(--panel-2);}
+  .task-head .left{display:flex;align-items:center;gap:14px;}
+  .task-num{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--bg);background:var(--blueprint);width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-weight:700;flex-shrink:0;}
+  .task-title{color:var(--ink-bright);font-weight:600;font-size:14.5px;}
+  .task-sub{color:var(--ink-dim);font-size:12px;margin-top:2px;}
+  .chevron{color:var(--ink-dim);font-family:'JetBrains Mono',monospace;transition:transform .2s ease;}
+  .task.open .chevron{transform:rotate(90deg);color:var(--blueprint);}
+  .task-body{max-height:0;overflow:hidden;transition:max-height .35s ease;border-top:1px solid var(--grid);}
+  .task.open .task-body{max-height:3200px;}
+  .task-body-inner{padding:18px 20px 20px 20px;font-size:13.5px;color:var(--ink);}
+  .task-body-inner p{margin:6px 0;}
+  .task-body-inner ul{padding-left:18px;margin:8px 0;}
+  .task-body-inner li{margin:4px 0;}
+
+  .code-block{background:#0d1119;border:1px solid var(--grid);border-radius:var(--radius);padding:12px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--green);overflow-x:auto;margin:10px 0;white-space:pre;}
+  .code-block .c2{color:var(--amber);}
+  .code-block .c1{color:var(--ink-dim);}
+
+  .callout{margin-top:14px;background:linear-gradient(90deg, rgba(63,182,255,0.08), transparent);border-left:3px solid var(--blueprint);padding:12px 16px;font-size:13.5px;color:var(--ink);border-radius:0 var(--radius) var(--radius) 0;}
+  .callout b{color:var(--blueprint);}
+  .callout.violet{background:linear-gradient(90deg, rgba(183,141,255,0.09), transparent);border-left-color:var(--violet);}
+  .callout.violet b{color:var(--violet);}
+  .callout.amber{background:linear-gradient(90deg, rgba(255,180,84,0.08), transparent);border-left-color:var(--amber);}
+  .callout.amber b{color:var(--amber);}
+  .callout.green{background:linear-gradient(90deg, rgba(95,217,160,0.09), transparent);border-left-color:var(--green);}
+  .callout.green b{color:var(--green);}
+
+  .anatomy-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
+  @media(max-width:640px){.anatomy-grid{grid-template-columns:1fr;}}
+  .cap{background:var(--panel-2);border:1px solid var(--grid);border-left:3px solid var(--green);border-radius:var(--radius);padding:12px 14px;cursor:pointer;}
+  .cap.blue{border-left-color:var(--blueprint);}
+  .cap.amber{border-left-color:var(--amber);}
+  .cap.violet{border-left-color:var(--violet);}
+  .cap .cap-title{font-size:13.5px;color:var(--ink-bright);font-weight:600;display:flex;justify-content:space-between;align-items:center;}
+  .cap .cap-title::after{content:"+";font-family:'JetBrains Mono',monospace;color:var(--ink-dim);font-size:16px;}
+  .cap.open .cap-title::after{content:"–";color:var(--green);}
+  .cap .cap-body{max-height:0;overflow:hidden;transition:max-height .25s ease;font-size:12.5px;color:var(--ink-dim);}
+  .cap.open .cap-body{max-height:260px;margin-top:8px;}
+
+  /* prompt anatomy diagram */
+  .prompt-flow{display:flex;flex-direction:column;gap:0;margin:14px 0;}
+  .pf-row{display:flex;align-items:stretch;border:1px solid var(--grid);border-radius:var(--radius);overflow:hidden;margin-bottom:8px;}
+  .pf-label{
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;
+    width:110px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+    color:var(--bg);font-weight:700;text-align:center;padding:10px 6px;
+  }
+  .pf-content{padding:10px 14px;font-size:12.5px;color:var(--ink);display:flex;align-items:center;background:var(--panel-2);}
+  .pf-row.ctx .pf-label{background:var(--blueprint);}
+  .pf-row.ins .pf-label{background:var(--green);}
+  .pf-row.inp .pf-label{background:var(--amber);}
+  .pf-row.out .pf-label{background:var(--violet);}
+
+  /* technique comparison */
+  .tech-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px;}
+  @media(max-width:720px){.tech-grid{grid-template-columns:1fr;}}
+  .tech-card{background:var(--panel-2);border:1px solid var(--grid);border-radius:var(--radius);padding:14px;}
+  .tech-card h4{margin:0 0 6px 0;font-size:13px;color:var(--ink-bright);}
+  .tech-card p{font-size:12px;color:var(--ink-dim);margin:0;}
+  .tech-card .ex{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--green);margin-top:8px;}
+
+  /* model comparison strip */
+  .model-strip{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;}
+  .model-chip{font-family:'JetBrains Mono',monospace;font-size:11.5px;background:var(--panel-2);border:1px solid var(--blueprint-dim);color:var(--blueprint);padding:6px 12px;border-radius:20px;}
+
+  .recap-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;}
+  @media(max-width:640px){.recap-grid{grid-template-columns:1fr;}}
+  .recap-card{background:var(--panel);border:1px solid var(--grid);border-radius:var(--radius);padding:16px 18px;}
+  .recap-card .num{font-family:'JetBrains Mono',monospace;color:var(--amber);font-size:11px;letter-spacing:1px;}
+  .recap-card p{font-size:13px;color:var(--ink);margin:6px 0 0 0;}
+
+  .recall-wrap{background:var(--panel);border:1px dashed var(--blueprint-dim);border-radius:var(--radius);padding:20px 22px;}
+  .recall-card{background:var(--panel-2);border:1px solid var(--grid);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;cursor:pointer;}
+  .recall-card:last-child{margin-bottom:0;}
+  .recall-q{font-size:13.5px;color:var(--ink-bright);display:flex;justify-content:space-between;gap:10px;}
+  .recall-q .qmark{font-family:'JetBrains Mono',monospace;color:var(--amber);flex-shrink:0;}
+  .recall-a{max-height:0;overflow:hidden;transition:max-height .25s ease;font-size:13px;color:var(--green);}
+  .recall-card.open .recall-a{max-height:220px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--grid);}
+  .recall-hint{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink-dim);text-align:right;margin-bottom:14px;letter-spacing:1px;text-transform:uppercase;}
+
+  footer{max-width:920px;margin:50px auto 0 auto;padding:16px 6px 0 6px;border-top:1px solid var(--grid);color:var(--ink-dim);font-size:12px;font-family:'JetBrains Mono',monospace;}
+  /* notes width expansion - matches learning plan box */
+  .wrap,.container,main,header.hero,header.masthead,nav.toc,section.block,footer{max-width:100%!important;padding-left:24px!important;padding-right:24px!important;}
+</style>
+</head>
+<body>
+<!-- LEARNING PLAN -->
+<div style="margin:24px;background:#0f1520;border:1px solid #1e2836;border-left:4px solid #e0a030;border-radius:8px;padding:24px 28px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;">
+  <div style="color:#e0a030;font-size:13px;font-weight:700;letter-spacing:.08em;margin-bottom:14px;">&#9670; LEARNING PLAN — 2.5 HOURS DAILY</div>
+  <div style="overflow-x:auto;">
+  <table style="width:100%;border-collapse:collapse;font-size:13px;color:#c8d3e0;margin-bottom:18px;white-space:nowrap;">
+    <thead><tr style="color:#7c8ba0;border-bottom:1px solid #1e2836;">
+      <th style="padding:6px 10px;text-align:left;width:48px;">Step</th>
+      <th style="padding:6px 10px;text-align:left;">Activity</th>
+      <th style="padding:6px 10px;text-align:left;">Outcome</th>
+    </tr></thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">1</td><td style="padding:7px 10px;"><b>Complete the Udemy Course</b> — watch videos, understand concepts, don't rush</td><td style="padding:7px 10px;color:#5fbf7f;">Build strong fundamentals</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">2</td><td style="padding:7px 10px;"><b>Practice Everything</b> — complete exercises, assignments, and source code</td><td style="padding:7px 10px;color:#5fbf7f;">Gain hands-on experience</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">3</td><td style="padding:7px 10px;"><b>Revise with these notes</b></td><td style="padding:7px 10px;color:#5fbf7f;">Reinforce concepts and fill knowledge gaps</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">4</td><td style="padding:7px 10px;"><b>Earn the Udemy Certificate</b></td><td style="padding:7px 10px;color:#5fbf7f;">Ensure the course is completed end-to-end</td></tr>
+      <tr><td style="padding:7px 10px;color:#e0a030;font-weight:700;">5</td><td style="padding:7px 10px;"><b>Practise real world tough scenario</b> — scenario-based questions &amp; interview problems</td><td style="padding:7px 10px;color:#5fbf7f;">Develop practical and interview-ready skills</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">1.5 HRS</div>
+      <div style="font-size:12px;color:#c8d3e0;">Udemy Videos + Exercises + Source Code</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Notes Revision</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Scenario-Based Questions &amp; Practical Problems</div>
+    </div>
+  </div>
+  <div style="color:#f0f4f8;font-size:12px;font-weight:600;letter-spacing:.04em;">GOAL: <span style="color:#e0a030;">Learn &#8594; Practice &#8594; Revise &#8594; Complete &#8594; Apply</span></div>
+</div>
+<!-- END LEARNING PLAN -->
+<a href="https://ai.shivawithin.in" id="home-return-btn" title="Back to Home" style="position:fixed;bottom:24px;right:24px;z-index:99999;display:inline-flex;align-items:center;gap:6px;background:#0d1b2a;color:#3fb6ff;border:1px solid #3fb6ff;padding:9px 15px;border-radius:8px;text-decoration:none;font-family:system-ui,-apple-system,sans-serif;font-size:13px;font-weight:600;box-shadow:0 2px 16px rgba(0,0,0,0.5);transition:background 0.2s,box-shadow 0.2s;" onmouseover="this.style.background='#1a2f47';this.style.boxShadow='0 4px 20px rgba(63,182,255,0.25)'" onmouseout="this.style.background='#0d1b2a';this.style.boxShadow='0 2px 16px rgba(0,0,0,0.5)'">&#8592; Home</a>
+
+  <div class="course-box">
+    <div>
+      <div class="label">Source Course</div>
+      <div class="title">Become an LLM &amp; Agentic AI Engineer — 14-Day Bootcamp</div>
+    </div>
+    <a class="link-btn" href="https://www.udemy.com/course/become-an-llm-agentic-ai-engineer-14-day-bootcamp-2025/" target="_blank" rel="noopener">Open on Udemy ↗</a>
+    <div class="note">⚠ no lecture-specific link was provided for this section — pointing to the course root; swap in the exact lecture URL if you have it.</div>
+  </div>
+
+  <header class="masthead">
+    <div class="kicker">Section 03 — Project 2</div>
+    <h1>Build an AI Calorie Tracker</h1>
+    <p class="sub">Vision API + prompt engineering fundamentals: feed the model a food photo, get back structured nutrition data. Covers image handling, the 4-part prompt framework, zero/few-shot &amp; chain-of-thought, base64 encoding, and prompt-enforced structured output.</p>
+  </header>
+
+  <div class="arch-banner">
+    <b>Reading lens —</b> Two threads run through this whole project: (1) <b>vision input is just another payload format</b> — an image becomes a base64 string embedded in the same <code>messages</code> JSON you already know from Project 1; (2) <b>prompt engineering is API contract design done in natural language</b> — context/instruction/input/output-indicator is you hand-writing a request/response schema before you have Pydantic to enforce it for you.
+  </div>
+
+  <main>
+
+    <section id="tasks">
+      <div class="section-head">
+        <span class="tag">PROJECT 02</span>
+        <h2>Task Walkthrough</h2>
+      </div>
+
+      <!-- TASK 1 -->
+      <div class="task open">
+        <div class="task-head" onclick="this.parentElement.classList.toggle('open')">
+          <div class="left">
+            <div class="task-num">1</div>
+            <div>
+              <div class="task-title">Project Overview</div>
+              <div class="task-sub">Image → food identification → calorie/macro breakdown</div>
+            </div>
+          </div>
+          <span class="chevron">›</span>
+        </div>
+        <div class="task-body">
+          <div class="task-body-inner">
+            <p>Goal: feed a food photo to a vision-capable LLM and get back identified food items, portion size, and a calorie/macronutrient estimate — a real daily-use app, not just a toy demo.</p>
+            <div class="anatomy-grid">
+              <div class="cap open"><div class="cap-title">Vision API calls</div><div class="cap-body">Talk to GPT-4o with an <i>image</i> input instead of plain text.</div></div>
+              <div class="cap open"><div class="cap-title">Prompt engineering</div><div class="cap-body">Structure prompts for consistent, robust output — context, instruction, input, output indicator.</div></div>
+              <div class="cap open"><div class="cap-title">Zero-shot / few-shot / CoT</div><div class="cap-body">Three techniques for steering model behavior without any fine-tuning.</div></div>
+              <div class="cap open"><div class="cap-title">Base64 image encoding</div><div class="cap-body">The transport format required to embed binary image data inside a JSON API payload.</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TASK 2 -->
+      <div class="task">
+        <div class="task-head" onclick="this.parentElement.classList.toggle('open')">
+          <div class="left">
+            <div class="task-num">2</div>
+            <div>
+              <div class="task-title">Loading &amp; Inspecting an Image (Pillow)</div>
+              <div class="task-sub">Format, size, mode — before any API call happens</div>
+            </div>
+          </div>
+          <span class="chevron">›</span>
+        </div>
+        <div class="task-body">
+          <div class="task-body-inner">
+            <p><b style="color:var(--ink-bright)">Pillow (PIL)</b> is Python's image-handling library. Load and inspect an image locally before sending anything to an API — a basic sanity check on your input.</p>
+            <div class="code-block">from PIL import Image
+
+image_file_name = <span class="c2">"images/food_image.jpg"</span>
+image = Image.open(image_file_name)
+
+print(<span class="c2">"Format:"</span>, image.format)   <span class="c1"># JPEG</span>
+print(<span class="c2">"Size:"</span>, image.size)       <span class="c1"># (600, 400)</span>
+print(<span class="c2">"Mode:"</span>, image.mode)       <span class="c1"># RGB — color image</span>
+
+image_to_analyze = image  <span class="c1"># keep a reference for later encoding</span></div>
+            <p><b style="color:var(--ink-bright)">Mode = RGB</b> means a full-color image (red/green/blue channels) — as opposed to grayscale.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TASK 3 -->
+      <div class="task">
+        <div class="task-head" onclick="this.parentElement.classList.toggle('open')">
+          <div class="left">
+            <div class="task-num">3</div>
+            <div>
+              <div class="task-title">Practice — swap the image</div>
+              <div class="task-sub">Pizza slice test, confirm format/size/mode</div>
+            </div>
+          </div>
+          <span class="chevron">›</span>
+        </div>
+        <div class="task-body">
+          <div class="task-body-inner">
+            <p>Swap <code>image_file_name</code> to a different sample (e.g. <code>images/pizza_slice.png</code>), rerun, and sanity-check the printed format/size/mode. Solution result: <code>PNG</code>, RGB mode — confirms the loader is format-agnostic (JPEG or PNG both work identically downstream).</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TASK 4 -->
+      <div class="task">
+        <div class="task-head" onclick="this.parentElement.classList.toggle('open')">
+          <div class="left">
+            <div class="task-num">4</div>
+            <div>
+              <div class="task-title">Prompt Engineering Fundamentals</div>
+              <div class="task-sub">The 4-part prompt framework + 3 core techniques</div>
+            </div>
+          </div>
+          <span class="chevron">›</span>
+        </div>
+        <div class="task-body">
+          <div class="task-body-inner">
+            <p><b style="color:var(--ink-bright)">Prompt engineering</b> = designing/optimizing text input to a generative model for consistent output. Specificity compounds: "recommend a book" → "recommend a fiction book" → "recommend a historical fiction book set in WWII" — each refinement narrows the output space.</p>
+
+            <p><b style="color:var(--ink-bright)">The 4-part structure</b> (sentiment-classification example):</p>
+            <div class="prompt-flow">
+              <div class="pf-row ctx"><div class="pf-label">Context</div><div class="pf-content">"Assume you are an expert financial analyst" — sets the persona/scene.</div></div>
+              <div class="pf-row ins"><div class="pf-label">Instruction</div><div class="pf-content">"Classify the following text as positive, neutral, or negative" — the exact task.</div></div>
+              <div class="pf-row inp"><div class="pf-label">Input</div><div class="pf-content">"Apple stock increased by 2% in today's trading session" — the actual data.</div></div>
+              <div class="pf-row out"><div class="pf-label">Output indicator</div><div class="pf-content">"Sentiment:" — tells the model the exact shape of the expected answer.</div></div>
+            </div>
+
+            <p><b style="color:var(--ink-bright)">Three prompting techniques:</b></p>
+            <div class="tech-grid">
+              <div class="tech-card">
+                <h4>Zero-shot</h4>
+                <p>Ask the model to perform a task with <b>no examples</b> in the prompt — relies purely on the model's pretrained knowledge.</p>
+                <div class="ex">"Categorize this headline as positive/negative/neutral: ..."</div>
+              </div>
+              <div class="tech-card">
+                <h4>Few-shot</h4>
+                <p>Provide <b>example input→output pairs</b> inside the prompt itself (not fine-tuning) to steer the model toward a pattern.</p>
+                <div class="ex">"Apple -2% → negative. Tesla +5% → positive. OpenAI +100M users → ?"</div>
+              </div>
+              <div class="tech-card">
+                <h4>Chain-of-thought</h4>
+                <p>Break a complex task into <b>explicit intermediate reasoning steps</b> in the prompt — dramatically improves accuracy on multi-step problems (esp. older/smaller models).</p>
+                <div class="ex">"Sarah started with 10... gave away 4, leaving 6... bought 5 more, 6+5=11."</div>
+              </div>
+            </div>
+            <div class="callout amber"><b>Trade-off —</b> Few-shot and chain-of-thought both increase token count (= cost + latency) in exchange for reliability. This is the same lever you'll weigh later when choosing between prompting, RAG, and fine-tuning for a given accuracy bar.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TASK 5 -->
+      <div class="task">
+        <div class="task-head" onclick="this.parentElement.classList.toggle('open')">
+          <div class="left">
+            <div class="task-num">5</div>
+            <div>
+              <div class="task-title">Practice — draft &amp; multi-model test a prompt</div>
+              <div class="task-sub">No code: CEO tone classification, tested across 5 models</div>
+            </div>
+          </div>
+          <span class="chevron">›</span>
+        </div>
+        <div class="task-body">
+          <div class="task-body-inner">
+            <p>Scenario: a private-equity firm needs the CEO's tone (optimistic / cautious / concerning) classified from an earnings-call transcript, with top-3 supporting phrases and actionable recommendations — drafted using the context/instruction/input/output-indicator framework, <i>no code</i>, tested directly in chat UIs.</p>
+            <div class="model-strip">
+              <span class="model-chip">ChatGPT</span>
+              <span class="model-chip">Gemini</span>
+              <span class="model-chip">Grok (x.ai)</span>
+              <span class="model-chip">DeepSeek</span>
+              <span class="model-chip">Claude (Sonnet)</span>
+            </div>
+            <p>All five models converged on <b style="color:var(--ink-bright)">"optimistic"</b> with consistent supporting evidence and recommendations — expected, since this was a relatively unambiguous, easy classification task for current-generation models.</p>
+            <div class="callout violet"><b>Architect's note —</b> This exercise is a manual <b>model evaluation harness</b>: same prompt, multiple vendors, compare outputs. It's the human-in-the-loop version of the automated leaderboard/blind-test evaluation from Section 1, and previews why teams build eval pipelines before committing to a single model provider.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TASK 6 -->
+      <div class="task">
+        <div class="task-head" onclick="this.parentElement.classList.toggle('open')">
+          <div class="left">
+            <div class="task-num">6</div>
+            <div>
+              <div class="task-title">Sending Images to the API — base64 encoding</div>
+              <div class="task-sub">Two helper functions: encode_image_to_base64, query_openai_vision</div>
+            </div>
+          </div>
+          <span class="chevron">›</span>
+        </div>
+        <div class="task-body">
+          <div class="task-body-inner">
+            <p>OpenAI's vision endpoint accepts images as a <b style="color:var(--ink-bright)">URL</b> or a <b style="color:var(--ink-bright)">base64-encoded string</b>. Since a JSON payload is text-only, binary image bytes must be serialized to text first.</p>
+            <div class="code-block">import base64
+
+<span class="c1">def</span> encode_image_to_base64(image_input):
+    <span class="c1">if</span> isinstance(image_input, str):        <span class="c1"># file path</span>
+        <span class="c1">with</span> open(image_input, <span class="c2">"rb"</span>) <span class="c1">as</span> f:
+            <span class="c1">return</span> base64.b64encode(f.read()).decode()
+    <span class="c1">else</span>:                                  <span class="c1"># PIL Image object</span>
+        buffer = io.BytesIO()
+        image_input.save(buffer, format=<span class="c2">"JPEG"</span>)
+        <span class="c1">return</span> base64.b64encode(buffer.getvalue()).decode()</div>
+            <p>Second function, <code>query_openai_vision(client, image, prompt, model="gpt-4o", max_tokens=100)</code>, wraps the full call: encodes the image, builds the message payload, calls the API, returns the text response. Defaults (<code>model="gpt-4o"</code>, <code>max_tokens=100</code>) mean callers only need to pass what differs per-call.</p>
+            <div class="code-block">messages = [{
+    <span class="c2">"role"</span>: <span class="c2">"user"</span>,
+    <span class="c2">"content"</span>: [
+        {<span class="c2">"type"</span>: <span class="c2">"text"</span>, <span class="c2">"text"</span>: prompt},
+        {<span class="c2">"type"</span>: <span class="c2">"image_url"</span>, <span class="c2">"image_url"</span>: {<span class="c2">"url"</span>: f<span class="c2">"data:image/jpeg;base64,{base64_image}"</span>}}
+    ]
+}]</div>
+            <div class="callout violet"><b>Architect's note —</b> Notice <code>content</code> is now a <b>list of typed parts</b> (<code>text</code>, <code>image_url</code>) instead of a plain string — a multimodal message is a heterogeneous payload, same shape as a multipart form or a GraphQL union type. The <code>role</code>/<code>messages</code> envelope from Project 1 didn't change; only what can go inside <code>content</code> expanded.</div>
+            <div class="callout amber"><b>Function design note —</b> Default parameter values (<code>model="gpt-4o"</code>) are exactly what you'd expect from any well-designed config object — sane defaults, override only what's different for a given call.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TASK 7 -->
+      <div class="task">
+        <div class="task-head" onclick="this.parentElement.classList.toggle('open')">
+          <div class="left">
+            <div class="task-num">7</div>
+            <div>
+              <div class="task-title">First Vision Call — food recognition</div>
+              <div class="task-sub">"What food is in this image?"</div>
+            </div>
+          </div>
+          <span class="chevron">›</span>
+        </div>
+        <div class="task-body">
+          <div class="task-body-inner">
+            <p>Applying the 4-part prompt framework to the vision call:</p>
+            <div class="prompt-flow">
+              <div class="pf-row ctx"><div class="pf-label">Context</div><div class="pf-content">"I'm analyzing a food image for a calorie tracking application."</div></div>
+              <div class="pf-row ins"><div class="pf-label">Instruction</div><div class="pf-content">"Identify the food item in this image."</div></div>
+              <div class="pf-row inp"><div class="pf-label">Input</div><div class="pf-content">The image (sent alongside as <code>image_url</code>).</div></div>
+              <div class="pf-row out"><div class="pf-label">Output</div><div class="pf-content">"Provide the food name, a brief description, and typical ingredients/nutritional profile."</div></div>
+            </div>
+            <p>Result on the salmon test image: correctly identified grilled salmon fillet, asparagus, cherry tomatoes, lemon slices, and dill — no calorie data yet, just recognition.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TASK 8 -->
+      <div class="task">
+        <div class="task-head" onclick="this.parentElement.classList.toggle('open')">
+          <div class="left">
+            <div class="task-num">8</div>
+            <div>
+              <div class="task-title">Practice — change the question</div>
+              <div class="task-sub">"Main color?" / "Sweet or savory?"</div>
+            </div>
+          </div>
+          <span class="chevron">›</span>
+        </div>
+        <div class="task-body">
+          <div class="task-body-inner">
+            <p>Modify only the <code>instruction</code>/<code>output</code> portion of the prompt — image and code stay untouched. Solution result: correctly classified the salmon plate as <b style="color:var(--ink-bright)">savory</b>, and listed accurate colors (orange salmon, green asparagus/herbs, red tomatoes, yellow lemon).</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TASK 9 -->
+      <div class="task">
+        <div class="task-head" onclick="this.parentElement.classList.toggle('open')">
+          <div class="left">
+            <div class="task-num">9</div>
+            <div>
+              <div class="task-title">Structured Nutrition Output — the core deliverable</div>
+              <div class="task-sub">Prompt-enforced JSON, pre-Pydantic</div>
+            </div>
+          </div>
+          <span class="chevron">›</span>
+        </div>
+        <div class="task-body">
+          <div class="task-body-inner">
+            <p>The final prompt specifies an exact output schema <i>in natural language</i>, field by field, with types called out explicitly and a worked example (one-shot) to lock the format:</p>
+            <div class="code-block">Output — respond only with a single JSON object containing:
+  food_name          (string)
+  serving_description (string, e.g. "1 cup", "100g", "1 slice")
+  calories           (float)
+  fat_grams          (float)
+  protein_grams      (float)
+  confidence_level   (string: "high" / "medium" / "low")
+
+Example:
+{
+  <span class="c2">"food_name"</span>: <span class="c2">"banana"</span>, <span class="c2">"serving_description"</span>: <span class="c2">"1 medium"</span>,
+  <span class="c2">"calories"</span>: 105, <span class="c2">"fat_grams"</span>: 0.4, <span class="c2">"protein_grams"</span>: 1.3,
+  <span class="c2">"confidence_level"</span>: <span class="c2">"high"</span>
+}</div>
+            <p>Result on the salmon image: <code>calories: ~350, fat_grams: ~20, protein_grams: ~35, confidence_level: "medium"</code> — a full structured estimate from a single API call.</p>
+            <div class="callout green"><b>Big picture —</b> This is "structured output via prompting" — the model is instructed to self-format as JSON, with no schema enforcement beyond the instruction text and a one-shot example. It works, but it's fragile (the model could still return prose, markdown fences, or malformed JSON). This is explicitly framed as the naive precursor to <b>Pydantic-based output validation</b> covered later in the bootcamp — the difference between "asking nicely for a shape" and "enforcing a schema."</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TASK 10 -->
+      <div class="task">
+        <div class="task-head" onclick="this.parentElement.classList.toggle('open')">
+          <div class="left">
+            <div class="task-num">10</div>
+            <div>
+              <div class="task-title">Practice — extend fields, stress-test robustness</div>
+              <div class="task-sub">sugar_grams, fiber_grams · pizza vs. mixed Greek salad</div>
+            </div>
+          </div>
+          <span class="chevron">›</span>
+        </div>
+        <div class="task-body">
+          <div class="task-body-inner">
+            <p>Add <code>sugar_grams</code> and <code>fiber_grams</code> (both float) to the schema and one-shot example, then test on harder images:</p>
+            <div class="anatomy-grid">
+              <div class="cap blue"><div class="cap-title">Pizza slice (single, common food)</div><div class="cap-body">1 slice ≈ 107g, ~298 calories, confidence: <b>high</b>. A single, extremely common item — the model has seen countless reference images.</div></div>
+              <div class="cap amber"><div class="cap-title">Greek salad (mixed dish)</div><div class="cap-body">1 bowl ≈ 200 calories, protein ~5g, sugar ~5g, fiber ~4g, confidence: <b>medium</b>. Multiple co-mingled ingredients reduce the model's own reported confidence.</div></div>
+            </div>
+            <div class="callout"><b>Key observation —</b> The model's self-reported <code>confidence_level</code> tracked visual complexity — single common foods scored high, multi-ingredient mixed dishes scored medium. This is a useful, if soft, signal for downstream logic (e.g. flag low-confidence estimates for user review) — and it also means every API call can return slightly different numbers, since nothing here is deterministic.</div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- MODULE RECAP -->
+    <section id="recap">
+      <div class="section-head">
+        <span class="tag">RECAP</span>
+        <h2>Module Close-Out — Project 2 Complete</h2>
+      </div>
+      <div class="recap-grid">
+        <div class="recap-card"><div class="num">01</div><p>Built an AI-powered app that <b style="color:var(--ink-bright)">processes and interprets images</b> to extract calorie/nutrition data, using OpenAI's vision capabilities.</p></div>
+        <div class="recap-card"><div class="num">02</div><p>Mastered <b style="color:var(--ink-bright)">prompt engineering fundamentals</b> — context, instruction, input, output indicator — and confirmed a well-structured prompt materially improves output quality.</p></div>
+        <div class="recap-card"><div class="num">03</div><p>Gained hands-on experience <b style="color:var(--ink-bright)">defining Python functions</b> (with defaults, docstrings, type branching) to wrap API calls cleanly and reusably.</p></div>
+        <div class="recap-card"><div class="num">04</div><p>This is the <b style="color:var(--ink-bright)">core algorithm only</b> — a UI layer (Gradio) and production deployment patterns come in later projects.</p></div>
+      </div>
+      <div class="callout"><b>What's next —</b> Wrapping this core logic in a Gradio interface, then moving toward Pydantic-based structured output validation (replacing the "ask nicely for JSON" pattern used here with real schema enforcement).</div>
+    </section>
+
+    <!-- ACTIVE RECALL -->
+    <section id="recall">
+      <div class="section-head">
+        <span class="tag">RECALL</span>
+        <h2>Active Recall Check</h2>
+      </div>
+      <div class="recall-wrap">
+        <div class="recall-hint">Click a card to reveal the answer</div>
+
+        <div class="recall-card" onclick="this.classList.toggle('open')">
+          <div class="recall-q"><span>What are the four components of a well-structured prompt?</span><span class="qmark">?</span></div>
+          <div class="recall-a">Context (persona/scene) → Instruction (the task) → Input (the data) → Output indicator (the expected answer shape).</div>
+        </div>
+
+        <div class="recall-card" onclick="this.classList.toggle('open')">
+          <div class="recall-q"><span>Distinguish zero-shot, few-shot, and chain-of-thought prompting.</span><span class="qmark">?</span></div>
+          <div class="recall-a">Zero-shot: no examples, rely on pretrained knowledge. Few-shot: example input→output pairs embedded in the prompt (not fine-tuning). Chain-of-thought: explicit step-by-step reasoning written into the prompt to improve multi-step accuracy.</div>
+        </div>
+
+        <div class="recall-card" onclick="this.classList.toggle('open')">
+          <div class="recall-q"><span>Why does an image need to be base64-encoded before an API call?</span><span class="qmark">?</span></div>
+          <div class="recall-a">The API payload is JSON (text-only); base64 encoding serializes binary image bytes into a text string that can be embedded in that JSON structure.</div>
+        </div>
+
+        <div class="recall-card" onclick="this.classList.toggle('open')">
+          <div class="recall-q"><span>How does a multimodal message's <code>content</code> field differ from the plain-text version in Project 1?</span><span class="qmark">?</span></div>
+          <div class="recall-a"><code>content</code> becomes a list of typed parts — e.g. <code>{"type": "text", ...}</code> and <code>{"type": "image_url", ...}</code> — instead of a single string, so text and image can travel in the same message.</div>
+        </div>
+
+        <div class="recall-card" onclick="this.classList.toggle('open')">
+          <div class="recall-q"><span>How was structured (JSON-shaped) output achieved in this project, and what's the limitation of that approach?</span><span class="qmark">?</span></div>
+          <div class="recall-a">By explicitly specifying the field names/types and a one-shot example in the prompt itself, and instructing the model to respond with only a JSON object. Limitation: there's no real schema enforcement — the model could still return malformed or non-JSON text. Pydantic-based validation is the more robust successor covered later.</div>
+        </div>
+
+        <div class="recall-card" onclick="this.classList.toggle('open')">
+          <div class="recall-q"><span>What pattern did the confidence_level field reveal when testing pizza vs. a mixed Greek salad?</span><span class="qmark">?</span></div>
+          <div class="recall-a">Simple, common, single-item foods (pizza slice) got high confidence; complex, multi-ingredient mixed dishes (Greek salad) got medium confidence — the model's self-reported certainty tracked visual/compositional complexity.</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    Architects Lab · Study Notes — Section 03 · Project 2: AI Calorie Tracker (Vision API &amp; Prompt Engineering)
+  </footer>
+
+<script>
+  document.querySelectorAll('.cap').forEach(el=>{
+    el.addEventListener('click', ()=> el.classList.toggle('open'));
+  });
+</script>
+</body>
+</html>

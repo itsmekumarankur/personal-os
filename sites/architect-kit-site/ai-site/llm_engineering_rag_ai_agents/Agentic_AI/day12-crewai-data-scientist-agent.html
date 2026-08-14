@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architects Lab · Building a Data Scientist Agent with CrewAI</title>
+<style>
+  :root{
+    --bg:#0d0f14; --panel:#151823; --panel2:#1b1f2e;
+    --ink:#e8e6df; --dim:#8b8fa3;
+    --gold:#d4af5a; --gold-soft:#b8964a;
+    --teal:#5ad4c8; --rose:#d47a8a; --violet:#9a8ad4; --amber:#d4915a;
+    --line:#2a2f42;
+    --mono:'Courier New', ui-monospace, monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif;display:flex;flex-direction:column;min-height:100vh}
+  header{padding:16px 26px 12px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  header .k{font-family:var(--mono);font-size:.68rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase}
+  header h1{font-size:1rem;font-weight:normal}
+  header .count{margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--dim)}
+  .tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
+  .tab{flex:1;min-width:110px;padding:9px 10px;text-align:center;font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;color:var(--dim);border-right:1px solid var(--line);cursor:pointer;white-space:nowrap;transition:.2s;background:transparent;border-top:none;border-bottom:none;border-left:none}
+  .tab:last-child{border-right:none}
+  .tab.active{color:var(--bg);font-weight:bold}
+  .tab[data-c="gold"].active{background:var(--gold)}
+  .tab[data-c="teal"].active{background:var(--teal)}
+  .tab[data-c="rose"].active{background:var(--rose)}
+  .tab[data-c="violet"].active{background:var(--violet)}
+  .tab[data-c="amber"].active{background:var(--amber)}
+  .tab[data-c="ink"].active{background:var(--ink)}
+  main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px 96px;overflow-y:auto}
+  .slide{max-width:780px;width:100%;animation:fadeUp .4s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @media (prefers-reduced-motion: reduce){.slide{animation:none}}
+  .eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px}
+  .eyebrow.gold{color:var(--gold)} .eyebrow.teal{color:var(--teal)} .eyebrow.rose{color:var(--rose)}
+  .eyebrow.violet{color:var(--violet)} .eyebrow.amber{color:var(--amber)} .eyebrow.ink{color:var(--dim)}
+  .slide h2{font-size:1.55rem;font-weight:normal;line-height:1.3;margin-bottom:14px}
+  .slide h2 em{font-style:italic;color:var(--gold)}
+  .slide p{color:#c9c7bf;line-height:1.75;font-size:1rem;margin-bottom:13px}
+  .slide p strong, .slide li strong{color:var(--ink)}
+  .slide code{font-family:var(--mono);font-size:.85em;background:var(--panel2);padding:2px 6px;border-radius:3px;color:var(--gold)}
+  .ascii{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:6px;padding:14px 16px;margin:14px 0;font-family:var(--mono);font-size:.74rem;line-height:1.5;color:#b9c2d8;overflow-x:auto;white-space:pre}
+  .ascii .hl{color:var(--gold)} .ascii .tl{color:var(--teal)} .ascii .rs{color:var(--rose)}
+  .note{border:1px dashed var(--gold-soft);border-radius:6px;padding:11px 15px;margin:14px 0;font-size:.9rem;color:#cfc9ae;line-height:1.65}
+  .note b{color:var(--gold)}
+  ul.pts{margin:10px 0 13px 2px;list-style:none}
+  ul.pts li{padding:6px 0 6px 21px;position:relative;color:#c9c7bf;line-height:1.6;font-size:.95rem}
+  ul.pts li::before{content:"\203A";position:absolute;left:4px;color:var(--gold);font-family:var(--mono)}
+  /* ---- Think First (question) slides ---- */
+  .qcard{border:2px solid var(--gold);border-radius:10px;background:linear-gradient(160deg,#1a1608,#151823);padding:30px 28px;margin:6px 0 18px;position:relative}
+  .qcard::before{content:"?";position:absolute;top:-20px;left:22px;width:38px;height:38px;border-radius:50%;background:var(--gold);color:var(--bg);font-family:var(--mono);font-weight:bold;font-size:1.3rem;display:flex;align-items:center;justify-content:center}
+  .qcard .qlabel{font-family:var(--mono);font-size:.64rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;margin-bottom:12px}
+  .qcard .qtext{font-size:1.25rem;line-height:1.55;color:var(--ink);font-style:italic}
+  .qcard .qsub{margin-top:14px;font-size:.86rem;color:var(--dim);font-style:normal;font-family:var(--mono)}
+  /* ---- lenses (CTO / Director) ---- */
+  details.lens{margin:10px 0;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+  details.lens summary{cursor:pointer;padding:10px 14px;font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;color:var(--teal);list-style:none}
+  details.lens summary::before{content:"+ ";color:var(--gold)}
+  details.lens[open] summary::before{content:"\2212 "}
+  details.lens.dir summary{color:var(--rose)}
+  details.lens .body{padding:2px 16px 13px}
+  details.lens .body li{font-size:.9rem}
+  /* ---- recall quiz slides ---- */
+  .recall-item{border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:6px;background:var(--panel);margin:12px 0;overflow:hidden}
+  .recall-item summary{cursor:pointer;padding:13px 16px;font-size:.98rem;color:var(--ink);list-style:none;line-height:1.55}
+  .recall-item summary::before{content:"Q  ";font-family:var(--mono);color:var(--teal);font-weight:bold}
+  .recall-item .ans{padding:0 16px 13px;color:#b9c2b0;font-size:.92rem;line-height:1.65;border-top:1px dashed var(--line);padding-top:11px;margin:0 16px 13px;padding-left:0;padding-right:0}
+  .recall-item .ans b{color:var(--teal)}
+  .recall-hint{font-family:var(--mono);font-size:.7rem;color:var(--dim);margin-top:6px}
+  footer{position:fixed;left:0;right:0;bottom:0;background:rgba(13,15,20,.93);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:11px 20px;display:flex;align-items:center;gap:14px}
+  .dots{display:flex;gap:4px;flex:1;justify-content:center;flex-wrap:wrap}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--line);cursor:pointer;transition:.2s}
+  .dot.on{background:var(--gold);transform:scale(1.45)}
+  .dot.q{border:1px solid var(--gold);background:transparent}
+  .dot.q.on{background:var(--gold)}
+  button.nav{font-family:var(--mono);font-size:.78rem;letter-spacing:.1em;background:transparent;color:var(--ink);border:1px solid var(--line);padding:9px 18px;border-radius:5px;cursor:pointer;transition:.2s}
+  button.nav:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+  button.nav.primary{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:bold}
+  button.nav.primary:hover{background:#e2c070}
+  button.nav:disabled{opacity:.25;cursor:default}
+  button.nav:focus-visible,.tab:focus-visible,.dot:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .hint{position:fixed;bottom:62px;right:18px;font-family:var(--mono);font-size:.6rem;color:var(--dim);letter-spacing:.1em}
+  @media(max-width:600px){.slide h2{font-size:1.28rem}.ascii{font-size:.58rem;padding:11px}.hint{display:none}.qcard .qtext{font-size:1.08rem}}
+</style>
+</head>
+<body>
+<header>
+  <span class="k">Architects Lab</span>
+  <h1>Building a Data Scientist Agent with CrewAI</h1>
+  <span class="count" id="counter"></span>
+</header>
+<div class="tabs" id="tabs"></div>
+<main><div id="stage"></div></main>
+<div class="hint">&larr; &rarr; keys work too</div>
+<footer>
+  <button class="nav" id="prevBtn">&larr; Prev</button>
+  <div class="dots" id="dots"></div>
+  <button class="nav primary" id="nextBtn">Next &rarr;</button>
+</footer>
+<script>
+const SECTIONS=[
+ {id:"intro",label:"START",c:"ink"},
+ {id:"manual",label:"THE MANUAL BASELINE",c:"teal"},
+ {id:"model",label:"MODELING+INSIGHT",c:"gold"},
+ {id:"crew",label:"CREWAI DESIGN",c:"violet"},
+ {id:"risk",label:"PROMPTS+SECURITY",c:"rose"},
+ {id:"end",label:"RESULT+WRAP-UP",c:"amber"}
+];
+const S=[
+
+{sec:"intro",c:"ink",eyebrow:"Building a Data Scientist Agent",t:"a",h:"Building a Data Scientist Agent with <em>CrewAI</em>",body:`
+<p>A two-part project: first, the full ML regression workflow built manually — pandas, imputation, EDA, encoding, linear/random forest/XGBoost models, feature importance — then the exact same workflow rebuilt as a crew of three autonomous AI agents that write and execute their own Python code.</p>
+<div class="note"><b>How to use:</b> "?" slides ask you to predict first. Press Next to compare. Recall quizzes close each section.</div>`},
+
+/* ---------- THE MANUAL BASELINE ---------- */
+{sec:"manual",c:"teal",eyebrow:"Framing",t:"q",q:`The project deliberately builds the entire regression workflow <b>by hand</b> before automating it with CrewAI. Why insist on the manual version first?`},
+
+{sec:"manual",c:"teal",eyebrow:"Framing",t:"a",h:"Why build it manually before automating it",body:`
+<p><strong>Goal:</strong> predict weekly <code>units_sold</code> for a supplement company from date, product, category, price, discount, and location. First build the entire regression workflow by hand (load &rarr; clean &rarr; explore &rarr; encode &rarr; split &rarr; train &rarr; evaluate), then rebuild the identical workflow as a CrewAI multi-agent system that plans, writes, and executes its own code.</p>
+<div class="note">Because writing precise task descriptions for an AI agent requires understanding every step of the workflow yourself, and being able to judge whether the agent's generated output and results are actually correct requires the <b>same ground-truth understanding</b> — without it, you can't write a good specification or catch when the agent gets something wrong.</div>`,
+cto:[`This "understand it by hand before you delegate it to AI" sequencing is worth treating as a general engineering-management principle, not just a teaching device — don't let a squad automate a workflow with an agent until someone on the team has actually done it manually enough times to write a precise specification and recognize a wrong answer. Agent output that "looks plausible" is a real risk category when nobody on the reviewing side has ground-truth intuition for what correct looks like.`]},
+
+{sec:"manual",c:"teal",eyebrow:"Fundamentals",t:"q",q:`What's the fastest single line of pandas code to check how many missing values exist in <b>each column</b> of a DataFrame?`},
+
+{sec:"manual",c:"teal",eyebrow:"Fundamentals",t:"a",h:"The DataFrame as a spreadsheet on steroids",body:`
+<div class="ascii">Method                Purpose
+df.head(n)/tail(n)    First/last n rows (default 5)
+df.info()             Column types + non-null counts - quick
+                        missing-value scan
+df.describe()         Statistical summary (mean, std, min/max,
+                        percentiles); include='object' for
+                        categoricals
+df.shape              (rows, columns) tuple
+df.isnull().sum()     Count of missing values per column
+df['col'].nunique()   Count of unique values in a column</div>
+<div class="note"><code>df.isnull().sum()</code> — <code>isnull()</code> converts every cell to True/False (missing/not-missing), and <code>sum()</code> adds up the True values (treated as 1) per column, giving a per-column count in one line. Indexing starts at 0 — the "first" row is row 0, not row 1.</div>`},
+
+{sec:"manual",c:"teal",eyebrow:"Cleaning",t:"q",q:`What is "data leakage" in the context of imputation — and why does splitting into train/test <b>before</b> imputing prevent it?`},
+
+{sec:"manual",c:"teal",eyebrow:"Cleaning",t:"a",h:"Handling missing values — choosing the right strategy",body:`
+<div class="ascii">Strategy                When to use            Trade-off
+Drop rows                Very few missing, or a  Simple but wastes
+                          column mostly empty      data
+Mean imputation           Numeric, roughly normal Sensitive to
+                                                    outliers
+Median imputation         Numeric with outliers/  More robust,
+                            skew                    unaffected by
+                                                     extremes
+Mode imputation            Categorical             Most frequent
+                                                     category
+Regression/KNN imputation  Advanced - predict      More accurate,
+                             from other features     real complexity
+                                                      (not used here)</div>
+<div class="ascii">from sklearn.impute import SimpleImputer
+imputer = SimpleImputer(strategy='median')
+df[cols_with_missing] = imputer.fit_transform(df[cols_with_missing])</div>
+<div class="note">Data leakage happens when information from the test set influences how the model or preprocessing is built — e.g. computing the median for imputation using the FULL dataset (including test rows) before splitting means the imputed training values are subtly informed by test-set data the model should never have seen. Splitting first and fitting the imputer only on the training set avoids this — the test set stays completely untouched until final evaluation.</div>`,
+cto:[`The project explicitly notes the textbook-correct order is split FIRST, then impute — computing the median only from the training set. This project deliberately imputes before splitting for simplicity, flagged as a shortcut, not a best practice. Worth treating as a real checklist item for any production ML pipeline: is preprocessing fit only on the training data, or does it silently leak test-set information?`]},
+
+{sec:"manual",c:"teal",eyebrow:"Exploration",t:"q",q:`A histogram of the target variable shows high skewness (~2.05). Before any model is trained, what does that <b>predict</b> about linear regression's eventual performance?`},
+
+{sec:"manual",c:"teal",eyebrow:"Exploration",t:"a",h:"EDA — reading the data's story before modeling it",body:`
+<p><strong>Three visualization libraries compared:</strong> Matplotlib (the low-level "grandfather," static/interactive), Seaborn (built on Matplotlib, higher-level, better default aesthetics — "Matplotlib on steroids"), and Plotly (interactive, zoomable, 40+ chart types).</p>
+<p><strong>EDA steps:</strong> target variable distribution (histogram, checking skewness), numeric feature distributions (histogram + box plot, spotting outliers), categorical feature frequency (count plots), pairwise relationships (scatter plots against the target), and a full correlation heatmap.</p>
+<div class="note">It predicted the linear regression model would underperform — and it did, achieving only R&sup2;=0.67 compared to ~0.80 for tree-based models. Linear regression assumes relationships close to linear/symmetric, so a highly skewed target distribution is an early warning sign a linear model won't capture the data's structure well — <b>visible before any model is even trained.</b></div>`,
+cto:[`The skewness check directly foreshadows and explains the later result. Reading EDA output as a prediction of which model family will work, not just a description of the data, is the more sophisticated way to use exploratory analysis.`]},
+
+{sec:"manual",c:"teal",eyebrow:"Preprocessing",t:"q",q:`With 3 categories one-hot encoded and <code>drop_first=True</code> applied, how many columns get created — and why doesn't this <b>lose information</b>?`},
+
+{sec:"manual",c:"teal",eyebrow:"Preprocessing",t:"a",h:"One-hot encoding — and the multicollinearity trap",body:`
+<div class="ascii">BAD:  red=1, yellow=2, green=3
+      (implies green > yellow > red numerically - FALSE ordering!)
+GOOD (one-hot): red=[1,0,0]  yellow=[0,1,0]  green=[0,0,1]
+      (each category gets its own binary column, no false ranking)
+
+pd.get_dummies(df, columns=['category','location','platform'],
+                drop_first=True)</div>
+<div class="note">Only 2 columns are created (not 3). No information is lost because the 3rd category becomes the implicit "baseline" — if both remaining columns are 0, that row belongs to the dropped category by elimination. With 3 categories and no dropping, you get 3 binary columns — but if you know 2, the 3rd is fully determined (perfectly predictable), creating <b>multicollinearity</b> — redundant, perfectly correlated predictor columns that undermine a linear model's statistical validity. Dropping one category removes the redundancy without losing information.</div>`},
+
+{sec:"manual",c:"teal",eyebrow:"The Manual Baseline · Recall",t:"r",h:"Quick recall: the manual baseline",qs:[
+{q:`What's the one-line check for missing values per column, and how does it work?`,a:`<code>df.isnull().sum()</code> — <code>isnull()</code> converts each cell to True/False, <code>sum()</code> adds the True values (as 1) per column.`},
+{q:`Why does splitting before imputing prevent data leakage?`,a:`Computing statistics like the median from the full dataset (including test rows) lets test-set information subtly influence the training data's preprocessing. Splitting first and fitting only on training data keeps the test set completely untouched until final evaluation.`},
+{q:`What did the target variable's skewness (~2.05) predict, and was it right?`,a:`It predicted linear regression would underperform (assumes roughly linear/symmetric relationships) — confirmed: linear regression scored R&sup2;=0.67 vs ~0.80 for tree-based models.`},
+{q:`With drop_first=True on 3 categories, how many columns result and why is nothing lost?`,a:`Only 2 columns — the 3rd category becomes the implicit baseline: if both remaining columns are 0, that row belongs to the dropped category by elimination. Avoids multicollinearity.`}]},
+
+/* ---------- MODELING + INSIGHT ---------- */
+{sec:"model",c:"gold",eyebrow:"Evaluation",t:"q",q:`Why is RMSE generally preferred over raw MSE when communicating model error to a <b>non-technical stakeholder</b>?`},
+
+{sec:"model",c:"gold",eyebrow:"Evaluation",t:"a",h:"Regression metrics — what each number actually tells you",body:`
+<div class="ascii">Metric   Meaning                          Units
+MAE      Average absolute prediction      Same as target
+          error
+MSE      Squares errors before            Squared units (hard
+          averaging - penalizes large      to interpret)
+          errors more heavily
+RMSE     Square root of MSE               Same as target -
+                                            lower is better
+R²       Proportion of target variance    Unitless - closer
+          explained, 0 to 1                to 1 is better
+
+Rule of thumb: R² > 0.9 = excellent, R² > 0.7 = good fit,
+below that = likely underfitting, consider non-linear models.
+Linear regression's R²=0.67 triggered exactly this conclusion.</div>
+<div class="note">Because MSE is in squared units of the target (e.g. squared units sold), hard to interpret intuitively. RMSE takes the square root, bringing it back into the SAME units as the original target — so "RMSE = 319" directly means "the model's typical prediction error is about 319 units sold," immediately interpretable.</div>`},
+
+{sec:"model",c:"gold",eyebrow:"Modeling",t:"q",q:`Linear Regression &rarr; Random Forest &rarr; tuned XGBoost. Which transition produces the <b>bigger</b> performance jump — and what does that tell you about where to spend your time?`},
+
+{sec:"model",c:"gold",eyebrow:"Modeling",t:"a",h:"The progression: linear regression to XGBoost",body:`
+<div class="ascii">Model                      R²      RMSE
+Linear Regression          0.67    319
+Random Forest              ~0.80   ~246
+XGBoost (tuned)             ~0.81   ~245
+XGBoost (default params)   lower   higher (than tuned)
+
+Each model: instantiate -> .fit(X_train,y_train) -> .predict(X_test)
+-> compare against y_test using the metrics above. XGBoost's
+hyperparameters (n_estimators, learning_rate, max_depth) mattered
+significantly - running with defaults visibly degraded performance.</div>
+<div class="note">Linear regression to Random Forest produced the much larger jump (0.67 &rarr; ~0.80). Random Forest to tuned XGBoost was tiny (~0.80 &rarr; ~0.81) — illustrating that switching model <b>families</b> (linear to tree-based) mattered far more here than further sophistication within the tree-based family.</div>`,
+cto:[`The near-identical final performance between Random Forest and tuned XGBoost is itself a useful data point: more sophisticated algorithms don't always translate into meaningfully better results on a given dataset. Worth remembering as a prioritization heuristic: the biggest performance jump usually comes from picking the right MODEL FAMILY for your data's shape, not from endlessly tuning within one family.`]},
+
+{sec:"model",c:"gold",eyebrow:"Interpretation",t:"q",q:`Random Forest's built-in feature importance reveals one feature dominating at ~0.78. Does this <b>match</b> what the correlation heatmap already showed earlier — or contradict it?`},
+
+{sec:"model",c:"gold",eyebrow:"Interpretation",t:"a",h:"Feature importance — turning a model into a business insight",body:`
+<div class="ascii">rf_model.feature_importances_  # array of scores, one per feature</div>
+<p><strong>price</strong> dominated as the driver of units sold (~0.78 importance), with discount a distant second — directly matching the earlier correlation heatmap finding (price: -0.76 correlation, discount: +0.23).</p>
+<div class="note">Yes, it matched. This confirms the same signal was visible both through simple correlation analysis <em>and</em> through the trained model's internal feature weighting — converting a black-box prediction model into an actionable business insight: "price is what drives sales volume — pricing strategy matters more than which platform you sell on."</div>`},
+
+{sec:"model",c:"gold",eyebrow:"Modeling &amp; Insight · Recall",t:"r",h:"Quick recall: modeling and interpretation",qs:[
+{q:`Why does RMSE beat MSE for a VP conversation?`,a:`RMSE is in the <b>same units as the target</b> ("off by 319 units sold"), directly interpretable. MSE is in squared units, which don't map to a real-world quantity.`},
+{q:`Which model transition delivered the biggest R² jump, and what's the general lesson?`,a:`Linear regression &rarr; Random Forest (0.67&rarr;0.80) — far bigger than Random Forest &rarr; tuned XGBoost (0.80&rarr;0.81). The biggest gains usually come from picking the right <b>model family</b>, not endless tuning within one.`},
+{q:`Did the Random Forest's feature importance ranking agree with the earlier correlation heatmap?`,a:`Yes — price dominated both (importance ~0.78, correlation -0.76), confirming the same signal through two independent analyses.`}]},
+
+/* ---------- CREWAI DESIGN ---------- */
+{sec:"crew",c:"violet",eyebrow:"Framing",t:"q",q:`CrewAI is compared to "an AI company" — departments working together toward a shared goal. What's the practical difference between its <b>sequential</b> and <b>hierarchical</b> process types?`},
+
+{sec:"crew",c:"violet",eyebrow:"Framing",t:"a",h:"CrewAI — multi-agent orchestration as &quot;an AI company&quot;",body:`
+<div class="ascii">Component   Role
+Agent       role + goal + backstory (persona) + LLM ("brain") +
+             optional tools + delegation on/off
+Tool        A capability an agent can invoke - search, file I/O,
+             code execution, custom APIs
+Task        description + expected_output ("definition of done")
+             + assigned agent + optional context (prior tasks'
+             outputs feeding in)
+Crew        agents + tasks + process (sequential or hierarchical)</div>
+<div class="note"><b>Sequential:</b> tasks run one after another in a fixed, predetermined order, with each task's output feeding into the next as context — simple and predictable (used throughout this project). <b>Hierarchical:</b> a manager agent dynamically decides how to delegate tasks among subordinates at runtime — more flexible and powerful, but also more complex to reason about and debug.</div>`,
+cto:[`Comparing this to n8n and the OpenAI Agents SDK/MCP: CrewAI sits conceptually between them — more structured and role-oriented than a single flat agent with many tools, but more code-native and version-controllable than n8n's visual canvas. The "role + goal + backstory" persona pattern is a genuinely distinct design choice worth noting — giving each agent an explicit narrative identity (not just a system prompt) appears to meaningfully shape how reliably it stays in its lane during a multi-agent handoff.`]},
+
+{sec:"crew",c:"violet",eyebrow:"Design",t:"q",q:`The Analyst and Modeler agents don't "reason" their way to a mean squared error. Why do they <b>write and execute Python code</b> instead of just computing the answer directly through LLM reasoning?`},
+
+{sec:"crew",c:"violet",eyebrow:"Design",t:"a",h:"The three-agent data science team",body:`
+<ul class="pts">
+<li><strong>1. Planner Agent</strong> — Role: Lead Data Scientist and Planner. No tools — generates a numbered plan only, doesn't execute code.</li>
+<li><strong>2. Analyst/Preprocessor Agent</strong> — Tools: notebook_code_executor. Inspects data, imputes, encodes, splits into train/test — ALL via generated-and-executed Python code.</li>
+<li><strong>3. Modeler/Evaluator Agent</strong> — Tools: notebook_code_executor. Trains model(s), evaluates metrics, extracts feature importance — again via generated-and-executed code.</li>
+</ul>
+<div class="note">Because LLMs are unreliable at precise numerical computation done purely "in their head" through text reasoning, but highly reliable at writing syntactically correct code that a deterministic Python interpreter then executes exactly. An LLM "eyeballing" a mean squared error would be unreliable; an LLM writing correct <code>mean_squared_error(y_test, y_pred)</code> code and running it gets an exact, deterministic answer.</div>`,
+cto:[`This "agent writes code, then executes it, rather than reasoning numerically itself" pattern is the single most important architectural decision in the whole project, and a general principle worth applying anywhere precision matters. Any agentic system doing quantitative work (financial calculations, metrics, anything audit-sensitive) should follow this same "generate code, don't generate the number directly" discipline.`]},
+
+{sec:"crew",c:"violet",eyebrow:"CrewAI Design · Recall",t:"r",h:"Quick recall: CrewAI's design",qs:[
+{q:`Name CrewAI's four components and one-line each.`,a:`Agent (role+goal+backstory+brain+tools), Tool (invocable capability), Task (description+expected_output+agent+context), Crew (agents+tasks+process).`},
+{q:`Why do the Analyst and Modeler agents generate and execute Python code instead of reasoning numerically?`,a:`LLMs are unreliable at precise arithmetic done "in their head" but highly reliable at writing correct code a deterministic interpreter then executes exactly — offloading calculation to verifiable code, not model guesswork.`}]},
+
+/* ---------- PROMPTS + SECURITY ---------- */
+{sec:"risk",c:"rose",eyebrow:"Prompt Engineering",t:"q",q:`The Analyst agent's first attempt at one-hot encoding created a <b>NEW</b> DataFrame instead of updating the shared one — breaking the pipeline. What was the fix, and what does it teach about task descriptions for autonomous agents?`},
+
+{sec:"risk",c:"rose",eyebrow:"Prompt Engineering",t:"a",h:"Writing task descriptions precise enough for autonomous execution",body:`
+<ul class="pts">
+<li><strong>Emphasis markers</strong> — double asterisks around "generate Python code," "crucially" — making critical instructions stand out, the way bolded text does in a spec a human skims.</li>
+<li><strong>Explicit global variable contracts</strong> — instructing agents to create/update specific named variables (<code>shared_df</code>, <code>X_train</code>, <code>y_test</code>) in a shared execution scope, since later agents/tasks depend on those exact variables existing.</li>
+<li><strong>"Crucially, update the original DataFrame"</strong> — an explicit fix after observing the agent's first attempt created a NEW DataFrame instead of updating the shared one, breaking the downstream pipeline.</li>
+<li><strong>Precise expected_output</strong> — describing exactly what successful completion looks like, so the agent has an unambiguous stopping condition.</li>
+</ul>
+<div class="note">The analyst/preprocessor agent's first attempt at one-hot encoding created a NEW, separate DataFrame — breaking the pipeline since downstream tasks expected transformations reflected in the same <code>shared_df</code> variable they'd reference. The fix: explicit emphasis instructing the agent to update the original shared variable, not create a separate one.</div>
+<div class="note">The instructor explicitly notes going through "multiple iterations back and forth" to refine task descriptions — the DataFrame bug is a direct example. <b>Multi-agent autonomous systems are NOT reliably one-shot correct on a first attempt</b>, even with careful upfront design — budget for observed-failure-driven prompt iteration as a normal part of building any such system, not an exception.</div>`},
+
+{sec:"risk",c:"rose",eyebrow:"Security",t:"q",q:`Before running the assembled crew, the instructor flags that this "imposes risk to your computer." What category of risk does <b>arbitrary code execution</b> introduce that a scoped API tool (like search or calendar) doesn't?`},
+
+{sec:"risk",c:"rose",eyebrow:"Security",t:"a",h:"Giving an AI agent the ability to execute code",body:`
+<p>An LLM is autonomously generating and then <strong>actually executing</strong> Python code on the local machine via the notebook code executor tool, with no human review step between code generation and execution.</p>
+<div class="note">Arbitrary code execution can, in principle, do anything the host process/environment is capable of — read/write any accessible file, make any network call, consume unbounded resources — whereas a scoped API tool is limited to whatever specific, narrow actions that particular API exposes. This is why arbitrary code execution needs sandboxing (isolated, ephemeral, resource-limited environments) as a hard requirement for any production use, not just careful prompting.</div>
+<div class="note">This is the second explicit "this could go wrong" warning across this course's agentic projects (the first being n8n's Google Sheets delete-access warning). Arbitrary code execution by an autonomous agent is a materially different risk category from an agent calling a scoped, read-only tool.</div>`,
+cto:[`Worth connecting this directly to Docker — a properly isolated, ephemeral container is exactly the kind of sandbox that makes "let an agent execute arbitrary code" a defensible pattern rather than a reckless one. If this pattern were ever proposed for a real tool (an agent that writes and runs its own analysis code against production-adjacent data), the non-negotiable requirement: code execution happens in a disposable, network-isolated container with no access beyond the specific dataset it's meant to analyze — never directly on a developer's or production host's local environment.`]},
+
+{sec:"risk",c:"rose",eyebrow:"Prompts &amp; Security · Recall",t:"r",h:"Quick recall: prompt engineering and security",qs:[
+{q:`What specific bug required the "crucially, update the original DataFrame" instruction?`,a:`The Analyst agent's first attempt at one-hot encoding created a NEW DataFrame instead of updating the shared <code>shared_df</code> variable in place, breaking downstream tasks that expected transformations reflected in that same shared variable.`},
+{q:`What risk category does arbitrary code execution introduce that a scoped API tool doesn't?`,a:`Code execution can in principle do anything the host process can do — any file, any network call, unbounded resources — versus a scoped tool limited to specific narrow actions. Requires sandboxing (isolated, ephemeral, resource-limited) as a hard requirement, not optional hardening.`}]},
+
+/* ---------- RESULT + WRAP-UP ---------- */
+{sec:"end",c:"amber",eyebrow:"Result",t:"q",q:`The crew's final results (R&sup2;&asymp;0.78) were compared against the <b>manually-built</b> Random Forest (R&sup2;&asymp;0.80). Why does that close numeric match matter more than the output just "looking reasonable"?`},
+
+{sec:"end",c:"amber",eyebrow:"Result",t:"a",h:"Running the crew — what actually happened",body:`
+<p>With <code>verbose=True</code>, the full execution trace is visible: the Planner agent produces a numbered plan &rarr; the Analyst/Preprocessor agent generates and executes preprocessing code (visibly matching the manual notebook's steps: <code>get_dummies</code>, <code>train_test_split</code>) &rarr; the Modeler/Evaluator agent trains a Random Forest, evaluates it, and reports feature importance.</p>
+<div class="note">Final agent-produced results (R&sup2;&asymp;0.78, RMSE&asymp;286, price as top feature at ~0.78 importance) closely matched the manually-built Random Forest's results (R&sup2;&asymp;0.80) — a genuine validation that the automated crew reproduced <b>equivalent-quality work</b> to the hand-built pipeline, not just superficially similar-looking output.</div>`,
+cto:[`Anyone can generate plausible-looking code; whether the automated pipeline produces genuinely comparable numerical results to a known-correct manual baseline is what separates a real validation from a demo. Worth using this same discipline for any automation candidate: don't just check "did the agent's output look reasonable," check "does it match a known-correct baseline within an acceptable tolerance."`]},
+
+{sec:"end",c:"amber",eyebrow:"Wrap-up",t:"a",h:"The honest conclusion — augmentation, not replacement",body:`
+<p>The project's closing framing is notably measured rather than hyperbolic: CrewAI agents won't fully replace data scientists — human intuition is still needed to design the agent system itself, debug it when it goes wrong (as the DataFrame bug demonstrated), and validate results against domain knowledge. The stated position: <strong>"you still need humans in tandem with AI agents... but without AI agents you will definitely be left behind."</strong></p>
+<ol style="color:#c9c7bf;line-height:1.9;padding-left:20px;font-size:.95rem">
+<li>Manual baseline: pandas &rarr; EDA &rarr; imputation &rarr; encoding &rarr; split &rarr; linear regression &rarr; random forest &rarr; XGBoost &rarr; feature importance (ground truth established)</li>
+<li>CrewAI components: Agent (role/goal/backstory/brain/tools) + Task (description/expected_output/agent/context) + Crew (agents+tasks+process)</li>
+<li>Notebook code executor tool: agents generate code, execute it via a real Python interpreter — not "reasoning" numerically</li>
+<li>Three-agent team: Planner (strategy only) &rarr; Analyst/Preprocessor (data prep, via code execution) &rarr; Modeler/Evaluator (training + evaluation, via code execution)</li>
+<li>Task descriptions require extreme precision — explicit global variable contracts, emphasis markers, iteration after observed failures (not one-shot correct)</li>
+<li>Code execution by an autonomous agent is a real security risk category requiring sandboxing discipline</li>
+<li>Validation = matching a known-correct manual baseline, not just plausible-looking output</li>
+</ol>`},
+
+{sec:"end",c:"amber",eyebrow:"Final Recall",t:"r",h:"Final recall: questions worth carrying forward",qs:[
+{q:`Across n8n, OpenAI Agents SDK + MCP, and CrewAI — which would you reach for first for a realistic data-analysis automation task?`,a:`Depends more on who maintains the system afterward than on task complexity alone: n8n suits non-engineer ownership and rapid iteration; CrewAI/code-first frameworks suit engineer-maintained, version-controlled, precisely-specified pipelines. Task complexity matters, but the maintenance-owner question is often the deciding factor.`},
+{q:`Given "multiple iterations required, not one-shot correct" — how should you budget development time for a similar agentic tool?`,a:`Budget explicit iteration cycles driven by observed failures (like the DataFrame bug), not a single upfront design-then-ship estimate. Optimistic vendor/team timelines that assume first-attempt correctness should be discounted accordingly.`},
+{q:`The CrewAI code-execution risk and n8n's Google Sheets delete-risk are the same underlying category. Would a unified safety checklist help?`,a:`Likely yes — both reduce to "agent with real-world write/execute power" needing sandboxing, least-privilege scoping, and human-in-the-loop checkpoints. A single internal checklist applicable across frameworks would avoid re-deriving the same principles project by project.`}]}
+];
+
+let i=0;
+const stage=document.getElementById('stage'),dots=document.getElementById('dots'),
+tabs=document.getElementById('tabs'),counter=document.getElementById('counter'),
+prevBtn=document.getElementById('prevBtn'),nextBtn=document.getElementById('nextBtn');
+SECTIONS.forEach(s=>{const b=document.createElement('button');b.className='tab';b.dataset.c=s.c;b.dataset.sec=s.id;b.textContent=s.label;b.onclick=()=>go(S.findIndex(x=>x.sec===s.id));tabs.appendChild(b);});
+S.forEach((sl,k)=>{const d=document.createElement('span');d.className='dot'+(sl.t==='q'?' q':'');d.tabIndex=0;d.setAttribute('role','button');d.setAttribute('aria-label','Slide '+(k+1));d.onclick=()=>go(k);d.onkeydown=e=>{if(e.key==='Enter')go(k)};dots.appendChild(d);});
+function lens(cto,dir){
+  let out='';
+  if(cto&&cto.length) out+='<details class="lens"><summary>CTO LENS</summary><div class="body"><ul class="pts">'+cto.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+  if(dir&&dir.length) out+='<details class="lens dir"><summary>DIRECTOR LENS</summary><div class="body"><ul class="pts">'+dir.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+  return out;
+}
+function go(k){
+  i=Math.max(0,Math.min(S.length-1,k));
+  const s=S[i];stage.innerHTML='';
+  const el=document.createElement('div');el.className='slide';
+  try{
+    if(s.t==='q'){
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div>'
+        +'<div class="qcard"><div class="qlabel">Think first &middot; predict before you peek</div>'
+        +'<div class="qtext">'+s.q+'</div>'
+        +'<div class="qsub">Form your answer in your head. Then press Next to compare.</div></div>';
+    } else if(s.t==='r'){
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'
+        +'<p>Answer from memory first. Tap a question to reveal the answer.</p>'
+        +s.qs.map(x=>'<details class="recall-item"><summary>'+x.q+'</summary><div class="ans">'+x.a+'</div></details>').join('')
+        +'<div class="recall-hint">Struggled on any? Jump back with the tabs above, then return.</div>';
+    } else {
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'+s.body+(((s.cto&&s.cto.length)||(s.dir&&s.dir.length))?lens(s.cto,s.dir):'');
+    }
+  }catch(err){
+    el.innerHTML='<div class="eyebrow rose">Render error</div><h2>Slide '+(i+1)+' failed to render</h2><p>'+String(err&&err.message||err)+'</p>';
+  }
+  stage.appendChild(el);
+  counter.textContent=(i+1)+' / '+S.length;
+  document.querySelectorAll('.dot').forEach((d,k2)=>d.classList.toggle('on',k2===i));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.sec===s.sec));
+  prevBtn.disabled=(i===0);
+  nextBtn.textContent=(i===S.length-1)?'Done \u2713':'Next \u2192';
+  nextBtn.disabled=(i===S.length-1);
+  document.querySelector('main').scrollTop=0;window.scrollTo(0,0);
+}
+prevBtn.onclick=()=>go(i-1);nextBtn.onclick=()=>go(i+1);
+document.addEventListener('keydown',e=>{if(e.target.closest('details'))return;if(e.key==='ArrowRight')go(i+1);if(e.key==='ArrowLeft')go(i-1);});
+go(0);
+</script>
+</body>
+</html>

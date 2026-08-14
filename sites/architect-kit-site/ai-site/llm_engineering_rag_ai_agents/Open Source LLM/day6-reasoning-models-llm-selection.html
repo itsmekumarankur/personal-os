@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architects Lab · Reasoning Models &amp; A Framework for Choosing the Right LLM</title>
+<style>
+  :root{
+    --bg:#0d0f14; --panel:#151823; --panel2:#1b1f2e;
+    --ink:#e8e6df; --dim:#8b8fa3;
+    --gold:#d4af5a; --gold-soft:#b8964a;
+    --teal:#5ad4c8; --rose:#d47a8a; --violet:#9a8ad4; --amber:#d4915a;
+    --line:#2a2f42;
+    --mono:'Courier New', ui-monospace, monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif;display:flex;flex-direction:column;min-height:100vh}
+  header{padding:16px 26px 12px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  header .k{font-family:var(--mono);font-size:.68rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase}
+  header h1{font-size:1rem;font-weight:normal}
+  header .count{margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--dim)}
+  .tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
+  .tab{flex:1;min-width:110px;padding:9px 10px;text-align:center;font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;color:var(--dim);border-right:1px solid var(--line);cursor:pointer;white-space:nowrap;transition:.2s;background:transparent;border-top:none;border-bottom:none;border-left:none}
+  .tab:last-child{border-right:none}
+  .tab.active{color:var(--bg);font-weight:bold}
+  .tab[data-c="gold"].active{background:var(--gold)}
+  .tab[data-c="teal"].active{background:var(--teal)}
+  .tab[data-c="rose"].active{background:var(--rose)}
+  .tab[data-c="violet"].active{background:var(--violet)}
+  .tab[data-c="amber"].active{background:var(--amber)}
+  .tab[data-c="ink"].active{background:var(--ink)}
+  main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px 96px;overflow-y:auto}
+  .slide{max-width:780px;width:100%;animation:fadeUp .4s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @media (prefers-reduced-motion: reduce){.slide{animation:none}}
+  .eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px}
+  .eyebrow.gold{color:var(--gold)} .eyebrow.teal{color:var(--teal)} .eyebrow.rose{color:var(--rose)}
+  .eyebrow.violet{color:var(--violet)} .eyebrow.amber{color:var(--amber)} .eyebrow.ink{color:var(--dim)}
+  .slide h2{font-size:1.55rem;font-weight:normal;line-height:1.3;margin-bottom:14px}
+  .slide h2 em{font-style:italic;color:var(--gold)}
+  .slide p{color:#c9c7bf;line-height:1.75;font-size:1rem;margin-bottom:13px}
+  .slide p strong, .slide li strong{color:var(--ink)}
+  .slide code{font-family:var(--mono);font-size:.85em;background:var(--panel2);padding:2px 6px;border-radius:3px;color:var(--gold)}
+  .ascii{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:6px;padding:14px 16px;margin:14px 0;font-family:var(--mono);font-size:.74rem;line-height:1.5;color:#b9c2d8;overflow-x:auto;white-space:pre}
+  .ascii .hl{color:var(--gold)} .ascii .tl{color:var(--teal)} .ascii .rs{color:var(--rose)}
+  .note{border:1px dashed var(--gold-soft);border-radius:6px;padding:11px 15px;margin:14px 0;font-size:.9rem;color:#cfc9ae;line-height:1.65}
+  .note b{color:var(--gold)}
+  ul.pts{margin:10px 0 13px 2px;list-style:none}
+  ul.pts li{padding:6px 0 6px 21px;position:relative;color:#c9c7bf;line-height:1.6;font-size:.95rem}
+  ul.pts li::before{content:"\203A";position:absolute;left:4px;color:var(--gold);font-family:var(--mono)}
+  /* ---- Think First (question) slides ---- */
+  .qcard{border:2px solid var(--gold);border-radius:10px;background:linear-gradient(160deg,#1a1608,#151823);padding:30px 28px;margin:6px 0 18px;position:relative}
+  .qcard::before{content:"?";position:absolute;top:-20px;left:22px;width:38px;height:38px;border-radius:50%;background:var(--gold);color:var(--bg);font-family:var(--mono);font-weight:bold;font-size:1.3rem;display:flex;align-items:center;justify-content:center}
+  .qcard .qlabel{font-family:var(--mono);font-size:.64rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;margin-bottom:12px}
+  .qcard .qtext{font-size:1.25rem;line-height:1.55;color:var(--ink);font-style:italic}
+  .qcard .qsub{margin-top:14px;font-size:.86rem;color:var(--dim);font-style:normal;font-family:var(--mono)}
+  /* ---- lenses (CTO / Director) ---- */
+  details.lens{margin:10px 0;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+  details.lens summary{cursor:pointer;padding:10px 14px;font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;color:var(--teal);list-style:none}
+  details.lens summary::before{content:"+ ";color:var(--gold)}
+  details.lens[open] summary::before{content:"\2212 "}
+  details.lens.dir summary{color:var(--rose)}
+  details.lens .body{padding:2px 16px 13px}
+  details.lens .body li{font-size:.9rem}
+  /* ---- recall quiz slides ---- */
+  .recall-item{border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:6px;background:var(--panel);margin:12px 0;overflow:hidden}
+  .recall-item summary{cursor:pointer;padding:13px 16px;font-size:.98rem;color:var(--ink);list-style:none;line-height:1.55}
+  .recall-item summary::before{content:"Q  ";font-family:var(--mono);color:var(--teal);font-weight:bold}
+  .recall-item .ans{padding:0 16px 13px;color:#b9c2b0;font-size:.92rem;line-height:1.65;border-top:1px dashed var(--line);padding-top:11px;margin:0 16px 13px;padding-left:0;padding-right:0}
+  .recall-item .ans b{color:var(--teal)}
+  .recall-hint{font-family:var(--mono);font-size:.7rem;color:var(--dim);margin-top:6px}
+  footer{position:fixed;left:0;right:0;bottom:0;background:rgba(13,15,20,.93);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:11px 20px;display:flex;align-items:center;gap:14px}
+  .dots{display:flex;gap:4px;flex:1;justify-content:center;flex-wrap:wrap}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--line);cursor:pointer;transition:.2s}
+  .dot.on{background:var(--gold);transform:scale(1.45)}
+  .dot.q{border:1px solid var(--gold);background:transparent}
+  .dot.q.on{background:var(--gold)}
+  button.nav{font-family:var(--mono);font-size:.78rem;letter-spacing:.1em;background:transparent;color:var(--ink);border:1px solid var(--line);padding:9px 18px;border-radius:5px;cursor:pointer;transition:.2s}
+  button.nav:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+  button.nav.primary{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:bold}
+  button.nav.primary:hover{background:#e2c070}
+  button.nav:disabled{opacity:.25;cursor:default}
+  button.nav:focus-visible,.tab:focus-visible,.dot:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .hint{position:fixed;bottom:62px;right:18px;font-family:var(--mono);font-size:.6rem;color:var(--dim);letter-spacing:.1em}
+  @media(max-width:600px){.slide h2{font-size:1.28rem}.ascii{font-size:.58rem;padding:11px}.hint{display:none}.qcard .qtext{font-size:1.08rem}}
+</style>
+</head>
+<body>
+<header>
+  <span class="k">Architects Lab</span>
+  <h1>Reasoning Models &amp; Choosing the Right LLM</h1>
+  <span class="count" id="counter"></span>
+</header>
+<div class="tabs" id="tabs"></div>
+<main><div id="stage"></div></main>
+<div class="hint">&larr; &rarr; keys work too</div>
+<footer>
+  <button class="nav" id="prevBtn">&larr; Prev</button>
+  <div class="dots" id="dots"></div>
+  <button class="nav primary" id="nextBtn">Next &rarr;</button>
+</footer>
+<script>
+const SECTIONS=[
+ {id:"intro",label:"START",c:"ink"},
+ {id:"demo",label:"REASONING DEMO",c:"teal"},
+ {id:"valid",label:"VALIDATE+COMPARE",c:"gold"},
+ {id:"framework",label:"5-STEP FRAMEWORK",c:"violet"},
+ {id:"bench",label:"BENCHMARKS",c:"rose"},
+ {id:"end",label:"WRAP-UP",c:"amber"}
+];
+const S=[
+
+{sec:"intro",c:"ink",eyebrow:"Reasoning Models Project",t:"a",h:"Reasoning Models &amp; <em>A Framework for Choosing the Right LLM</em>",body:`
+<p>A hands-on project: use DeepSeek's reasoning model to classify financial news, with its thinking shown out loud. Then a simple 5-step framework for picking the right model for any job, plus a tour of Hugging Face's leaderboards.</p>
+<div class="note"><b>How to use:</b> "?" slides ask you to predict first. Press Next to compare. Recall quizzes close each section.</div>`},
+
+/* ---------- REASONING DEMO ---------- */
+{sec:"demo",c:"teal",eyebrow:"Framing",t:"q",q:`A reasoning model writes out its thinking before answering. Does that visible "thinking" text <b>prove</b> the model actually reasoned correctly — or could it just be more plausible-sounding text, same as any other LLM output?`},
+
+{sec:"demo",c:"teal",eyebrow:"Framing",t:"a",h:"What makes a &quot;reasoning model&quot; different",body:`
+<div class="ascii">CHAT MODEL                        REASONING MODEL (DeepSeek)
+headline+desc                     headline+desc
+   |                                  |
+[ LLM ] (black box,               [ LLM ]
+ no visible work)                    |
+   |                                 v
+   v                          "thinking..." <- you can
+answer (take it                step 1,2,3...    SEE this
+ or leave it)                        |
+                                      v
+                               final answer (sentiment+tag)
+
+COST TO TRAIN (reported): GPT-4 ~$100,000,000
+                           DeepSeek ~$5-6,000,000 (cheap, reasons well)</div>
+<div class="note">It doesn't prove correctness by itself — the thinking text is generated the same way as any other LLM output, optimized to look like reasoning, not verified to BE correct. What it gives you is something to check: a step-by-step trace you can inspect and catch an error in, instead of a bare answer you'd have to trust blindly. Visible thinking upgrades "trust me" to "here's my work, verify it" — but the verifying part is still on you.</div>`,
+cto:[`RAG proves its answer with citations you can click and check against a source. A reasoning model proves its answer with a "thinking" trace. These are NOT equally trustworthy. A citation points to an external, independently-checkable fact. A "thinking" trace is still entirely the model's own generated text — plausible-sounding, self-reported, nothing external to check it against. Visible thinking is genuinely useful, but it's a weaker transparency mechanism than citations, not an equivalent one. The strongest systems use both: retrieval for facts, visible reasoning for how facts were combined.`]},
+
+{sec:"demo",c:"teal",eyebrow:"Data",t:"q",q:`The dataset is deliberately kept small (~1.6MB, ~5,000 rows) so it fits a free GPU. Does keeping the DATASET small also mean the <b>MODEL's understanding</b> is limited to those 5,000 headlines — or is something else going on?`},
+
+{sec:"demo",c:"teal",eyebrow:"Data",t:"a",h:"Loading financial news from Hugging Face",body:`
+<div class="ascii">raw dataset row:
+  id | source (CNBC...) | title | description | created_at
+                    ~5,000 rows, ~1.6MB (small on purpose --
+                    fits free Colab GPU)
+
+title: "Stock X jumps" \\
+                          >-- mapping fn --> full_text
+description: "...after   /                       |
+strong Q2..."                                     v
+                                            [ fed to model ]
+why merge? title alone = weak signal
+           title + description = enough context to reason well
+
+exploration tool: HF Data Studio -- type "filter to CNBC only"
+                   in plain English, no code needed</div>
+<div class="note">Something else entirely — this project isn't training the model on these 5,000 rows, it's running an already-trained model against them (<b>inference, not fine-tuning</b>). DeepSeek's actual knowledge comes from its massive original pretraining; these rows are just the questions being asked of it, not lessons it's learning from. A small dataset here is small because it's a small TEST set, not because understanding is limited to it.</div>`},
+
+{sec:"demo",c:"teal",eyebrow:"Model Loading",t:"q",q:`This project never fine-tunes DeepSeek — it only loads and runs it. So why does the <b>same 4-bit quantization trick</b> from the fine-tuning project show up again here, if there's no training happening?`},
+
+{sec:"demo",c:"teal",eyebrow:"Model Loading",t:"a",h:"Downloading DeepSeek — quantization and pipeline setup",body:`
+<div class="ascii">DeepSeek 1.5B weights (full size)
+   |
+load_in_4bit=True -- squeeze each weight into 4 bits --> much
+   |                                                     smaller
+torch_dtype="auto" -- picks best precision for hardware
+device_map="auto"  -- GPU if available, else CPU
+trust_remote_code  -- allows model's own custom code to run
+   |
+AutoModelForCausalLM + AutoTokenizer
+   |
+pipeline("text-generation", model, tokenizer)
+   |
+runs fine on a FREE-TIER Colab GPU</div>
+<div class="note">Because quantization solves a <b>memory</b> problem that exists whether you're training or just running a model — a 1.5B-parameter model's weights take real memory to hold regardless of whether you're computing gradients against them or just reading through them for inference. The reason (fit a big model on a small/free GPU) is identical in both projects; only the workload on top differs (backprop+updates vs. a single forward pass).</div>`},
+
+{sec:"demo",c:"teal",eyebrow:"Prompting",t:"q",q:`The prompt ends with an <b>unfinished</b> tag, <code>&lt;think&gt;</code>, with nothing after it. Why would leaving the prompt deliberately incomplete — instead of asking "please explain your reasoning" in plain English — be the more reliable trigger?`},
+
+{sec:"demo",c:"teal",eyebrow:"Prompting",t:"a",h:"Speaking DeepSeek's native format — special tokens for reasoning",body:`
+<div class="ascii">prompt string sent to model:
+&lt;IAM_START&gt;user
+[question] &lt;IAM_END&gt;
+&lt;IAM_START&gt;assistant
+&lt;think&gt;        &lt;---- trigger token: "show your reasoning first"
+
+settings that shape the answer:
+  max_new_tokens=4000 -> room for long reasoning
+  do_sample=True       -> add some randomness
+  temperature (0 ---------------------------- 2)
+               deterministic, factual        wild, unpredictable
+  top_p=0.9 (nucleus) -> only the smallest group of words whose
+    combined chance is 90% -- on-topic, still some variety
+    too low = repetitive | no limit = rambling/incoherent</div>
+<div class="note">A plain-English request is a suggestion the model can follow loosely or ignore under other pressures. An unfinished special token isn't a request — it's a <b>structural cue</b> the model was specifically trained to continue in one particular way, because that's literally where "assistant turn, thinking mode" tokens appeared during training. Less "please think," more "here's the exact spot where thinking goes — continue from here."</div>`,
+cto:[`This trigger works because it exploits a structural pattern DeepSeek was trained on. Swap in a completely different model never trained with a "<think>" token, and you'd expect nothing useful — the model would likely treat it as ordinary text, maybe even literally continuing "<think> about it...", rather than as a signal to enter reasoning mode. A structural trigger only works for the model it was trained into. Always check that specific model's documentation for its own trigger — never assume this one transfers.`]},
+
+{sec:"demo",c:"teal",eyebrow:"Parsing",t:"q",q:`The split relies on finding literal <code>&lt;think&gt;</code> and end-of-think markers inside the output string. What happens the day the model forgets to close the tag, or phrases something slightly differently?`},
+
+{sec:"demo",c:"teal",eyebrow:"Parsing",t:"a",h:"Separating &quot;thinking&quot; from the final answer",body:`
+<div class="ascii">raw model output (one blob):
+"...&lt;think&gt; step 1... step 2... &lt;/think&gt; Sentiment: Positive, Tag: Earnings"
+        | output.find('&lt;think&gt;'), output.find(end-marker)
+        v
+  reasoning block          final answer block
+  (thinking text)          (sentiment+tag, clean)
+        |                        |
+   shown in UI              shown in UI
+  (transparency)           (the actual result)
+
+method used: plain string search on hardcoded tokens
+more robust: structured output / JSON schema / function calling</div>
+<div class="note">The split silently breaks — <code>output.find()</code> returns "not found," or worse, finds a spurious match, and the separation comes out wrong or empty with <b>no error raised</b>. That's the core fragility of parsing by string search: it works exactly as long as the format holds, and breaks quietly, not loudly, the moment it doesn't. Raw text is not a contract, and a schema-based approach fails loudly instead of silently.</div>`,
+cto:[`String-search parsing works fine in this demo. Would it survive a model VERSION UPGRADE unchanged? Not a safe bet either way. Even within the same model family, a version upgrade can subtly change tokenization, default formatting, or how consistently the model closes its own tags — none of which show up as a documented breaking change, because the provider isn't promising a stable TEXT contract, only a stable API surface. A schema-based approach holds up across version bumps in a way string search on hardcoded tokens was never designed to.`]},
+
+{sec:"demo",c:"teal",eyebrow:"Reasoning Demo · Recall",t:"r",h:"Quick recall: the reasoning demo",qs:[
+{q:`Does visible chain-of-thought prove the reasoning was correct?`,a:`No — it's generated the same way as any other LLM text, optimized to sound plausible, not verified to be correct. It gives you something to <b>check</b> rather than a bare answer to blindly trust.`},
+{q:`Why does the same 4-bit quantization trick appear in both the fine-tuning project and this inference-only one?`,a:`Because quantization solves a <b>memory</b> problem, not a training problem — weights take real memory to hold whether you're computing gradients against them or just reading through them for inference.`},
+{q:`Why is string-search parsing of &lt;think&gt; tags fragile?`,a:`It breaks silently, not loudly — <code>output.find()</code> quietly returns "not found" or a spurious match with no error raised, exactly when the model's output format drifts even slightly (a version upgrade, an unclosed tag).`}]},
+
+/* ---------- VALIDATE + COMPARE ---------- */
+{sec:"valid",c:"gold",eyebrow:"Validation",t:"q",q:`The model gets the CAPM finance answer right — recalls the formula, substitutes, reaches "undervalued." Does a <b>correct final answer</b> prove the reasoning trace in between was actually correct?`},
+
+{sec:"valid",c:"gold",eyebrow:"Validation",t:"a",h:"Testing reasoning on math and finance problems",body:`
+<div class="ascii">CAPM VALIDATION CHAIN (visible inside the reasoning trace):
+beta 1.2, risk-free 3%, market return 9%
+   | recall CAPM formula: E(R) = Rf + beta*(Rm - Rf)
+   | substitute: 3% + 1.2*(9%-3%) = 3% + 7.2% = 10.2% (CAPM-expected)
+   | compare to actual expected return: 10.5%
+   v
+10.5% > 10.2% ==> stock is UNDERVALUED
+
+a wrong FORMULA + a wrong SUBSTITUTION could still, by luck,
+cross the 10.5% line and land on "undervalued" -- the right
+answer alone never proves the middle steps were sound</div>
+<p><strong>Two extra tests, outside news sentiment</strong>, to check the model is really reasoning: simple math (5 apples, gave away 2+2, how many left? &rarr; correctly worked through it, answered "1") and the CAPM problem above.</p>
+<div class="note">They can absolutely coexist — a model could make two errors that cancel out, or get lucky despite a wrong intermediate number, and still land on the right conclusion. A correct final answer is necessary but not sufficient evidence the reasoning was sound. The only way to actually know is to read the trace and check each step independently of whether the conclusion matches. This is exactly why visible thinking matters — it gives you something to check beyond the bottom line.</div>`,
+cto:[`Your wealth/demat background lets you personally check this CAPM trace by eye. What happens the moment the finance concept is one you DON'T already know well enough to check by hand? It breaks down — a visible reasoning trace is only as useful as your ability to actually verify it. For a domain you don't know well, a fluent, confident-looking trace is just as persuasive whether it's right or wrong. The real due-diligence question isn't "does the reasoning trace exist" but "do you, or does some other check, actually have the domain knowledge to validate it" — without that, visible thinking gives a false sense of security.`]},
+
+{sec:"valid",c:"gold",eyebrow:"Comparison",t:"q",q:`"Reasoning models keep the same structure every time" is called a strength for pipelines. Is that reliability actually coming from the model being a <b>reasoning</b> model, or from something else entirely?`},
+
+{sec:"valid",c:"gold",eyebrow:"Comparison",t:"a",h:"Reasoning models vs. general chat models",body:`
+<div class="ascii">General chat model:
+  "I think this sounds negative because..."
+  (free-form prose, format changes request to request)
+  result: breaks automated parsing once you scale to thousands
+
+Reasoning model (with a good prompt):
+  &lt;think&gt;...&lt;/think&gt; Sentiment: X | Tag: Y
+  (same structure, every single time)
+  result: parses reliably, request 1 or request 10,000
+
+rule of thumb: one-off answer for a human -> either works
+               pipeline reading 1,000s of rows -> need the
+               consistent, structured one</div>
+<div class="note">It's actually coming from <b>something else</b> — how the prompt was written and enforced, not from "reasoning" as a category. A reasoning model given a loose, unstructured prompt would drift in format just like a chat model would; a general chat model given a strict prompt (or wrapped in structured output) can hold a consistent format too. Reasoning and structural consistency are two separate properties that happened to get demonstrated together — don't conflate "shows its thinking" with "always outputs a fixed format."</div>`},
+
+{sec:"valid",c:"gold",eyebrow:"Validate &amp; Compare · Recall",t:"r",h:"Quick recall: validation &amp; comparison",qs:[
+{q:`Can a wrong reasoning step and a right final answer coexist? Why does this matter?`,a:`Yes — errors can cancel out or a comparison can get lucky despite a wrong intermediate number. A correct final answer is necessary but not sufficient proof the reasoning was sound; you must read and check the trace itself.`},
+{q:`Is structural consistency (same format every time) actually a property of "reasoning models"?`,a:`No — it comes from prompt design and enforcement, not from the reasoning category itself. A loosely-prompted reasoning model drifts in format just like a chat model; a strictly-prompted chat model can hold a consistent format too.`}]},
+
+/* ---------- 5-STEP FRAMEWORK ---------- */
+{sec:"framework",c:"violet",eyebrow:"Framework",t:"q",q:`Step 2 asks "do you even need an LLM?" before any other model question. A real request arrives as "we need an AI/LLM solution for X." Is that framing itself already a <b>warning sign</b>, before you even reach step 3?`},
+
+{sec:"framework",c:"violet",eyebrow:"Framework",t:"a",h:"A five-step framework for choosing the right LLM",body:`
+<div class="ascii">[1] DEFINE NEEDS
+     task, I/O, privacy, latency, time-to-market, cost
+[2] CHOOSE MODEL TYPE -- "do you even need an LLM?"
+     classification/NER/retrieval? -> maybe NO LLM needed
+     summarization/generation/translation/chat/reasoning? -> YES
+[3] CHOOSE MODEL SIZE
+     small/medium (&lt;50B) <- boost via fine-tune or RAG
+     large/XL (&gt;50B)     <- more knowledge/reasoning, higher cost
+[4] CHOOSE SOURCING
+     build from scratch (rare, ~$100M)
+     open-source pretrained (low license cost, +50-100% deploy cost)
+     proprietary cloud API (fast, less transparency, usage fees)
+[5] DECIDE HOW IT SCALES
+     data residency, volume vs rate limits, skills needed,
+     end-to-end cost, can you actually operate it?</div>
+<div class="note">Often, yes — a request that names the SOLUTION ("we need an LLM") before establishing the actual NEED (classify these, retrieve that, summarize this) has usually skipped step 1 and step 2 entirely. It's the AI equivalent of a stakeholder saying "we need a bigger server" before anyone's confirmed the current one is the bottleneck. The framework's real value isn't steps 3-5 (model size, sourcing, scaling) — it's that steps 1-2 force the requester to justify needing an LLM at all before any model-selection conversation starts.</div>`,
+cto:[`Step 4 says open-source deployment can run 50-100% MORE expensive in practice once expertise and GPU time are counted, despite "free" licensing. Worth checking against your own lived experience rather than taking the number at face value — every hour spent on IAM permissions, Docker configuration, GPU provisioning, and ongoing maintenance is real engineering cost a proprietary API call skips entirely. Whether that lands at 50%, 100%, or something else depends heavily on how much of that infrastructure work your team already has reusable.`]},
+
+{sec:"framework",c:"violet",eyebrow:"Sourcing",t:"q",q:`"Open-source" and "free" get used almost interchangeably, but open-source deployment can cost 50-100% <b>more</b> in practice. What is the word "free" actually referring to, if not total cost?`},
+
+{sec:"framework",c:"violet",eyebrow:"Sourcing",t:"a",h:"Open-source vs. proprietary — the real trade-offs",body:`
+<div class="ascii">OPEN-SOURCE (Hugging Face)         PROPRIETARY (OpenAI/AWS/etc.)
+license cost:  low/free            license cost:  usage fees
+deploy cost:   +50-100% (expertise deploy cost:   bundled in API
+               + GPU)                             price
+time-to-mkt:   slow (build it      time-to-mkt:   fast (pre-built)
+               yourself)
+data lineage:  often unclear       data lineage:  documented/
+                                                   compliant
+support:       community,          support:       professional
+               irregular
+
+"free" = the LICENSE is free
+it says NOTHING about the deployment/staffing/GPU cost
+sitting underneath it</div>
+<div class="note">"Free" refers only to the <b>license</b> — you don't pay to download or use the model weights. It says nothing about deployment cost: GPU time, integration expertise, ongoing maintenance, infrastructure to serve it reliably at scale. A proprietary API bundles all of that into one usage fee; open-source unbundles it into "free license + everything else you now have to build and staff yourself." "Free" and "cheap" are not the same claim.</div>`},
+
+{sec:"framework",c:"violet",eyebrow:"5-Step Framework · Recall",t:"r",h:"Quick recall: the 5-step framework",qs:[
+{q:`Recite the five steps in order.`,a:`1. Define needs. 2. Choose model TYPE ("do you even need an LLM?"). 3. Choose model SIZE. 4. Choose SOURCING (build/open-source/proprietary). 5. Decide how it SCALES.`},
+{q:`What warning sign does step 2 catch that most requests skip past?`,a:`A request framed as "we need an LLM for X" (naming the solution) rather than "we need to classify/retrieve/summarize X" (naming the need) has usually skipped steps 1-2 — the equivalent of asking for a bigger server before confirming the current one is the bottleneck.`},
+{q:`What does "free" actually mean for open-source models, and what does it NOT cover?`,a:`It means the <b>license</b> is free — you don't pay to download the weights. It says nothing about deployment cost: GPU time, integration expertise, and ongoing maintenance, which can add 50-100% in practice.`}]},
+
+/* ---------- BENCHMARKS ---------- */
+{sec:"bench",c:"rose",eyebrow:"Benchmarks",t:"q",q:`If most frontier models now score above 80-85% on the OLD benchmarks, and a leaderboard still ranks by those scores, what would that ranking actually be measuring — genuine ability, or something else?`},
+
+{sec:"bench",c:"rose",eyebrow:"Benchmarks",t:"a",h:"Old vs. new leaderboards — benchmarks get beaten fast",body:`
+<div class="ascii">score
+100%|                     .-----------------  OLD benchmarks
+    |                 .--'                    (MMLU, HellaSwag,
+ 85%|- - - - - - - -.'- - - - - - - - - - -    ARC, DROP, ...)
+    |            .-'                           saturated, most
+    |         .-'                              models &gt;80-85%
+    |      .-'
+    |   .-'                                 NEW benchmarks (Humanity's
+ 35%|-------------------------------------.  Last Exam, GPQA, MuSR,
+    |__________________________________.___  BBH, IFEval, MATH)
+      time -->        ~1.5 yrs             best models still ~35%
+
+at the top, 83% vs 85% on an OLD benchmark tells you almost
+nothing real -- everyone's clustered near the ceiling.</div>
+<ul class="pts">
+<li><strong>Humanity's Last Exam</strong> — 2,500 extremely hard hand-crafted questions, best models ~35%.</li>
+<li><strong>GPQA</strong> — PhD-level science, designed to resist lookup.</li>
+<li><strong>MuSR</strong> — multi-step soft reasoning over long text. <strong>BBH</strong> — challenging language/math tasks.</li>
+<li><strong>IFEval</strong> — instruction-following fidelity. <strong>MATH</strong> — competition-level mathematics.</li>
+<li><strong>AgentBench/WebArena/ToolBench</strong> — agentic capability. <strong>CO2 cost</strong> — environmental footprint.</li>
+</ul>
+<div class="note">At that point it's measuring <b>noise, not ability</b> — when everyone clusters near the ceiling, small score differences stop reflecting real capability gaps and start reflecting evaluation quirks or randomness. A saturated benchmark can't tell a genuinely better model from a slightly-differently-tuned one — exactly why Hugging Face had to retire the old set.</div>`,
+cto:[`Today's "hard" benchmarks will likely saturate too, on the same ~1.5 year timeline. Build the process around a re-verification HABIT, not a fixed benchmark list. Any benchmark named today has a documented shelf life of roughly 1-2 years before saturation. Always check the benchmark's publication date, always re-verify scores close to the decision, and always expect today's "hard" test to be tomorrow's saturated one.`]},
+
+{sec:"bench",c:"rose",eyebrow:"Practical Use",t:"q",q:`You can filter the leaderboard by whatever score matters to you. What's the <b>risk</b> of picking the model that TOPS your chosen benchmark, versus the model that scores well across several relevant ones?`},
+
+{sec:"bench",c:"rose",eyebrow:"Practical Use",t:"a",h:"Filtering leaderboards by what actually matters to you",body:`
+<div class="ascii">accuracy
+ high|                          * Qwen (large: higher accuracy,
+     |                             but higher latency+cost)
+     |             * Phi-3
+     |            (sweet spot -- good accuracy, still fast)
+     |   *
+ low |*
+     +---------------------------------------------- latency
+       fast                                    slow
+
+filters: parameter count, precision, fine-tuned vs pre-trained,
+domain leaderboard (coding, medical), sort by the ONE score that
+matches your use case (MATH -> finance tool, GPQA -> research)
+
+rule: no single "best" model -- best POINT on the accuracy/
+latency/cost triangle for YOUR job</div>
+<div class="note">Optimizing for a single benchmark risks picking a model tuned (deliberately or incidentally) to that one test's style of question, without the broader competence you'll actually need — real user queries rarely look exactly like benchmark questions. A model that scores well across several related benchmarks is a safer bet than the single highest score on one, the same way you wouldn't hire based on one interview question alone.</div>`,
+cto:[`"Pick the best point on the accuracy/latency/cost triangle for your SLA" sounds clean in theory. Who at IDFC would actually know the real latency tolerance for a given use case — is that even a question engineering can answer alone? Usually not — a quick eligibility check's latency tolerance is as much a product/business decision (how long will a customer wait?) as engineering. Applying the "best point" framing for real requires pulling in whoever owns the actual SLA or UX for that specific use case — not just picking a number engineering finds comfortable.`]},
+
+{sec:"bench",c:"rose",eyebrow:"Benchmarks · Recall",t:"r",h:"Quick recall: benchmarks",qs:[
+{q:`Why did old benchmarks (MMLU, HellaSwag) get retired?`,a:`Within ~1.5 years, most frontier models scored above 80-85% on all of them — they stopped discriminating between models, measuring noise instead of ability.`},
+{q:`Name three of the newer, harder benchmarks and what each tests.`,a:`Humanity's Last Exam (2,500 extremely hard hand-crafted questions, best models ~35%), GPQA (PhD-level science, lookup-resistant), MATH (competition-level maths) — also MuSR, BBH, IFEval, AgentBench.`},
+{q:`Why is topping ONE benchmark riskier than scoring well across several?`,a:`A single-benchmark leader may be tuned to that test's specific style of question without broader real-world competence — real queries rarely match benchmark questions exactly.`}]},
+
+/* ---------- WRAP-UP ---------- */
+{sec:"end",c:"amber",eyebrow:"Wrap-up",t:"q",q:`This project covers two very different things — a hands-on DeepSeek demo, and a general 5-step framework. If you could remember only <b>ONE</b> a year from now, which would still be useful, and why?`},
+
+{sec:"end",c:"amber",eyebrow:"Wrap-up",t:"a",h:"Project recap",body:`
+<div class="ascii">HF dataset (title+desc)
+        |
+full_text -----------------> [ DeepSeek 1.5B, 4-bit quantized ]
+                                          |
+                             prompt ends in &lt;think&gt; trigger
+                                          |
+                              raw output: reasoning+answer, mixed
+                                          |
+                                parse / split on markers
+                       +------------------+-------------+
+                       v                                v
+               reasoning block                 sentiment + tag
+                       +---------> Gradio UI <-----------+
+
+validated separately on: math word problem, CAPM finance problem
+
+5-STEP SELECTION FRAMEWORK (for choosing ANY LLM):
+  needs -> type ("need an LLM at all?") -> size -> sourcing -> scaling
+
+WHAT AGES:                    WHAT DOESN'T:
+  DeepSeek's specific tokens    the 5-step decision framework
+  these exact benchmark scores  "measure before you trust" habit
+  "&lt;think&gt;" as THE trigger      "check if you need an LLM at all"</div>
+<div class="note">The 5-step framework ages much better. The DeepSeek specifics — its exact special tokens, its reported training cost, its benchmark scores — will be stale within a year or two, the same way this project's own benchmarks go stale on a ~1.5 year cycle. The framework is a way of THINKING that doesn't expire just because the specific models it's applied to change. The demo teaches mechanics of one moment in time; the framework teaches a durable decision process.</div>
+<ul class="pts">
+<li>Reasoning models (DeepSeek) expose visible chain-of-thought, unlike typical chat models.</li>
+<li>Load quantized model + tokenizer; build a text-generation pipeline.</li>
+<li>Speak the model's native chat-template format, including the explicit <code>&lt;think&gt;</code> trigger.</li>
+<li>Parse raw output into separate reasoning + answer sections.</li>
+<li>Validate reasoning on math and domain-specific (CAPM) problems — not just the target task.</li>
+<li>Five-step framework: needs &rarr; type &rarr; size &rarr; sourcing &rarr; scaling.</li>
+<li>"Do you even need an LLM?" is the cheapest, most important early filter.</li>
+<li>Benchmarks saturate fast — always check recency before trusting a leaderboard position.</li>
+<li>Model selection = optimizing a position on the accuracy/latency/cost frontier for YOUR constraint.</li>
+<li>Wrapped in a Gradio interface for interactive sentiment + reasoning + tag classification.</li>
+</ul>`},
+
+{sec:"end",c:"amber",eyebrow:"Final Recall",t:"r",h:"Final recall: questions worth carrying forward",qs:[
+{q:`Across fine-tuning, RAG, and reasoning models — how would you decide which technique to reach for first for a new internal tool?`,a:`Start with the 5-step framework's own logic: define the need first (is it fact-grounding, behaviour/style change, or transparency/auditability that's required?). RAG fits frequently-changing facts; fine-tuning fits deep behavioural/stylistic adaptation; reasoning models fit tasks needing an inspectable trace. Layer a second technique only once the first's limitation is concretely observed, not pre-emptively.`},
+{q:`The framework flags data provenance/transparency as an open-source weakness. Does that change the calculus for a model with geopolitically visible training data, in a regulated banking use case?`,a:`It should raise the bar for that specific model's internal risk review — data provenance and training transparency are exactly the kind of compliance-adjacent question a regulated environment can't wave away, regardless of how well the model performs on benchmarks. A domestically-sourced or better-documented alternative may need to clear a materially lower bar to be approved.`}]}
+];
+
+let i=0;
+const stage=document.getElementById('stage'),dots=document.getElementById('dots'),
+tabs=document.getElementById('tabs'),counter=document.getElementById('counter'),
+prevBtn=document.getElementById('prevBtn'),nextBtn=document.getElementById('nextBtn');
+SECTIONS.forEach(s=>{const b=document.createElement('button');b.className='tab';b.dataset.c=s.c;b.dataset.sec=s.id;b.textContent=s.label;b.onclick=()=>go(S.findIndex(x=>x.sec===s.id));tabs.appendChild(b);});
+S.forEach((sl,k)=>{const d=document.createElement('span');d.className='dot'+(sl.t==='q'?' q':'');d.tabIndex=0;d.setAttribute('role','button');d.setAttribute('aria-label','Slide '+(k+1));d.onclick=()=>go(k);d.onkeydown=e=>{if(e.key==='Enter')go(k)};dots.appendChild(d);});
+function lens(cto,dir){
+  let out='';
+  if(cto&&cto.length) out+='<details class="lens"><summary>CTO LENS</summary><div class="body"><ul class="pts">'+cto.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+  if(dir&&dir.length) out+='<details class="lens dir"><summary>DIRECTOR LENS</summary><div class="body"><ul class="pts">'+dir.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+  return out;
+}
+function go(k){
+  i=Math.max(0,Math.min(S.length-1,k));
+  const s=S[i];stage.innerHTML='';
+  const el=document.createElement('div');el.className='slide';
+  try{
+    if(s.t==='q'){
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div>'
+        +'<div class="qcard"><div class="qlabel">Think first &middot; predict before you peek</div>'
+        +'<div class="qtext">'+s.q+'</div>'
+        +'<div class="qsub">Form your answer in your head. Then press Next to compare.</div></div>';
+    } else if(s.t==='r'){
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'
+        +'<p>Answer from memory first. Tap a question to reveal the answer.</p>'
+        +s.qs.map(x=>'<details class="recall-item"><summary>'+x.q+'</summary><div class="ans">'+x.a+'</div></details>').join('')
+        +'<div class="recall-hint">Struggled on any? Jump back with the tabs above, then return.</div>';
+    } else {
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'+s.body+(((s.cto&&s.cto.length)||(s.dir&&s.dir.length))?lens(s.cto,s.dir):'');
+    }
+  }catch(err){
+    el.innerHTML='<div class="eyebrow rose">Render error</div><h2>Slide '+(i+1)+' failed to render</h2><p>'+String(err&&err.message||err)+'</p>';
+  }
+  stage.appendChild(el);
+  counter.textContent=(i+1)+' / '+S.length;
+  document.querySelectorAll('.dot').forEach((d,k2)=>d.classList.toggle('on',k2===i));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.sec===s.sec));
+  prevBtn.disabled=(i===0);
+  nextBtn.textContent=(i===S.length-1)?'Done \u2713':'Next \u2192';
+  nextBtn.disabled=(i===S.length-1);
+  document.querySelector('main').scrollTop=0;window.scrollTo(0,0);
+}
+prevBtn.onclick=()=>go(i-1);nextBtn.onclick=()=>go(i+1);
+document.addEventListener('keydown',e=>{if(e.target.closest('details'))return;if(e.key==='ArrowRight')go(i+1);if(e.key==='ArrowLeft')go(i-1);});
+go(0);
+</script>
+</body>
+</html>

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architects Lab · AI Lifecycle Mastery</title>
+<style>
+  :root{
+    --bg:#0d0f14; --panel:#151823; --panel2:#1b1f2e;
+    --ink:#e8e6df; --dim:#8b8fa3;
+    --gold:#d4af5a; --gold-soft:#b8964a;
+    --teal:#5ad4c8; --rose:#d47a8a; --violet:#9a8ad4; --amber:#d4915a;
+    --line:#2a2f42;
+    --mono:'Courier New', ui-monospace, monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif;display:flex;flex-direction:column;min-height:100vh}
+  header{padding:16px 26px 12px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  header .k{font-family:var(--mono);font-size:.68rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase}
+  header h1{font-size:1rem;font-weight:normal}
+  header .count{margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--dim)}
+  .tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
+  .tab{flex:1;min-width:110px;padding:9px 10px;text-align:center;font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;color:var(--dim);border-right:1px solid var(--line);cursor:pointer;white-space:nowrap;transition:.2s;background:transparent;border-top:none;border-bottom:none;border-left:none}
+  .tab:last-child{border-right:none}
+  .tab.active{color:var(--bg);font-weight:bold}
+  .tab[data-c="gold"].active{background:var(--gold)}
+  .tab[data-c="teal"].active{background:var(--teal)}
+  .tab[data-c="rose"].active{background:var(--rose)}
+  .tab[data-c="violet"].active{background:var(--violet)}
+  .tab[data-c="amber"].active{background:var(--amber)}
+  .tab[data-c="ink"].active{background:var(--ink)}
+  main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px 96px;overflow-y:auto}
+  .slide{max-width:780px;width:100%;animation:fadeUp .4s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @media (prefers-reduced-motion: reduce){.slide{animation:none}}
+  .eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px}
+  .eyebrow.gold{color:var(--gold)} .eyebrow.teal{color:var(--teal)} .eyebrow.rose{color:var(--rose)}
+  .eyebrow.violet{color:var(--violet)} .eyebrow.amber{color:var(--amber)} .eyebrow.ink{color:var(--dim)}
+  .slide h2{font-size:1.55rem;font-weight:normal;line-height:1.3;margin-bottom:14px}
+  .slide h2 em{font-style:italic;color:var(--gold)}
+  .slide p{color:#c9c7bf;line-height:1.75;font-size:1rem;margin-bottom:13px}
+  .slide p strong, .slide li strong{color:var(--ink)}
+  .slide code{font-family:var(--mono);font-size:.85em;background:var(--panel2);padding:2px 6px;border-radius:3px;color:var(--gold)}
+  .ascii{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:6px;padding:14px 16px;margin:14px 0;font-family:var(--mono);font-size:.74rem;line-height:1.5;color:#b9c2d8;overflow-x:auto;white-space:pre}
+  .ascii .hl{color:var(--gold)} .ascii .tl{color:var(--teal)} .ascii .rs{color:var(--rose)}
+  .note{border:1px dashed var(--gold-soft);border-radius:6px;padding:11px 15px;margin:14px 0;font-size:.9rem;color:#cfc9ae;line-height:1.65}
+  .note b{color:var(--gold)}
+  ul.pts{margin:10px 0 13px 2px;list-style:none}
+  ul.pts li{padding:6px 0 6px 21px;position:relative;color:#c9c7bf;line-height:1.6;font-size:.95rem}
+  ul.pts li::before{content:"\203A";position:absolute;left:4px;color:var(--gold);font-family:var(--mono)}
+  /* ---- Think First (question) slides ---- */
+  .qcard{border:2px solid var(--gold);border-radius:10px;background:linear-gradient(160deg,#1a1608,#151823);padding:30px 28px;margin:6px 0 18px;position:relative}
+  .qcard::before{content:"?";position:absolute;top:-20px;left:22px;width:38px;height:38px;border-radius:50%;background:var(--gold);color:var(--bg);font-family:var(--mono);font-weight:bold;font-size:1.3rem;display:flex;align-items:center;justify-content:center}
+  .qcard .qlabel{font-family:var(--mono);font-size:.64rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;margin-bottom:12px}
+  .qcard .qtext{font-size:1.25rem;line-height:1.55;color:var(--ink);font-style:italic}
+  .qcard .qsub{margin-top:14px;font-size:.86rem;color:var(--dim);font-style:normal;font-family:var(--mono)}
+  /* ---- lenses (CTO / Director) ---- */
+  details.lens{margin:10px 0;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+  details.lens summary{cursor:pointer;padding:10px 14px;font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;color:var(--teal);list-style:none}
+  details.lens summary::before{content:"+ ";color:var(--gold)}
+  details.lens[open] summary::before{content:"\2212 "}
+  details.lens.dir summary{color:var(--rose)}
+  details.lens .body{padding:2px 16px 13px}
+  details.lens .body li{font-size:.9rem}
+  /* ---- recall quiz slides ---- */
+  .recall-item{border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:6px;background:var(--panel);margin:12px 0;overflow:hidden}
+  .recall-item summary{cursor:pointer;padding:13px 16px;font-size:.98rem;color:var(--ink);list-style:none;line-height:1.55}
+  .recall-item summary::before{content:"Q  ";font-family:var(--mono);color:var(--teal);font-weight:bold}
+  .recall-item .ans{padding:0 16px 13px;color:#b9c2b0;font-size:.92rem;line-height:1.65;border-top:1px dashed var(--line);padding-top:11px;margin:0 16px 13px;padding-left:0;padding-right:0}
+  .recall-item .ans b{color:var(--teal)}
+  .recall-hint{font-family:var(--mono);font-size:.7rem;color:var(--dim);margin-top:6px}
+  footer{position:fixed;left:0;right:0;bottom:0;background:rgba(13,15,20,.93);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:11px 20px;display:flex;align-items:center;gap:14px}
+  .dots{display:flex;gap:4px;flex:1;justify-content:center;flex-wrap:wrap}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--line);cursor:pointer;transition:.2s}
+  .dot.on{background:var(--gold);transform:scale(1.45)}
+  .dot.q{border:1px solid var(--gold);background:transparent}
+  .dot.q.on{background:var(--gold)}
+  button.nav{font-family:var(--mono);font-size:.78rem;letter-spacing:.1em;background:transparent;color:var(--ink);border:1px solid var(--line);padding:9px 18px;border-radius:5px;cursor:pointer;transition:.2s}
+  button.nav:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+  button.nav.primary{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:bold}
+  button.nav.primary:hover{background:#e2c070}
+  button.nav:disabled{opacity:.25;cursor:default}
+  button.nav:focus-visible,.tab:focus-visible,.dot:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .hint{position:fixed;bottom:62px;right:18px;font-family:var(--mono);font-size:.6rem;color:var(--dim);letter-spacing:.1em}
+  @media(max-width:600px){.slide h2{font-size:1.28rem}.ascii{font-size:.58rem;padding:11px}.hint{display:none}.qcard .qtext{font-size:1.08rem}}
+</style>
+</head>
+<body>
+<header>
+  <span class="k">Architects Lab</span>
+  <h1>Study Note 022 · AI Lifecycle Mastery</h1>
+  <span class="count" id="counter"></span>
+</header>
+<div class="tabs" id="tabs"></div>
+<main><div id="stage"></div></main>
+<div class="hint">&larr; &rarr; keys work too</div>
+<footer>
+  <button class="nav" id="prevBtn">&larr; Prev</button>
+  <div class="dots" id="dots"></div>
+  <button class="nav primary" id="nextBtn">Next &rarr;</button>
+</footer>
+<script>
+const SECTIONS=[
+ {id:"intro",label:"START",c:"ink"},
+ {id:"layers",label:"AI/GENAI/AGENTS",c:"teal"},
+ {id:"cycle",label:"7-STEP LIFECYCLE",c:"gold"},
+ {id:"train",label:"TRAINING",c:"violet"},
+ {id:"risk",label:"RISK+HORIZON",c:"rose"},
+ {id:"end",label:"APPLIED+RECALL",c:"amber"}
+];
+const S=[
+
+{sec:"intro",c:"ink",eyebrow:"Study Note 022",t:"a",h:"AI Lifecycle Mastery — <em>the mindset of an AI architect</em>",body:`
+<p>Every topic follows the same rhythm: prime yourself with a few recall questions before you read, work through the concept, then close the loop with a recap and — where it actually changes a decision — the CTO, Architect, and Project Manager view of the same idea.</p>
+<div class="note"><b>How to use:</b> "?" slides ask you to predict first. Press Next to compare. Recall quizzes close each section.</div>
+<div class="note"><b>Daily plan (2.5 hrs):</b> 1.5 hr Udemy videos + exercises + source code &middot; 30 min notes revision &middot; 30 min scenario questions. Learn &rarr; Practice &rarr; Revise &rarr; Complete &rarr; Apply.</div>`},
+
+/* ---------- AI / GENAI / AGENTS ---------- */
+{sec:"layers",c:"teal",eyebrow:"Fundamentals · 01",t:"q",q:`What's the actual difference between "AI" and "Generative AI" — is Gen AI a separate technology or a subset? What three things does an LLM need bolted on before it can be called an "agent" rather than just a chatbot? Name one everyday product for each of the three layers.`},
+
+{sec:"layers",c:"teal",eyebrow:"Fundamentals · 01",t:"a",h:"AI, Gen AI &amp; AI Agents — the three layers",body:`
+<p><strong>AI is the broad umbrella:</strong> "the science that empowers machines to learn from experience, make decisions, and perform human-like tasks." Nearly everything else is a narrower slice.</p>
+<div class="ascii">FIG — AI IS EVERYWHERE
+  ChatGPT -&gt; Content generation
+  Siri/Alexa -&gt; Voice assistants
+  Netflix/Amazon -&gt; Recommender systems</div>
+<div class="ascii">FIG — GENERATIVE AI: INPUT -&gt; MODEL -&gt; NEW OUTPUT (never existed before)
+  Prompt "city in the year 2500" -&gt; AI Model -&gt; brand-new
+  output (image/text/music/video)</div>
+<p><strong>Key insight:</strong> traditional AI recognizes patterns and classifies; Gen AI generates entirely new content that didn't exist before the prompt.</p>
+<div class="ascii">FIG — LLM + TOOLS + MEMORY + ACTIONS = AGENT (autonomous, extended)
+  Large Language Model (Brain)
+  + Tools (database access, search internet)
+  + Memory (extended conversations)
+  + Actions (book trips, make payments, send emails)</div>
+<div class="note">AI Agents go a layer further — an LLM becomes an agent only once it's wired up with <b>tools</b> (to act on the world), <b>memory</b> (to persist context), and the ability to take <b>actions</b>, letting it operate autonomously over extended periods instead of one-shot replying.</div>`,
+cto:[`Agents change the risk profile, not just the tech stack — an LLM that can only talk is a content risk; one that can pay, email, or write to a database is an operational risk. Budget for guardrails and audit trails before the first agent touches a production credential.`],
+dir:[`Design the tool boundary deliberately: which tools an agent can call, with what scopes, and what's logged on every call. Treat "tools" as a permission surface, the same way you'd treat a microservice's API contract.`]},
+
+{sec:"layers",c:"teal",eyebrow:"Fundamentals · 01b",t:"q",q:`Are Gen AI and AI Agents siblings under the AI umbrella, or is one built on top of the other? Give one task each system could NOT do that the next tier over could.`},
+
+{sec:"layers",c:"teal",eyebrow:"Side by Side · 01b",t:"a",h:"AI vs Gen AI vs AI Agents — the hierarchy",body:`
+<div class="ascii">FIG — THE AI HIERARCHY: one umbrella, three capability tiers
+Artificial Intelligence (broad umbrella)
+  Traditional AI: recognize patterns, make decisions, classify
+  Generative AI: create NEW content — text, images, music, video
+  AI Agents: autonomous operation, use tools, memory + actions</div>
+<div class="ascii">Tier              Example task
+Traditional AI    Identify whether an image is a cat or a dog
+Generative AI     Generate a brand-new image of a cat that
+                  never existed before
+AI Agent          Research, plan, and book a vacation based on
+                  your preferences, budget, and schedule</div>
+<div class="note">All three sit under one umbrella, but each tier adds a capability the one before didn't have: Traditional AI recognizes/classifies; Generative AI creates net-new content; AI Agents wrap that generative capability in autonomy so it can complete a multi-step task on its own.</div>`,
+cto:[`These aren't three separate systems to choose between — they're often layered in one product. A recommendation engine (traditional AI) might feed context to a Gen AI summarizer, which an agent then acts on. Map which tier each component actually belongs to before designing its interfaces.`]},
+
+{sec:"layers",c:"teal",eyebrow:"Layers · Recall",t:"r",h:"Quick recall: the three layers",qs:[
+{q:`What three things turn an LLM into an "agent"?`,a:`<b>Tools</b> (act on the world), <b>memory</b> (persist context across turns), and <b>actions</b> (book trips, send emails, make payments) — enabling autonomous operation over extended periods.`},
+{q:`One example task per tier: Traditional AI, Gen AI, AI Agent.`,a:`Traditional AI: classify cat vs dog. Gen AI: generate a brand-new cat image. AI Agent: research, plan, and book a vacation autonomously.`},
+{q:`Why does adding tools change an LLM's risk profile, per the CTO view?`,a:`An LLM that only talks is a <b>content</b> risk; one that can pay, email, or write to a database is an <b>operational</b> risk — requiring guardrails and audit trails before it touches production credentials.`}]},
+
+/* ---------- 7-STEP LIFECYCLE ---------- */
+{sec:"cycle",c:"gold",eyebrow:"Lifecycle · 02",t:"q",q:`Before you look at the 7 steps — how many stages would you guess a real AI project needs, start to finish? Which step fails most often in practice: data, modeling, or deployment? Is this lifecycle a straight line or a loop?`},
+
+{sec:"cycle",c:"gold",eyebrow:"Lifecycle · 02",t:"a",h:"The 7-Step AI Project Lifecycle",body:`
+<div class="ascii">FIG — SEVEN-STEP LIFECYCLE (iterative, not linear)
+STEP 1 Problem Scoping    "what problem are we solving?"
+STEP 2 Data Acquisition   "where do we get the data?"
+STEP 3 Data Exploration   "is it clean? features?"
+STEP 4 Modeling           "which algorithm to use?"
+STEP 5 Evaluation         "how well does it perform?"
+STEP 6 Deployment         "into production"
+STEP 7 Maintenance        "monitor and update over time"
+              &#8635; ITERATIVE LOOP back to Step 1</div>
+<div class="ascii">HEALTHCARE EXAMPLE — diabetes risk
+1 Scoping      Predict diabetes risk from patient health data
+2 Data         Records, lab results, lifestyle data
+3 Exploration  Handle missing values, normalize measurements
+4 Modeling     Neural network, decision tree, random forest
+5 Evaluation   Test on unseen patients, measure F1
+6 Deployment   Hospital EMR system integration
+7 Maintenance  Regular performance checks, retraining</div>
+<div class="note">An AI project runs through seven stages — but the arrow at the end loops back to the start. It's not a waterfall completed once; it's a cycle you keep re-entering as data, models, and business needs drift over time.</div>`,
+cto:[`Steps 6 and 7 are where most AI initiatives quietly die — teams get a working notebook (steps 1-5) and stop funding before deployment and monitoring. Budget deployment and maintenance as first-class line items.`],
+dir:[`Design the retraining loop before you ship v1 — where does new labeled data land, what triggers a retrain, how does a new model get promoted. If that pipeline doesn't exist on day one, step 7 becomes manual firefighting.`]},
+
+{sec:"cycle",c:"gold",eyebrow:"Lifecycle · 02b",t:"a",h:"The PM view on iteration",body:`<div class="note"><b>📋 PM view:</b> because it's iterative, "done" needs a definition per cycle, not per project. Scope each loop (v1, v2…) with its own success criteria rather than treating the whole lifecycle as one deliverable with one deadline.</div>`},
+
+{sec:"cycle",c:"gold",eyebrow:"Building Blocks · 03",t:"q",q:`If you had to drop one of Data, Model, or Compute to cut cost, which would <b>hurt least</b> — and why might that instinct be wrong? Can a brilliant model with poor data still ship a usable product?`},
+
+{sec:"cycle",c:"gold",eyebrow:"Building Blocks · 03",t:"a",h:"Three Ingredients: Data + Model + Compute",body:`
+<div class="ascii">FIG — THREE EQUAL INGREDIENTS, none substitutes for another
+  DATA (Foundation — large quantities required)
+  + MODEL (Algorithm — math that processes patterns)
+  + COMPUTE (GPUs/TPUs — cloud resources)</div>
+<div class="note">Data, Model, and Compute are equally load-bearing — a great model on bad data underperforms a simple model on great data, and neither ships without enough compute to train and serve it. Treat all three as <b>one budget line</b>, not three separate ones you can trade off freely.</div>`,
+cto:[`Compute cost is the one that surprises finance teams — a training run and its ongoing inference cost should be modeled before the project is greenlit, not discovered after the first cloud bill.`],
+dir:[`Data quality debt compounds like technical debt — bad labels or missing governance early on shows up as unexplainable model behavior two lifecycle loops later. Invest in data pipeline design as seriously as model architecture.`]},
+
+{sec:"cycle",c:"gold",eyebrow:"Lifecycle · Recall",t:"r",h:"Quick recall: the 7-step lifecycle",qs:[
+{q:`Name all 7 steps in order.`,a:`Problem Scoping &rarr; Data Acquisition &rarr; Data Exploration &amp; Prep &rarr; Modeling &rarr; Evaluation &rarr; Deployment &rarr; Maintenance &amp; Monitoring — then loops back to Step 1.`},
+{q:`Where do most AI initiatives "quietly die," per the CTO view?`,a:`<b>Steps 6-7</b> (Deployment and Maintenance) — teams get a working notebook through step 5 and stop funding before production and monitoring.`},
+{q:`Why treat Data, Model, and Compute as one budget line?`,a:`They're equally load-bearing — a great model on bad data underperforms a simple model on great data, and neither ships without enough compute. Trading one off for another doesn't actually save the project money.`}]},
+
+/* ---------- TRAINING ---------- */
+{sec:"train",c:"violet",eyebrow:"Training · 04",t:"q",q:`What do you think happens if the learning rate is set way too high — does training just get slower, or something worse? Is more epochs always better? Batch size 16 vs 128 — which trains faster per epoch, and which uses more memory?`},
+
+{sec:"train",c:"violet",eyebrow:"Training · 04",t:"a",h:"Training Process &amp; Hyperparameters",body:`
+<div class="ascii">FIG — TRAINING FLOW: upload -&gt; train -&gt; evaluate
+Upload Data (images per class) -&gt; Feed Model (data -&gt; algorithm)
+-&gt; Train: Epochs x Batches
+   Epoch 1 -&gt; batch 1,2,... | Epoch 2 -&gt; batch 1,2,... | ...Epoch 50
+-&gt; Evaluate (unseen data)</div>
+<ul class="pts">
+<li><strong>Epochs</strong> — complete passes through the dataset. 50 is a common Teachable Machine default. More epochs generally means better learning — up to the point of overfitting.</li>
+<li><strong>Batch Size</strong> — samples processed per update. Common values 16/32/64/128. Small batches &rarr; more frequent updates, slower training. Large batches &rarr; faster per epoch, more memory.</li>
+<li><strong>Learning Rate</strong> — like a gas pedal: too little and training crawls, too much and it never converges. Just right lands on stable, efficient learning.</li>
+</ul>
+<div class="note">Get the learning rate wrong and the model either learns too slowly or never stabilizes; run too many epochs on the same data and the model starts <b>memorizing instead of generalizing</b> — exactly what the held-out test set is there to catch.</div>`,
+cto:[`Hyperparameter search is a compute-cost multiplier — a naive grid search can burn 10-100x the training budget of a single run. Approve a search budget explicitly, don't let it happen by default.`],
+dir:[`Log every hyperparameter with every experiment run. Without that, "why did v3 outperform v2" becomes archaeology instead of a lookup.`]},
+
+{sec:"train",c:"violet",eyebrow:"Agents · 05",t:"q",q:`A human researcher takes 1-2 days on a competitor analysis. What would an agent need to do <b>differently</b> to get it done in minutes, not just faster typing? What's the biggest risk in trusting a 10-minute agent report over a 2-day human one?`},
+
+{sec:"train",c:"violet",eyebrow:"Agents · 05",t:"a",h:"Deep Research Agents in Action",body:`
+<div class="ascii">FIG — DEEP RESEARCH AGENT WORKFLOW
+  "research Tesla competitors"
+  AI Agent -&gt; Search 100+ sites -&gt; Read every resource
+  -&gt; Compile summary -&gt; Final report (5-10 minutes)
+  vs. 1-2 days for a human researcher</div>
+<div class="note">A deep research agent doesn't just answer faster — it <b>parallelizes</b> the research itself: fanning out across dozens of sources, reading each one, then converging on a single compiled report. That's what turns a 1-2 day human task into a 5-10 minute agent task.</div>`,
+cto:[`Speed doesn't imply accuracy. Before this replaces a human research function, you need a citation/grounding check built into the pipeline — otherwise you've made bad information faster, not better.`],
+dir:[`Treat the 5-10 minute report as a first draft that still needs a human review pass for anything customer-facing or decision-critical — budget that review time into the workflow, don't assume it's zero.`]},
+
+{sec:"train",c:"violet",eyebrow:"Training &amp; Agents · Recall",t:"r",h:"Quick recall: training &amp; agents",qs:[
+{q:`What's the failure mode of too many epochs on the same data?`,a:`The model starts <b>memorizing instead of generalizing</b> (overfitting) — caught by evaluating against a held-out test set.`},
+{q:`Small batch vs. large batch — trade-offs?`,a:`Small batches: more frequent updates, slower training, less memory. Large batches: faster per epoch, more memory required.`},
+{q:`What makes a deep research agent fast — better typing, or something structural?`,a:`It <b>parallelizes</b> the research itself, fanning out across 100+ sources simultaneously and reading each, then converging on one report — not just faster generation of the same sequential process a human does.`}]},
+
+/* ---------- RISK + HORIZON ---------- */
+{sec:"risk",c:"rose",eyebrow:"Risk · 06",t:"q",q:`A model shows <b>99% accuracy in testing</b> but fails in production. Name two completely different root causes for that gap. Is "model drift" a data problem, a model problem, or a world problem?`},
+
+{sec:"risk",c:"rose",eyebrow:"Risk · 06",t:"a",h:"Key Challenges in AI Development",body:`
+<ul class="pts">
+<li><strong>01 Data quality issues</strong> — missing values, biased data (garbage in &rarr; garbage out), insufficient quantity, poor labeling.</li>
+<li><strong>02 Model bias &amp; fairness</strong> — models inherit biases from training data and can discriminate against groups — needs careful auditing and mitigation.</li>
+<li><strong>03 Real-time deployment issues</strong> — latency requirements, scaling challenges, integration with existing systems.</li>
+<li><strong>04 Monitoring &amp; maintenance</strong> — model drift as data distributions change, performance degradation, need for regular retraining.</li>
+</ul>
+<div class="note">Most AI failures aren't algorithm failures — they're data, bias, latency, or drift failures. A model that tests well can still fail in production because the production data distribution, latency budget, or user population differs from what it was validated against.</div>`,
+cto:[`Bias audits and drift monitoring are compliance and reputational risk, not just engineering nice-to-haves — in regulated domains (finance, healthcare) they're often a hard requirement, not optional hardening.`],
+dir:[`Design for the 99%-in-test-fails-in-production gap explicitly: shadow deployments, canary rollout, and production-vs-training distribution monitoring should all be part of the architecture, not bolted on after the first incident.`]},
+
+{sec:"risk",c:"rose",eyebrow:"Horizon · 07",t:"q",q:`What's the actual test for "general" intelligence — is it about task <b>breadth</b>, or something deeper? If AGI can do any intellectual task a human can, what's left that's uniquely human?`},
+
+{sec:"risk",c:"rose",eyebrow:"Horizon · 07",t:"a",h:"Narrow AI &rarr; AGI &rarr; ASI",body:`
+<div class="ascii">FIG — THE INTELLIGENCE ESCALATOR (each level strictly broader)
+Narrow AI (current)
+  good at ONE task — chess, image recognition, translation
+AGI — Artificial General Intelligence
+  any intellectual task a human can do, learns any task
+  the stated goal of many AI research labs
+ASI — Artificial Super Intelligence
+  surpasses the best human minds in every domain
+  self-improving, exponential — "the singularity"</div>
+<div class="note">Narrow AI, AGI, and ASI aren't different technologies — they're points on a widening scale of generality. Narrow AI is bounded to one task domain; AGI matches human breadth; ASI would exceed the best humans across every domain and, per the theory, begin improving itself.</div>`,
+cto:[`None of today's roadmap decisions should be blocked on AGI arriving — plan around narrow-AI capability curves you can actually forecast, and treat AGI/ASI timelines as a watch-list, not a dependency.`]},
+
+{sec:"risk",c:"rose",eyebrow:"Risk &amp; Horizon · Recall",t:"r",h:"Quick recall: risk &amp; the intelligence horizon",qs:[
+{q:`Name the four key challenge categories in AI development.`,a:`Data quality issues, model bias &amp; fairness, real-time deployment issues, monitoring &amp; maintenance (drift).`},
+{q:`Give two totally different root causes for "99% test accuracy, fails in production."`,a:`E.g. (1) production data distribution differs from training/test (distribution shift), or (2) latency/scaling issues in real-time deployment unrelated to model correctness — could also be data leakage inflating the test score or edge cases the test set never covered.`},
+{q:`What distinguishes Narrow AI, AGI, and ASI?`,a:`Not different technologies — points on a generality scale. Narrow AI: one task domain. AGI: matches human breadth across any intellectual task. ASI: exceeds the best humans in every domain and self-improves.`}]},
+
+/* ---------- APPLIED + FINAL RECALL ---------- */
+{sec:"end",c:"amber",eyebrow:"Applied Practice · 08",t:"q",q:`For a diabetes-risk model, would you optimize harder for <b>precision</b> (avoid false alarms) or <b>recall</b> (avoid missed cases) — and why? What compliance constraint is unique to healthcare that wouldn't apply to a movie recommender?`},
+
+{sec:"end",c:"amber",eyebrow:"Applied Practice · 08",t:"a",h:"Applied Practice: Diabetes Risk Prediction — the full lifecycle",body:`
+<div class="ascii">1 Scoping    Predict patient diabetes risk. Why: early detection
+             enables early treatment. Stakeholders: patients,
+             doctors, insurers.
+2 Data       Demographics (age, BMI), lab results (blood sugar,
+             insulin), lifestyle data (diet, exercise, smoking).
+             Sourced from hospital EMR + patient questionnaires.
+3 Prep       Handle missing values, normalize/scale features,
+             engineer BMI from height/weight, 80/20 train/test split.
+4 Modeling   Candidates: Random Forest (interpretable), Neural
+             Network (high performance), Logistic Regression
+             (baseline), XGBoost.
+5 Evaluation Accuracy, Precision (false positives matter), Recall
+             (false negatives are dangerous in disease detection),
+             F1-score.
+6 Deployment Integrate with hospital EMR, secure API, doctor-
+             facing UI, HIPAA compliance required.
+7 Maintenance Monitor drift as population health changes, retrain
+              regularly, audit for demographic bias, keep docs
+              current.</div>
+<div class="note">Applied to a real scenario, the 7 abstract steps become concrete decisions — which features to engineer, which metric to optimize (recall over raw accuracy, given the cost of a missed diagnosis), and which regulatory constraint (HIPAA) shapes deployment specifically.</div>`,
+cto:[`In healthcare, recall usually outweighs precision — a missed diabetes case is more costly than a false alarm that leads to a confirmatory test. Make that trade-off an explicit, documented decision, not an accident of the default threshold.`],
+dir:[`HIPAA-driven deployment means the API, logging, and data-at-rest design all need compliance review before step 6 starts — not a retrofit after the model works.`]},
+
+{sec:"end",c:"amber",eyebrow:"Final Architect's Perspective",t:"a",h:"The iterative architect's loop",body:`
+<p>As an AI architect: <strong>"The model is not the product — the solution is."</strong> Architecture is about end-to-end thinking (not just model accuracy), system reliability (not just research results), business value (not just technical novelty).</p>
+<div class="ascii">FIG — THE ITERATIVE ARCHITECT'S LOOP (research to learning, back again)
+  Research -&gt; Prototype -&gt; Deploy -&gt; Monitor -&gt; Learn
+  loops back — learning feeds the next research cycle</div>
+<div class="note">Always ask: "What could go wrong?" &middot; "How does this serve the user?" &middot; "Can we measure success?" &middot; "How do we handle edge cases?"</div>
+<div class="note"><b>🏗️ The one line to remember:</b> Building AI systems is roughly 80% data engineering, 20% modeling — and architecture is the discipline of never letting the 20% distract from the 80%.</div>`,
+dir:[`Bias auditing across demographics (step 7) is its own workstream with its own timeline — don't fold it silently into "maintenance," it needs a named owner and a recurring cadence.`]},
+
+{sec:"end",c:"amber",eyebrow:"Deep Recall · Part A",t:"r",h:"Active Recall — deep thought questions (1/2)",qs:[
+{q:`If AI models learn from historical data, are they inherently conservative — reinforcing the past?`,a:`Largely yes, by construction — a model's outputs are a function of patterns in its training data, so it reproduces and interpolates within that distribution rather than originating something outside it. "Novelty" is usually recombination of existing patterns, not a human insight that breaks from precedent.`},
+{q:`In the 7-step lifecycle, is data acquisition always the step with the most downstream impact if done poorly?`,a:`It's the most common failure point, but not universally the most impactful — a scoping failure (solving the wrong problem) can waste the entire cycle regardless of data quality, and a deployment failure can sink a technically sound model just as completely. Data dominates in practice because it's the easiest step to underinvest in, not because it structurally matters most.`},
+{q:`Can we truly build unbiased AI systems, or are we just shifting human bias into the machine?`,a:`Mostly the latter — a model trained on human-generated or human-labeled data inherits the biases in that data and labeling process. "Debiasing" reduces specific, measured disparities but doesn't remove bias as a category; it trades one set of trade-offs for another, which is why bias auditing has to be continuous.`},
+{q:`If AI agents act autonomously — making payments, sending emails — who is legally liable when something goes wrong?`,a:`Genuinely unsettled and varies by jurisdiction, but current practice generally places liability on the deploying organization and/or developer rather than the agent itself, since the agent has no legal personhood. That's precisely why the tool-permission boundary (what an agent can touch, what's logged) matters — it's the evidence trail liability arguments will hinge on.`}]},
+
+{sec:"end",c:"amber",eyebrow:"Deep Recall · Part B",t:"r",h:"Active Recall — deep thought questions (2/2)",qs:[
+{q:`A model shows 99% accuracy on test data but fails in production — what's actually going on?`,a:`Usually one of: distribution shift (production data differs from test), data leakage (test set leaked training info, inflating the score), overfitting to test-set quirks through repeated tuning, or edge cases production introduces that the test set never covered. A static test score is a necessary check, not a guarantee of real-world generalization.`},
+{q:`How should we measure "success" for an AI system making high-stakes decisions, differently from a human decision-maker?`,a:`A human decision is judged case-by-case with room for context and appeal; an AI system is judged in aggregate — across thousands of decisions, for consistency, calibration, and disparate impact across groups. Success metrics need a fairness/consistency axis alongside raw accuracy, unlike how we'd score an individual human's judgment.`},
+{q:`If we achieve AGI, should it have rights or moral consideration?`,a:`No consensus — the honest answer depends on unresolved questions about whether the system has anything like subjective experience, which we currently can't reliably test for. Many ethicists use a precautionary framing: as systems grow more capable and autonomous, the cost of being wrong in either direction (over- or under-attributing moral status) grows, arguing for taking the question seriously before the technology forces the issue.`},
+{q:`The AI lifecycle is iterative — so how do you know when to stop iterating and ship?`,a:`Stop when the model clears a pre-agreed, business-defined threshold (not an ever-improving research metric) and the cost of another iteration exceeds its expected value. The mistake is letting "we could always keep improving it" delay shipping indefinitely — which is why step 1 (scoping) should define the success bar up front, so step 5 (evaluation) has a stopping condition.`}]},
+
+{sec:"end",c:"amber",eyebrow:"Deep Recall · Bonus",t:"r",h:"Active Recall — one more deep question",qs:[
+{q:`Should models be optimized for accuracy or interpretability in life-critical applications?`,a:`Rarely a strict either/or — the real question is what interpretability buys you. In healthcare or lending, an explainable model lets a human reviewer catch a "wrong-for-the-right-reasons" or "right-for-the-wrong-reasons" prediction before it causes harm, which raw accuracy alone can't guarantee. Many teams resolve this by pairing a highly accurate model with a separate interpretability layer (e.g. SHAP/LIME) rather than sacrificing accuracy for a simpler but weaker model.`}]}
+];
+
+let i=0;
+const stage=document.getElementById('stage'),dots=document.getElementById('dots'),
+tabs=document.getElementById('tabs'),counter=document.getElementById('counter'),
+prevBtn=document.getElementById('prevBtn'),nextBtn=document.getElementById('nextBtn');
+SECTIONS.forEach(s=>{const b=document.createElement('button');b.className='tab';b.dataset.c=s.c;b.dataset.sec=s.id;b.textContent=s.label;b.onclick=()=>go(S.findIndex(x=>x.sec===s.id));tabs.appendChild(b);});
+S.forEach((sl,k)=>{const d=document.createElement('span');d.className='dot'+(sl.t==='q'?' q':'');d.tabIndex=0;d.setAttribute('role','button');d.setAttribute('aria-label','Slide '+(k+1));d.onclick=()=>go(k);d.onkeydown=e=>{if(e.key==='Enter')go(k)};dots.appendChild(d);});
+function lens(cto,dir){
+  let out='';
+  if(cto&&cto.length) out+='<details class="lens"><summary>CTO LENS</summary><div class="body"><ul class="pts">'+cto.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+  if(dir&&dir.length) out+='<details class="lens dir"><summary>DIRECTOR LENS</summary><div class="body"><ul class="pts">'+dir.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+  return out;
+}
+function go(k){
+  i=Math.max(0,Math.min(S.length-1,k));
+  const s=S[i];stage.innerHTML='';
+  const el=document.createElement('div');el.className='slide';
+  try{
+    if(s.t==='q'){
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div>'
+        +'<div class="qcard"><div class="qlabel">Think first &middot; predict before you peek</div>'
+        +'<div class="qtext">'+s.q+'</div>'
+        +'<div class="qsub">Form your answer in your head. Then press Next to compare.</div></div>';
+    } else if(s.t==='r'){
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'
+        +'<p>Answer from memory first. Tap a question to reveal the answer.</p>'
+        +s.qs.map(x=>'<details class="recall-item"><summary>'+x.q+'</summary><div class="ans">'+x.a+'</div></details>').join('')
+        +'<div class="recall-hint">Struggled on any? Jump back with the tabs above, then return.</div>';
+    } else {
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'+s.body+(((s.cto&&s.cto.length)||(s.dir&&s.dir.length))?lens(s.cto,s.dir):'');
+    }
+  }catch(err){
+    el.innerHTML='<div class="eyebrow rose">Render error</div><h2>Slide '+(i+1)+' failed to render</h2><p>'+String(err&&err.message||err)+'</p>';
+  }
+  stage.appendChild(el);
+  counter.textContent=(i+1)+' / '+S.length;
+  document.querySelectorAll('.dot').forEach((d,k2)=>d.classList.toggle('on',k2===i));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.sec===s.sec));
+  prevBtn.disabled=(i===0);
+  nextBtn.textContent=(i===S.length-1)?'Done \u2713':'Next \u2192';
+  nextBtn.disabled=(i===S.length-1);
+  document.querySelector('main').scrollTop=0;window.scrollTo(0,0);
+}
+prevBtn.onclick=()=>go(i-1);nextBtn.onclick=()=>go(i+1);
+document.addEventListener('keydown',e=>{if(e.target.closest('details'))return;if(e.key==='ArrowRight')go(i+1);if(e.key==='ArrowLeft')go(i-1);});
+go(0);
+</script>
+</body>
+</html>

@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personal OS: /cron-setup & /status</title>
+<style>
+  :root{
+    --bg:#0d0f14; --panel:#151823; --panel2:#1b1f2e;
+    --ink:#e8e6df; --dim:#8b8fa3;
+    --gold:#d4af5a; --gold-soft:#b8964a;
+    --teal:#5ad4c8; --rose:#d47a8a; --violet:#9a8ad4; --amber:#d4915a;
+    --line:#2a2f42;
+    --mono:'Courier New', ui-monospace, monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif;display:flex;flex-direction:column;min-height:100vh}
+  header{padding:16px 26px 12px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  header .k{font-family:var(--mono);font-size:.68rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase}
+  header h1{font-size:1rem;font-weight:normal}
+  header .count{margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--dim)}
+  .tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
+  .tab{flex:1;min-width:110px;padding:9px 10px;text-align:center;font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;color:var(--dim);border-right:1px solid var(--line);cursor:pointer;white-space:nowrap;transition:.2s;background:transparent;border-top:none;border-bottom:none;border-left:none}
+  .tab:last-child{border-right:none}
+  .tab.active{color:var(--bg);font-weight:bold}
+  .tab[data-c="gold"].active{background:var(--gold)}
+  .tab[data-c="teal"].active{background:var(--teal)}
+  .tab[data-c="rose"].active{background:var(--rose)}
+  .tab[data-c="violet"].active{background:var(--violet)}
+  .tab[data-c="amber"].active{background:var(--amber)}
+  .tab[data-c="ink"].active{background:var(--ink)}
+  main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px 96px;overflow-y:auto}
+  .slide{max-width:780px;width:100%;animation:fadeUp .4s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @media (prefers-reduced-motion: reduce){.slide{animation:none}}
+  .eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px}
+  .eyebrow.gold{color:var(--gold)} .eyebrow.teal{color:var(--teal)} .eyebrow.rose{color:var(--rose)}
+  .eyebrow.violet{color:var(--violet)} .eyebrow.amber{color:var(--amber)} .eyebrow.ink{color:var(--dim)}
+  .slide h2{font-size:1.55rem;font-weight:normal;line-height:1.3;margin-bottom:14px}
+  .slide h2 em{font-style:italic;color:var(--gold)}
+  .slide p{color:#c9c7bf;line-height:1.75;font-size:1rem;margin-bottom:13px}
+  .slide p strong, .slide li strong{color:var(--ink)}
+  .slide code{font-family:var(--mono);font-size:.85em;background:var(--panel2);padding:2px 6px;border-radius:3px;color:var(--gold)}
+  .ascii{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:6px;padding:14px 16px;margin:14px 0;font-family:var(--mono);font-size:.74rem;line-height:1.5;color:#b9c2d8;overflow-x:auto;white-space:pre}
+  .ascii .hl{color:var(--gold)} .ascii .tl{color:var(--teal)} .ascii .rs{color:var(--rose)}
+  .note{border:1px dashed var(--gold-soft);border-radius:6px;padding:11px 15px;margin:14px 0;font-size:.9rem;color:#cfc9ae;line-height:1.65}
+  .note b{color:var(--gold)}
+  ul.pts{margin:10px 0 13px 2px;list-style:none}
+  ul.pts li{padding:6px 0 6px 21px;position:relative;color:#c9c7bf;line-height:1.6;font-size:.95rem}
+  ul.pts li::before{content:"\203A";position:absolute;left:4px;color:var(--gold);font-family:var(--mono)}
+  /* ---- Think First (question) slides ---- */
+  .qcard{border:2px solid var(--gold);border-radius:10px;background:linear-gradient(160deg,#1a1608,#151823);padding:30px 28px;margin:6px 0 18px;position:relative}
+  .qcard::before{content:"?";position:absolute;top:-20px;left:22px;width:38px;height:38px;border-radius:50%;background:var(--gold);color:var(--bg);font-family:var(--mono);font-weight:bold;font-size:1.3rem;display:flex;align-items:center;justify-content:center}
+  .qcard .qlabel{font-family:var(--mono);font-size:.64rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;margin-bottom:12px}
+  .qcard .qtext{font-size:1.25rem;line-height:1.55;color:var(--ink);font-style:italic}
+  .qcard .qsub{margin-top:14px;font-size:.86rem;color:var(--dim);font-style:normal;font-family:var(--mono)}
+  /* ---- lenses (CTO / Director) ---- */
+  details.lens{margin:10px 0;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+  details.lens summary{cursor:pointer;padding:10px 14px;font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;color:var(--teal);list-style:none}
+  details.lens summary::before{content:"+ ";color:var(--gold)}
+  details.lens[open] summary::before{content:"\2212 "}
+  details.lens.dir summary{color:var(--rose)}
+  details.lens .body{padding:2px 16px 13px}
+  details.lens .body li{font-size:.9rem}
+  /* ---- recall quiz slides ---- */
+  .recall-item{border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:6px;background:var(--panel);margin:12px 0;overflow:hidden}
+  .recall-item summary{cursor:pointer;padding:13px 16px;font-size:.98rem;color:var(--ink);list-style:none;line-height:1.55}
+  .recall-item summary::before{content:"Q  ";font-family:var(--mono);color:var(--teal);font-weight:bold}
+  .recall-item .ans{padding:0 16px 13px;color:#b9c2b0;font-size:.92rem;line-height:1.65;border-top:1px dashed var(--line);padding-top:11px;margin:0 16px 13px;padding-left:0;padding-right:0}
+  .recall-item .ans b{color:var(--teal)}
+  .recall-hint{font-family:var(--mono);font-size:.7rem;color:var(--dim);margin-top:6px}
+  footer{position:fixed;left:0;right:0;bottom:0;background:rgba(13,15,20,.93);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:11px 20px;display:flex;align-items:center;gap:14px}
+  .dots{display:flex;gap:4px;flex:1;justify-content:center;flex-wrap:wrap}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--line);cursor:pointer;transition:.2s}
+  .dot.on{background:var(--gold);transform:scale(1.45)}
+  .dot.q{border:1px solid var(--gold);background:transparent}
+  .dot.q.on{background:var(--gold)}
+  button.nav{font-family:var(--mono);font-size:.78rem;letter-spacing:.1em;background:transparent;color:var(--ink);border:1px solid var(--line);padding:9px 18px;border-radius:5px;cursor:pointer;transition:.2s}
+  button.nav:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+  button.nav.primary{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:bold}
+  button.nav.primary:hover{background:#e2c070}
+  button.nav:disabled{opacity:.25;cursor:default}
+  button.nav:focus-visible,.tab:focus-visible,.dot:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .hint{position:fixed;bottom:62px;right:18px;font-family:var(--mono);font-size:.6rem;color:var(--dim);letter-spacing:.1em}
+  @media(max-width:600px){.slide h2{font-size:1.28rem}.ascii{font-size:.58rem;padding:11px}.hint{display:none}.qcard .qtext{font-size:1.08rem}}
+</style>
+</head>
+<body>
+<header>
+  <span class="k">Architects Lab</span>
+  <h1>/cron-setup vs /status — Personal OS Command Deck</h1>
+  <span class="count" id="counter"></span>
+</header>
+<div class="tabs" id="tabs"></div>
+<main><div id="stage"></div></main>
+<div class="hint">&larr; &rarr; keys work too</div>
+<footer>
+  <button class="nav" id="prevBtn">&larr; Prev</button>
+  <div class="dots" id="dots"></div>
+  <button class="nav primary" id="nextBtn">Next &rarr;</button>
+</footer>
+<script>
+const SECTIONS=[
+ {id:"intro", label:"OVERVIEW", c:"gold"},
+ {id:"cron", label:"CRON-SETUP", c:"teal"},
+ {id:"status", label:"STATUS", c:"rose"},
+ {id:"compare", label:"COMPARE", c:"violet"},
+ {id:"arch", label:"ARCHITECTURE", c:"amber"}
+];
+
+const S=[
+
+// ============ SECTION 1: OVERVIEW ============
+{sec:"intro", c:"gold", eyebrow:"Overview · Think First", t:"q",
+ q:`Every Claude command normally just follows markdown instructions and stops. But <b>one</b> command needs to reach past Claude, into the real operating system, and keep running on its own after you close the chat.<br><br>Which command do you think that is — and what would it need to create to make that possible?`},
+
+{sec:"intro", c:"gold", eyebrow:"Overview · 01", t:"a",
+ h:"The <em>Normal</em> Command Flow",
+ body:`<p>Most commands are simple. You type one, Claude reads a file, and does what it says.</p>
+ <div class="ascii">You type:
+
+/study-brief
+     │
+     ▼
+Claude Code
+     │
+     ▼
+.claude/commands/study-brief.md
+     │
+     ▼
+Claude follows instructions
+     │
+     ▼
+Result</div>
+ <div class="note"><b>Key point:</b> Nothing runs automatically. The command only executes the moment you type it.</div>`},
+
+{sec:"intro", c:"gold", eyebrow:"Overview · 02", t:"a",
+ h:"<em>/cron-setup</em> — the Bridge",
+ body:`<p><code>/cron-setup</code> is different from every other command:</p>
+ <div class="note">&gt; <b>/cron-setup</b> is different from normal commands because it creates a <b>real operating-system scheduler</b>.</div>
+ <div class="ascii">             /cron-setup
+                  │
+                  ▼
+      .claude/commands/cron-setup.md
+                  │
+                  ▼
+        Read schedule configuration
+                  │
+                  ▼
+        scheduler/schedule.md
+                  │
+                  ▼
+       Decide WHAT + WHEN to run
+                  │
+                  ▼
+       Update schedule.md
+                  │
+                  ▼
+      Create systemd .service
+                  │
+                  ▼
+       Create systemd .timer
+                  │
+                  ▼
+ systemctl --user enable + start
+                  │
+                  ▼
+          Linux Scheduler</div>
+ <p>So <code>/cron-setup</code> is basically a <b>bridge between Claude commands and Linux systemd</b>.</p>`},
+
+{sec:"intro", c:"gold", eyebrow:"Overview · Recall", t:"r",
+ h:"Quick recall: Overview",
+ qs:[
+  {q:"What's the one thing that makes /cron-setup different from every other command?", a:"It creates a <b>real OS-level scheduler</b> (systemd <b>.service</b> + <b>.timer</b>) instead of just running markdown instructions."},
+  {q:"What does a normal command do when you're not actively typing it?", a:"<b>Nothing</b> — it only runs the moment you type it. No side effects otherwise."}
+ ]},
+
+// ============ SECTION 2: CRON-SETUP ============
+{sec:"cron", c:"teal", eyebrow:"Cron-Setup · Think First", t:"q",
+ q:`Before Claude can create any schedule, it has to check one file first. That file becomes the "source of truth" for every scheduled job.<br><br>What do you think that file is called, and why does it matter more than the schedule itself?`},
+
+{sec:"cron", c:"teal", eyebrow:"Cron-Setup · 01", t:"a",
+ h:"Step 1 — Read the Schedule",
+ body:`<p>First, <code>/cron-setup</code> reads:</p>
+ <div class="ascii">/cron-setup
+     │
+     ▼
+scheduler/schedule.md</div>
+ <p>This file is the <b>source of truth</b> for schedules.</p>
+ <div class="ascii">scheduler/
+└── schedule.md</div>
+ <p>Conceptually:</p>
+ <div class="ascii">┌──────────────────────────────────────────┐
+│ scheduler/schedule.md                    │
+├──────────────────────────────────────────┤
+│ /study-brief   → weekdays 7:30 AM       │
+│ /reflect       → every day 9:00 PM      │
+│ /weekly-report → Friday 6:00 PM         │
+│ /career-radar  → monthly                │
+└──────────────────────────────────────────┘</div>`},
+
+{sec:"cron", c:"teal", eyebrow:"Cron-Setup · 02", t:"a",
+ h:"Step 2 — Deciding What Runs",
+ body:`<p>You tell <code>/cron-setup</code>:</p>
+ <div class="ascii">/study-brief → 7:30 AM weekdays</div>
+ <p>Claude converts that into a schedule:</p>
+ <div class="ascii">Human language
+
+"Every weekday at 7:30 AM"
+             │
+             ▼
+       cron expression
+             │
+             ▼
+       30 7 * * 1-5</div>
+ <p>Another example:</p>
+ <div class="ascii">"Every day at 9 PM"
+       │
+       ▼
+   0 21 * * *</div>`},
+
+{sec:"cron", c:"teal", eyebrow:"Cron-Setup · 03", t:"a",
+ h:"Step 3 — Update schedule.md",
+ body:`<p>The configuration becomes:</p>
+ <div class="ascii">┌─────────────────────────────────────────────┐
+│ scheduler/schedule.md                       │
+├─────────────────────────────────────────────┤
+│                                             │
+│ Command         Schedule                    │
+│ ──────────────────────────────────────────  │
+│ /study-brief    30 7 * * 1-5               │
+│ /reflect        0 21 * * *                  │
+│ /weekly-report  0 18 * * 5                  │
+│                                             │
+└─────────────────────────────────────────────┘</div>
+ <p>Think:</p>
+ <div class="ascii">schedule.md
+     │
+     │
+     └── "WHAT should run and WHEN?"</div>`},
+
+{sec:"cron", c:"teal", eyebrow:"Cron-Setup · Think First", t:"q",
+ q:`When 7:30 AM arrives, systemd wakes up and runs something. But it does <b>not</b> directly run the logic inside <code>/study-brief</code>.<br><br>What command do you think systemd actually executes?`},
+
+{sec:"cron", c:"teal", eyebrow:"Cron-Setup · 04", t:"a",
+ h:"Step 4 — Create the .service",
+ body:`<p>Now <code>/cron-setup</code> creates a Linux systemd service. Conceptually:</p>
+ <div class="ascii">~/.config/systemd/user/
+│
+├── personal-os-study-brief.service
+└── personal-os-study-brief.timer</div>
+ <p>The <code>.service</code> says:</p>
+ <div class="ascii">┌──────────────────────────────────────────────┐
+│ personal-os-study-brief.service              │
+├──────────────────────────────────────────────┤
+│                                              │
+│ When executed:                               │
+│                                              │
+│ claude -p "Run /study-brief"                │
+│                                              │
+└──────────────────────────────────────────────┘</div>
+ <div class="note">This is extremely important. The OS is <b>not directly executing the logic of /study-brief</b>. It is executing: <b>claude -p "Run /study-brief"</b></div>`},
+
+{sec:"cron", c:"teal", eyebrow:"Cron-Setup · 05", t:"a",
+ h:"Step 5 — Create the .timer",
+ body:`<p>The timer says "when should the service run?"</p>
+ <div class="ascii">┌───────────────────────────────┐
+│ .timer                        │
+├───────────────────────────────┤
+│ Monday     07:30              │
+│ Tuesday    07:30              │
+│ Wednesday  07:30              │
+│ Thursday   07:30              │
+│ Friday     07:30              │
+└───────────────────────────────┘
+             │
+             ▼
+       Trigger service</div>
+ <p>So:</p>
+ <div class="ascii">.timer
+  │
+  │ WHEN?
+  ▼
+.service
+  │
+  │ WHAT?
+  ▼
+claude -p "Run /study-brief"</div>`},
+
+{sec:"cron", c:"teal", eyebrow:"Cron-Setup · 06", t:"a",
+ h:".timer + .service Together",
+ body:`<p>This is the easiest mental model:</p>
+ <div class="ascii">             SYSTEMD
+                │
+       ┌────────┴────────┐
+       │                 │
+     .timer           .service
+       │                 │
+       │ WHEN?           │ WHAT?
+       │                 │
+       ▼                 ▼
+   7:30 AM       claude -p "Run /study-brief"
+                         │
+                         ▼
+                     Claude Code
+                         │
+                         ▼
+              .claude/commands/
+                  study-brief.md
+                         │
+                         ▼
+                  Execute instructions</div>`},
+
+{sec:"cron", c:"teal", eyebrow:"Cron-Setup · 07", t:"a",
+ h:"The Complete /study-brief Automation",
+ body:`<p>This is probably the <b>most important diagram</b> to understand the entire architecture:</p>
+ <div class="ascii">                    7:30 AM
+                       │
+                       ▼
+                Linux systemd
+                       │
+                       ▼
+            study-brief.timer
+                       │
+                       ▼
+           study-brief.service
+                       │
+                       ▼
+       claude -p "Run /study-brief"
+                       │
+                       ▼
+                 Claude Code
+                       │
+                       ▼
+       .claude/commands/study-brief.md
+                       │
+                       ▼
+              Claude reads rules
+                       │
+                       ▼
+             Execute the command
+                       │
+              ┌────────┼────────┐
+              ▼        ▼        ▼
+            Vault    Calendar  Notion
+              │        │        │
+              └────────┼────────┘
+                       ▼
+                Study Brief
+                       │
+                       ▼
+                     User</div>
+ <div class="note"><b>One-line mental model:</b> Linux timer → starts Claude → Claude runs /study-brief → Claude reads study-brief.md → Claude does what the markdown says</div>`},
+
+{sec:"cron", c:"teal", eyebrow:"Cron-Setup · 08", t:"a",
+ h:"Why /cron-setup Is Special",
+ body:`<p>Most commands are basically <b>.md instructions</b>:</p>
+ <div class="ascii">/new
+/setup
+/status
+/learn
+/ingest
+/reflect</div>
+ <p>But <code>/cron-setup</code> touches the <b>real operating system</b>:</p>
+ <div class="ascii">                 Personal OS
+                     │
+       ┌─────────────┴─────────────┐
+       │                           │
+   Claude layer               Linux layer
+       │                           │
+       ▼                           ▼
+ .claude/commands/          systemd
+       │                           │
+       │                    .timer/.service
+       │                           │
+       └──────────────┬────────────┘
+                      ▼
+                Automated OS</div>`},
+
+{sec:"cron", c:"teal", eyebrow:"Cron-Setup · Recall", t:"r",
+ h:"Quick recall: /cron-setup",
+ qs:[
+  {q:"What file is the source of truth for every schedule?", a:"<b>scheduler/schedule.md</b>"},
+  {q:"What two systemd files does /cron-setup create?", a:"A <b>.service</b> (WHAT to run) and a <b>.timer</b> (WHEN to run it)."},
+  {q:"What command does the systemd service literally execute — not the command's actual logic?", a:'<b>claude -p "Run /X"</b> — the OS just starts Claude, which then reads the .md file itself.'},
+  {q:"Name three commands that are just .md instructions with no OS access.", a:"Any of: <b>/new, /setup, /status, /learn, /ingest, /reflect</b>."}
+ ]},
+
+// ============ SECTION 3: STATUS ============
+{sec:"status", c:"rose", eyebrow:"Status · Think First", t:"q",
+ q:`/cron-setup <b>changes</b> the system — it creates files and talks to systemd. Based on that contrast, what do you think <code>/status</code> does instead? Does it create or schedule anything at all?`},
+
+{sec:"status", c:"rose", eyebrow:"Status · 01", t:"a",
+ h:"/status — Read, Don't Change",
+ body:`<p><code>/status</code> is much simpler. It doesn't create anything. It doesn't schedule anything. It mainly <b>reads information and reports it</b>.</p>
+ <div class="ascii">/status
+   │
+   ▼
+status.md
+   │
+   ▼
+Read system information
+   │
+   ▼
+Summarize
+   │
+   ▼
+Show health/status</div>`},
+
+{sec:"status", c:"rose", eyebrow:"Status · 02", t:"a",
+ h:"/status Default (Quick) Mode",
+ body:`<p>When you type <code>/status</code>, it does a <b>quick health check</b>:</p>
+ <div class="ascii">             /status
+                │
+                ▼
+      .claude/commands/status.md
+                │
+        ┌───────┼────────┐
+        ▼       ▼        ▼
+     log.md   courses   schedule
+        │       │        │
+        └───────┼────────┘
+                ▼
+             Summary
+                │
+                ▼
+              User</div>
+ <p>It checks things like:</p>
+ <div class="ascii">vault/log.md
+      │
+      ├── What did I learn recently?
+      ├── What was ingested?
+      └── When?
+
+courses
+      │
+      └── Active courses?
+
+inbox/
+      │
+      └── Anything waiting?
+
+scheduler/schedule.md
+      │
+      └── What's scheduled?</div>
+ <p>Think of it like:</p>
+ <div class="ascii">/status
+   │
+   ├── Recent activity
+   │
+   ├── Courses
+   │
+   ├── Inbox
+   │
+   └── Scheduled jobs
+          │
+          ▼
+       &lt; 10 lines</div>
+ <div class="note">It is basically: "Give me a quick snapshot"</div>`},
+
+{sec:"status", c:"rose", eyebrow:"Status · Think First", t:"q",
+ q:`If quick mode gives you under 10 lines, what extra categories do you think a <b>full</b> diagnostic would pull in on top of that?`},
+
+{sec:"status", c:"rose", eyebrow:"Status · 03", t:"a",
+ h:"/status full — the Overview",
+ body:`<p>Now you type <code>/status full</code>. Much more information is collected:</p>
+ <div class="ascii">                     /status full
+                           │
+                           ▼
+                  status.md instructions
+                           │
+       ┌───────────────────┼────────────────────┐
+       │                   │                    │
+       ▼                   ▼                    ▼
+   Identity              Vault              Courses
+   soul.md              folders              tracker
+       │                   │                    │
+       └───────────────────┼────────────────────┘
+                           │
+       ┌───────────────────┼────────────────────┐
+       │                   │                    │
+       ▼                   ▼                    ▼
+    Projects             Inbox             Scheduler
+       │                   │                    │
+       └───────────────────┼────────────────────┘
+                           │
+                           ▼
+                      Connections
+                           │
+                           ▼
+                       Open loops
+                           │
+                           ▼
+                     Full Report</div>`},
+
+{sec:"status", c:"rose", eyebrow:"Status · 04", t:"a",
+ h:"What It Reads — Identity & Vault",
+ body:`<p><b>Identity:</b></p>
+ <div class="ascii">soul.md
+   │
+   ▼
+Is Personal OS identity configured?</div>
+ <p><b>Vault:</b></p>
+ <div class="ascii">vault/
+│
+├── me/
+├── learning/
+├── courses/
+├── projects/
+├── spirituality/
+├── people/
+├── ideas/
+├── research/
+└── sources/</div>
+ <p>It counts/checks these:</p>
+ <div class="ascii">vault/
+   │
+   ├── How many pages?
+   ├── What's recently updated?
+   └── What's the current state?</div>`},
+
+{sec:"status", c:"rose", eyebrow:"Status · 05", t:"a",
+ h:"Courses & Projects",
+ body:`<p><b>Courses:</b></p>
+ <div class="ascii">vault/courses/tracker.md
+             │
+             ▼
+       Active courses?
+       Completed courses?
+       Recently touched?</div>
+ <p><b>Projects:</b></p>
+ <div class="ascii">vault/projects/
+       │
+       ├── project-A/status.md
+       ├── project-B/status.md
+       ├── project-C/status.md
+       └── ...
+              │
+              ▼
+       Project health summary</div>`},
+
+{sec:"status", c:"rose", eyebrow:"Status · 06", t:"a",
+ h:"Inbox & Scheduler",
+ body:`<p><b>Inbox:</b></p>
+ <div class="ascii">inbox/
+  │
+  ├── article.pdf
+  ├── notes.md
+  └── book.txt</div>
+ <p><code>/status full</code> asks: "Are there files waiting to be processed?"</p>
+ <p><b>Scheduler:</b></p>
+ <div class="ascii">scheduler/schedule.md
+          │
+          ▼
+ ┌─────────────────────┐
+ │ /study-brief  7:30  │
+ │ /reflect      21:00 │
+ │ /weekly-report Fri  │
+ └─────────────────────┘</div>`},
+
+{sec:"status", c:"rose", eyebrow:"Status · 07", t:"a",
+ h:"Connections",
+ body:`<p>If MCP tools are available:</p>
+ <div class="ascii">/status full
+      │
+      ▼
+Check connections
+      │
+ ┌────┼─────┐
+ ▼    ▼     ▼
+Gmail Calendar Notion
+ │      │      │
+ ▼      ▼      ▼
+LIVE    LIVE   LIVE</div>
+ <p>If something isn't connected:</p>
+ <div class="ascii">Gmail       → LIVE
+Calendar    → LIVE
+Notion      → NOT CONNECTED</div>`},
+
+{sec:"status", c:"rose", eyebrow:"Status · 08", t:"a",
+ h:"Open Loops",
+ body:`<p>Another useful concept. The command looks through recent logs/journals:</p>
+ <div class="ascii">journal
+   │
+   ▼
+Recent conversations
+   │
+   ▼
+Unresolved things?
+   │
+   ├── Question still open?
+   ├── Task unfinished?
+   ├── Decision pending?
+   └── Follow-up needed?</div>
+ <p>Then reports them.</p>`},
+
+{sec:"status", c:"rose", eyebrow:"Status · Recall", t:"r",
+ h:"Quick recall: /status",
+ qs:[
+  {q:"Does /status create or schedule anything?", a:"No — it <b>mostly has no side effects</b>. It only reads and reports."},
+  {q:"What four things does the default (quick) /status check?", a:"<b>Recent activity (log.md), Courses, Inbox, Scheduled jobs</b> — under 10 lines."},
+  {q:"What three extra categories appear only in /status full, not quick /status?", a:"<b>Identity (soul.md), Connections (MCP), and Open loops</b> — on top of vault, courses, projects, inbox, scheduler."},
+  {q:"What does /status full show if Notion isn't connected?", a:'It lists it as <b>NOT CONNECTED</b> in the connections check, alongside LIVE ones like Gmail and Calendar.'}
+ ]},
+
+// ============ SECTION 4: COMPARE ============
+{sec:"compare", c:"violet", eyebrow:"Compare · 01", t:"a",
+ h:"/status vs /status full",
+ body:`<p>Very simple:</p>
+ <div class="ascii">                 /status
+                    │
+             ┌──────┴──────┐
+             │             │
+          QUICK           FULL
+             │             │
+             ▼             ▼
+       Few important    Everything
+       signals          important
+             │             │
+             ▼             ▼
+        &lt; 10 lines     Full diagnosis</div>
+ <p>Think:</p>
+ <div class="ascii">/status
+   =
+Dashboard
+
+/status full
+   =
+System diagnostic</div>`},
+
+{sec:"compare", c:"violet", eyebrow:"Compare · 02", t:"a",
+ h:"/cron-setup vs /status — Side by Side",
+ body:`<p>This distinction is important:</p>
+ <div class="ascii">┌────────────────────────────────────────────────┐
+│                PERSONAL OS                     │
+├──────────────────────┬─────────────────────────┤
+│     /cron-setup      │        /status          │
+├──────────────────────┼─────────────────────────┤
+│ Changes system       │ Reads system            │
+│                       │                         │
+│ Creates schedules    │ Checks health            │
+│                       │                         │
+│ Creates .timer       │ Reads files              │
+│ Creates .service     │ Counts/checks things     │
+│                       │                         │
+│ Talks to systemd     │ Mostly no side effects   │
+└──────────────────────┴─────────────────────────┘</div>`},
+
+{sec:"compare", c:"violet", eyebrow:"Compare · Recall", t:"r",
+ h:"Quick recall: Compare",
+ qs:[
+  {q:"/status = Dashboard. /status full = ?", a:"<b>System diagnostic</b>."},
+  {q:"Which of the two — /cron-setup or /status — actually talks to systemd?", a:"Only <b>/cron-setup</b>. /status just reads files, mostly with no side effects."}
+ ]},
+
+// ============ SECTION 5: ARCHITECTURE ============
+{sec:"arch", c:"amber", eyebrow:"Architecture · 01", t:"a",
+ h:"The Whole Personal OS Architecture",
+ body:`<p>Now combine everything you've learned about /new, /setup, /cron-setup, and /status:</p>
+ <div class="ascii">                         YOU
+                          │
+                          │ /command
+                          ▼
+                  ┌─────────────────┐
+                  │   Claude Code   │
+                  └────────┬────────┘
+                           │
+                           ▼
+              .claude/commands/*.md
+                           │
+             ┌─────────────┼──────────────┐
+             │             │              │
+             ▼             ▼              ▼
+            /new         /setup        /status
+             │             │              │
+             ▼             ▼              ▼
+         Creates        Builds        Reads/
+         commands       identity      reports
+             │             │              │
+             └─────────────┼──────────────┘
+                           │
+                           ▼
+                         vault/
+                           │
+              ┌────────────┼─────────────┐
+              ▼            ▼             ▼
+           learning     projects       courses</div>`},
+
+{sec:"arch", c:"amber", eyebrow:"Architecture · 02", t:"a",
+ h:"Scheduling Sits Outside Claude",
+ body:`<div class="ascii">                 PERSONAL OS
+                      │
+          ┌───────────┴───────────┐
+          │                       │
+     Claude layer             Linux layer
+          │                       │
+          ▼                       ▼
+ .claude/commands/           systemd
+          │                       │
+          │                  ┌────┴────┐
+          │                  ▼         ▼
+          │                .timer   .service
+          │                            │
+          │                            ▼
+          │                   claude -p "Run /X"
+          │                            │
+          └────────────────────────────┘
+                       │
+                       ▼
+                 /X command
+                       │
+                       ▼
+              Claude reads X.md
+                       │
+                       ▼
+                  Does the work</div>`},
+
+{sec:"arch", c:"amber", eyebrow:"Architecture · 03", t:"a",
+ h:"The Single Most Important Mental Model",
+ body:`<div class="ascii">                COMMAND
+                   │
+                   ▼
+          ┌─────────────────┐
+          │   command.md    │
+          │                 │
+          │  INSTRUCTIONS   │
+          └────────┬────────┘
+                   │
+                   ▼
+             Claude reads it
+                   │
+                   ▼
+             Claude executes it
+                   │
+                   ▼
+              Files / APIs
+                   │
+                   ▼
+                RESULT</div>
+ <p>And for automation:</p>
+ <div class="ascii">        SYSTEMD TIMER
+              │
+              │ WHEN?
+              ▼
+        SYSTEMD SERVICE
+              │
+              │ WHAT?
+              ▼
+      claude -p "Run /X"
+              │
+              ▼
+       .claude/commands/X.md
+              │
+              │ INSTRUCTIONS
+              ▼
+           CLAUDE
+              │
+              ▼
+            WORK</div>`},
+
+{sec:"arch", c:"amber", eyebrow:"Architecture · 04", t:"a",
+ h:"The Core Formula",
+ body:`<p>So the architecture is essentially:</p>
+ <div class="ascii">Markdown = Brain
+     +
+Claude = Executor
+     +
+Vault = Memory
+     +
+MCP = External connections
+     +
+systemd = Clock
+     +
+Commands = Workflows</div>
+ <div class="note">That is the core architecture behind this Personal OS.</div>`},
+
+{sec:"arch", c:"amber", eyebrow:"Architecture · Recall — Whole Deck", t:"r",
+ h:"Final recall: cron-setup, status & architecture",
+ qs:[
+  {q:"In one line: what does the systemd timer trigger, and what does that trigger in turn?", a:'The timer triggers the <b>.service</b>, which runs <b>claude -p "Run /X"</b>, which makes Claude read and execute the matching command\'s <b>.md file</b>.'},
+  {q:"What layer does /cron-setup live in that commands like /status never touch?", a:"The <b>Linux/systemd layer</b> — real OS scheduling, not just Claude's markdown layer."},
+  {q:"Complete the formula: Markdown = Brain, Claude = Executor, Vault = ___, systemd = ___", a:"Vault = <b>Memory</b>, systemd = <b>Clock</b> (and MCP = External connections, Commands = Workflows)."},
+  {q:"Recite the single most important mental model in five steps.", a:"<b>command.md → Claude reads it → Claude executes it → Files/APIs → RESULT</b>."}
+ ]}
+
+];
+
+let i=0;
+const stage=document.getElementById('stage'),dots=document.getElementById('dots'),
+tabs=document.getElementById('tabs'),counter=document.getElementById('counter'),
+prevBtn=document.getElementById('prevBtn'),nextBtn=document.getElementById('nextBtn');
+SECTIONS.forEach(s=>{const b=document.createElement('button');b.className='tab';b.dataset.c=s.c;b.dataset.sec=s.id;b.textContent=s.label;b.onclick=()=>go(S.findIndex(x=>x.sec===s.id));tabs.appendChild(b);});
+S.forEach((sl,k)=>{const d=document.createElement('span');d.className='dot'+(sl.t==='q'?' q':'');d.tabIndex=0;d.setAttribute('role','button');d.setAttribute('aria-label','Slide '+(k+1));d.onclick=()=>go(k);d.onkeydown=e=>{if(e.key==='Enter')go(k)};dots.appendChild(d);});
+function lens(cto,dir){
+  return '<details class="lens"><summary>CTO LENS</summary><div class="body"><ul class="pts">'+cto.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>'
+       + '<details class="lens dir"><summary>DIRECTOR LENS</summary><div class="body"><ul class="pts">'+dir.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+}
+function go(k){
+  i=Math.max(0,Math.min(S.length-1,k));
+  const s=S[i];stage.innerHTML='';
+  const el=document.createElement('div');el.className='slide';
+  if(s.t==='q'){
+    el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div>'
+      +'<div class="qcard"><div class="qlabel">Think first &middot; predict before you peek</div>'
+      +'<div class="qtext">'+s.q+'</div>'
+      +'<div class="qsub">Form your answer in your head. Then press Next to compare.</div></div>';
+  } else if(s.t==='r'){
+    el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'
+      +'<p>Answer from memory first. Tap a question to reveal the answer.</p>'
+      +s.qs.map(x=>'<details class="recall-item"><summary>'+x.q+'</summary><div class="ans">'+x.a+'</div></details>').join('')
+      +'<div class="recall-hint">Struggled on any? Jump back with the tabs above, then return.</div>';
+  } else {
+    el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'+s.body+(s.cto?lens(s.cto,s.dir):'');
+  }
+  stage.appendChild(el);
+  counter.textContent=(i+1)+' / '+S.length;
+  document.querySelectorAll('.dot').forEach((d,k2)=>d.classList.toggle('on',k2===i));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.sec===s.sec));
+  prevBtn.disabled=(i===0);
+  nextBtn.textContent=(i===S.length-1)?'Done \u2713':'Next \u2192';
+  nextBtn.disabled=(i===S.length-1);
+  document.querySelector('main').scrollTop=0;window.scrollTo(0,0);
+}
+prevBtn.onclick=()=>go(i-1);nextBtn.onclick=()=>go(i+1);
+document.addEventListener('keydown',e=>{if(e.target.closest('details'))return;if(e.key==='ArrowRight')go(i+1);if(e.key==='ArrowLeft')go(i-1);});
+go(0);
+</script>
+</body>
+</html>

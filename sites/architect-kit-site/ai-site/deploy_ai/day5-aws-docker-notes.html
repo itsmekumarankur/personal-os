@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Architects Lab — Day 5: First AWS Deploy (IAM, Docker, App Runner)</title>
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#121821; --panel2:#161d28; --border:#22303f;
+    --text:#dbe4ee; --muted:#7d92a8; --accent:#39d3ac; --accent2:#f2b84b;
+    --danger:#ef6a6a; --code:#0d1319; --tag:#1c2a3a;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    line-height:1.6; padding:0 0 80px 0;
+  }
+  header{
+    padding:36px 24px 24px; border-bottom:1px solid var(--border);
+    background:linear-gradient(180deg,#0e141c,#0b0f14);
+  }
+  .eyebrow{color:var(--accent); font-size:12px; letter-spacing:2px; text-transform:uppercase; font-weight:600;}
+  h1{margin:8px 0 6px; font-size:28px; color:#f2f6fa;}
+  .sub{color:var(--muted); font-size:14px; max-width:780px;}
+  .course-link{
+    display:inline-block; margin-top:14px; font-size:13px; font-weight:600;
+    color:var(--accent); text-decoration:none; border:1px solid var(--border);
+    background:var(--panel2); padding:8px 14px; border-radius:6px;
+  }
+  .course-link:hover{border-color:var(--accent); background:#152030;}
+  .toolbar{
+    display:flex; gap:10px; padding:16px 24px; position:sticky; top:0;
+    background:rgba(11,15,20,0.95); backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--border); z-index:10; flex-wrap:wrap;
+  }
+  button.ctrl{
+    background:var(--panel2); color:var(--text); border:1px solid var(--border);
+    padding:8px 14px; border-radius:6px; cursor:pointer; font-size:13px;
+  }
+  button.ctrl:hover{border-color:var(--accent); color:var(--accent);}
+  .wrap{max-width:920px; margin:0 auto; padding:24px;}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    margin-bottom:16px; overflow:hidden;
+  }
+  .card-head{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:16px 20px; cursor:pointer; user-select:none;
+  }
+  .card-head:hover{background:var(--panel2);}
+  .card-title{font-size:16px; font-weight:600; color:#f2f6fa; display:flex; align-items:center; gap:10px;}
+  .tag{
+    font-size:10px; text-transform:uppercase; letter-spacing:1px;
+    background:var(--tag); color:var(--accent); padding:3px 8px; border-radius:4px; font-weight:700;
+  }
+  .tag.arch{color:var(--accent2);}
+  .tag.risk{color:var(--danger);}
+  .chevron{color:var(--muted); transition:transform .2s;}
+  .card.open .chevron{transform:rotate(90deg);}
+  .card-body{
+    max-height:0; overflow:hidden; transition:max-height .25s ease;
+    padding:0 20px;
+  }
+  .card.open .card-body{ max-height:4500px; padding:0 20px 20px; }
+  p{margin:8px 0;}
+  .questions{
+    background:var(--code); border-left:3px solid var(--accent);
+    border-radius:6px; padding:12px 16px; margin:14px 0;
+  }
+  .questions h4{margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--accent);}
+  .questions ul{margin:0; padding-left:18px;}
+  .questions li{margin:6px 0; color:#c8d6e2;}
+  .archnote{
+    background:var(--code); border-left:3px solid var(--accent2);
+    border-radius:6px; padding:12px 16px; margin:14px 0;
+  }
+  .archnote h4{margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--accent2);}
+  .risknote{
+    background:var(--code); border-left:3px solid var(--danger);
+    border-radius:6px; padding:12px 16px; margin:14px 0;
+  }
+  .risknote h4{margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--danger);}
+  pre{
+    background:var(--code); border:1px solid var(--border); border-radius:8px;
+    padding:14px; overflow-x:auto; font-size:12.5px; color:#a9e6c9; line-height:1.5;
+  }
+  code{color:var(--accent2); font-family:'Cascadia Code',Consolas,monospace;}
+  .recall{
+    margin-top:12px; border:1px dashed var(--border); border-radius:6px; padding:10px 14px;
+    cursor:pointer; background:#0e1620;
+  }
+  .recall .q{color:var(--accent2); font-weight:600; font-size:13.5px;}
+  .recall .a{display:none; margin-top:8px; color:var(--muted); font-size:13.5px; border-top:1px solid var(--border); padding-top:8px;}
+  .recall.show .a{display:block;}
+  .recall .hint{font-size:11px; color:var(--muted); float:right;}
+  ul.plain li{margin:4px 0;}
+  table{width:100%; border-collapse:collapse; margin:12px 0; font-size:13px;}
+  th,td{border:1px solid var(--border); padding:8px 10px; text-align:left;}
+  th{background:var(--panel2); color:var(--accent2);}
+  .foot{color:var(--muted); text-align:center; padding:30px; font-size:12px;}
+  .progress{font-size:11px; color:var(--muted);}
+  /* notes width expansion - matches learning plan box */
+  .wrap,.container,main,header.hero,header.masthead,nav.toc,section.block,footer{max-width:100%!important;padding-left:24px!important;padding-right:24px!important;}
+</style>
+</head>
+<body>
+<!-- LEARNING PLAN -->
+<div style="margin:24px;background:#0f1520;border:1px solid #1e2836;border-left:4px solid #e0a030;border-radius:8px;padding:24px 28px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;">
+  <div style="color:#e0a030;font-size:13px;font-weight:700;letter-spacing:.08em;margin-bottom:14px;">&#9670; LEARNING PLAN — 2.5 HOURS DAILY</div>
+  <div style="overflow-x:auto;">
+  <table style="width:100%;border-collapse:collapse;font-size:13px;color:#c8d3e0;margin-bottom:18px;white-space:nowrap;">
+    <thead><tr style="color:#7c8ba0;border-bottom:1px solid #1e2836;">
+      <th style="padding:6px 10px;text-align:left;width:48px;">Step</th>
+      <th style="padding:6px 10px;text-align:left;">Activity</th>
+      <th style="padding:6px 10px;text-align:left;">Outcome</th>
+    </tr></thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">1</td><td style="padding:7px 10px;"><b>Complete the Udemy Course</b> — watch videos, understand concepts, don't rush</td><td style="padding:7px 10px;color:#5fbf7f;">Build strong fundamentals</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">2</td><td style="padding:7px 10px;"><b>Practice Everything</b> — complete exercises, assignments, and source code</td><td style="padding:7px 10px;color:#5fbf7f;">Gain hands-on experience</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">3</td><td style="padding:7px 10px;"><b>Revise with these notes</b></td><td style="padding:7px 10px;color:#5fbf7f;">Reinforce concepts and fill knowledge gaps</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">4</td><td style="padding:7px 10px;"><b>Earn the Udemy Certificate</b></td><td style="padding:7px 10px;color:#5fbf7f;">Ensure the course is completed end-to-end</td></tr>
+      <tr><td style="padding:7px 10px;color:#e0a030;font-weight:700;">5</td><td style="padding:7px 10px;"><b>Practise real world tough scenario</b> — scenario-based questions &amp; interview problems</td><td style="padding:7px 10px;color:#5fbf7f;">Develop practical and interview-ready skills</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">1.5 HRS</div>
+      <div style="font-size:12px;color:#c8d3e0;">Udemy Videos + Exercises + Source Code</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Notes Revision</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Scenario-Based Questions &amp; Practical Problems</div>
+    </div>
+  </div>
+  <div style="color:#f0f4f8;font-size:12px;font-weight:600;letter-spacing:.04em;">GOAL: <span style="color:#e0a030;">Learn &#8594; Practice &#8594; Revise &#8594; Complete &#8594; Apply</span></div>
+</div>
+<!-- END LEARNING PLAN -->
+<a href="https://ai.shivawithin.in" id="home-return-btn" title="Back to Home" style="position:fixed;bottom:24px;right:24px;z-index:99999;display:inline-flex;align-items:center;gap:6px;background:#0d1b2a;color:#3fb6ff;border:1px solid #3fb6ff;padding:9px 15px;border-radius:8px;text-decoration:none;font-family:system-ui,-apple-system,sans-serif;font-size:13px;font-weight:600;box-shadow:0 2px 16px rgba(0,0,0,0.5);transition:background 0.2s,box-shadow 0.2s;" onmouseover="this.style.background='#1a2f47';this.style.boxShadow='0 4px 20px rgba(63,182,255,0.25)'" onmouseout="this.style.background='#0d1b2a';this.style.boxShadow='0 2px 16px rgba(0,0,0,0.5)'">&#8592; Home</a>
+
+<header>
+  <div class="eyebrow">Architects Lab · LLM &amp; Agentic AI Bootcamp</div>
+  <h1>Week 1 · Day 5 — First AWS Deploy: IAM, Docker, and App Runner</h1>
+  <div class="sub">Notes from Ed Donner's Day 5 lecture — the "big day" moving off Vercel's PaaS convenience
+  onto AWS: root vs. IAM users, budget guardrails, Docker fundamentals, and a first live deploy via App
+  Runner. Structured for a Senior Engineering Manager comparing AWS's IAM/cost model against enterprise
+  governance patterns already familiar from banking infrastructure.</div>
+  <a class="course-link" href="https://www.udemy.com/course/generative-and-agentic-ai-in-production/learn/lecture/52442087#overview" target="_blank" rel="noopener noreferrer">
+    ↗ Open on Udemy — Generative and Agentic AI in Production
+  </a>
+</header>
+
+<div class="toolbar">
+  <button class="ctrl" onclick="expandAll()">▾ Expand All</button>
+  <button class="ctrl" onclick="collapseAll()">▸ Collapse All</button>
+  <button class="ctrl" onclick="revealAllRecall()">💡 Reveal All Recall Answers</button>
+  <span class="progress" id="progressLabel"></span>
+</div>
+
+<div class="wrap">
+
+  <!-- SECTION 1 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Framing</span> Today Is a Teaser, Not the Full AWS Deep Dive</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>Explicit scope-setting: today covers "many of the core components," not "every component" — Week 2
+      is the real AWS deep dive. The goal for Day 5 is a working end-to-end deploy and a general flavor for
+      AWS's operating model, not mastery.</p>
+      <p>The headline contrast set up for the whole day: Vercel felt almost too easy; AWS is the opposite —
+      "industrial grade," built for massive scale, and deliberately more granular (and more tedious) about
+      permissions and configuration as a direct consequence of being trusted by major enterprises.</p>
+    </div>
+  </div>
+
+  <!-- SECTION 2 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">IAM</span> Root User vs. IAM User — The Core Discipline</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <pre>
+Root user  → created at signup, all-powerful, should almost NEVER be used
+             day-to-day. Only two legitimate uses:
+               1. Assigning permissions (creating/configuring IAM users)
+               2. Budget / billing management
+
+IAM user   → a restricted-permission identity you create and use for
+             actual daily work. This course creates ONE user, "AI
+             engineer" (real production setups would create MANY,
+             scoped per environment / per project).
+      </pre>
+      <p>Setup flow: sign up for AWS (credit card required) → sign in as root → enable MFA (mandatory, via
+      an authenticator app) → note the 12-digit AWS Account ID (needed repeatedly going forward) → create
+      an IAM user → create a <strong>user group</strong> ("broad AI engineer access") → attach permission
+      policies to the group, not the user directly → the user inherits the group's permissions.</p>
+
+      <p>Four policies attached in this setup: <code>AWSAppRunnerFullAccess</code>,
+      <code>AmazonEC2ContainerRegistryFullAccess</code>, <code>CloudWatchLogsFullAccess</code>,
+      <code>IAMUserChangePassword</code>. Explicitly flagged as broader than a real security-conscious setup
+      would use ("full access" grants are convenient but not least-privilege) — acceptable for a learning
+      environment, not for real production.</p>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>Group-based permission assignment (policies → group → user, never policies → user directly) is
+        the same RBAC discipline you'd expect in any enterprise IAM system — it's the pattern that scales
+        when you have more than a handful of users, since you manage the group's permission set once instead
+        of touching every individual user. The explicit admission that "full access" policies are used here
+        purely for course convenience, not least-privilege, is a useful teaching moment: it's the same
+        corner every team is tempted to cut early on, and the same one that becomes expensive to unwind later
+        once dozens of services depend on overly broad grants.</p>
+      </div>
+
+      <div class="questions">
+        <h4>Questions worth sitting with</h4>
+        <ul>
+          <li>Across your 80+ microservices, how much of the current IAM/service-account footprint started
+          as a convenient "full access" grant during a rushed initial setup, the same way this course
+          explicitly does — and never got tightened afterward?</li>
+        </ul>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: Why attach permission policies to a user GROUP rather than directly to the user? <span class="hint">tap to reveal</span></div>
+        <div class="a">Because it scales — with permissions on the group, you manage one set of policies that automatically applies to every user added to that group, rather than having to individually configure permissions on every single user account as your team grows.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag risk">Cost Governance</span> Budgets, Alerts, and AWS's "No Hard Cap" Reality</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>This week's project is estimated at $1–5 if run briefly and torn down; de minimis if left running
+      only a couple of days. New accounts often get several months of free credits (varies by region/eligibility).</p>
+
+      <p>Two budgets set up, both from the root account (Billing and Cost Management → Budgets):</p>
+      <ul class="plain">
+        <li><strong>Zero-spend budget</strong> — alerts the moment spend exceeds $0.01. A safety-net tripwire.</li>
+        <li><strong>Monthly cost budget</strong> — a chosen dollar ceiling (e.g. $5), with alerts at 85% actual, 100% actual, and 100% <em>forecast</em> (i.e. Amazon predicting you'll hit it if current usage continues).</li>
+      </ul>
+
+      <div class="risknote">
+        <h4>Risk Flag — This Is the Important Part</h4>
+        <p>AWS alerting is granular and reliable, but there is <strong>no hard spending cap</strong> — no
+        "shut everything off at $X" option, unlike OpenAI's pre-funded drawdown model. AWS's own stated
+        reasoning: an enterprise running Netflix-scale infrastructure can't have billing suddenly kill
+        production. In theory, liability is unlimited if something runs away (e.g. misconfigured
+        auto-scaling spinning up far more infrastructure than intended). The explicit comparison: with
+        OpenAI's $5 pre-pay model, worst-case liability is $5; with AWS, worst-case liability is open-ended
+        unless you're actively monitoring.</p>
+      </div>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>This is the exact same cost-governance gap flagged back on Day 1, now made concrete with the
+        specific mechanism (alerts, not caps). For an enterprise this is manageable via tagging, chargeback,
+        and service quotas set proactively — but it's worth treating "no automatic shutoff" as a standing
+        design constraint any time your team spins up new AWS infrastructure, not just a beginner's warning.
+        A runaway auto-scaling misconfiguration is a very plausible real incident category, not a hypothetical.</p>
+      </div>
+
+      <div class="questions">
+        <h4>Question worth sitting with</h4>
+        <ul>
+          <li>Does IDFC's current AWS governance model rely on the same "alerts, not caps" mechanism as the
+          baseline defense against runaway spend — and if so, what's the actual incident-response playbook
+          if an alert fires at 2am for an unexplained scaling event?</li>
+        </ul>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: What is AWS's stated reason for not offering a hard spending cap / auto-shutoff? <span class="hint">tap to reveal</span></div>
+        <div class="a">Because AWS is used by major enterprises running critical, always-on infrastructure — a hard cap that automatically shuts services off when a bill isn't paid or a limit is hit isn't acceptable in that context (e.g. a payment failure shouldn't be able to take down a service like Netflix), so AWS only offers alerting, never automatic cutoff.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 4 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">AWS Lingo</span> Regions and ARNs — Two Identifiers You'll See Constantly</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <ul class="plain">
+        <li><strong>Region</strong> (e.g. <code>us-east-1</code>): almost a separate installation of AWS with its own service availability. Typo risk called out explicitly — leaving out a hyphen produces obscure, hard-to-diagnose errors ("I speak from bitter personal experience").</li>
+        <li><strong>ARN</strong> (Amazon Resource Name): a unique identifier attached to essentially every object in AWS — encodes the service, region, account ID, and resource details in one string. You'll see these everywhere once you start using more services.</li>
+      </ul>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: What does an ARN typically encode, and why does that matter? <span class="hint">tap to reveal</span></div>
+        <div class="a">An ARN encodes the AWS service, the region, and the account ID (plus resource-specific details) into a single unique string identifying any object in AWS. It matters because ARNs are used pervasively to reference and permission specific resources across the platform — you'll need to read and recognize them constantly.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 5 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Docker</span> Docker Fundamentals — Dockerfile → Image → Container</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>Analogy given: Docker is a lightweight "computer within a computer" — like a VM, but sharing the
+      host OS instead of emulating a whole separate one, so it's much faster to start and lighter on
+      resources. The payoff: build once, run identically on any machine.</p>
+
+      <pre>
+Dockerfile  → a text "recipe": step-by-step instructions for building
+              the environment (often starts FROM an existing image and
+              layers changes on top)
+     ↓
+Image       → a snapshot/blueprint built by running the Dockerfile —
+              not running, just a saved definition
+     ↓
+Container   → a live, running instance of an image. You can spin up
+              many containers from the same image; each can be
+              started and stopped independently.
+      </pre>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>"Build once, run identically anywhere" is the whole point, and it's the same reproducibility
+        guarantee that matters most in regulated environments — a container that passed testing locally is,
+        modulo environment variables/secrets, the exact same artifact that runs in production. Worth
+        confirming this is actually how your Wealth/Demat services are deployed today (image built once,
+        promoted unchanged across environments) versus rebuilt per-environment, which reintroduces exactly
+        the "works on my machine" risk containers are meant to eliminate.</p>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: What's the relationship between a Dockerfile, an image, and a container? <span class="hint">tap to reveal</span></div>
+        <div class="a">A Dockerfile is a text recipe of build instructions. Running that Dockerfile produces an image — a static snapshot/blueprint. Running that image produces a container — a live, active instance. Many containers can be spun up from the same single image.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 6 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">AWS Services</span> The Three New Services — App Runner, ECR, CloudWatch</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <table>
+        <tr><th>Service</th><th>What it does</th></tr>
+        <tr><td>AWS App Runner</td><td>Simplest way to take a Docker container and run it live on AWS — the common starting point for containerized deploys</td></tr>
+        <tr><td>Amazon ECR (Elastic Container Registry)</td><td>Where Docker images are stored, ready to be pulled and deployed</td></tr>
+        <tr><td>CloudWatch</td><td>Centralized logging and monitoring across AWS services — one place to observe what's happening, including (later) agent behavior</td></tr>
+      </table>
+      <p>Combined with IAM and Billing/Cost Management (already seen), that's five AWS services touched by
+      end of Day 5 — explicitly framed as "don't try to memorize all this, it sinks in with repetition."</p>
+    </div>
+  </div>
+
+  <!-- SECTION 7 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Refactor</span> Adapting the App for AWS — What Actually Changed</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>Moving from Vercel's model to a single Docker container required real architectural changes, not
+      just a redeploy:</p>
+      <ul class="plain">
+        <li><code>next.config</code> updated to <strong>static export</strong> — the Next.js front end is now pre-compiled into plain HTML/CSS/JS at build time, not served dynamically on demand the way Vercel handled it.</li>
+        <li>Front-end fetch calls updated from <code>/api</code> to <code>/api/consultation</code> — a more specific route since front end and back end now share one server.</li>
+        <li>New <code>server.py</code> replaces <code>index.py</code> — adds <strong>CORS middleware</strong> (restricts which origins can call the backend), a new <code>/health</code> endpoint (required by AWS App Runner's health checks), and logic so the FastAPI backend also serves the static front-end files directly at <code>/</code> — front end and back end now live in one process/container instead of Vercel's separate handling.</li>
+        <li>New <code>.env</code> additions: AWS default region and the 12-digit AWS account ID, alongside the existing Clerk/OpenAI secrets.</li>
+      </ul>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>This is the real lesson hiding under the "just add two env vars" framing: moving between deployment
+        platforms is rarely a pure ops change — it forced genuine application-level changes (static export,
+        CORS, a merged front-end/back-end serving model, a new health endpoint). Worth internalizing as a
+        general rule before quoting a "quick migration" timeline to stakeholders: cross-platform portability
+        claims should always be verified against what the target platform actually expects structurally, not
+        just where secrets and config live.</p>
+      </div>
+
+      <div class="questions">
+        <h4>Question worth sitting with</h4>
+        <ul>
+          <li>If a squad told you "we can move this Vercel-hosted tool to AWS in an afternoon," would this
+          walkthrough change how skeptically you'd probe that estimate?</li>
+        </ul>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: Why does the FastAPI backend need a new "serve the static front end" route when deploying to AWS App Runner, when it didn't need this on Vercel? <span class="hint">tap to reveal</span></div>
+        <div class="a">Because on Vercel, the front end and back end were handled as separate concerns by the platform itself. On AWS, everything is packaged into one Docker container running one process — so the FastAPI backend now has to take on the extra job of serving the pre-built static front-end files (like index.html) whenever the root URL is requested, in addition to handling its API routes.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 8 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Docker</span> The Multi-Stage Dockerfile — Building Front End and Back End Into One Image</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <pre>
+Stage 1 (temporary) — FROM node:22
+  → npm run build     (compiles Next.js into a static site)
+
+Stage 2 (final)      — FROM python:3.12-slim
+  → pip install -r requirements.txt
+  → COPY api/server.py .
+  → COPY --from=stage1  (the static site built in Stage 1) → into this image
+  → HEALTHCHECK        (periodically hits /health)
+  → EXPOSE 8000
+  → CMD uvicorn server:app --host 0.0.0.0 --port 8000
+      </pre>
+      <p>This is a <strong>multi-stage build</strong> — Stage 1 exists purely to compile the front end;
+      only its output (the static files) gets copied into the final Python-based image, keeping the final
+      image lean (no Node.js runtime bloat in production). A <code>.dockerignore</code> file (same concept
+      as <code>.gitignore</code>) excludes unnecessary files from the build context.</p>
+
+      <div class="risknote">
+        <h4>Note, Not a Real Risk</h4>
+        <p>Build-time warnings about the Clerk publishable key being present in the container are expected
+        and safe to ignore — it's explicitly a <em>publishable</em> key, designed to be exposed client-side.
+        Worth remembering as a category distinction: publishable/public keys are meant to be visible; secret
+        keys are not — the warning tooling can't always tell the difference automatically.</p>
+      </div>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>Multi-stage builds are the standard answer to "my final image shouldn't need the entire build
+        toolchain" — a pattern worth enforcing as a default across any Dockerized service at IDFC: build
+        stage carries compilers/SDKs/dev dependencies, final stage carries only the runtime artifact. Smaller
+        final images mean faster deploys, smaller attack surface, and lower registry storage costs at scale.</p>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: Why does this Dockerfile use two separate FROM stages instead of one? <span class="hint">tap to reveal</span></div>
+        <div class="a">Stage 1 (Node.js) exists only to compile the Next.js front end into static files — the Node.js runtime itself isn't needed to actually run the app. Stage 2 (Python) is the real final image; it copies only the compiled static output from Stage 1, keeping the final production image lean and free of unnecessary build tooling.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 9 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Deploy</span> Build Locally, Test Locally, Then Ship to App Runner</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>Sequence: run a script to load <code>.env</code> values as shell environment variables →
+      <code>docker build</code> (creates the image, caching layers on repeat runs) → <code>docker run</code>
+      (spins up a container locally, verified working — including Clerk login — entirely on localhost)
+      → push the image to ECR → configure App Runner:</p>
+      <ul class="plain">
+        <li>Port set to <strong>8000</strong> (matching the Dockerfile's EXPOSE/uvicorn port)</li>
+        <li>Auto-scaling config (ASC): concurrency limit (10 requests), min instances = 1, max instances = 1 for this exercise (kept intentionally non-scaling — real production would raise the max)</li>
+        <li>Health check: HTTP protocol, path <code>/health</code>, 5s timeout, 20s interval — App Runner uses this to decide if the container is actually healthy</li>
+      </ul>
+      <p>Result: a live HTTPS App Runner URL, verified end-to-end with the same Clerk login → consultation
+      form → OpenAI-generated summary flow that worked on Vercel — this time fully running on AWS.</p>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>The min=1/max=1 auto-scaling choice is a deliberate cost-safety decision for a learning exercise —
+        it guarantees the container can never silently multiply and run up a bill, at the cost of having zero
+        real scalability. Worth noting as the mirror image of the "no hard spend cap" risk from earlier in
+        the day: here, the instructor manually built in his own cap by constraining max instances, since AWS
+        itself won't do it for him.</p>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: Why does App Runner need a <code>/health</code> endpoint specifically, and what does it check? <span class="hint">tap to reveal</span></div>
+        <div class="a">App Runner needs a way to know whether the running container is actually healthy and ready to serve traffic. It periodically calls the /health endpoint (every 20s, with a 5s timeout in this config) and expects a simple JSON response confirming healthy status — repeated failures mark the instance unhealthy.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 10 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Recap</span> Vercel vs. AWS — The Direct Comparison</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <table>
+        <tr><th></th><th>Vercel (Days 1–4)</th><th>AWS App Runner (Day 5)</th></tr>
+        <tr><td>Setup friction</td><td>Minimal — sign up, deploy in minutes</td><td>Significant — IAM, MFA, budgets, permissions before any deploy</td></tr>
+        <tr><td>Deployment unit</td><td>Serverless functions, platform-managed</td><td>A Docker container you build and own</td></tr>
+        <tr><td>Front/back end</td><td>Handled separately by the platform</td><td>Merged into one container, one process</td></tr>
+        <tr><td>Cost model</td><td>Simple, PaaS-style</td><td>Granular, enterprise-grade, no hard cap</td></tr>
+        <tr><td>Scaling/monitoring</td><td>Basic</td><td>Deep — auto-scaling config, CloudWatch, health checks</td></tr>
+        <tr><td>Best fit</td><td>Fast iteration, prototypes, small teams</td><td>Regulated, high-scale, enterprise production</td></tr>
+      </table>
+
+      <div class="questions">
+        <h4>Questions worth sitting with</h4>
+        <ul>
+          <li>Given this side-by-side, is there a middle ground for your own future projects — e.g.
+          prototyping on something Vercel-like, then graduating specific components to AWS once they need
+          the scale/compliance guarantees — rather than an all-or-nothing platform choice?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 11: NEXT UP -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag arch">Preview</span> What Week 2 Will Likely Cover</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>Week 1 closes at "25% complete." The explicit setup for Week 2: a deeper AWS treatment revisiting
+      the "Digital Twin" project (from a prior course) with Bedrock, plus Terraform (infrastructure as code)
+      and GitHub Actions (CI/CD) — described as "a big old plunge" after today's "toe in the water."</p>
+
+      <div class="questions">
+        <h4>Questions to answer once Week 2 starts</h4>
+        <ul>
+          <li>Does Terraform get introduced to codify exactly the manual IAM/App Runner/ECR setup done by
+          hand today — turning today's click-through process into reusable, version-controlled infrastructure?</li>
+          <li>Does GitHub Actions replace the manual <code>docker build</code> → push to ECR → App Runner
+          deploy sequence with an automated pipeline triggered on git push, the way Vercel automated
+          deployment implicitly?</li>
+          <li>Does Bedrock replace the direct OpenAI API calls used so far, and if so, does that change
+          anything architecturally (IAM permissions for model access, VPC considerations) beyond just
+          swapping the API endpoint?</li>
+          <li>Is today's min=1/max=1 auto-scaling safety net revisited with real scaling configuration once
+          cost-monitoring habits are more established?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="foot">Architects Lab · Study Notes · Source: "Gen AI &amp; Agentic AI in Production," Week 1 Day 5 (Ed Donner)</div>
+
+<script>
+  function toggleCard(headEl){
+    const card = headEl.parentElement;
+    card.classList.toggle('open');
+    updateProgress();
+  }
+  function toggleRecall(el){
+    el.classList.toggle('show');
+  }
+  function expandAll(){
+    document.querySelectorAll('.card').forEach(c=>c.classList.add('open'));
+    updateProgress();
+  }
+  function collapseAll(){
+    document.querySelectorAll('.card').forEach(c=>c.classList.remove('open'));
+    updateProgress();
+  }
+  function revealAllRecall(){
+    document.querySelectorAll('.recall').forEach(r=>r.classList.add('show'));
+  }
+  function updateProgress(){
+    const total = document.querySelectorAll('.card').length;
+    const open = document.querySelectorAll('.card.open').length;
+    document.getElementById('progressLabel').textContent = open + ' / ' + total + ' sections expanded';
+  }
+  updateProgress();
+</script>
+
+</body>
+</html>

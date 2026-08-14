@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architects Lab · AI Project Management &amp; Inception</title>
+<style>
+  :root{
+    --bg:#0d0f14; --panel:#151823; --panel2:#1b1f2e;
+    --ink:#e8e6df; --dim:#8b8fa3;
+    --gold:#d4af5a; --gold-soft:#b8964a;
+    --teal:#5ad4c8; --rose:#d47a8a; --violet:#9a8ad4; --amber:#d4915a;
+    --line:#2a2f42;
+    --mono:'Courier New', ui-monospace, monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif;display:flex;flex-direction:column;min-height:100vh}
+  header{padding:16px 26px 12px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  header .k{font-family:var(--mono);font-size:.68rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase}
+  header h1{font-size:1rem;font-weight:normal}
+  header .count{margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--dim)}
+  .tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
+  .tab{flex:1;min-width:110px;padding:9px 10px;text-align:center;font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;color:var(--dim);border-right:1px solid var(--line);cursor:pointer;white-space:nowrap;transition:.2s;background:transparent;border-top:none;border-bottom:none;border-left:none}
+  .tab:last-child{border-right:none}
+  .tab.active{color:var(--bg);font-weight:bold}
+  .tab[data-c="gold"].active{background:var(--gold)}
+  .tab[data-c="teal"].active{background:var(--teal)}
+  .tab[data-c="rose"].active{background:var(--rose)}
+  .tab[data-c="violet"].active{background:var(--violet)}
+  .tab[data-c="amber"].active{background:var(--amber)}
+  .tab[data-c="ink"].active{background:var(--ink)}
+  main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px 96px;overflow-y:auto}
+  .slide{max-width:780px;width:100%;animation:fadeUp .4s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @media (prefers-reduced-motion: reduce){.slide{animation:none}}
+  .eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px}
+  .eyebrow.gold{color:var(--gold)} .eyebrow.teal{color:var(--teal)} .eyebrow.rose{color:var(--rose)}
+  .eyebrow.violet{color:var(--violet)} .eyebrow.amber{color:var(--amber)} .eyebrow.ink{color:var(--dim)}
+  .slide h2{font-size:1.55rem;font-weight:normal;line-height:1.3;margin-bottom:14px}
+  .slide h2 em{font-style:italic;color:var(--gold)}
+  .slide p{color:#c9c7bf;line-height:1.75;font-size:1rem;margin-bottom:13px}
+  .slide p strong, .slide li strong{color:var(--ink)}
+  .slide code{font-family:var(--mono);font-size:.85em;background:var(--panel2);padding:2px 6px;border-radius:3px;color:var(--gold)}
+  .ascii{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:6px;padding:14px 16px;margin:14px 0;font-family:var(--mono);font-size:.74rem;line-height:1.5;color:#b9c2d8;overflow-x:auto;white-space:pre}
+  .ascii .hl{color:var(--gold)} .ascii .tl{color:var(--teal)} .ascii .rs{color:var(--rose)}
+  .note{border:1px dashed var(--gold-soft);border-radius:6px;padding:11px 15px;margin:14px 0;font-size:.9rem;color:#cfc9ae;line-height:1.65}
+  .note b{color:var(--gold)}
+  ul.pts{margin:10px 0 13px 2px;list-style:none}
+  ul.pts li{padding:6px 0 6px 21px;position:relative;color:#c9c7bf;line-height:1.6;font-size:.95rem}
+  ul.pts li::before{content:"\203A";position:absolute;left:4px;color:var(--gold);font-family:var(--mono)}
+  /* ---- Think First (question) slides ---- */
+  .qcard{border:2px solid var(--gold);border-radius:10px;background:linear-gradient(160deg,#1a1608,#151823);padding:30px 28px;margin:6px 0 18px;position:relative}
+  .qcard::before{content:"?";position:absolute;top:-20px;left:22px;width:38px;height:38px;border-radius:50%;background:var(--gold);color:var(--bg);font-family:var(--mono);font-weight:bold;font-size:1.3rem;display:flex;align-items:center;justify-content:center}
+  .qcard .qlabel{font-family:var(--mono);font-size:.64rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;margin-bottom:12px}
+  .qcard .qtext{font-size:1.25rem;line-height:1.55;color:var(--ink);font-style:italic}
+  .qcard .qsub{margin-top:14px;font-size:.86rem;color:var(--dim);font-style:normal;font-family:var(--mono)}
+  /* ---- lenses (CTO / Director) ---- */
+  details.lens{margin:10px 0;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+  details.lens summary{cursor:pointer;padding:10px 14px;font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;color:var(--teal);list-style:none}
+  details.lens summary::before{content:"+ ";color:var(--gold)}
+  details.lens[open] summary::before{content:"\2212 "}
+  details.lens.dir summary{color:var(--rose)}
+  details.lens .body{padding:2px 16px 13px}
+  details.lens .body li{font-size:.9rem}
+  /* ---- recall quiz slides ---- */
+  .recall-item{border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:6px;background:var(--panel);margin:12px 0;overflow:hidden}
+  .recall-item summary{cursor:pointer;padding:13px 16px;font-size:.98rem;color:var(--ink);list-style:none;line-height:1.55}
+  .recall-item summary::before{content:"Q  ";font-family:var(--mono);color:var(--teal);font-weight:bold}
+  .recall-item .ans{padding:0 16px 13px;color:#b9c2b0;font-size:.92rem;line-height:1.65;border-top:1px dashed var(--line);padding-top:11px;margin:0 16px 13px;padding-left:0;padding-right:0}
+  .recall-item .ans b{color:var(--teal)}
+  .recall-hint{font-family:var(--mono);font-size:.7rem;color:var(--dim);margin-top:6px}
+  footer{position:fixed;left:0;right:0;bottom:0;background:rgba(13,15,20,.93);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:11px 20px;display:flex;align-items:center;gap:14px}
+  .dots{display:flex;gap:4px;flex:1;justify-content:center;flex-wrap:wrap}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--line);cursor:pointer;transition:.2s}
+  .dot.on{background:var(--gold);transform:scale(1.45)}
+  .dot.q{border:1px solid var(--gold);background:transparent}
+  .dot.q.on{background:var(--gold)}
+  button.nav{font-family:var(--mono);font-size:.78rem;letter-spacing:.1em;background:transparent;color:var(--ink);border:1px solid var(--line);padding:9px 18px;border-radius:5px;cursor:pointer;transition:.2s}
+  button.nav:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+  button.nav.primary{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:bold}
+  button.nav.primary:hover{background:#e2c070}
+  button.nav:disabled{opacity:.25;cursor:default}
+  button.nav:focus-visible,.tab:focus-visible,.dot:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .hint{position:fixed;bottom:62px;right:18px;font-family:var(--mono);font-size:.6rem;color:var(--dim);letter-spacing:.1em}
+  @media(max-width:600px){.slide h2{font-size:1.28rem}.ascii{font-size:.58rem;padding:11px}.hint{display:none}.qcard .qtext{font-size:1.08rem}}
+</style>
+</head>
+<body>
+<header>
+  <span class="k">Architects Lab</span>
+  <h1>Study Note 023 · AI Project Management &amp; Inception</h1>
+  <span class="count" id="counter"></span>
+</header>
+<div class="tabs" id="tabs"></div>
+<main><div id="stage"></div></main>
+<div class="hint">&larr; &rarr; keys work too</div>
+<footer>
+  <button class="nav" id="prevBtn">&larr; Prev</button>
+  <div class="dots" id="dots"></div>
+  <button class="nav primary" id="nextBtn">Next &rarr;</button>
+</footer>
+<script>
+const SECTIONS=[
+ {id:"intro",label:"START",c:"ink"},
+ {id:"vision",label:"VISION+METRICS",c:"teal"},
+ {id:"people",label:"PEOPLE+METHOD",c:"gold"},
+ {id:"scale",label:"SCALE+RISK",c:"violet"},
+ {id:"money",label:"SUCCESS+BUDGET",c:"rose"},
+ {id:"apply",label:"APPLIED+RECALL",c:"amber"}
+];
+const S=[
+
+{sec:"intro",c:"ink",eyebrow:"Study Note 023",t:"a",h:"AI Project Management &amp; Inception — <em>Step 1, done properly</em>",body:`
+<p>Vision, feasibility, scope, metrics, roles, methodology, risk, and budget — everything that has to be right before a single line of model code gets written. Same rhythm: prime with a question, learn the concept, recap what stuck, then view it from the CTO's, Architect's, and PM's seat.</p>
+<div class="ascii">FIG — 7-STEP LIFECYCLE, THIS MODULE = STEP 1
+STEP 1 — WE ARE HERE: Problem Scoping &amp; Planning
+Step 2 Data Acquisition | Step 3 Data Exploration &amp; Prep
+Step 4 Modeling | Step 5 Evaluation
+Step 6 Deployment | Step 7 Maintenance &amp; Monitoring</div>
+<div class="note"><b>How to use:</b> "?" slides ask you to predict first. Press Next to compare. Recall quizzes close each section.</div>`},
+
+/* ---------- VISION + METRICS ---------- */
+{sec:"vision",c:"teal",eyebrow:"Foundations · 01",t:"q",q:`Of the 7 lifecycle steps, which one does this <b>entire module</b> live inside? And: name one way an AI project can have "great data and a great model" and still fail.`},
+
+{sec:"vision",c:"teal",eyebrow:"Foundations · 01",t:"a",h:"Lifecycle Refresher &amp; Why AI PM Matters",body:`
+<p>Why AI project management is critical — 3 pillars:</p>
+<ul class="pts">
+<li><strong>01 Proper planning</strong> — define scope clearly, set success metrics (not just accuracy), define realistic timelines, link business KPIs to model KPIs.</li>
+<li><strong>02 Coordination</strong> — cross-functional communication, Agile teams (AI moves fast), new models release weekly, adaptability required.</li>
+<li><strong>03 Business alignment</strong> — define ROI clearly, stakeholder buy-in, business + data science + MLOps alignment.</li>
+</ul>
+<div class="note">❌ <b>Common pitfall:</b> "We have data and a model — we're done!" &middot; ✅ <b>Reality:</b> AI projects fail due to misalignment, not technology.</div>
+<div class="note">This whole module lives inside <b>Step 1</b> of the lifecycle: problem scoping and planning. The most common failure mode isn't a bad model — it's a team that shipped a working model nobody asked the right question about.</div>`,
+cto:[`"We have data and a model" is the sentence that precedes most AI project write-offs. Require a named business KPI before funding moves past step 1 — not after the model exists.`],
+dir:[`Because new models ship weekly, a plan that assumed today's tooling is stale within a quarter. Build re-evaluation checkpoints into the plan itself, not just the backlog.`]},
+
+{sec:"vision",c:"teal",eyebrow:"Inception · 02",t:"q",q:`Before checking whether an AI project is technically <b>possible</b>, what should you check first? And: what's the actual risk of skipping scope definition and just "seeing where the model takes us"?`},
+
+{sec:"vision",c:"teal",eyebrow:"Inception · 02",t:"a",h:"Vision, Feasibility &amp; Scope",body:`
+<p>Three questions anchor the vision before anything else gets planned:</p>
+<ul class="pts">
+<li><strong>1. Why this project?</strong> Quantify expected business value — 15% cost reduction? $1M annual revenue growth? 3,000 labor hours saved?</li>
+<li><strong>2. Alignment with strategic goals</strong> — customer retention, operational efficiency, new revenue streams?</li>
+<li><strong>3. Clear success metrics</strong> — well-defined KPIs, track ROI, measure what matters.</li>
+</ul>
+<p><strong>Feasibility assessment — 4 dimensions:</strong> technical feasibility (right tools/cloud? can we prototype quickly?), organizational readiness (skilled DS/ML/PM staff? can we hire/consult?), data availability &amp; quality (access, historical/real-time, clean?), cost &amp; resource constraints (deliverable within budget? can AutoML/pre-trained models cut cost?).</p>
+<div class="ascii">SELF-DRIVING CAR — SCOPE DEFINITION
+✅ In scope (MVP): highway driving, lane keeping, adaptive
+   cruise control, automatic lane changes in clear conditions,
+   clear daylight + good weather
+❌ Out of scope (future): urban driving, complex weather
+   (snow/rain/fog), construction zones, night-time driving</div>
+<div class="note">Vision comes before feasibility, and feasibility comes before scope. An undefined scope is how "highway lane-keeping" quietly turns into "full self-driving everywhere" and the project never ships.</div>`,
+cto:[`Feasibility is a go/no-go gate, not a formality — a project that's organizationally infeasible (no ML engineer on staff) needs a hiring or consulting line item before it's greenlit.`],
+dir:[`Design the MVP's architecture to be extensible toward the out-of-scope items — retrofitting night-time or weather handling onto a highway-only architecture is far more expensive than anticipating the seam now.`]},
+
+{sec:"vision",c:"teal",eyebrow:"Inception · 02b",t:"a",h:"The PM note on scope",body:`<div class="note"><b>📋 PM view:</b> write the out-of-scope list down and get stakeholder sign-off on it explicitly — an unwritten "we'll get to that later" is exactly where scope creep enters through the back door.</div>`},
+
+{sec:"vision",c:"teal",eyebrow:"Measurement · 03",t:"q",q:`Can a model with excellent accuracy still be a business <b>failure</b>? What would that look like? And: where would "response time" belong — model metrics, system metrics, or business metrics?`},
+
+{sec:"vision",c:"teal",eyebrow:"Measurement · 03",t:"a",h:"Success Metrics — 3 Levels",body:`
+<div class="ascii">FIG — THREE LEVELS, EACH ANSWERS A DIFFERENT QUESTION
+Business Metrics: "Does it matter?"
+System Metrics:   "Does it run?"
+Model Metrics:    "Is it correct?"</div>
+<ul class="pts">
+<li><strong>Model quality</strong> — what the model produces. Classification: accuracy, precision, recall, F1. LLMs: coherence, instruction adherence.</li>
+<li><strong>System quality</strong> — how well it runs in production. Latency, throughput, uptime, resource efficiency (CPU/GPU).</li>
+<li><strong>Business</strong> — real-world impact. Productivity gains, cost savings, customer experience, revenue growth.</li>
+</ul>
+<div class="note">A model can be correct (model metrics), fast and reliable (system metrics), and still miss the point if it doesn't move a business number. All three levels have to clear the bar together — optimizing one in isolation, like chasing accuracy at the cost of latency, can quietly sink the other two.</div>`,
+cto:[`Report all three levels to leadership, not just model accuracy — a board that only hears "94% accuracy" has no way to judge whether the project is actually working in production.`],
+dir:[`Assign an owner to each level — data science owns model metrics, engineering owns system metrics, the business sponsor owns business metrics — so no level quietly goes unmeasured.`]},
+
+{sec:"vision",c:"teal",eyebrow:"Goal Setting · 04",t:"q",q:`What's wrong with the goal <b>"improve the chatbot's response time"</b>? What's it missing?`},
+
+{sec:"vision",c:"teal",eyebrow:"Goal Setting · 04",t:"a",h:"SMART Goals Framework",body:`
+<div class="ascii">S  Specific    Reduce customer service response time using an
+                AI chatbot
+M  Measurable  40% reduction, from 5 min to 3 min
+A  Achievable  Based on industry benchmarks and current capacity
+R  Relevant    Aligns with improving UX and reducing cost
+T  Time-bound  Within 3 months, maintaining CSAT &gt; 85%</div>
+<div class="note"><b>Complete SMART goal:</b> "Reduce average customer service response time by 40% (from 5 minutes to 3 minutes) by deploying an AI-powered chatbot within 3 months, while maintaining customer satisfaction score above 85%."</div>
+<p>A SMART goal isn't five separate checkboxes — it's one sentence that survives all five tests at once. "Improve response time" fails on measurable, achievable, and time-bound.</p>`,
+dir:[`The guardrail metric (CSAT > 85%) is the part teams skip under deadline pressure — without it, a team can "hit" the speed goal by giving worse answers faster. Always pair the primary SMART metric with at least one guardrail.`]},
+
+{sec:"vision",c:"teal",eyebrow:"Vision &amp; Metrics · Recall",t:"r",h:"Quick recall: vision, feasibility &amp; metrics",qs:[
+{q:`Name the three vision questions and the four feasibility dimensions.`,a:`<b>Vision:</b> why this project (quantified value)? alignment with strategic goals? clear success metrics? <b>Feasibility:</b> technical, organizational readiness, data availability &amp; quality, cost/resource constraints.`},
+{q:`Recite the three levels of success metrics and the question each answers.`,a:`<b>Model</b> — "is it correct?" <b>System</b> — "does it run?" <b>Business</b> — "does it matter?" All three must clear the bar together.`},
+{q:`Why does "improve response time" fail as a goal, and what fixes it?`,a:`It fails Measurable, Achievable, and Time-bound. A complete SMART goal bundles a number, a deadline, and a <b>guardrail metric</b> (e.g. CSAT &gt; 85%) so success can't be redefined after the fact.`}]},
+
+/* ---------- PEOPLE + METHODOLOGY ---------- */
+{sec:"people",c:"gold",eyebrow:"People · 05",t:"q",q:`Which role bridges business and technical teams — and what happens to a project without one? Also: what's the difference between a Data Scientist and a Machine Learning Engineer, in one sentence?`},
+
+{sec:"people",c:"gold",eyebrow:"People · 05",t:"a",h:"Stakeholders &amp; Roles",body:`
+<p><strong>Category 1 — Business &amp; Product:</strong> AI Product Manager (bridges business/tech, sets success metrics — AI initiatives fail without this role) &middot; Industry Domain Expert (validates data relevance, guides feature engineering — without this, models mislead or harm) &middot; Project Manager (coordinates, tracks milestones, manages risk/budget).</p>
+<p><strong>Category 2 — Data Science &amp; AI:</strong> AI Researcher (PhD-level, novel algorithms) &middot; Data Scientist (analyzes data, builds models, turns raw data into business value) &middot; ML Engineer (builds scalable pipelines, deploys to production) &middot; Responsible AI &amp; Ethics Lead (audits bias, ensures fairness) &middot; UX Designer (designs interfaces, builds trust and usability).</p>
+<p><strong>Category 3 — Development &amp; Ops:</strong> Software Engineer (builds apps/APIs, connects models to UI) &middot; Solution Architect (technical blueprint, tools/platforms) &middot; MLOps Architect (CI/CD, versioning, drift detection — AI must run reliably in production).</p>
+<p><strong>Category 4 — Data Engineering:</strong> Data Engineer (ETL pipelines — no data means no AI) &middot; Data Architect (data infrastructure, schema, governance).</p>
+<div class="note">Each role's absence has a <b>named, predictable failure mode</b>: no AI PM &rarr; misaligned scope; no domain expert &rarr; misleading models; no MLOps &rarr; unreliable production; no data engineer &rarr; no fuel at all.</div>`,
+cto:[`Headcount planning should map to these four categories explicitly — a team of five data scientists and zero data engineers or MLOps staff is not a smaller version of a full team, it's a team that structurally cannot reach production.`],
+dir:[`When a role is missing (common in small teams), don't silently absorb its responsibilities into an adjacent role. Name the gap and either hire, consult, or explicitly de-scope what that missing role would have covered.`]},
+
+{sec:"people",c:"gold",eyebrow:"Methodology · 06",t:"q",q:`Why would a methodology built for construction (Waterfall) struggle specifically with AI projects? What does "iterative and incremental" actually buy you that "linear and sequential" doesn't?`},
+
+{sec:"people",c:"gold",eyebrow:"Methodology · 06",t:"a",h:"Waterfall vs Agile",body:`
+<div class="ascii">WATERFALL: linear &amp; sequential, testing happens last
+  Requirements -&gt; Design -&gt; Implement -&gt; Deployment -&gt; Testing
+  -&gt; Maintenance
+  rigid, minimal flexibility, stakeholders see result only at end
+  works poorly for AI: uncertainty, data-dependence, non-determinism
+
+AGILE: iterative &amp; incremental, working software every sprint
+  BACKLOG: Story A, B, C, D, E
+  Sprint (1-4 wks): Plan -&gt; Design -&gt; Develop -&gt; Test -&gt; Review</div>
+<div class="ascii">Aspect          Waterfall              Agile
+Approach        Linear &amp; sequential    Iterative &amp; incremental
+Flexibility     Inflexible             Highly flexible
+Customer inv.   Limited (start/end)    Continuous
+Testing         After development      Ongoing throughout
+Risk mgmt       Higher (issues late)   Lower (frequent reassess)
+Best for        Bridges, manufacturing AI/ML, startups, mobile/web</div>
+<div class="note">Waterfall assumes you can fully specify the outcome up front — true for a bridge, false for a model whose accuracy you can't know until you've trained it. Agile's core advantage isn't speed — it's that testing and feedback happen continuously, so a bad direction gets caught in week 2 instead of month 6.</div>`,
+cto:[`If a regulated business unit insists on Waterfall-style sign-offs, don't fight it head-on — layer Agile sprints inside Waterfall-style milestones (Hybrid) rather than picking one pure methodology.`],
+dir:[`Non-determinism is the real argument against Waterfall for AI — a model may never reach a "finished" state the way a bridge does. Architecture needs to support continuous redeployment, not a single go-live event.`]},
+
+{sec:"people",c:"gold",eyebrow:"Frameworks · 07",t:"q",q:`CRISP-DM comes from data mining, Agile comes from software. What problem does combining them into <b>"Hybrid"</b> actually solve? Which framework would you guess dominates in regulated industries like banking?`},
+
+{sec:"people",c:"gold",eyebrow:"Frameworks · 07",t:"a",h:"CRISP-DM, Agile &amp; Hybrid Frameworks",body:`
+<div class="ascii">CRISP-DM: 6 structured phases
+Business Understanding -&gt; Data Understanding -&gt; Data Prep
+-&gt; Modeling -&gt; Evaluation -&gt; Deployment
+✅ structured, heavy upfront planning ❌ slow feedback loops
+Best for fixed-scope projects.
+
+AGILE: successive sprints, plan-design-develop-test-review, repeated
+✅ fast feedback, rapid prototyping ❌ can lack documentation
+Best for research, startups, evolving projects.
+
+HYBRID: CRISP-DM phases + Agile sprints INSIDE each phase
+✅ governance + adaptability, structured milestones + flexibility
+Best for enterprise AI and regulated industries.</div>
+<div class="ascii">Aspect        CRISP-DM              Agile              Hybrid
+Structure     Linear &amp; phase-based  Iterative          Milestones+sprints
+Planning      Heavy upfront         Light + sprints    Roadmap + flexible
+Feedback      Slow                  Fast               Medium-fast
+Best for      Structured, fixed     Rapid prototyping  Enterprise, regulated
+Risk          Misalign real-time    Lacks structure    Combines both</div>
+<div class="note">CRISP-DM gives structure but slow feedback; Agile gives speed but weak documentation; Hybrid takes CRISP-DM's phase gates as the outer skeleton and runs Agile sprints inside — why it dominates in regulated, enterprise settings needing both an audit trail and the ability to course-correct.</div>`,
+cto:[`Choose the framework based on your compliance burden, not team preference — a bank's model risk management office will often mandate CRISP-DM-style phase gates regardless of engineering preference; Hybrid is usually the pragmatic answer.`],
+dir:[`In Hybrid, the milestone reviews are where you renegotiate scope with executives — treat them as real checkpoints, not rubber-stamp meetings, or you lose the one structural advantage Hybrid has over pure Agile.`]},
+
+{sec:"people",c:"gold",eyebrow:"Scale · 08",t:"q",q:`Agile works well for a single team. What specifically <b>breaks</b> when you have 10 Agile teams working on the same product?`},
+
+{sec:"people",c:"gold",eyebrow:"Scale · 08",t:"a",h:"SAFe — Scaled Agile Framework",body:`
+<p>SAFe is a structured methodology for scaling Agile, Lean, and DevOps practices across large enterprises.</p>
+<div class="ascii">FIG — AGILE RELEASE TRAIN (ART), 50-125 people, cross-functional
+Agile Team 1 · Agile Team 2 · Agile Team 3 · Systems Eng. · Software Eng.
+        -&gt; ART Backlog — Features &amp; Stories
+        -&gt; Continuous Iterations &amp; Delivery</div>
+<ul class="pts">
+<li><strong>Alignment</strong> — all teams work toward common strategic goals, breaking down silos.</li>
+<li><strong>Faster time to market</strong> — synchronized planning, regular delivery, quick feedback loops.</li>
+<li><strong>Increased productivity</strong> — streamlined processes, transparency.</li>
+<li><strong>Continuous improvement</strong> — enhanced collaboration, better risk management.</li>
+</ul>
+<div class="note"><b>Core values:</b> Transparency &middot; Alignment &middot; Relentless Improvement &middot; Respect for People. <b>Companies using SAFe:</b> Spotify, Intel, JP Morgan.</div>
+<p>SAFe doesn't replace Agile — it coordinates many Agile teams (an ART of 50-125 people) around one shared backlog and delivery cadence, so ten teams moving independently don't drift into ten incompatible directions.</p>`,
+cto:[`SAFe is overhead you shouldn't adopt until you actually have the coordination problem it solves — a single 8-person AI team doesn't need an ART; introducing SAFe early just adds ceremony without the scale that justifies it.`]},
+
+{sec:"people",c:"gold",eyebrow:"People &amp; Methodology · Recall",t:"r",h:"Quick recall: people, methodology &amp; scale",qs:[
+{q:`Name the four role categories and what happens when each is missing.`,a:`<b>Business/Product</b> — missing AI PM = misaligned scope. <b>Data Science/AI</b> — missing domain expert = misleading models. <b>Dev/Ops</b> — missing MLOps = unreliable production. <b>Data Engineering</b> — missing data engineer = no fuel at all.`},
+{q:`One-line contrast: why does Agile beat Waterfall for AI specifically?`,a:`AI is non-deterministic — a model may never reach a "finished" state the way a bridge does. Agile's continuous testing catches a bad direction in week 2 instead of month 6.`},
+{q:`Describe Hybrid in one sentence, and name its home turf.`,a:`CRISP-DM's phase gates as the outer skeleton, with Agile sprints running inside each phase — dominant in enterprise AI and regulated industries needing both audit trails and course-correction speed.`},
+{q:`What structural problem does SAFe solve, and when should you NOT adopt it?`,a:`It aligns many (10+) Agile teams around one shared backlog and cadence so they don't drift apart. Don't adopt it for a single small team — it's overhead without the coordination problem it's built to solve.`}]},
+
+/* ---------- SCALE (RISK) ---------- */
+{sec:"scale",c:"violet",eyebrow:"Risk · 09",t:"q",q:`Of five risk categories you're about to see, which do you think is <b>most often underestimated</b> at project kickoff?`},
+
+{sec:"scale",c:"violet",eyebrow:"Risk · 09",t:"a",h:"Risks &amp; Mitigation",body:`
+<ul class="pts">
+<li><strong>1. Data risks</strong> — poor quality, insufficient quantity, inherent biases, PII exposure. Mitigate: thorough assessment early, data governance, ethical sourcing, augmentation, anonymization.</li>
+<li><strong>2. Technical feasibility risks</strong> — accuracy targets missed, high compute cost, complex integration. Mitigate: PoC first, realistic expectations, explore multiple algorithms, plan for scalability day 1.</li>
+<li><strong>3. Stakeholder alignment risks</strong> — misunderstood problem, changing expectations, lack of buy-in. Mitigate: continuous communication, involve stakeholders early, clear success metrics, executive sponsorship.</li>
+<li><strong>4. Operational &amp; deployment risks</strong> — latency, scalability, model drift, security vulnerabilities. Mitigate: MLOps early, design for production day 1, plan monitoring/retraining, regular security audits.</li>
+<li><strong>5. Ethical &amp; compliance risks</strong> — bias, lack of transparency, regulatory non-compliance. Mitigate: ethical guidelines, bias audits, explainability, legal/compliance consultation.</li>
+</ul>
+<div class="note">Most mitigations share a pattern: do the hard, unglamorous work <b>early</b> (governance, PoCs, stakeholder involvement, MLOps, audits) rather than discovering the risk after launch.</div>`,
+cto:[`Stakeholder alignment risk is the one that doesn't show up in a technical risk register but sinks the most projects — track it with the same rigor (owner, mitigation plan, review cadence) you'd give a technical risk.`],
+dir:[`"Design for production from day 1" is the single highest-leverage line in this list — retrofitting monitoring, drift detection, and security onto a notebook-only demo is far more expensive than building it in from the start.`]},
+
+{sec:"scale",c:"violet",eyebrow:"Success Factors · 10",t:"q",q:`Of Technology, People, and Alignment — which one, if missing, is <b>hardest to fix mid-project</b>?`},
+
+{sec:"scale",c:"violet",eyebrow:"Success Factors · 10",t:"a",h:"Ingredients for Success",body:`
+<ul class="pts">
+<li><strong>Technology</strong> — build it right: data quality, MLOps pipeline, scalable infrastructure, tool selection.</li>
+<li><strong>People</strong> — staff it right: skilled team, cross-functional, domain experts, product managers.</li>
+<li><strong>Alignment</strong> — point it right: clear vision, executive buy-in, stakeholder alignment, shared goals.</li>
+</ul>
+<div class="note">✅ Clear business vision &amp; value alignment &middot; ✅ Data quality, availability &amp; governance &middot; ✅ Realistic expectations &amp; multi-disciplinary team &middot; ✅ Effective stakeholder management &middot; ✅ Robust MLOps &amp; deployment strategy &middot; ✅ Ethical considerations &amp; responsible AI</div>
+<p>Success rests on three legs — the checklist underneath is really just those three legs made concrete and checkable at each project review.</p>`,
+dir:[`Alignment is the leg hardest to repair mid-flight — a technology gap can be patched with a vendor or a sprint, a people gap with a hire, but a stakeholder who was never truly bought in tends to surface as friction right before launch.`]},
+
+{sec:"scale",c:"violet",eyebrow:"Risk &amp; Success · Recall",t:"r",h:"Quick recall: risk &amp; success factors",qs:[
+{q:`Name the five risk categories.`,a:`Data risks, technical feasibility risks, stakeholder alignment risks, operational &amp; deployment risks, ethical &amp; compliance risks.`},
+{q:`What's the common pattern across every mitigation strategy?`,a:`Do the hard, unglamorous work <b>early</b> — governance, PoCs, stakeholder involvement, MLOps, audits — rather than discovering the risk after launch.`},
+{q:`Which of the three success legs (Technology/People/Alignment) is hardest to fix mid-project, and why?`,a:`<b>Alignment.</b> A tech gap gets patched with a vendor or sprint; a people gap with a hire; but a stakeholder who was never truly bought in surfaces as friction right before launch, when it's most costly.`}]},
+
+/* ---------- MONEY (BUDGET) ---------- */
+{sec:"money",c:"rose",eyebrow:"Budgeting · 11",t:"q",q:`For a typical mid-sized AI project, which cost category do you think <b>dominates</b> — infrastructure, talent, or data? And: training a frontier model is a one-time cost. What's the ongoing cost called, and why might it matter more over time?`},
+
+{sec:"money",c:"rose",eyebrow:"Budgeting · 11",t:"a",h:"Budgeting a Mid-Sized AI Project",body:`
+<div class="ascii">Category                    Typical range
+Infrastructure &amp; compute    $4K – $30K (initial setup)
+Human resources             $140K – $500K+ per role/yr
+Software &amp; tools            $500-$7K fixed + $150-$1.2K/mo
+Data acquisition &amp; mgmt     $1.5K-$45K fixed + $600-$4.5K/mo
+Operations &amp; maintenance    $600 – $4.8K/mo
+Hidden / unexpected         $3K – $20K+ (legal/ethics, compliance,
+                             upskilling)
+TOTAL: $15,000 – $450,000+ for a medium-sized project</div>
+<div class="note"><b>Human resources dominates</b> a typical mid-sized project — salaries at $140K-$500K+/yr per role dwarf the infrastructure line, which is why "hidden costs" (legal, compliance, upskilling) get squeezed out under budget pressure.</div>`,
+},
+
+{sec:"money",c:"rose",eyebrow:"Budgeting · 11b",t:"q",q:`Sam Altman said training GPT-4 cost roughly <b>$100M</b>. Guess the split: how much went to raw compute vs staff vs energy?`},
+
+{sec:"money",c:"rose",eyebrow:"Case Study · 11b",t:"a",h:"Budgeting &amp; the GPT-4 Case Study",body:`
+<div class="ascii">FIG — WHERE THE ~$100M WENT (approximate breakdown)
+  Compute &amp; training     $78M  (also cited: $40M GPU hardware)
+  Staff / talent          30-40%
+  Interconnect/servers    15-22%
+  Energy                  9-13%</div>
+<div class="ascii">INFERENCE (running ChatGPT) costs roughly
+  $700,000 / DAY for OpenAI
+  — an ongoing operational cost distinct from the
+    one-time training cost.</div>
+<div class="note">Budgeting an AI project means pricing <b>six categories</b>, not just compute — dwarfed entirely by frontier-model training (~$100M) and its ongoing inference bill (~$700K/day). Training is a one-time cost; inference is forever, and at scale it can <b>exceed the training cost within months</b>.</div>`,
+cto:[`Budget inference as an operating expense line, not a footnote to the training capex — for any product with real usage, ongoing inference cost typically dwarfs the one-time training or fine-tuning cost within the first year.`],
+dir:[`Reserve 10-15% of budget explicitly for the "hidden costs" category — projects that don't plan for it usually eat that cost out of the operations budget instead, which then looks like a maintenance overrun.`]},
+
+{sec:"money",c:"rose",eyebrow:"Budgeting · Recall",t:"r",h:"Quick recall: budgeting",qs:[
+{q:`What's the full 6-category budget range for a mid-sized AI project?`,a:`$15,000 – $450,000+, spanning infrastructure/compute, human resources, software/tools, data acquisition, operations/maintenance, and hidden/unexpected costs.`},
+{q:`Roughly what fraction of GPT-4's ~$100M training cost went to staff/talent?`,a:`30-40% — comparable in magnitude to the compute/hardware spend.`},
+{q:`Training is one-time. What's the forever cost called, and how big is it for OpenAI?`,a:`<b>Inference</b> — roughly <b>$700,000/day</b> to run ChatGPT. At scale it can exceed the one-time training cost within months.`}]},
+
+/* ---------- APPLIED + FINAL RECALL ---------- */
+{sec:"apply",c:"amber",eyebrow:"Applied Practice · 12",t:"q",q:`A team of 2 data analysts + 1 engineer wants to ship a fraud-detection MVP in <b>6 months</b>. Feasible or not — what's your gut call before reading the case?`},
+
+{sec:"apply",c:"amber",eyebrow:"Scenario A · 12",t:"a",h:"UnitedHealth Group — fraud detection AI",body:`
+<p><strong>Background:</strong> 10M+ claims/year, focus on dental &amp; outpatient claims fraud, team of 2 data analysts + 1 software engineer plus an AI consultant, stack of BigQuery + Google Cloud AutoML + Vertex AI, 6-month timeline, structured data.</p>
+<div class="ascii">Dimension               Verdict    Why
+Technical feasibility   Yes OK     Cloud+BigQuery in use, AutoML
+                                    needs no custom code
+Organizational readiness Partial   Team small; missing PM, data
+                                    eng, domain expert, ML eng —
+                                    consultant fills the gap
+Data availability       Yes OK     Historical, structured, labeled,
+                                    clean, in modern cloud system
+Resources                Yes OK    Existing infra, AutoML reduces
+                                    dev cost, consultant fills gaps</div>
+<div class="note">✅ In scope: dental/outpatient claims, structured tabular data only, AutoML (no custom code), flag for human review, weekly batch, KPIs (FP&lt;10%, recall&gt;90%). ❌ Out of scope: surgical/complex claims, unstructured data, autonomous approvals, real-time scoring, custom models, external data.</div>`,
+cto:[`UnitedHealth's "partial" organizational readiness is the realistic case, not the exception — most teams start understaffed against the full role list. The AI consultant is doing double duty covering multiple missing roles; know exactly which ones before you rely on that arrangement long-term.`]},
+
+{sec:"apply",c:"amber",eyebrow:"Scenario B · 12",t:"a",h:"Bank loan default prediction — SMART goals across 3 levels",body:`
+<div class="ascii">MODEL LEVEL
+  Accuracy: >=85% predicting missed payments (test set, 3 mo)
+  False positives: <10% during 3-mo pilot
+  Recall: >=90% of truly risky customers by end of Q2
+SYSTEM LEVEL
+  Response time: <2s for 95% of requests, at launch
+  Uptime: 99.5% during business hours, first 60 days
+  Scalability: 1,000 predictions/hour without degradation, month 1
+BUSINESS LEVEL
+  Missed payments: -12% within 3 months
+  Outreach: +25% early calls in month 1
+  Cost savings: -10% collection costs within 6 months</div>
+<div class="note">Notice the goals are <b>phased across the timeline</b> (Q1 accuracy, month 1 scalability, month 6 cost savings) rather than all due at once — this keeps every review checkpoint meaningful instead of one big pass/fail at the end.</div>`},
+
+{sec:"apply",c:"amber",eyebrow:"Scenario C · 12",t:"a",h:"Customer support chatbot — role assignment",body:`
+<div class="ascii">Task                                    Correct role
+Design overall AI vision                AI Product Manager
+Design &amp; train the NLP model            Data Scientist / AI Researcher
+Validate complaint categories           Industry Domain Expert
+Set up cloud infrastructure             Solution Architect
+Monitor accuracy &amp; response time        MLOps Architect
+Ensure fairness, ethics, bias mit.      Responsible AI &amp; Ethics Lead
+Connect chatbot to CRM system           Software Engineer
+Design user interaction                 UX Designer
+Coordinate timeline, sprints, risk      Project Manager</div>
+<div class="note">All three scenarios converge the earlier frameworks: feasibility + MVP scoping (UnitedHealth), SMART goals across all three metric levels (bank loan), and the stakeholder role map (chatbot) — this is "Step 1 done properly" applied to real, resource-constrained situations.</div>
+<div class="note"><b>🏗️ The one line to remember:</b> "The model is not the product — the solution is." Success comes from proper planning, the right people, and clear alignment — not from a single accuracy number.</div>`},
+
+{sec:"apply",c:"amber",eyebrow:"Deep Recall · Part A",t:"r",h:"Active Recall — deep thought questions (1/2)",qs:[
+{q:`A 99%-accurate model responds in 5 seconds; a 95%-accurate model responds in 100ms. Which is better?`,a:`Depends entirely on the use case's latency budget and error tolerance: a fraud-review queue can tolerate 5 seconds (a human reviews anyway); a live chat cannot — users abandon before 5s. Set the system-level SLA as a hard constraint first, then optimize accuracy within that budget.`},
+{q:`UnitedHealth's team has only 2 analysts + 1 engineer. Is the 6-month MVP feasible?`,a:`Yes — specifically because scope was deliberately narrowed to match capacity (structured data only, AutoML instead of custom modeling, human-in-the-loop instead of full automation), plus a consultant supplementing the missing roles. Without that scope discipline, a broader real-time custom system would not be feasible.`},
+{q:`Which methodology would you recommend for a highly regulated industry like healthcare or finance, and why?`,a:`Hybrid is usually the right default — CRISP-DM-style phase gates give compliance teams the audit trail they require, while Agile sprints nested inside let the team course-correct without waiting for the next full phase gate.`},
+{q:`Unlimited budget but limited talent — build or buy AI solutions?`,a:`Buy (pre-trained models, AutoML, vendor platforms) is usually pragmatic regardless of budget, because the bottleneck isn't money — it's the people needed to build, validate, and operate a custom system safely. Trade-off: bought solutions are faster and lower-risk but rarely defensible competitive advantage, and can create vendor lock-in.`}]},
+
+{sec:"apply",c:"amber",eyebrow:"Deep Recall · Part B",t:"r",h:"Active Recall — deep thought questions (2/2)",qs:[
+{q:`How do you measure ROI for an AI project that saves time but doesn't directly generate revenue?`,a:`Convert time savings into a cost-avoidance figure — hours saved &times; fully-loaded labor cost. Be honest about whether the saved time gets redeployed to value-generating work or just becomes slack; only the former is real business value.`},
+{q:`When defining scope, how do you decide MVP vs. future phases when stakeholders want it all?`,a:`Anchor in the feasibility assessment and the SMART goal's timeline, not stakeholder preference: anything undeliverable inside the agreed timeline/budget with acceptable risk goes into a future phase, written down and signed off — as in the self-driving car MVP (highway-only, daylight, good weather).`},
+{q:`In SAFe, 50-125 people work in an Agile Release Train. How do you ensure alignment across all teams?`,a:`Through a shared ART backlog and synchronized planning cadence, not top-down control — every team pulls from the same prioritized feature list and delivers on the same iteration cadence. The core values (transparency, alignment, relentless improvement, respect for people) are the cultural glue.`},
+{q:`OpenAI spends ~$700,000/day on inference. How would you optimize this while maintaining UX?`,a:`Model-side levers: distillation/smaller models for simple queries, quantization, caching common responses. Routing-side: a "model cascade" — cheap model handles easy requests, expensive model only handles genuinely hard ones. Watch that aggressive optimization doesn't silently degrade quality; track system + model quality metrics alongside cost savings.`}]}
+];
+
+let i=0;
+const stage=document.getElementById('stage'),dots=document.getElementById('dots'),
+tabs=document.getElementById('tabs'),counter=document.getElementById('counter'),
+prevBtn=document.getElementById('prevBtn'),nextBtn=document.getElementById('nextBtn');
+SECTIONS.forEach(s=>{const b=document.createElement('button');b.className='tab';b.dataset.c=s.c;b.dataset.sec=s.id;b.textContent=s.label;b.onclick=()=>go(S.findIndex(x=>x.sec===s.id));tabs.appendChild(b);});
+S.forEach((sl,k)=>{const d=document.createElement('span');d.className='dot'+(sl.t==='q'?' q':'');d.tabIndex=0;d.setAttribute('role','button');d.setAttribute('aria-label','Slide '+(k+1));d.onclick=()=>go(k);d.onkeydown=e=>{if(e.key==='Enter')go(k)};dots.appendChild(d);});
+function lens(cto,dir){
+  let out='';
+  if(cto&&cto.length) out+='<details class="lens"><summary>CTO LENS</summary><div class="body"><ul class="pts">'+cto.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+  if(dir&&dir.length) out+='<details class="lens dir"><summary>DIRECTOR LENS</summary><div class="body"><ul class="pts">'+dir.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+  return out;
+}
+function go(k){
+  i=Math.max(0,Math.min(S.length-1,k));
+  const s=S[i];stage.innerHTML='';
+  const el=document.createElement('div');el.className='slide';
+  try{
+    if(s.t==='q'){
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div>'
+        +'<div class="qcard"><div class="qlabel">Think first &middot; predict before you peek</div>'
+        +'<div class="qtext">'+s.q+'</div>'
+        +'<div class="qsub">Form your answer in your head. Then press Next to compare.</div></div>';
+    } else if(s.t==='r'){
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'
+        +'<p>Answer from memory first. Tap a question to reveal the answer.</p>'
+        +s.qs.map(x=>'<details class="recall-item"><summary>'+x.q+'</summary><div class="ans">'+x.a+'</div></details>').join('')
+        +'<div class="recall-hint">Struggled on any? Jump back with the tabs above, then return.</div>';
+    } else {
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'+s.body+(((s.cto&&s.cto.length)||(s.dir&&s.dir.length))?lens(s.cto,s.dir):'');
+    }
+  }catch(err){
+    el.innerHTML='<div class="eyebrow rose">Render error</div><h2>Slide '+(i+1)+' failed to render</h2><p>'+String(err&&err.message||err)+'</p>';
+  }
+  stage.appendChild(el);
+  counter.textContent=(i+1)+' / '+S.length;
+  document.querySelectorAll('.dot').forEach((d,k2)=>d.classList.toggle('on',k2===i));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.sec===s.sec));
+  prevBtn.disabled=(i===0);
+  nextBtn.textContent=(i===S.length-1)?'Done \u2713':'Next \u2192';
+  nextBtn.disabled=(i===S.length-1);
+  document.querySelector('main').scrollTop=0;window.scrollTo(0,0);
+}
+prevBtn.onclick=()=>go(i-1);nextBtn.onclick=()=>go(i+1);
+document.addEventListener('keydown',e=>{if(e.target.closest('details'))return;if(e.key==='ArrowRight')go(i+1);if(e.key==='ArrowLeft')go(i-1);});
+go(0);
+</script>
+</body>
+</html>

@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Governance — Architects Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0d14;
+    --bg-panel:#0f1420;
+    --bg-panel-2:#121828;
+    --grid-line:rgba(94,177,255,0.07);
+    --grid-line-strong:rgba(94,177,255,0.14);
+    --border:#1c2333;
+    --border-soft:#171d2c;
+    --text:#e7ecf5;
+    --text-dim:#93a0b8;
+    --text-faint:#5c6780;
+    --blue:#5eb1ff;
+    --blue-dim:#2b6ea8;
+    --amber:#eab04a;
+    --amber-dim:#8a672a;
+    --green:#5fcf9a;
+    --green-dim:#2f6d51;
+    --red:#f0665c;
+    --red-dim:#8a3630;
+    --purple:#b18fef;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', sans-serif;
+    --disp: 'Space Grotesk', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:
+      linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0/48px 48px,
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0/48px 48px,
+      var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.65;
+    padding-bottom:120px;
+  }
+  a{color:var(--blue);}
+
+  /* ===== HERO ===== */
+  .hero{
+    position:relative;
+    padding:64px 24px 40px;
+    border-bottom:1px solid var(--border);
+    overflow:hidden;
+  }
+  .hero::before{
+    content:"";
+    position:absolute; inset:0;
+    background: radial-gradient(600px 300px at 15% 0%, rgba(94,177,255,0.10), transparent 60%),
+                radial-gradient(500px 260px at 85% 20%, rgba(234,176,74,0.07), transparent 60%);
+    pointer-events:none;
+  }
+  .hero-inner{max-width:980px; margin:0 auto; position:relative;}
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:var(--mono); font-size:12px; letter-spacing:.14em;
+    color:var(--amber); text-transform:uppercase;
+    border:1px solid var(--amber-dim); background:rgba(234,176,74,0.06);
+    padding:5px 12px; border-radius:3px;
+  }
+  .eyebrow::before{content:"◆"; font-size:10px;}
+  h1.title{
+    font-family:var(--disp); font-weight:700;
+    font-size:clamp(30px,5vw,50px);
+    margin:18px 0 8px; letter-spacing:-0.02em;
+    background:linear-gradient(120deg,#fff,#a9c7ef 60%,var(--blue));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .subtitle{color:var(--text-dim); font-size:16px; max-width:620px;}
+  .meta-row{
+    display:flex; flex-wrap:wrap; gap:10px; margin-top:22px;
+    font-family:var(--mono); font-size:12px; color:var(--text-faint);
+  }
+  .meta-chip{
+    border:1px solid var(--border); padding:5px 10px; border-radius:3px;
+    background:var(--bg-panel);
+  }
+  .meta-chip b{color:var(--text-dim); font-weight:500;}
+
+  /* ===== CONTROL BAR ===== */
+  .controlbar{
+    position:sticky; top:0; z-index:50;
+    background:rgba(10,13,20,0.92); backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:14px;
+    padding:10px 24px; overflow-x:auto;
+  }
+  .cb-title{
+    font-family:var(--mono); font-size:11px; color:var(--text-faint);
+    text-transform:uppercase; letter-spacing:.1em; white-space:nowrap;
+  }
+  .cb-btn{
+    font-family:var(--mono); font-size:11.5px; color:var(--text);
+    background:var(--bg-panel-2); border:1px solid var(--border);
+    padding:6px 12px; border-radius:3px; cursor:pointer; white-space:nowrap;
+    transition:.15s;
+  }
+  .cb-btn:hover{border-color:var(--blue-dim); color:var(--blue);}
+  .cb-nav{display:flex; gap:6px; margin-left:auto;}
+  .cb-nav a{
+    font-family:var(--mono); font-size:11px; color:var(--text-faint);
+    text-decoration:none; border:1px solid transparent; padding:5px 8px; border-radius:3px;
+  }
+  .cb-nav a:hover{color:var(--blue); border-color:var(--border);}
+
+  /* ===== MAIN ===== */
+  main{max-width:980px; margin:0 auto; padding:40px 24px;}
+
+  section.chapter{
+    margin-bottom:26px;
+    border:1px solid var(--border);
+    border-radius:8px;
+    background:linear-gradient(180deg, var(--bg-panel), rgba(15,20,32,0.4));
+    scroll-margin-top:70px;
+    overflow:hidden;
+  }
+  .chapter-head{
+    display:flex; align-items:flex-start; gap:16px;
+    padding:22px 24px;
+    border-bottom:1px solid var(--border-soft);
+  }
+  .chapter-num{
+    font-family:var(--mono); font-size:13px; color:var(--bg);
+    background:var(--blue); min-width:34px; height:34px;
+    border-radius:6px; display:flex; align-items:center; justify-content:center;
+    font-weight:700; flex-shrink:0;
+  }
+  .chapter-titlewrap h2{
+    font-family:var(--disp); font-size:22px; margin:0 0 4px; letter-spacing:-0.01em;
+  }
+  .chapter-titlewrap .tag{
+    font-family:var(--mono); font-size:11px; color:var(--text-faint);
+    text-transform:uppercase; letter-spacing:.08em;
+  }
+  .chapter-body{padding:0 24px 24px;}
+
+  /* Recall question - click to reveal */
+  .recall{
+    margin:18px 0; border:1px dashed var(--blue-dim); border-radius:6px;
+    background:rgba(94,177,255,0.04); overflow:hidden;
+  }
+  .recall > summary{
+    list-style:none; cursor:pointer; padding:14px 16px;
+    display:flex; align-items:center; gap:10px;
+    font-family:var(--mono); font-size:12.5px; color:var(--blue);
+  }
+  .recall > summary::-webkit-details-marker{display:none;}
+  .recall > summary::before{content:"▸"; transition:.2s; display:inline-block; color:var(--blue);}
+  .recall[open] > summary::before{transform:rotate(90deg);}
+  .recall-label{text-transform:uppercase; letter-spacing:.1em; color:var(--text-faint); font-size:10.5px;}
+  .recall-q{color:var(--text);}
+  .recall-answer{
+    padding:0 16px 16px 40px; color:var(--text-dim); font-size:14.5px;
+    border-top:1px solid rgba(94,177,255,0.12); margin-top:2px; padding-top:14px;
+  }
+
+  h3.sub{
+    font-family:var(--disp); font-size:16.5px; color:var(--text);
+    margin:26px 0 10px; padding-left:12px; border-left:3px solid var(--amber);
+  }
+  p{color:var(--text-dim); font-size:15px; margin:10px 0;}
+  strong{color:var(--text); font-weight:600;}
+  ul, ol{color:var(--text-dim); font-size:15px; padding-left:22px;}
+  li{margin:6px 0;}
+  li::marker{color:var(--blue);}
+  code.inline{
+    font-family:var(--mono); font-size:12.5px; background:var(--bg-panel-2);
+    border:1px solid var(--border); padding:1px 6px; border-radius:3px; color:var(--amber);
+  }
+
+  /* Diagram frame */
+  .blueprint{
+    margin:18px 0; border:1px solid var(--border); border-radius:6px;
+    background:#0b0f1a;
+    background-image:linear-gradient(var(--grid-line-strong) 1px, transparent 1px),
+                      linear-gradient(90deg, var(--grid-line-strong) 1px, transparent 1px);
+    background-size:22px 22px;
+    position:relative; overflow-x:auto;
+  }
+  .blueprint::before{
+    content:"FIG";
+    position:absolute; top:8px; right:12px;
+    font-family:var(--mono); font-size:10px; color:var(--text-faint);
+    letter-spacing:.15em;
+  }
+  .blueprint pre{
+    margin:0; padding:20px 18px 16px;
+    font-family:var(--mono); font-size:12px; line-height:1.5;
+    color:var(--blue); white-space:pre; overflow-x:auto;
+  }
+  .blueprint .cap{
+    font-family:var(--mono); font-size:11px; color:var(--text-faint);
+    border-top:1px solid var(--border); padding:8px 16px; background:rgba(0,0,0,0.2);
+  }
+
+  /* Table */
+  .tablewrap{overflow-x:auto; margin:16px 0; border:1px solid var(--border); border-radius:6px;}
+  table{width:100%; border-collapse:collapse; font-size:13.5px; min-width:520px;}
+  thead th{
+    font-family:var(--mono); text-transform:uppercase; letter-spacing:.06em;
+    font-size:11px; color:var(--amber); text-align:left;
+    background:var(--bg-panel-2); padding:10px 14px; border-bottom:1px solid var(--border);
+  }
+  tbody td{padding:10px 14px; border-bottom:1px solid var(--border-soft); color:var(--text-dim);}
+  tbody tr:hover{background:rgba(94,177,255,0.03);}
+  tbody tr:last-child td{border-bottom:none;}
+
+  /* Architect's Lens - CTO/Director perspectives */
+  .lens{
+    margin:22px 0 6px; border:1px solid var(--amber-dim); border-radius:6px;
+    background:linear-gradient(180deg, rgba(234,176,74,0.06), transparent);
+    overflow:hidden;
+  }
+  .lens > summary{
+    list-style:none; cursor:pointer; display:flex; align-items:center; gap:10px;
+    padding:12px 16px; font-family:var(--mono); font-size:12px; color:var(--amber);
+    text-transform:uppercase; letter-spacing:.08em;
+  }
+  .lens > summary::-webkit-details-marker{display:none;}
+  .lens > summary::before{content:"⌂"; font-size:14px;}
+  .lens-arrow{margin-left:auto; transition:.2s; color:var(--text-faint);}
+  .lens[open] .lens-arrow{transform:rotate(180deg);}
+  .lens-body{padding:2px 16px 16px;}
+  .voice{
+    display:flex; gap:12px; padding:12px 0; border-top:1px solid rgba(234,176,74,0.12);
+  }
+  .voice:first-child{border-top:none;}
+  .voice-badge{
+    flex-shrink:0; width:74px; text-align:center;
+    font-family:var(--mono); font-size:10px; letter-spacing:.06em;
+    padding:4px 0; border-radius:3px; height:fit-content; text-transform:uppercase;
+  }
+  .voice.cto .voice-badge{background:rgba(94,177,255,0.12); color:var(--blue); border:1px solid var(--blue-dim);}
+  .voice.director .voice-badge{background:rgba(95,207,154,0.12); color:var(--green); border:1px solid var(--green-dim);}
+  .voice p{margin:0; font-size:14px; font-style:italic; color:var(--text-dim);}
+
+  /* Section-level collapsible wrapper toggle already via <details> on chapter */
+  details.chapter > summary{list-style:none; cursor:pointer;}
+  details.chapter > summary::-webkit-details-marker{display:none;}
+  .chevron{
+    margin-left:auto; font-family:var(--mono); font-size:16px; color:var(--text-faint);
+    transition:transform .2s; flex-shrink:0; align-self:center;
+  }
+  details.chapter[open] .chevron{transform:rotate(90deg);}
+
+  /* Nested mini-collapse for lists inside sections (used for pillar/factor breakdowns) */
+  .minifold{border:1px solid var(--border); border-radius:5px; margin:10px 0; background:var(--bg-panel-2);}
+  .minifold > summary{
+    list-style:none; cursor:pointer; padding:10px 14px; font-family:var(--mono);
+    font-size:12.5px; color:var(--text); display:flex; gap:8px; align-items:center;
+  }
+  .minifold > summary::-webkit-details-marker{display:none;}
+  .minifold > summary::before{content:"+"; color:var(--blue); font-weight:700; width:14px;}
+  .minifold[open] > summary::before{content:"–";}
+  .minifold-body{padding:0 14px 14px 36px;}
+  .minifold-body p, .minifold-body ul{margin:6px 0;}
+
+  /* Risk pyramid special */
+  .pyramid{display:flex; flex-direction:column; align-items:center; gap:0; padding:26px 16px;}
+  .pyramid-tier{
+    font-family:var(--mono); font-size:11.5px; text-align:center; padding:12px 20px;
+    margin:2px 0; border-radius:3px; color:#0a0d14; font-weight:700;
+    letter-spacing:.03em; width:100%; max-width:640px;
+  }
+  .pyramid-tier small{display:block; font-weight:500; font-size:10px; margin-top:3px; opacity:.85;}
+  .t1{background:var(--red); max-width:220px;}
+  .t2{background:var(--amber); max-width:360px;}
+  .t3{background:var(--blue); max-width:500px;}
+  .t4{background:var(--green); max-width:640px;}
+
+  /* Footer / progress */
+  .progress-note{
+    max-width:980px; margin:0 auto; padding:0 24px;
+    font-family:var(--mono); font-size:11.5px; color:var(--text-faint);
+    text-align:center; margin-top:10px;
+  }
+  footer{
+    max-width:980px; margin:60px auto 0; padding:24px; text-align:center;
+    border-top:1px solid var(--border); color:var(--text-faint); font-family:var(--mono); font-size:11.5px;
+  }
+
+  ::-webkit-scrollbar{height:8px; width:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--border); border-radius:4px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  /* notes width expansion - matches learning plan box */
+  .wrap,.container,main,header.hero,header.masthead,nav.toc,section.block,footer{max-width:100%!important;padding-left:24px!important;padding-right:24px!important;}
+</style>
+</head>
+<body>
+<div style="position:sticky;top:0;z-index:9999;background:#0a0d14;border-bottom:1px solid #1c2333;padding:10px 20px;font-family:-apple-system,'Segoe UI',sans-serif;"><a href="https://ai.shivawithin.in" style="color:#5eb1ff;text-decoration:none;font-size:13px;font-weight:600;letter-spacing:.04em;">← Back to Home</a></div>
+<!-- LEARNING PLAN -->
+<div style="margin:24px;background:#0f1520;border:1px solid #1e2836;border-left:4px solid #e0a030;border-radius:8px;padding:24px 28px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;">
+  <div style="color:#e0a030;font-size:13px;font-weight:700;letter-spacing:.08em;margin-bottom:14px;">&#9670; LEARNING PLAN — 2.5 HOURS DAILY</div>
+  <div style="overflow-x:auto;">
+  <table style="width:100%;border-collapse:collapse;font-size:13px;color:#c8d3e0;margin-bottom:18px;white-space:nowrap;">
+    <thead><tr style="color:#7c8ba0;border-bottom:1px solid #1e2836;">
+      <th style="padding:6px 10px;text-align:left;width:48px;">Step</th>
+      <th style="padding:6px 10px;text-align:left;">Activity</th>
+      <th style="padding:6px 10px;text-align:left;">Outcome</th>
+    </tr></thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">1</td><td style="padding:7px 10px;"><b>Complete the Udemy Course</b> — watch videos, understand concepts, don't rush</td><td style="padding:7px 10px;color:#5fbf7f;">Build strong fundamentals</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">2</td><td style="padding:7px 10px;"><b>Practice Everything</b> — complete exercises, assignments, and source code</td><td style="padding:7px 10px;color:#5fbf7f;">Gain hands-on experience</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">3</td><td style="padding:7px 10px;"><b>Revise with these notes</b></td><td style="padding:7px 10px;color:#5fbf7f;">Reinforce concepts and fill knowledge gaps</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">4</td><td style="padding:7px 10px;"><b>Earn the Udemy Certificate</b></td><td style="padding:7px 10px;color:#5fbf7f;">Ensure the course is completed end-to-end</td></tr>
+      <tr><td style="padding:7px 10px;color:#e0a030;font-weight:700;">5</td><td style="padding:7px 10px;"><b>Practise real world tough scenario</b> — scenario-based questions &amp; interview problems</td><td style="padding:7px 10px;color:#5fbf7f;">Develop practical and interview-ready skills</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">1.5 HRS</div>
+      <div style="font-size:12px;color:#c8d3e0;">Udemy Videos + Exercises + Source Code</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Notes Revision</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Scenario-Based Questions &amp; Practical Problems</div>
+    </div>
+  </div>
+  <div style="color:#f0f4f8;font-size:12px;font-weight:600;letter-spacing:.04em;">GOAL: <span style="color:#e0a030;">Learn &#8594; Practice &#8594; Revise &#8594; Complete &#8594; Apply</span></div>
+</div>
+<!-- END LEARNING PLAN -->
+
+<div class="hero">
+  <div class="hero-inner">
+    <span class="eyebrow">Architects Lab · Governance Module</span>
+    <h1 class="title">Organizational Structure &amp; Stakeholders</h1>
+    <p class="subtitle">The human and structural side of AI governance: the core quartet of roles, how it plugs into existing data/IT governance, the extended stakeholder map, decision flows, and the cross-team reviews that make it a living practice.</p>
+    <div class="meta-row">
+      <span class="meta-chip"><b>Source:</b> Ultimate AI Governance Master Notes — Organizational Structure &amp; Stakeholders</span>
+      <span class="meta-chip"><b>Sections:</b> 5</span>
+      <span class="meta-chip"><b>Format:</b> Recall → Structure → Diagram → Lens</span>
+      <span class="meta-chip"><b>Context:</b> Wealth/Demat platform, regulated fintech</span>
+    </div>
+  </div>
+</div>
+
+<div class="controlbar">
+  <span class="cb-title">Controls</span>
+  <button class="cb-btn" id="expandAll">▾ Expand all</button>
+  <button class="cb-btn" id="collapseAll">▸ Collapse all</button>
+  <div class="cb-nav">
+    <a href="#s1">01</a><a href="#s2">02</a><a href="#s3">03</a><a href="#s4">04</a><a href="#s5">05</a>
+  </div>
+</div>
+
+<main>
+
+<!-- ============ SECTION 1 ============ -->
+<details class="chapter" id="s1" open>
+  <summary class="chapter-head">
+    <span class="chapter-num">01</span>
+    <div class="chapter-titlewrap">
+      <h2>Key Roles in AI Governance: The Core Quartet</h2>
+      <span class="tag">Organization · Core Roles</span>
+    </div>
+    <span class="chevron">›</span>
+  </summary>
+  <div class="chapter-body">
+
+    <details class="recall">
+      <summary><span class="recall-label">Recall</span><span class="recall-q">Why is a purely technical team insufficient for governing AI, and which four roles form the irreducible core of any effective AI governance structure?</span></summary>
+      <div class="recall-answer">AI carries ethical, legal, business, and reputational dimensions no single engineer can address alone. The irreducible core is four roles in continuous dialogue: <strong>AI Officer, Technology/MLOps, Business/Product, and Legal &amp; Compliance</strong> — the "Interlock Principle" says if any one is missing from a governance process, that process is incomplete.</div>
+    </details>
+
+    <h3 class="sub">The Fallacy of the "Tech-Only" AI Project</h3>
+    <p>Treating AI as just an engineering initiative is the root cause of most governance failures. AI systems carry ethical, legal, business, and reputational dimensions that no single data scientist or engineer can fully address. Governance requires a <strong>cross-functional core</strong> of at least four profiles, each bringing a distinct mandate and lens.</p>
+
+    <h3 class="sub">The Four Essential Roles</h3>
+    <details class="minifold">
+      <summary>1. AI Officer (or AI Governance Lead)</summary>
+      <div class="minifold-body">
+        <ul>
+          <li>Acts as the corporate steward of AI governance</li>
+          <li>Defines and maintains AI policies, ethical principles, and risk appetites</li>
+          <li>Bridges the technical, legal, and business domains — translating regulation into engineering requirements and technical risks into business language</li>
+          <li>Oversees the portfolio of AI projects, ensuring alignment with organisational values and regulatory obligations</li>
+        </ul>
+      </div>
+    </details>
+    <details class="minifold">
+      <summary>2. Technology / IT / MLOps</summary>
+      <div class="minifold-body">
+        <ul>
+          <li>Owns the infrastructure, security, deployment pipelines, and operational monitoring</li>
+          <li>Understands model limitations, data dependencies, integration constraints, and failure modes</li>
+          <li>Translates governance requirements (explainability, logging, fairness checks) into engineering realities</li>
+          <li>Ensures that AI systems are not just performant, but safe, robust, and maintainable</li>
+        </ul>
+      </div>
+    </details>
+    <details class="minifold">
+      <summary>3. Business / Product</summary>
+      <div class="minifold-body">
+        <ul>
+          <li>Defines the use case, objectives, and success criteria — ensuring AI creates genuine business value</li>
+          <li>Represents the customer/user perspective and the operational impact of automated decisions</li>
+          <li>Sets boundaries for acceptable behaviour (e.g. what level of error is tolerable, when human override is needed)</li>
+          <li>Co-owns ethical and fairness criteria because the business best understands the consequences of bias or failure</li>
+        </ul>
+      </div>
+    </details>
+    <details class="minifold">
+      <summary>4. Legal &amp; Compliance</summary>
+      <div class="minifold-body">
+        <ul>
+          <li>Ensures alignment with GDPR, AI Act, sector regulations, anti-discrimination laws, and contractual obligations</li>
+          <li>Drives impact assessments (DPIA, FRIA) and ensures lawful basis for data processing</li>
+          <li>Prepares the organisation for audits, regulatory inquiries, and potential litigation</li>
+          <li>Approves key governance documents and validates risk classifications</li>
+        </ul>
+      </div>
+    </details>
+
+    <h3 class="sub">The Interlock Principle</h3>
+    <p>None of these four roles can govern AI alone. They must work in continuous dialogue, not sequential handoffs. When designing any governance process, ask: "Is there representation from AI leadership, technology, business, and legal?" If not, the process is incomplete.</p>
+
+    <div class="blueprint">
+<pre>
+   THE GOVERNANCE QUARTET
+   +----------------------------------------------------+
+   |                                                    |
+   |   AI OFFICER  ◄────────────────────────► LEGAL     |
+   |   (Strategy,         Shared ownership      (Compliance,
+   |    Policy,            of AI risks          Regulations,
+   |    Oversight)                              DPIA, Art.22)
+   |      ▲                        ▲              |
+   |      │                        │              |
+   |      ▼                        ▼              ▼
+   |   TECHNOLOGY        BUSINESS / PRODUCT
+   |   (Infrastructure,  (Use case, value,
+   |    MLOps, security,  user impact,
+   |    monitoring)       ethical boundaries)
+   |                                                    |
+   +----------------------------------------------------+
+</pre>
+      <div class="cap">Fig 1.1 — The governance quartet: four roles in continuous, bidirectional dialogue, not a handoff chain.</div>
+    </div>
+
+    <details class="lens">
+      <summary>Architect's Lens — CTO &amp; Director Perspective <span class="lens-arrow">▾</span></summary>
+      <div class="lens-body">
+        <div class="voice cto">
+          <span class="voice-badge">CTO</span>
+          <p>"I don't want my engineers making legal calls, and I don't want lawyers making architecture decisions. The AI Officer role is the integrator — someone who speaks both languages. I'll co-fund that role with the legal and business units because it sits at the intersection we all need."</p>
+        </div>
+        <div class="voice director">
+          <span class="voice-badge">Director</span>
+          <p>"If the business unit owns the AI use case, they must also co-own the governance. I don't accept 'the tech team will handle compliance.' Every AI project in my portfolio has a named business sponsor who is jointly accountable with the AI Officer for governance sign-offs. That's how you build a culture of responsibility."</p>
+        </div>
+      </div>
+    </details>
+
+  </div>
+</details>
+
+<!-- ============ SECTION 2 ============ -->
+<details class="chapter" id="s2">
+  <summary class="chapter-head">
+    <span class="chapter-num">02</span>
+    <div class="chapter-titlewrap">
+      <h2>Integrating AI Governance with Existing Data &amp; IT Governance</h2>
+      <span class="tag">Organization · Integration</span>
+    </div>
+    <span class="chevron">›</span>
+  </summary>
+  <div class="chapter-body">
+
+    <details class="recall">
+      <summary><span class="recall-label">Recall</span><span class="recall-q">Instead of creating a parallel governance universe, how should AI governance extend and adapt existing data and IT governance structures?</span></summary>
+      <div class="recall-answer">Extend, don't duplicate. AI governance should plug into the <strong>existing data catalog, architecture review board, DevOps/MLOps pipelines, and ERM/audit framework</strong> as an added lens and set of gates — not spin up a parallel committee structure that competes for attention and breeds territorial conflict.</div>
+    </details>
+
+    <h3 class="sub">Don't Reinvent the Wheel</h3>
+    <p>Most organisations already have data governance (data quality, catalog, metadata, data office) and IT governance (architecture review, change management, DevOps, security). AI governance should <strong>extend</strong> these, not replace them. A parallel structure breeds confusion, duplication, and territorial conflict.</p>
+
+    <h3 class="sub">Connection Points</h3>
+    <details class="minifold">
+      <summary>With Data Governance</summary>
+      <div class="minifold-body">
+        <ul>
+          <li>Data catalogues should include <strong>AI model metadata</strong>: which datasets are used, for which model versions, with what license and consent basis</li>
+          <li>The data governance committee should have an <strong>AI lens</strong>: when approving data domains, ask "will this data be used for AI training? Is that a compatible purpose?"</li>
+          <li>Data lineage tools must trace data flows into training pipelines and model outputs</li>
+          <li>Data quality metrics for AI training data (representativeness, bias, drift) become a joint responsibility of data and AI governance</li>
+        </ul>
+      </div>
+    </details>
+    <details class="minifold">
+      <summary>With IT / Technology Governance</summary>
+      <div class="minifold-body">
+        <ul>
+          <li>Architecture review boards must include AI-specific criteria: explainability, model versioning, monitoring hooks, fallback design</li>
+          <li>DevOps/MLOps pipelines become the enforcement point for governance gates (automated fairness checks, documentation generation, human-approval steps)</li>
+          <li>Change management processes should treat model updates (retraining, new data) with the same rigour as code releases, plus additional validation for drift and bias</li>
+          <li>Security governance extends to AI-specific threats: adversarial robustness, data poisoning, model extraction</li>
+        </ul>
+      </div>
+    </details>
+    <details class="minifold">
+      <summary>With Risk Management &amp; Compliance</summary>
+      <div class="minifold-body">
+        <ul>
+          <li>Algorithmic risk assessments should be integrated into the existing operational risk register and ERM framework</li>
+          <li>Internal audit plans should include AI models as auditable assets</li>
+          <li>Compliance calendars (for DPIA, regulatory filings) should trigger AI-specific reviews when models are trained or deployed</li>
+        </ul>
+      </div>
+    </details>
+
+    <h3 class="sub">The Integration Model</h3>
+    <p>Create <strong>clear touchpoints</strong>, not separate empires:</p>
+    <ul>
+      <li>A Data &amp; AI Governance Working Group that includes both data stewards and AI leads</li>
+      <li>An AI Subcommittee of the existing IT Architecture Review Board</li>
+      <li>A joint risk taxonomy that maps both traditional IT risks and AI-specific risks</li>
+    </ul>
+
+    <div class="blueprint">
+<pre>
+   INTEGRATING AI GOVERNANCE
+   +---------------------------+     +--------------------------+
+   | DATA GOVERNANCE           |     | IT / TECHNOLOGY GOV.     |
+   | (Catalog, Quality, Lineage|     | (Architecture, DevOps,   |
+   |  Data Office, Stewards)   |     |  Security, Change Mgmt) |
+   +------------+--------------+     +------------+-------------+
+                |                                |
+                v                                v
+   +------------+--------------------------------+-------------+
+   |             AI GOVERNANCE EXTENSION                       |
+   |  - AI metadata in catalog                                 |
+   |  - AI-aware data quality rules                            |
+   |  - MLOps pipeline gates                                   |
+   |  - Adversarial security testing                           |
+   |  - Model change management                                |
+   +-----------------------------------------------------------+
+                                  |
+                                  v
+   +-----------------------------------------------------------+
+   | RISK & COMPLIANCE INTEGRATION                             |
+   | (Algorithmic risks in ERM, AI in internal audit plan)     |
+   +-----------------------------------------------------------+
+</pre>
+      <div class="cap">Fig 2.1 — AI governance as an extension layer sitting between existing data/IT governance and risk & compliance.</div>
+    </div>
+
+    <details class="lens">
+      <summary>Architect's Lens — CTO &amp; Director Perspective <span class="lens-arrow">▾</span></summary>
+      <div class="lens-body">
+        <div class="voice cto">
+          <span class="voice-badge">CTO</span>
+          <p>"I refuse to have a separate AI governance tool that doesn't talk to our data catalogue. My condition for the AI governance program is that it leverages our existing metadata platform and CI/CD pipelines. We'll extend, not duplicate. The AI Officer's success metric should include integration with existing tooling, not the creation of a new silo."</p>
+        </div>
+        <div class="voice director">
+          <span class="voice-badge">Director</span>
+          <p>"We already struggle with too many governance committees. I don't want an 'AI Governance Committee' that meets independently. Instead, I want AI added as a standing agenda item in the Data Council and the Architecture Review Board. That makes governance efficient and shows that AI is part of the business, not a special project."</p>
+        </div>
+      </div>
+    </details>
+
+  </div>
+</details>
+
+<!-- ============ SECTION 3 ============ -->
+<details class="chapter" id="s3">
+  <summary class="chapter-head">
+    <span class="chapter-num">03</span>
+    <div class="chapter-titlewrap">
+      <h2>The Extended Stakeholder Ecosystem</h2>
+      <span class="tag">Organization · Stakeholders</span>
+    </div>
+    <span class="chevron">›</span>
+  </summary>
+  <div class="chapter-body">
+
+    <details class="recall">
+      <summary><span class="recall-label">Recall</span><span class="recall-q">Beyond the core quartet, which other internal stakeholders are critical to AI governance, and what specific risks are they uniquely positioned to mitigate?</span></summary>
+      <div class="recall-answer">Five "hidden guardians": the <strong>DPO</strong> (privacy/GDPR), <strong>Cybersecurity</strong> (adversarial and pipeline threats), <strong>ESG/Sustainability</strong> (environmental and social impact), <strong>Compliance</strong> (regulatory register and audit liaison), and <strong>Procurement/Vendor Management</strong> (the guard against unvetted "shadow AI" bought rather than built). All feed into the core governance quartet.</div>
+    </details>
+
+    <h3 class="sub">The Hidden Guardians of AI Governance</h3>
+    <p>Many functions are not obvious AI stakeholders but hold essential levers for ensuring systems are lawful, secure, ethical, and auditable — even when acquired from third parties.</p>
+
+    <details class="minifold">
+      <summary>Data Protection Officer (DPO)</summary>
+      <div class="minifold-body">
+        <ul>
+          <li><strong>Mandatory</strong> under GDPR in many organisations; must be involved whenever personal data is processed by AI</li>
+          <li>Reviews legal basis, transparency information, and data minimization in AI contexts</li>
+          <li>Leads or validates the DPIA, ensuring privacy risks are identified and mitigated before training</li>
+          <li>Acts as an independent advisor to the AI team and can escalate concerns to the highest management level</li>
+        </ul>
+      </div>
+    </details>
+    <details class="minifold">
+      <summary>Cybersecurity</summary>
+      <div class="minifold-body">
+        <ul>
+          <li>Protects the AI pipeline: training data stores, model weights, inference APIs</li>
+          <li>Defends against AI-specific attacks: data poisoning (contaminating training data), model inversion/extraction, adversarial inputs</li>
+          <li>Ensures access control, encryption, and anomaly detection for AI systems</li>
+          <li>Collaborates with MLOps to embed security checks in the CI/CD pipeline</li>
+        </ul>
+      </div>
+    </details>
+    <details class="minifold">
+      <summary>ESG / Sustainability</summary>
+      <div class="minifold-body">
+        <ul>
+          <li>Ensures AI aligns with corporate values, human rights commitments, and inclusion principles</li>
+          <li>Assesses the environmental impact of model training (carbon footprint of large-scale compute)</li>
+          <li>Monitors social impact: bias mitigation, fair access, workforce transition plans</li>
+          <li>Incorporates AI performance into sustainability reporting for investors and rating agencies</li>
+        </ul>
+      </div>
+    </details>
+    <details class="minifold">
+      <summary>Compliance (Separate from Legal in Some Structures)</summary>
+      <div class="minifold-body">
+        <ul>
+          <li>Ensures adherence to internal policies and external regulations beyond data protection (anti-bribery, fair lending, sector rules)</li>
+          <li>Coordinates audits, internal reviews, and regulatory communications specifically for AI systems</li>
+          <li>Maintains the register of AI systems and their compliance status</li>
+          <li>Acts as the liaison with external auditors and regulators</li>
+        </ul>
+      </div>
+    </details>
+    <details class="minifold">
+      <summary>Procurement / Vendor Management</summary>
+      <div class="minifold-body">
+        <ul>
+          <li>Critical when AI solutions are bought, not built</li>
+          <li>Must ensure contracts include: ethical and bias audit rights, data usage and retention clauses, explainability and documentation requirements, liability and indemnity for discriminatory outputs, and exit/transition provisions</li>
+          <li>Evaluates third-party AI against the organisation's own governance standards before purchase</li>
+          <li>Prevents "shadow AI" where business units buy unvetted AI tools</li>
+        </ul>
+      </div>
+    </details>
+
+    <div class="blueprint">
+<pre>
+   THE EXTENDED STAKEHOLDER MAP
+   +--------------------------------------------------------------+
+   |                          AI SYSTEM                           |
+   +--------------------------------------------------------------+
+            |          |          |          |           |
+            v          v          v          v           v
+   +--------+ +--------+ +--------+ +--------+ +--------+
+   | DPO    | |Cyber-  | | ESG/   | |Compli- | |Procure-|
+   |(Privacy| |security| |Sustain | |ance    | |ment    |
+   |GDPR)   | |(Model  | |ability | |(Audits,| |(Third- |
+   |        | |security| |Ethics) | |Policies| |party AI|
+   +--------+ +--------+ +--------+ +--------+ +--------+
+        |          |          |          |           |
+        +----------+----------+----------+-----------+
+                           |
+                   All feed into core
+                   governance quartet
+</pre>
+      <div class="cap">Fig 3.1 — Five extended stakeholders, each guarding a distinct risk, converging back into the core governance quartet.</div>
+    </div>
+
+    <details class="lens">
+      <summary>Architect's Lens — CTO &amp; Director Perspective <span class="lens-arrow">▾</span></summary>
+      <div class="lens-body">
+        <div class="voice cto">
+          <span class="voice-badge">CTO</span>
+          <p>"I want the cybersecurity team to treat AI models as critical assets, not just as 'software'. That means threat modelling sessions must include adversarial ML scenarios. I also want procurement to have a technical checklist for AI vendors — security, data handling, model versioning — approved by my architects."</p>
+        </div>
+        <div class="voice director">
+          <span class="voice-badge">Director</span>
+          <p>"Procurement is our first line of defence against bad AI from vendors. I'm instituting a policy: no AI purchase over a certain threshold without a governance review that involves legal, privacy, and cybersecurity. The DPO is not a blocker but a partner — I want them involved early, not at the end when they can only say no."</p>
+        </div>
+      </div>
+    </details>
+
+  </div>
+</details>
+
+<!-- ============ SECTION 4 ============ -->
+<details class="chapter" id="s4">
+  <summary class="chapter-head">
+    <span class="chapter-num">04</span>
+    <div class="chapter-titlewrap">
+      <h2>Decision-Making Flows &amp; Conflict Resolution</h2>
+      <span class="tag">Organization · Governance Process</span>
+    </div>
+    <span class="chevron">›</span>
+  </summary>
+  <div class="chapter-body">
+
+    <details class="recall">
+      <summary><span class="recall-label">Recall</span><span class="recall-q">What happens when business wants speed, legal demands caution, and technology raises feasibility concerns — who decides, and how should governance structure these inevitable conflicts?</span></summary>
+      <div class="recall-answer">A <strong>stage-based governance model</strong> assigns specific stakeholder validations to each phase (design, development, pre-deployment, operational), and disagreements escalate through three levels: <strong>facilitated working-group discussion → AI Officer mediation → senior management/AI Steering Committee</strong> — guided by the precautionary principle, documented rationale, and narrow, targeted veto rights rather than a single universal veto.</div>
+    </details>
+
+    <h3 class="sub">The Inevitable Friction</h3>
+    <p>AI governance lives at the intersection of competing priorities: time-to-market vs. thorough testing, model accuracy vs. fairness, business ambition vs. regulatory compliance. Without a clear decision-making flow and conflict resolution mechanism, projects stall, risks are ignored, or unaccountable unilateral decisions prevail.</p>
+
+    <h3 class="sub">Designing the Decision Flow</h3>
+    <p>Implement a <strong>stage-based governance model</strong> where each phase mandates specific stakeholder validations:</p>
+    <details class="minifold">
+      <summary>Design Phase</summary>
+      <div class="minifold-body"><p>Legal, Ethics, and Business validate project purpose, risk classification, and feasibility. Outcome: approved project charter.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Development Phase</summary>
+      <div class="minifold-body"><p>Technology validates model selection, data provenance, and bias assessments. Legal and DPO review data usage. Outcome: validated model report.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Pre-Deployment Gate</summary>
+      <div class="minifold-body"><p>A <strong>cross-functional validation committee</strong> (AI Officer, IT, Business, Legal, DPO, Cybersecurity) reviews all evidence. This committee has the authority to approve, require remediation, or reject deployment.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Operational Phase</summary>
+      <div class="minifold-body"><p>Monitoring ownership clearly assigned. Performance metrics, bias drift, and incident triggers defined. Regular review cadence set (monthly for high-risk).</p></div>
+    </details>
+
+    <h3 class="sub">Conflict Resolution Mechanisms</h3>
+    <p>When stakeholders disagree:</p>
+    <ol>
+      <li><strong>First Level:</strong> Facilitated discussion within the cross-functional working group, using shared criteria (risk assessment, policy, regulation) to find a balance.</li>
+      <li><strong>Second Level:</strong> Escalation to the <strong>AI Officer</strong> (or designated governance lead), who mediates and makes a recommendation based on the organisation's risk appetite framework.</li>
+      <li><strong>Final Level:</strong> If the conflict is unresolvable at the officer level (e.g. fundamental ethical objection, major legal risk), escalation to <strong>senior management or an AI Steering Committee</strong> with clear decision authority. This body should include C-level representation (CTO, CLO, Chief Data Officer, etc.).</li>
+    </ol>
+
+    <h3 class="sub">Guiding Principles for Decisions</h3>
+    <ul>
+      <li><strong>Precautionary principle:</strong> when in doubt about high-risk impact, err on the side of caution (delay, not deny)</li>
+      <li><strong>Documented rationale:</strong> every key decision — especially rejections and compromises — must be logged with reasoning and signatories</li>
+      <li><strong>No single-veto-unless-critical:</strong> avoid design where one stakeholder can block everything, but give specific veto rights to Legal/Domain on clear regulatory violations</li>
+    </ul>
+
+    <div class="blueprint">
+<pre>
+   STAGE-BASED DECISION FLOW
+   +-------------+     +-------------+     +-------------+     +-------------+
+   | DESIGN GATE | --> | DEVELOP GATE| --> | DEPLOY GATE | --> | MONITORING  |
+   | Business,   |     | Tech, Legal |     | X-func      |     | Tech,       |
+   | Legal,      |     | DPO review  |     | Committee   |     | Business    |
+   | Ethics      |     |             |     | approval    |     | (alerts)    |
+   +------+------+     +------+------+     +------+------+     +------+------+
+          |                   |                   |                   |
+          v                   v                   v                   v
+     Documented           Documented         Formal sign-off     Escalation
+     Charter              Model Report       & log               protocol
+</pre>
+      <div class="cap">Fig 4.1 — Four gates, each with a named stakeholder set and a documented output, carrying the project from design to monitoring.</div>
+    </div>
+
+    <details class="lens">
+      <summary>Architect's Lens — CTO &amp; Director Perspective <span class="lens-arrow">▾</span></summary>
+      <div class="lens-body">
+        <div class="voice cto">
+          <span class="voice-badge">CTO</span>
+          <p>"I want the validation committee to be lightweight — meet for 30 minutes, not three hours. The key is that all evidence (fairness reports, security scans) is pre-submitted and auto-verified where possible. The committee should only discuss exceptions and risks, not redo the technical review. That keeps speed without sacrificing rigour."</p>
+        </div>
+        <div class="voice director">
+          <span class="voice-badge">Director</span>
+          <p>"Conflict resolution must be fast and final. I don't want models sitting in limbo because legal and business are arguing. I'll empower the AI Officer to make a call within 48 hours of a deadlock, with a clear escalation path to me and the CLO only for strategic disputes. The board needs to know we have a mechanism, not that we have no disagreements."</p>
+        </div>
+      </div>
+    </details>
+
+  </div>
+</details>
+
+<!-- ============ SECTION 5 ============ -->
+<details class="chapter" id="s5">
+  <summary class="chapter-head">
+    <span class="chapter-num">05</span>
+    <div class="chapter-titlewrap">
+      <h2>Cross-Team Reviews: The Practical Glue</h2>
+      <span class="tag">Organization · Collaboration</span>
+    </div>
+    <span class="chevron">›</span>
+  </summary>
+  <div class="chapter-body">
+
+    <details class="recall">
+      <summary><span class="recall-label">Recall</span><span class="recall-q">How can organisations move from siloed AI development to true collaborative governance, and what does an effective cross-team review look like in practice?</span></summary>
+      <div class="recall-answer">Replace siloed handoffs with <strong>short (30–45 min), structured, multi-profile working sessions</strong> at fixed checkpoints — training data review, feature/variable review, fairness/performance review, and pre-deployment readiness — each producing a one-page shared decision record. The goal is alignment and early risk-spotting, not rubber-stamping, and it has the side-effect of raising organisation-wide AI literacy.</div>
+    </details>
+
+    <h3 class="sub">The Silo Trap</h3>
+    <p>When AI development happens in isolation — data scientists build, business signs off later, legal reviews last — the result is last-minute crises, hidden biases, and models that are either blocked at the finish line or deployed with unknown risks. Siloed development is the enemy of responsible AI.</p>
+
+    <h3 class="sub">Cross-Team Reviews as Mandatory Checkpoints</h3>
+    <p>Establish <strong>short, structured, collaborative reviews</strong> at key points in the lifecycle where multiple profiles simultaneously examine progress:</p>
+    <details class="minifold">
+      <summary>Training Data Review</summary>
+      <div class="minifold-body"><p>DPO and Legal verify consent and lawful basis; Business checks relevance and representativeness; Technology assesses quality and integration.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Variable &amp; Feature Review</summary>
+      <div class="minifold-body"><p>Business validates that features make sense and won't cause user backlash; Ethics checks for proxies of protected characteristics; Legal confirms non-discrimination.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Model Performance &amp; Fairness Review</summary>
+      <div class="minifold-body"><p>Technology presents metrics; Ethics/Compliance assesses subgroup fairness; Business weighs accuracy-fairness trade-offs.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Pre-Deployment Readiness Review</summary>
+      <div class="minifold-body"><p>All stakeholders confirm that documentation, monitoring, fallback, and communication plans are complete.</p></div>
+    </details>
+
+    <h3 class="sub">Format That Works</h3>
+    <ul>
+      <li><strong>Short sessions (30–45 minutes)</strong> with a pre-circulated, structured template</li>
+      <li><strong>Shared decision record:</strong> one page capturing what was reviewed, decisions made, action items, and sign-offs</li>
+      <li><strong>Rotating facilitation</strong> to build shared understanding and avoid ownership silos</li>
+      <li><strong>Not bureaucratic:</strong> these are working sessions, not committees. The goal is alignment and risk identification, not rubber-stamping</li>
+    </ul>
+
+    <h3 class="sub">Educational Side-Effect</h3>
+    <p>When business people see fairness metrics, when lawyers understand model architecture, and when engineers hear user-impact stories, the organisation's AI literacy grows. Cross-team reviews build a shared language and collective ownership that no policy document can create.</p>
+
+    <div class="blueprint">
+<pre>
+   CROSS-TEAM REVIEW CADENCE
+   +------------------+
+   | TRAINING DATA    |  DPO, Legal, Tech, Business
+   | REVIEW           |
+   +--------+---------+
+            v
+   +------------------+
+   | FEATURE &        |  Business, Ethics, Legal
+   | VARIABLE REVIEW  |
+   +--------+---------+
+            v
+   +------------------+
+   | FAIRNESS & PERF. |  Tech, Ethics, Compliance
+   | REVIEW           |
+   +--------+---------+
+            v
+   +------------------+
+   | PRE-DEPLOYMENT   |  All stakeholders
+   | READINESS        |
+   +------------------+
+        |
+   Decisions logged & shared
+</pre>
+      <div class="cap">Fig 5.1 — Four cross-team review checkpoints, each with a distinct stakeholder mix, cascading toward deployment readiness.</div>
+    </div>
+
+    <details class="lens">
+      <summary>Architect's Lens — CTO &amp; Director Perspective <span class="lens-arrow">▾</span></summary>
+      <div class="lens-body">
+        <div class="voice cto">
+          <span class="voice-badge">CTO</span>
+          <p>"I'm making cross-team reviews a formal part of our Definition of Done for any AI model. No model moves to staging without a signed review record. I'll also invest in collaboration tooling — shared dashboards that show fairness, drift, and data lineage in a way that legal and business can understand without a translator."</p>
+        </div>
+        <div class="voice director">
+          <span class="voice-badge">Director</span>
+          <p>"These reviews are my best early-warning system. If a project can't get through a 30-minute cross-team review without major disagreements, it's not ready. I want a culture where raising a concern in these sessions is rewarded, not seen as obstruction. That's how we catch problems before they become headlines."</p>
+        </div>
+      </div>
+    </details>
+
+  </div>
+</details>
+
+</main>
+
+<div class="progress-note">— End of module · 5/5 sections · use ▾ Expand all to review before an interview run-through —</div>
+
+<footer>
+  ARCHITECTS LAB &nbsp;·&nbsp; Organizational Structure &amp; Stakeholders &nbsp;·&nbsp; compiled from Ultimate AI Governance Master Notes
+</footer>
+
+<script>
+  document.getElementById('expandAll').addEventListener('click', () => {
+    document.querySelectorAll('details').forEach(d => d.open = true);
+  });
+  document.getElementById('collapseAll').addEventListener('click', () => {
+    document.querySelectorAll('details.chapter').forEach(d => d.open = false);
+    document.querySelectorAll('details:not(.chapter)').forEach(d => d.open = false);
+  });
+</script>
+
+</body>
+</html>

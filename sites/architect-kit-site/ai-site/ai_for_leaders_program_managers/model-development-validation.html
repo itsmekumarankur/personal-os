@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architects Lab · Model Development &amp; Validation</title>
+<style>
+  :root{
+    --bg:#0d0f14; --panel:#151823; --panel2:#1b1f2e;
+    --ink:#e8e6df; --dim:#8b8fa3;
+    --gold:#d4af5a; --gold-soft:#b8964a;
+    --teal:#5ad4c8; --rose:#d47a8a; --violet:#9a8ad4; --amber:#d4915a;
+    --line:#2a2f42;
+    --mono:'Courier New', ui-monospace, monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif;display:flex;flex-direction:column;min-height:100vh}
+  header{padding:16px 26px 12px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  header .k{font-family:var(--mono);font-size:.68rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase}
+  header h1{font-size:1rem;font-weight:normal}
+  header .count{margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--dim)}
+  .tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
+  .tab{flex:1;min-width:110px;padding:9px 10px;text-align:center;font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;color:var(--dim);border-right:1px solid var(--line);cursor:pointer;white-space:nowrap;transition:.2s;background:transparent;border-top:none;border-bottom:none;border-left:none}
+  .tab:last-child{border-right:none}
+  .tab.active{color:var(--bg);font-weight:bold}
+  .tab[data-c="gold"].active{background:var(--gold)}
+  .tab[data-c="teal"].active{background:var(--teal)}
+  .tab[data-c="rose"].active{background:var(--rose)}
+  .tab[data-c="violet"].active{background:var(--violet)}
+  .tab[data-c="amber"].active{background:var(--amber)}
+  .tab[data-c="ink"].active{background:var(--ink)}
+  main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px 96px;overflow-y:auto}
+  .slide{max-width:780px;width:100%;animation:fadeUp .4s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @media (prefers-reduced-motion: reduce){.slide{animation:none}}
+  .eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px}
+  .eyebrow.gold{color:var(--gold)} .eyebrow.teal{color:var(--teal)} .eyebrow.rose{color:var(--rose)}
+  .eyebrow.violet{color:var(--violet)} .eyebrow.amber{color:var(--amber)} .eyebrow.ink{color:var(--dim)}
+  .slide h2{font-size:1.55rem;font-weight:normal;line-height:1.3;margin-bottom:14px}
+  .slide h2 em{font-style:italic;color:var(--gold)}
+  .slide p{color:#c9c7bf;line-height:1.75;font-size:1rem;margin-bottom:13px}
+  .slide p strong, .slide li strong{color:var(--ink)}
+  .slide code{font-family:var(--mono);font-size:.85em;background:var(--panel2);padding:2px 6px;border-radius:3px;color:var(--gold)}
+  .ascii{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:6px;padding:14px 16px;margin:14px 0;font-family:var(--mono);font-size:.74rem;line-height:1.5;color:#b9c2d8;overflow-x:auto;white-space:pre}
+  .ascii .hl{color:var(--gold)} .ascii .tl{color:var(--teal)} .ascii .rs{color:var(--rose)}
+  .note{border:1px dashed var(--gold-soft);border-radius:6px;padding:11px 15px;margin:14px 0;font-size:.9rem;color:#cfc9ae;line-height:1.65}
+  .note b{color:var(--gold)}
+  ul.pts{margin:10px 0 13px 2px;list-style:none}
+  ul.pts li{padding:6px 0 6px 21px;position:relative;color:#c9c7bf;line-height:1.6;font-size:.95rem}
+  ul.pts li::before{content:"\203A";position:absolute;left:4px;color:var(--gold);font-family:var(--mono)}
+  /* ---- Think First (question) slides ---- */
+  .qcard{border:2px solid var(--gold);border-radius:10px;background:linear-gradient(160deg,#1a1608,#151823);padding:30px 28px;margin:6px 0 18px;position:relative}
+  .qcard::before{content:"?";position:absolute;top:-20px;left:22px;width:38px;height:38px;border-radius:50%;background:var(--gold);color:var(--bg);font-family:var(--mono);font-weight:bold;font-size:1.3rem;display:flex;align-items:center;justify-content:center}
+  .qcard .qlabel{font-family:var(--mono);font-size:.64rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;margin-bottom:12px}
+  .qcard .qtext{font-size:1.25rem;line-height:1.55;color:var(--ink);font-style:italic}
+  .qcard .qsub{margin-top:14px;font-size:.86rem;color:var(--dim);font-style:normal;font-family:var(--mono)}
+  /* ---- lenses (CTO / Director) ---- */
+  details.lens{margin:10px 0;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+  details.lens summary{cursor:pointer;padding:10px 14px;font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;color:var(--teal);list-style:none}
+  details.lens summary::before{content:"+ ";color:var(--gold)}
+  details.lens[open] summary::before{content:"\2212 "}
+  details.lens.dir summary{color:var(--rose)}
+  details.lens .body{padding:2px 16px 13px}
+  details.lens .body li{font-size:.9rem}
+  /* ---- recall quiz slides ---- */
+  .recall-item{border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:6px;background:var(--panel);margin:12px 0;overflow:hidden}
+  .recall-item summary{cursor:pointer;padding:13px 16px;font-size:.98rem;color:var(--ink);list-style:none;line-height:1.55}
+  .recall-item summary::before{content:"Q  ";font-family:var(--mono);color:var(--teal);font-weight:bold}
+  .recall-item .ans{padding:0 16px 13px;color:#b9c2b0;font-size:.92rem;line-height:1.65;border-top:1px dashed var(--line);padding-top:11px;margin:0 16px 13px;padding-left:0;padding-right:0}
+  .recall-item .ans b{color:var(--teal)}
+  .recall-hint{font-family:var(--mono);font-size:.7rem;color:var(--dim);margin-top:6px}
+  footer{position:fixed;left:0;right:0;bottom:0;background:rgba(13,15,20,.93);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:11px 20px;display:flex;align-items:center;gap:14px}
+  .dots{display:flex;gap:4px;flex:1;justify-content:center;flex-wrap:wrap}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--line);cursor:pointer;transition:.2s}
+  .dot.on{background:var(--gold);transform:scale(1.45)}
+  .dot.q{border:1px solid var(--gold);background:transparent}
+  .dot.q.on{background:var(--gold)}
+  button.nav{font-family:var(--mono);font-size:.78rem;letter-spacing:.1em;background:transparent;color:var(--ink);border:1px solid var(--line);padding:9px 18px;border-radius:5px;cursor:pointer;transition:.2s}
+  button.nav:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+  button.nav.primary{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:bold}
+  button.nav.primary:hover{background:#e2c070}
+  button.nav:disabled{opacity:.25;cursor:default}
+  button.nav:focus-visible,.tab:focus-visible,.dot:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .hint{position:fixed;bottom:62px;right:18px;font-family:var(--mono);font-size:.6rem;color:var(--dim);letter-spacing:.1em}
+  @media(max-width:600px){.slide h2{font-size:1.28rem}.ascii{font-size:.58rem;padding:11px}.hint{display:none}.qcard .qtext{font-size:1.08rem}}
+</style>
+</head>
+<body>
+<header>
+  <span class="k">Architects Lab</span>
+  <h1>Study Note 025 · Model Development &amp; Validation</h1>
+  <span class="count" id="counter"></span>
+</header>
+<div class="tabs" id="tabs"></div>
+<main><div id="stage"></div></main>
+<div class="hint">&larr; &rarr; keys work too</div>
+<footer>
+  <button class="nav" id="prevBtn">&larr; Prev</button>
+  <div class="dots" id="dots"></div>
+  <button class="nav primary" id="nextBtn">Next &rarr;</button>
+</footer>
+<script>
+const SECTIONS=[
+ {id:"intro",label:"START",c:"ink"},
+ {id:"nn",label:"NEURAL NETS",c:"teal"},
+ {id:"arch",label:"ARCHITECTURES",c:"gold"},
+ {id:"eval",label:"EVALUATION",c:"rose"},
+ {id:"infra",label:"INFRA+TRANSFER",c:"violet"},
+ {id:"llm",label:"CHOOSING LLMs",c:"amber"},
+ {id:"end",label:"PRACTICE+RECALL",c:"ink"}
+];
+const S=[
+
+{sec:"intro",c:"ink",eyebrow:"Study Note 025",t:"a",h:"Model Development &amp; Validation — <em>the brain, only as good as its food</em>",body:`
+<p>From "a model is just math" through neural architectures, evaluation metrics, training infrastructure, transfer learning, and choosing the right LLM. Same rhythm throughout: prime with a question, learn the concept, recap what stuck, then view it from the CTO's, Architect's, and PM's seat.</p>
+<div class="note"><b>How to use:</b> "?" slides ask you to predict first. Press Next to compare. Recall quizzes close each section.</div>`},
+
+/* ---------- NEURAL NETS ---------- */
+{sec:"nn",c:"teal",eyebrow:"Foundations · 01",t:"q",q:`If a model is "just a mathematical equation," what do you think actually makes it <b>feel</b> intelligent? And guess: how many times has training compute grown since 2010 — 100&times;? 10,000&times;? a billion times?`},
+
+{sec:"nn",c:"teal",eyebrow:"Foundations · 01",t:"a",h:"Introduction to AI Models &amp; Algorithms",body:`
+<p>A model is a mathematical equation — a bunch of math trained to recognize patterns. The human brain has 86 billion neurons firing electrical and chemical signals; an AI model is an artificial neural network doing the mathematical equivalent. <strong>We mimic the brain mathematically, not biologically.</strong></p>
+<div class="ascii">FIG — COMPUTE GROWTH SINCE 2010 (doubling every 5-6 months)
+  2010:  ~2,000 params
+  Today: GPT-4 ~100 trillion params
+  10 BILLION-fold increase in training compute</div>
+<div class="note">A model's apparent "intelligence" is complex pattern matching expressed as math — millions or trillions of weighted connections mimicking, at a mathematical level, what neurons do biologically. Training compute has grown roughly <b>10 billion-fold since 2010</b>, doubling every 5-6 months — faster than Moore's Law ever moved for hardware.</div>`,
+cto:[`A growth curve doubling every 5-6 months will outrun almost any fixed infrastructure plan — build compute strategy around elastic cloud capacity, not a static hardware purchase sized for today's model.`],
+dir:[`The most likely limiting factor isn't hardware — it's energy and data availability. High-quality training data is finite and expensive to generate faster than compute is scaling; plan data strategy as the actual bottleneck, not compute.`]},
+
+{sec:"nn",c:"teal",eyebrow:"Neural Nets · 02",t:"q",q:`What's the actual difference between an "epoch" and a "batch"? Try to define both before reading on. And: why does training need a "backward" pass at all — why can't the network just get it right on the forward pass?`},
+
+{sec:"nn",c:"teal",eyebrow:"Neural Nets · 02",t:"a",h:"Neural Networks &amp; Deep Learning Fundamentals",body:`
+<div class="ascii">FIG — ARTIFICIAL NEURAL NETWORK
+  Input(x) -&gt; Hidden 1 -&gt; Hidden 2 -&gt; Output(y)
+  each line = a WEIGHT · each circle = a NEURON (math equation)</div>
+<ul class="pts">
+<li><strong>Input layer</strong> — receives raw data (images, text, etc.)</li>
+<li><strong>Hidden layers</strong> — process data, extract patterns.</li>
+<li><strong>Output layer</strong> — produces the prediction or classification.</li>
+<li><strong>Weights</strong> — learned connection strengths between neurons.</li>
+<li><strong>Epoch</strong> — one full pass through the entire dataset.</li>
+<li><strong>Batch size</strong> — number of samples processed at once.</li>
+<li><strong>Learning rate</strong> — speed of weight updates.</li>
+<li><strong>Loss / error</strong> — how far predictions are from ground truth.</li>
+</ul>
+<div class="ascii">FIG — THE TRAINING LOOP (repeats every epoch)
+  Initialize weights (random) -&gt; Feed forward -&gt; Compute loss
+  -&gt; Backpropagate (calc. gradients) -&gt; Update weights (optimize)
+  &#8635; repeat for each epoch</div>
+<div class="note">Training needs a backward pass because the forward pass alone only produces a guess and a measurable error (loss) — backpropagation computes how much each individual weight <b>contributed</b> to that error, so the optimizer knows which direction to nudge each one.</div>`,
+cto:[`Batch size isn't just a training-speed knob — it directly affects memory footprint on the GPU. Architecture decisions about hardware and batch size are coupled, not independent choices.`]},
+
+{sec:"nn",c:"teal",eyebrow:"Hands-On · 03",t:"q",q:`If a network with 100 hidden neurons performs well, does that automatically mean 100 is the "right" number? What would make you suspect otherwise?`},
+
+{sec:"nn",c:"teal",eyebrow:"Hands-On · 03",t:"a",h:"Building a Simple NN — TensorFlow Playground",body:`
+<p>TensorFlow Playground is a no-code, browser-based way to build and train a neural network visually — drag layers, adjust hyperparameters, watch weights update live, and see the decision boundary form between two classes in real time.</p>
+<ul class="pts">
+<li><strong>Learning rate</strong> — too high &rarr; unstable training. Too low &rarr; slow learning.</li>
+<li><strong>Batch size</strong> — number of samples per weight update.</li>
+<li><strong>Noise</strong> — amount of randomness injected into the data.</li>
+<li><strong>Train/test split</strong> — 50/50, 80/20, etc.</li>
+<li><strong>Architecture</strong> — number of hidden layers and neurons per layer.</li>
+</ul>
+<div class="note">A model performing well at 100 neurons doesn't prove 100 is optimal: the right test is whether a <b>smaller</b> network achieves comparably good performance — if it does, the larger one was overparameterized, wasting compute and risking overfitting.</div>`,
+cto:[`"It works" is not the same question as "it's efficiently sized" — unnecessarily large architectures cost more to train and serve indefinitely. Push teams to demonstrate the smallest architecture that hits the target metric.`]},
+
+{sec:"nn",c:"teal",eyebrow:"Hierarchy · 04",t:"q",q:`Where do CNNs, Transformers, and GANs sit in the AI &rarr; ML &rarr; learning-type hierarchy — are they a fourth branch, or do they sit inside the existing three?`},
+
+{sec:"nn",c:"teal",eyebrow:"Hierarchy · 04",t:"a",h:"Model Architecture Hierarchy",body:`
+<div class="ascii">FIG — AI -&gt; ML -&gt; LEARNING TYPES -&gt; ALGORITHMS
+Artificial Intelligence
+  Machine Learning
+    Supervised          Unsupervised        Reinforcement
+    Classification·      Clustering·         Q-learning·
+    Regression            Dim. reduction      Deep Q-networks
+Deep Neural Networks: FNN · CNN · RNN/LSTM · Transformers ·
+                       GANs · Autoencoders</div>
+<div class="note">CNNs, RNNs, Transformers, and GANs aren't a fourth category — they're specific <b>architectures</b> of deep neural networks, itself one implementation approach applied within supervised, unsupervised, or RL depending on how they're trained. A Transformer trained on labeled translation pairs is supervised; a GAN's generator/discriminator setup is its own training dynamic layered on top.</div>`,
+cto:[`When scoping a project, separate "which learning paradigm" (supervised/unsupervised/RL) from "which architecture" (CNN/Transformer/etc.) — they're independent decisions, and conflating them narrows your options before you've reasoned about the problem.`]},
+
+{sec:"nn",c:"teal",eyebrow:"Neural Nets · Recall",t:"r",h:"Quick recall: neural network fundamentals",qs:[
+{q:`Define epoch and batch in one sentence each.`,a:`<b>Epoch</b> = one full pass through the entire dataset. <b>Batch</b> = the number of samples processed together before one weight update.`},
+{q:`Why is a backward pass necessary?`,a:`The forward pass alone only produces a guess and a measurable error (loss). <b>Backpropagation</b> computes how much each weight contributed to that error, so the optimizer knows which direction to nudge each one.`},
+{q:`Are CNNs/Transformers/GANs a fourth branch alongside supervised/unsupervised/RL?`,a:`No — they're specific <b>architectures</b> that can be trained within any of the three paradigms, depending on how they're trained (e.g. a Transformer on labeled pairs is supervised).`}]},
+
+/* ---------- ARCHITECTURES ---------- */
+{sec:"arch",c:"gold",eyebrow:"Architectures · 05",t:"q",q:`RNNs process sequentially and "forget" long-term context (vanishing gradient). What problem was <b>LSTM</b> specifically built to fix? And: Transformers process all tokens in parallel instead of sequentially — why is that a genuine breakthrough rather than just a speed trick?`},
+
+{sec:"arch",c:"gold",eyebrow:"Architectures · 05",t:"a",h:"Neural Network Types in Detail",body:`
+<div class="ascii">Architecture   Key feature                Best use cases
+FNN/MLP        One-way flow, simple        Tabular data, basic
+                                            classification/regression
+CNN            Feature extraction via      Image recognition, object
+               convolution                 detection
+RNN            Feedback loops (memory)     Time series, speech — but
+                                            forgets long-term
+LSTM           Long-term memory cells      Stock prediction,
+                                            translation, text gen
+Transformers   Self-attention, parallel    LLMs, chatbots,
+                                            translation, NLP
+GANs           Two networks competing      Image generation,
+                                            deepfakes, augmentation
+Autoencoders   Compression &amp;               Anomaly detection,
+               reconstruction              denoising, compression</div>
+<div class="ascii">FIG — RNN: FEEDBACK LOOP
+  Input -&gt; RNN -&gt; Output, with feedback (memory) looping back</div>
+<p>Transformers power ChatGPT, Claude, Gemini, Llama — from "Attention Is All You Need" (Google, 2017). GANs: two networks compete — Generator creates fakes, Discriminator detects them.</p>
+<div class="note">LSTM was purpose-built to fix RNN's vanishing gradient problem — its memory cells preserve long-term dependencies a plain RNN loses over long sequences. Transformers' parallelism is a genuine breakthrough: sequential processing forces RNN-style models to compress everything through a bottleneck one token at a time, while self-attention lets every token directly reference every other token at once — faster to train <em>and</em> better at long-range relationships.</div>`,
+cto:[`Match the architecture to the data's actual structure, not the current trend — Transformers dominate NLP headlines, but a CNN is still usually the right, cheaper choice for pure image classification, and a plain FNN is fine for tabular regression.`]},
+
+{sec:"arch",c:"gold",eyebrow:"Architectures · Recall",t:"r",h:"Quick recall: architectures",qs:[
+{q:`What problem does LSTM solve that plain RNN has?`,a:`The <b>vanishing gradient</b> problem — RNNs "forget" long-term context; LSTM's memory cells preserve long-term dependencies.`},
+{q:`Why is Transformer parallelism a "genuine breakthrough" and not just speed?`,a:`Self-attention lets every token directly reference every other token at once, instead of compressing information through a bottleneck one step at a time (RNN-style) — better at long-range relationships, not just faster.`},
+{q:`Map five architectures to their best use case.`,a:`FNN &rarr; tabular data. CNN &rarr; images. LSTM &rarr; sequences/translation. Transformers &rarr; NLP/LLMs. GANs &rarr; generation/deepfakes. (Bonus: Autoencoders &rarr; anomaly detection.)`}]},
+
+/* ---------- EVALUATION ---------- */
+{sec:"eval",c:"rose",eyebrow:"Evaluation · 06",t:"q",q:`A fraud model hits <b>99% accuracy</b> but the fraud rate is only 1%. Should you be impressed? And: for a self-driving car's pedestrian detector, would you rather minimize false positives or false negatives?`},
+
+{sec:"eval",c:"rose",eyebrow:"Evaluation · 06",t:"a",h:"Model Evaluation: Classification Metrics",body:`
+<div class="ascii">FIG — CONFUSION MATRIX (foundation of every classification metric)
+                PREDICTED Positive     PREDICTED Negative
+ACTUAL Positive      TP                     FN
+ACTUAL Negative      FP                     TN</div>
+<ul class="pts">
+<li><strong>Accuracy</strong> = (TP+TN)/Total — overall correctness. Good for balanced data, misleading for imbalanced.</li>
+<li><strong>Precision</strong> = TP/(TP+FP) — "of all positive predictions, how many were correct?" Minimizes false positives. E.g. spam detection.</li>
+<li><strong>Recall</strong> = TP/(TP+FN) — "of all actual positives, how many did we catch?" Minimizes false negatives. E.g. disease detection.</li>
+<li><strong>F1-Score</strong> = harmonic mean 2&middot;(P&middot;R)/(P+R) — balances precision and recall, best for imbalanced datasets.</li>
+</ul>
+<div class="ascii">FRAUD DETECTION EXAMPLE (bank, 1,000 transactions)
+                Predicted fraud    Predicted not fraud
+Actual fraud         70 (TP)            30 (FN)
+Actual not fraud     50 (FP)            850 (TN)
+  Accuracy  (70+850)/1000 = 92%
+  Precision 70/(70+50)    = 58.3%
+  Recall    70/(70+30)    = 70%</div>
+<div class="note">💡 The bank prioritizes <b>precision</b> — false positives block legitimate transactions and frustrate customers, a direct customer-experience cost even though it looks like "only" a 92% accuracy story. A 99%-accurate fraud model could just be predicting "not fraud" every time if fraud is rare, catching zero real cases while still scoring well.</div>`,
+cto:[`Never let a team report "99% accuracy" as the headline metric without also stating the class balance — on a 1%-positive-rate problem, that number alone tells you almost nothing about whether the model works.`],
+dir:[`Get the precision/recall trade-off written into the success metrics before modeling starts — deciding it after seeing the results invites the team to rationalize whichever number came out better.`]},
+
+{sec:"eval",c:"rose",eyebrow:"Evaluation · 07",t:"q",q:`If RMSE is $27,000 for house price predictions, does that mean every single prediction is off by <b>exactly</b> $27K? And: what's the actual difference between R-squared and accuracy — are they measuring the same thing in different units?`},
+
+{sec:"eval",c:"rose",eyebrow:"Evaluation · 07",t:"a",h:"Model Evaluation: Regression Metrics",body:`
+<div class="ascii">FIG — LINEAR REGRESSION: y = mx + b, residuals are the errors</div>
+<ul class="pts">
+<li><strong>MAE</strong> — mean absolute error. Average magnitude of errors. Easy to interpret, robust to outliers.</li>
+<li><strong>MSE</strong> — mean squared error. Penalizes large errors heavily. Not in original units, sensitive to outliers.</li>
+<li><strong>RMSE</strong> = &radic;MSE. Interpretable in the same units as output — "on average, off by $X." Best for business communication.</li>
+<li><strong>R&sup2;</strong> — variance explained, 0 to 1, higher is better. 80% = 80% of output variation explained by the input(s).</li>
+</ul>
+<div class="ascii">HOUSE PRICE EXAMPLE — errors range $10K to $50K
+  MAE   $23,000
+  MSE   745M
+  RMSE  $27,300 — "off by ~$27K on average"</div>
+<div class="note">💡 <b>Best metric for stakeholders: RMSE</b> — it translates directly into a sentence a VP can repeat: "the model forecasts within about $27K on average." RMSE is an <b>average</b>, not a per-prediction guarantee — it's pulled upward by larger errors more than MAE would be, because it squares errors before averaging. R&sup2; is not accuracy: accuracy counts correct classifications, R&sup2; measures how much variance the model explains.</div>`,
+dir:[`When reporting model performance upward, lead with RMSE in the metric's real units, not R² or MSE — a VP can act on "off by $27K" immediately; "R² of 0.8" requires a follow-up explanation every time.`]},
+
+{sec:"eval",c:"rose",eyebrow:"Evaluation · Recall",t:"r",h:"Quick recall: evaluation metrics",qs:[
+{q:`Give the formula for precision and recall, and one use case each.`,a:`Precision = TP/(TP+FP), minimizes false positives (spam detection). Recall = TP/(TP+FN), minimizes false negatives (disease detection).`},
+{q:`Why is 99% accuracy on a 1%-positive-rate problem meaningless on its own?`,a:`A model could predict "negative" every time and still score 99% accuracy while catching zero real positives — always check class balance alongside accuracy.`},
+{q:`Why does RMSE beat R² for talking to a VP?`,a:`RMSE is in the <b>same units as the output</b> ("off by $27K on average") — directly actionable. R² (variance explained) requires a follow-up explanation every time.`}]},
+
+/* ---------- INFRA + TRANSFER ---------- */
+{sec:"infra",c:"violet",eyebrow:"Infrastructure · 08",t:"q",q:`Why is a GPU better than a CPU for training neural networks — what's the actual <b>structural</b> reason, not just "it's faster"? And: TPUs are Google-only — what's the real trade-off in choosing them over GPUs?`},
+
+{sec:"infra",c:"violet",eyebrow:"Infrastructure · 08",t:"a",h:"Training Infrastructure",body:`
+<ul class="pts">
+<li><strong>CPU</strong> — general-purpose processor. Good for basic tasks, I/O, data prep. Not ideal for deep learning — sequential.</li>
+<li><strong>GPU</strong> — optimized for parallel compute, thousands of cores for matrix operations. Best for training neural networks. Examples: NVIDIA A100, H100, RTX 4090.</li>
+<li><strong>TPU</strong> — Google's custom chip, purpose-built for TensorFlow and AI workloads. Google Cloud only.</li>
+</ul>
+<div class="ascii">Aspect         Local                  Cloud
+Setup time     Manual, time-consuming Fast (minutes)
+Cost           High upfront (capex)   Pay-as-you-go
+Compute power  Limited to hardware    Unlimited (scale)
+Scalability    Hard to scale          Easily scalable
+Maintenance    You maintain           Provider does
+Data privacy   High (on-premise)      Secure (encrypted)</div>
+<div class="note">AWS: SageMaker (ML platform), Bedrock (GenAI API). GCP: Vertex AI, TPUs available. Azure: Azure ML, Azure OpenAI Service. <b>Docker</b> packages code+libraries+dependencies into a container that runs identically everywhere.</div>
+<div class="note">CPUs are built for fast sequential logic; GPUs have thousands of simpler cores executing the same operation across a huge grid in parallel — exactly the shape of the matrix multiplications neural network training is made of. TPUs push specialization further for TensorFlow specifically, at the cost of <b>vendor lock-in</b> to Google Cloud — a real trade-off, not a free upgrade.</div>`,
+cto:[`Cloud's pay-as-you-go model is usually the right default for training (bursty, high peak demand); local/on-prem can make sense for inference at steady, predictable volume where the capex pays back. Don't apply one model to both phases by default.`]},
+
+{sec:"infra",c:"violet",eyebrow:"Reproducibility · 09",t:"q",q:`If you don't track experiments, what's the actual failure mode — not just "disorganization," but something <b>concrete that costs money</b>?`},
+
+{sec:"infra",c:"violet",eyebrow:"Reproducibility · 09",t:"a",h:"Experiment Tracking &amp; Version Control",body:`
+<p>AI development is inherently experimental — which architecture, how many neurons, what learning rate, which features, how much data? Hundreds of combinations to test. Without tracking: chaos, lost progress, confusion. With tracking: reproducibility, collaboration, insight.</p>
+<ul class="pts">
+<li><strong>Weights &amp; Biases</strong> — real-time tracking, visualization dashboards, collaboration, hyperparameter comparison, model versioning.</li>
+<li><strong>MLflow</strong> — open source, tracks experiments/parameters/metrics, model registry and deployment support.</li>
+<li><strong>Comet ML</strong> — W&amp;B alternative, similar feature set, free tier available.</li>
+<li><strong>Git</strong> — code version control, track changes, enable collaboration, rollback.</li>
+</ul>
+<div class="ascii">Run  Config     Accuracy      Loss
+1    lr=0.01    85%           0.23
+2    lr=0.001   88% <- close  0.18
+3    lr=0.1     70%           0.45
+4    5 layers   90% <- BEST   0.15
+5    10 layers  87%           0.20</div>
+<div class="note">The concrete failure mode without tracking is <b>re-running experiments you've already tried</b> — including ones that already failed — burning real compute cost and calendar time to rediscover a result someone already had.</div>`,
+dir:[`For a small project, a disciplined spreadsheet (config, metric, date, who ran it) genuinely can be enough — the value isn't the tool, it's the discipline of logging every run. Don't over-invest in W&B/MLflow before the team has proven it'll use even a spreadsheet consistently.`]},
+
+{sec:"infra",c:"violet",eyebrow:"Efficiency · 10",t:"q",q:`If you're detecting tumors in X-rays and the pre-trained model only ever saw everyday photos, would transfer learning still help — or is the domain gap too big?`},
+
+{sec:"infra",c:"violet",eyebrow:"Efficiency · 10",t:"a",h:"Transfer Learning",body:`
+<p><strong>Definition:</strong> reusing a model trained on one task as a starting point for another, similar task. <strong>Analogy:</strong> if you can skate, you can learn skiing faster — balance, comfort on slippery surfaces, weight distribution all transfer.</p>
+<div class="ascii">FIG — TRANSFER LEARNING WITH A CNN
+  Conv layers (FROZEN, pre-trained on ImageNet, 1M+ imgs)
+  -&gt; New FC layers (trained on YOUR data)
+  Only the final classifier layers get updated
+  Example: ResNet + 10K cat/dog images -&gt; ~95% accuracy in minutes</div>
+<ul class="pts">
+<li><strong>Speed</strong> — training time drops from hours to minutes.</li>
+<li><strong>Data</strong> — far less data needed — the feature extractor already learned good general features.</li>
+<li><strong>Compute</strong> — less compute — no need to retrain everything from scratch.</li>
+<li><strong>Performance</strong> — often better, since the base model was pre-trained on a massive dataset.</li>
+</ul>
+<div class="note">The X-ray case is the edge case worth flagging: when the target domain is very different from the source, the low-level features (edges, textures) still often transfer usefully, but you may need to unfreeze and fine-tune more layers than usual, or accept a smaller benefit than a same-domain transfer would give.</div>`,
+cto:[`How many layers to unfreeze is a spectrum, not binary — start with only the final layer trainable; if performance is insufficient, progressively unfreeze earlier layers with a lower learning rate, watching for overfitting as you go.`]},
+
+{sec:"infra",c:"violet",eyebrow:"Infra &amp; Transfer · Recall",t:"r",h:"Quick recall: infrastructure &amp; transfer learning",qs:[
+{q:`Why do GPUs structurally fit neural network training better than CPUs?`,a:`GPUs have thousands of simpler cores executing the same operation in parallel across a huge grid — exactly the shape of matrix multiplication, which is what training is made of.`},
+{q:`What's the concrete, costly failure mode of not tracking experiments?`,a:`Re-running experiments (including ones that already failed) because nobody remembers they were tried — burning real compute cost and calendar time to rediscover a known result.`},
+{q:`In transfer learning, what gets frozen and what gets trained?`,a:`The <b>convolutional feature-extractor layers</b> (pre-trained, e.g. on ImageNet) are frozen; only the <b>new final classifier layers</b> are trained on your data.`}]},
+
+/* ---------- CHOOSING LLMs ---------- */
+{sec:"llm",c:"amber",eyebrow:"LLM Selection · 11",t:"q",q:`Before reading — do you think classification tasks (like spam detection) actually <b>need</b> an LLM at all?`},
+
+{sec:"llm",c:"amber",eyebrow:"LLM Selection · 11",t:"a",h:"Framework to Choose the Right LLM",body:`
+<p><strong>Step 1 — Define your needs:</strong> core task? input/output format? data privacy? latency (real-time vs batch)? time to market? budget (build vs buy)? inference cost constraints?</p>
+<div class="ascii">STEP 2 - Choose model type: do you even need an LLM?
+Classification            No — use classical ML
+Named Entity Recognition  No — use specialized models
+Retrieval                 No — use search
+Summarization             Yes
+Text generation           Yes
+Translation                Yes
+Chatbots                  Yes
+Reasoning                 Yes</div>
+<div class="ascii">STEP 3 - Choose model size
+                Small/medium (&lt;50B)     Large (&gt;50B)
+Cost &amp; speed    Lower cost, faster      Expensive, higher latency
+Deployment      Easier                  Harder to deploy/maintain
+Reasoning       May lack depth, +RAG    Better reasoning
+Environmental   Lower footprint         Higher carbon footprint
+Example         DeepSeek (1.5B)         GPT-4 (~100T)</div>
+<div class="ascii">STEP 4 - Select sourcing option
+                Open source             Proprietary
+Cost            Free / low              Subscription / usage fees
+Time to deploy  High — needs expertise  Low — ready-to-use APIs
+Provenance      Often unknown           Rigorous checks
+Support         Community, irregular    Professional, continuous</div>
+<p><strong>Step 5 — Scaling &amp; operations:</strong> data residency laws, expected volume/traffic (API limits), skills needed (prompt engineering vs full training), end-to-end cost (training + inference), build vs buy.</p>
+<div class="note">Most tasks people reach for an LLM to solve <b>don't actually need one</b> — classification, entity recognition, and retrieval are typically faster, cheaper, and more accurate with classical ML or search. The five-step framework forces that question first.</div>`,
+cto:[`"We need an LLM for this" should trigger Step 2's table before any vendor conversation starts — a huge share of LLM cost overruns trace back to using a generative model for a task a classifier would have solved for a fraction of the inference cost.`],
+dir:[`Open-source's "low cost" is a trap if you don't have in-house expertise to operate it — the true cost includes the hiring or consulting needed to run it reliably, which can exceed a proprietary API's subscription fee.`]},
+
+{sec:"llm",c:"amber",eyebrow:"Benchmarks · 12",t:"q",q:`If a model scores <b>98% on professional medicine exams</b>, would you trust it to diagnose patients unsupervised? What's the gap between a benchmark score and real-world readiness?`},
+
+{sec:"llm",c:"amber",eyebrow:"Benchmarks · 12",t:"a",h:"LLM Leaderboards &amp; Benchmarks",body:`
+<div class="ascii">OLD BENCHMARKS (now near-obsolete, models >80%+)
+  DROP - reading comprehension | HellaSwag - common sense
+  MMLU - 57 subjects | ARC - scientific reasoning
+  TruthfulQA - resists false answers | HumanEval - code gen
+
+NEW, HARDER BENCHMARKS (current leaderboard)
+  Humanity's Last Exam - 2,500 hardest-for-humans Qs,
+    best models score only ~35%
+  GPQA - graduate-level, "Google-proof" PhD science
+  MATH - competition-level math | BBH - Big Bench Hard
+  IF-Eval - instruction-following</div>
+<div class="ascii">Model         Size   MATH   GPQA
+Qwen 72B      72B    41%    20.7% (highest avg)
+Llama 3 70B   70B    18%    ~10%</div>
+<div class="ascii">FIG — ACCURACY vs LATENCY: Phi-3 finds the balance
+  Qwen 72B (high acc, high latency) · Llama 3 70B
+  Phi-3 — best accuracy/latency balance</div>
+<div class="ascii">MEDICAL LEADERBOARD accuracy
+  Clinical knowledge 91% | Genetics 98%
+  Professional medicine 98.9% | Anatomy 98%</div>
+<div class="note">As models saturated older benchmarks above 90%, the field moved to genuinely harder tests where even top models clear only ~35%. "Best" is only meaningful relative to your constraint — Qwen wins raw MATH/GPQA, Phi-3 wins the accuracy-vs-latency trade-off real-time apps need. The medical score is the clearest gap: <b>98.9% measures recall of medical knowledge</b>, not clinical judgment, patient communication, or accountability for a wrong diagnosis.</div>`,
+cto:[`Pick the benchmark that matches your actual deployment constraint (accuracy-vs-latency for a real-time product, raw reasoning score for an offline research tool) — never adopt a model based on a leaderboard rank that optimizes for a dimension you don't actually care about.`]},
+
+{sec:"llm",c:"amber",eyebrow:"LLM Selection · Recall",t:"r",h:"Quick recall: choosing LLMs",qs:[
+{q:`Which four task types don't need an LLM at all, per Step 2?`,a:`Classification, Named Entity Recognition, and Retrieval don't need an LLM — use classical ML/specialized models/search instead. (Summarization, generation, translation, chatbots, reasoning do.)`},
+{q:`Why is open-source's "free" cost misleading?`,a:`The true cost includes the ML engineering and MLOps expertise needed to deploy, secure, and maintain it — expertise a non-tech company often lacks and must hire or consult for, which can exceed a proprietary API's subscription cost.`},
+{q:`Why did the field move from MMLU/HellaSwag to Humanity's Last Exam/GPQA?`,a:`Models saturated the old benchmarks above 90%, making them useless for differentiation — the new, harder tests (best models only ~35% on Humanity's Last Exam) restore meaningful signal.`}]},
+
+/* ---------- PRACTICE + FINAL RECALL ---------- */
+{sec:"end",c:"ink",eyebrow:"Applied Practice · 13",t:"q",q:`A spiral-shaped dataset is much harder to separate than two circles. What's your first instinct to fix a model failing on it — <b>more epochs, or a bigger architecture</b>?`},
+
+{sec:"end",c:"ink",eyebrow:"Applied Practice · 13",t:"a",h:"Practice Opportunities",body:`
+<div class="note">TensorFlow Playground — spiral dataset: a harder dataset requires more model <b>capacity</b> to fit. Increase hidden layers/neurons; tune learning rate for stability. More epochs alone won't fix it if the architecture itself is too small.</div>
+<div class="ascii">MAPPING ARCHITECTURES TO PROBLEMS
+Electricity consumption forecasting   LSTM (time series)
+Handwritten digit recognition          CNN (images)
+Generate synthetic faces               GANs (generation)
+Anomaly detection                      Autoencoder
+English -&gt; French translation         Transformers (NLP)</div>
+<div class="ascii">CLASSIFICATION RECAP — fraud detection
+  Accuracy 92% (misleading, imbalanced)
+  Precision 58.3% (many false positives)
+  Recall 70% (missing 30% of fraud)
+  Bank prioritizes precision for customer experience.
+
+REGRESSION RECAP — Walmart sales forecasting
+  MAE  $70,000 average error
+  MSE  5.13 x 10^9 (large, hard to interpret)
+  RMSE $71,000 — "off by $71K on average"
+  For a VP: "The model forecasts sales with roughly $70K accuracy."</div>
+<div class="note">These four scenarios are earlier topics applied concretely: a hard dataset needs more capacity, not just more epochs; problem shape maps predictably to architecture family; and both examples confirm the same lesson — the "best" metric reflects the real business cost, translated into a plain-language sentence a stakeholder can act on.</div>`,
+cto:[`When a model underperforms on a genuinely hard dataset, diagnose capacity vs. training time separately — plot training loss vs epoch; if loss plateaus early and high, that's a capacity problem (fix the architecture), not a training-duration problem (more epochs won't help).`]},
+
+{sec:"end",c:"ink",eyebrow:"Module Summary",t:"a",h:"Summary &amp; the one line to remember",body:`
+<ul class="pts">
+<li><strong>Models are math</strong> — neural networks mimic the brain mathematically. Training = optimizing weights. Compute grew 10 billion-fold since 2010.</li>
+<li><strong>Architecture choice matters</strong> — CNN: images. RNN/LSTM: sequential. Transformers: NLP, state-of-the-art. GANs: generation. Autoencoders: anomaly detection.</li>
+<li><strong>Evaluation metrics</strong> — classification: accuracy, precision, recall, F1. Regression: MAE, MSE, RMSE, R&sup2;. Choose based on business impact.</li>
+<li><strong>Training infrastructure</strong> — CPU: general purpose. GPU: best for neural nets. TPU: Google's AI chip. Cloud &gt; local for scalability.</li>
+<li><strong>Experiment tracking</strong> — track params, metrics, code versions. Tools: W&amp;B, MLflow, Comet ML. Ensures reproducibility.</li>
+<li><strong>Transfer learning</strong> — reuse pre-trained models for similar tasks. Saves time, data, compute. Fine-tune final layers.</li>
+<li><strong>Choosing the right LLM</strong> — define needs &rarr; choose type &rarr; choose size &rarr; open/closed source &rarr; plan scaling. Use leaderboards carefully.</li>
+</ul>
+<div class="note"><b>🏗️ The one line to remember:</b> "The model is the brain, but it's only as good as the data you feed it." Choose the right architecture, evaluate with the right metrics, and track everything for reproducibility.</div>`},
+
+{sec:"end",c:"ink",eyebrow:"Deep Recall · Part A",t:"r",h:"Active Recall — deep thought questions (1/2)",qs:[
+{q:`A 100-neuron network performs as well as a 1000-neuron one. Which should you choose, and what factors matter besides accuracy?`,a:`Choose the smaller one — it trains faster, costs less to serve, and is less prone to overfitting on future data. Beyond accuracy: training/inference cost, latency, interpretability, and how much headroom you need as real-world data drifts from the training distribution.`},
+{q:`Transformers process tokens in parallel with no recurrence. Does that make them "less intelligent" than RNNs?`,a:`No — sequential processing isn't a proxy for intelligence, just one architectural strategy. Transformers actually capture long-range dependencies better because self-attention lets every token reference every other token directly, rather than through a compressed hidden state one step at a time.`},
+{q:`The bank prioritizes precision over recall in fraud detection. What if they're losing millions to undetected fraud — should they shift to recall?`,a:`Quantify both costs directly — dollar cost of missed fraud (false negatives) vs. cost of blocked transactions and churn (false positives) — and choose the threshold minimizing total expected cost. Shift toward recall only if the fraud losses genuinely exceed the customer-experience cost, ideally validated with real financial data.`},
+{q:`Would transfer learning help detecting tumors in X-rays if the pre-trained model only saw natural photos?`,a:`Usually yes, with a caveat — the earliest CNN layers learn general features (edges, textures) that transfer even across very different domains. The benefit shrinks deeper in the network, where later layers encode domain-specific patterns. Practical approach: keep early layers frozen, unfreeze and fine-tune more of the later layers, expect a smaller boost than same-domain transfer.`}]},
+
+{sec:"end",c:"ink",eyebrow:"Deep Recall · Part B",t:"r",h:"Active Recall — deep thought questions (2/2)",qs:[
+{q:`Open-source LLMs are free but need expertise; proprietary are paid but easy. Which is more cost-effective for a non-tech company?`,a:`Proprietary APIs, for most non-tech companies — the "free" cost of open source is misleading once you account for the ML engineering/MLOps expertise needed, which a non-tech company typically lacks in-house. The calculus flips only at genuinely large, predictable usage volumes.`},
+{q:`LLM benchmarks show >90% on medical exams. Can they replace doctors? What's missing?`,a:`Benchmarks measure recall of medical knowledge under exam conditions — not clinical judgment under uncertainty, physical examination, reading non-verbal cues, legal/ethical accountability, or the countless edge cases and comorbidities that don't fit exam questions. A high score is necessary but nowhere near sufficient.`},
+{q:`Compute doubles every 5-6 months. Will we build larger models forever once compute is "infinite"?`,a:`Almost certainly not indefinitely — data availability, energy costs, and diminishing returns on scale are more likely to bind before compute itself runs out. The field has already started shifting effort toward efficiency (smaller models matching larger ones) rather than purely chasing scale.`},
+{q:`GANs generate realistic fake images. How do we distinguish real from fake — detection systems or regulation?`,a:`Both, and neither alone is sufficient. Detection systems are in a constant arms race with generators that improve to evade them, so detection alone degrades over time. Regulation (mandatory provenance/watermarking, disclosure) addresses the incentive structure rather than trying to win a technical arms race — most serious proposals combine both.`}]}
+];
+
+let i=0;
+const stage=document.getElementById('stage'),dots=document.getElementById('dots'),
+tabs=document.getElementById('tabs'),counter=document.getElementById('counter'),
+prevBtn=document.getElementById('prevBtn'),nextBtn=document.getElementById('nextBtn');
+SECTIONS.forEach(s=>{const b=document.createElement('button');b.className='tab';b.dataset.c=s.c;b.dataset.sec=s.id;b.textContent=s.label;b.onclick=()=>go(S.findIndex(x=>x.sec===s.id));tabs.appendChild(b);});
+S.forEach((sl,k)=>{const d=document.createElement('span');d.className='dot'+(sl.t==='q'?' q':'');d.tabIndex=0;d.setAttribute('role','button');d.setAttribute('aria-label','Slide '+(k+1));d.onclick=()=>go(k);d.onkeydown=e=>{if(e.key==='Enter')go(k)};dots.appendChild(d);});
+function lens(cto,dir){
+  let out='';
+  if(cto&&cto.length) out+='<details class="lens"><summary>CTO LENS</summary><div class="body"><ul class="pts">'+cto.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+  if(dir&&dir.length) out+='<details class="lens dir"><summary>DIRECTOR LENS</summary><div class="body"><ul class="pts">'+dir.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+  return out;
+}
+function go(k){
+  i=Math.max(0,Math.min(S.length-1,k));
+  const s=S[i];stage.innerHTML='';
+  const el=document.createElement('div');el.className='slide';
+  try{
+    if(s.t==='q'){
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div>'
+        +'<div class="qcard"><div class="qlabel">Think first &middot; predict before you peek</div>'
+        +'<div class="qtext">'+s.q+'</div>'
+        +'<div class="qsub">Form your answer in your head. Then press Next to compare.</div></div>';
+    } else if(s.t==='r'){
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'
+        +'<p>Answer from memory first. Tap a question to reveal the answer.</p>'
+        +s.qs.map(x=>'<details class="recall-item"><summary>'+x.q+'</summary><div class="ans">'+x.a+'</div></details>').join('')
+        +'<div class="recall-hint">Struggled on any? Jump back with the tabs above, then return.</div>';
+    } else {
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'+s.body+(((s.cto&&s.cto.length)||(s.dir&&s.dir.length))?lens(s.cto,s.dir):'');
+    }
+  }catch(err){
+    el.innerHTML='<div class="eyebrow rose">Render error</div><h2>Slide '+(i+1)+' failed to render</h2><p>'+String(err&&err.message||err)+'</p>';
+  }
+  stage.appendChild(el);
+  counter.textContent=(i+1)+' / '+S.length;
+  document.querySelectorAll('.dot').forEach((d,k2)=>d.classList.toggle('on',k2===i));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.sec===s.sec));
+  prevBtn.disabled=(i===0);
+  nextBtn.textContent=(i===S.length-1)?'Done \u2713':'Next \u2192';
+  nextBtn.disabled=(i===S.length-1);
+  document.querySelector('main').scrollTop=0;window.scrollTo(0,0);
+}
+prevBtn.onclick=()=>go(i-1);nextBtn.onclick=()=>go(i+1);
+document.addEventListener('keydown',e=>{if(e.target.closest('details'))return;if(e.key==='ArrowRight')go(i+1);if(e.key==='ArrowLeft')go(i-1);});
+go(0);
+</script>
+</body>
+</html>

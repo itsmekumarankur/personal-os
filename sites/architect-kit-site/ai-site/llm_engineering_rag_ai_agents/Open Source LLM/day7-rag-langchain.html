@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architects Lab · RAG with LangChain — &quot;Ask 11 Madison Park&quot;</title>
+<style>
+  :root{
+    --bg:#0d0f14; --panel:#151823; --panel2:#1b1f2e;
+    --ink:#e8e6df; --dim:#8b8fa3;
+    --gold:#d4af5a; --gold-soft:#b8964a;
+    --teal:#5ad4c8; --rose:#d47a8a; --violet:#9a8ad4; --amber:#d4915a;
+    --line:#2a2f42;
+    --mono:'Courier New', ui-monospace, monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif;display:flex;flex-direction:column;min-height:100vh}
+  header{padding:16px 26px 12px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  header .k{font-family:var(--mono);font-size:.68rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase}
+  header h1{font-size:1rem;font-weight:normal}
+  header .count{margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--dim)}
+  .tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
+  .tab{flex:1;min-width:110px;padding:9px 10px;text-align:center;font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;color:var(--dim);border-right:1px solid var(--line);cursor:pointer;white-space:nowrap;transition:.2s;background:transparent;border-top:none;border-bottom:none;border-left:none}
+  .tab:last-child{border-right:none}
+  .tab.active{color:var(--bg);font-weight:bold}
+  .tab[data-c="gold"].active{background:var(--gold)}
+  .tab[data-c="teal"].active{background:var(--teal)}
+  .tab[data-c="rose"].active{background:var(--rose)}
+  .tab[data-c="violet"].active{background:var(--violet)}
+  .tab[data-c="amber"].active{background:var(--amber)}
+  .tab[data-c="ink"].active{background:var(--ink)}
+  main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px 96px;overflow-y:auto}
+  .slide{max-width:780px;width:100%;animation:fadeUp .4s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @media (prefers-reduced-motion: reduce){.slide{animation:none}}
+  .eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px}
+  .eyebrow.gold{color:var(--gold)} .eyebrow.teal{color:var(--teal)} .eyebrow.rose{color:var(--rose)}
+  .eyebrow.violet{color:var(--violet)} .eyebrow.amber{color:var(--amber)} .eyebrow.ink{color:var(--dim)}
+  .slide h2{font-size:1.55rem;font-weight:normal;line-height:1.3;margin-bottom:14px}
+  .slide h2 em{font-style:italic;color:var(--gold)}
+  .slide p{color:#c9c7bf;line-height:1.75;font-size:1rem;margin-bottom:13px}
+  .slide p strong, .slide li strong{color:var(--ink)}
+  .slide code{font-family:var(--mono);font-size:.85em;background:var(--panel2);padding:2px 6px;border-radius:3px;color:var(--gold)}
+  .ascii{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:6px;padding:14px 16px;margin:14px 0;font-family:var(--mono);font-size:.74rem;line-height:1.5;color:#b9c2d8;overflow-x:auto;white-space:pre}
+  .ascii .hl{color:var(--gold)} .ascii .tl{color:var(--teal)} .ascii .rs{color:var(--rose)}
+  .note{border:1px dashed var(--gold-soft);border-radius:6px;padding:11px 15px;margin:14px 0;font-size:.9rem;color:#cfc9ae;line-height:1.65}
+  .note b{color:var(--gold)}
+  ul.pts{margin:10px 0 13px 2px;list-style:none}
+  ul.pts li{padding:6px 0 6px 21px;position:relative;color:#c9c7bf;line-height:1.6;font-size:.95rem}
+  ul.pts li::before{content:"\203A";position:absolute;left:4px;color:var(--gold);font-family:var(--mono)}
+  /* ---- Think First (question) slides ---- */
+  .qcard{border:2px solid var(--gold);border-radius:10px;background:linear-gradient(160deg,#1a1608,#151823);padding:30px 28px;margin:6px 0 18px;position:relative}
+  .qcard::before{content:"?";position:absolute;top:-20px;left:22px;width:38px;height:38px;border-radius:50%;background:var(--gold);color:var(--bg);font-family:var(--mono);font-weight:bold;font-size:1.3rem;display:flex;align-items:center;justify-content:center}
+  .qcard .qlabel{font-family:var(--mono);font-size:.64rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;margin-bottom:12px}
+  .qcard .qtext{font-size:1.25rem;line-height:1.55;color:var(--ink);font-style:italic}
+  .qcard .qsub{margin-top:14px;font-size:.86rem;color:var(--dim);font-style:normal;font-family:var(--mono)}
+  /* ---- lenses (CTO / Director) ---- */
+  details.lens{margin:10px 0;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+  details.lens summary{cursor:pointer;padding:10px 14px;font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;color:var(--teal);list-style:none}
+  details.lens summary::before{content:"+ ";color:var(--gold)}
+  details.lens[open] summary::before{content:"\2212 "}
+  details.lens.dir summary{color:var(--rose)}
+  details.lens .body{padding:2px 16px 13px}
+  details.lens .body li{font-size:.9rem}
+  /* ---- recall quiz slides ---- */
+  .recall-item{border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:6px;background:var(--panel);margin:12px 0;overflow:hidden}
+  .recall-item summary{cursor:pointer;padding:13px 16px;font-size:.98rem;color:var(--ink);list-style:none;line-height:1.55}
+  .recall-item summary::before{content:"Q  ";font-family:var(--mono);color:var(--teal);font-weight:bold}
+  .recall-item .ans{padding:0 16px 13px;color:#b9c2b0;font-size:.92rem;line-height:1.65;border-top:1px dashed var(--line);padding-top:11px;margin:0 16px 13px;padding-left:0;padding-right:0}
+  .recall-item .ans b{color:var(--teal)}
+  .recall-hint{font-family:var(--mono);font-size:.7rem;color:var(--dim);margin-top:6px}
+  footer{position:fixed;left:0;right:0;bottom:0;background:rgba(13,15,20,.93);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:11px 20px;display:flex;align-items:center;gap:14px}
+  .dots{display:flex;gap:4px;flex:1;justify-content:center;flex-wrap:wrap}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--line);cursor:pointer;transition:.2s}
+  .dot.on{background:var(--gold);transform:scale(1.45)}
+  .dot.q{border:1px solid var(--gold);background:transparent}
+  .dot.q.on{background:var(--gold)}
+  button.nav{font-family:var(--mono);font-size:.78rem;letter-spacing:.1em;background:transparent;color:var(--ink);border:1px solid var(--line);padding:9px 18px;border-radius:5px;cursor:pointer;transition:.2s}
+  button.nav:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+  button.nav.primary{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:bold}
+  button.nav.primary:hover{background:#e2c070}
+  button.nav:disabled{opacity:.25;cursor:default}
+  button.nav:focus-visible,.tab:focus-visible,.dot:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .hint{position:fixed;bottom:62px;right:18px;font-family:var(--mono);font-size:.6rem;color:var(--dim);letter-spacing:.1em}
+  @media(max-width:600px){.slide h2{font-size:1.28rem}.ascii{font-size:.58rem;padding:11px}.hint{display:none}.qcard .qtext{font-size:1.08rem}}
+</style>
+</head>
+<body>
+<header>
+  <span class="k">Architects Lab</span>
+  <h1>RAG with LangChain · &quot;Ask 11 Madison Park&quot;</h1>
+  <span class="count" id="counter"></span>
+</header>
+<div class="tabs" id="tabs"></div>
+<main><div id="stage"></div></main>
+<div class="hint">&larr; &rarr; keys work too</div>
+<footer>
+  <button class="nav" id="prevBtn">&larr; Prev</button>
+  <div class="dots" id="dots"></div>
+  <button class="nav primary" id="nextBtn">Next &rarr;</button>
+</footer>
+<script>
+const SECTIONS=[
+ {id:"intro",label:"START",c:"ink"},
+ {id:"frame",label:"WHAT RAG IS",c:"teal"},
+ {id:"setup",label:"LOAD+CHUNK+EMBED",c:"gold"},
+ {id:"test",label:"TEST+CHAIN",c:"violet"},
+ {id:"ui",label:"UI+RECAP",c:"amber"}
+];
+const S=[
+
+{sec:"intro",c:"ink",eyebrow:"RAG &amp; LangChain Project",t:"a",h:"Retrieval-Augmented Generation with LangChain — <em>&quot;Ask 11 Madison Park&quot;</em>",body:`
+<p>A hands-on project: make an LLM answer questions using a restaurant's own website data — not just what it learned in training. Built with LangChain, OpenAI embeddings, ChromaDB, and a Gradio front end that shows its sources.</p>
+<div class="note"><b>How to use:</b> "?" slides ask you to predict first. Press Next to compare. Recall quizzes close each section.</div>`},
+
+/* ---------- WHAT RAG IS ---------- */
+{sec:"frame",c:"teal",eyebrow:"Framing",t:"q",q:`RAG never touches the model's weights — it only changes the prompt. Does RAG make a model "smarter," or just "better informed"? Is a small model with great retrieval always better than a big model with none?`},
+
+{sec:"frame",c:"teal",eyebrow:"Framing",t:"a",h:"What RAG actually is — Retrieve, Augment, Generate",body:`
+<div class="ascii">User: "What kind of food does 11 Madison Park serve?"
+        |
+R - RETRIEVE ----------------------------------------------
+    search a vector database made of the restaurant's OWN
+    data --> pull out the chunks that match the question
+        |
+A - AUGMENT ------------------------------------------------
+    question + retrieved chunks ---> ONE combined prompt
+        |
+G - GENERATE -------------------------------------------------
+    send that combined prompt to the LLM
+        |
+Answer -- grounded in the RESTAURANT'S real data, not just
+          whatever the model happened to learn during training
+
+KEY POINT: model weights are never touched. Only the prompt
+           changes. Update the database, answers update too.</div>
+<div class="note">RAG improves what a model KNOWS, not how well it THINKS. Retrieval supplies facts; reasoning quality still comes entirely from the underlying LLM. A weak model with perfect retrieval can still reason badly over correct facts. A strong model with bad retrieval will reason brilliantly over the wrong facts. Neither fixes the other's job.</div>`},
+
+{sec:"frame",c:"teal",eyebrow:"Comparison",t:"q",q:`If you could bolt fine-tuning AND RAG onto the same production system, what job would <b>each</b> actually be doing — and when would using both together be additive vs. just redundant?`},
+
+{sec:"frame",c:"teal",eyebrow:"Comparison",t:"a",h:"RAG vs. fine-tuning — when to reach for which",body:`
+<div class="ascii">FINE-TUNING                      RAG
+what changes:  model weights      nothing in the model -- an
+               (retrain)          outside DB is checked live
+best for:      deep, stable       facts that change often,
+               style/behavior     or niche info
+update:        retrain (GPU,      just edit the database
+               days/weeks)        (fast, cheap)
+cost:          $$$ expensive      $ cheap, quick
+failure mode:  overfitting,       only as good as retrieval
+               narrow behavior    (bad chunks -> bad answers)
+citations:     X baked in, no     OK points to the exact
+               citation trail     source document
+
+RULE OF THUMB: menu/facts/policy updates often? --> RAG
+               need a specific WRITE/SPEAK style? --> fine-tune</div>
+<div class="note">RAG's job: supply current, citable FACTS at request time. Fine-tuning's job: change HOW the model behaves — tone, format discipline, domain reasoning style — permanently. Combining is additive when you need both: an IDFC bot that must always answer in a compliance-safe tone (fine-tune) while pulling live, correct policy numbers (RAG). Combining is redundant if the actual problem is just "the model doesn't know current facts" — fine-tuning alone won't fix staleness.</div>`,
+cto:[`Is there a real scenario where reaching for RAG would actually be the WRONG call, even though information genuinely changes often? Yes — when "changes often" really means "phrases itself differently every time" rather than "facts change." If the underlying facts are stable but the FORMAT or TONE must follow strict, non-negotiable rules (e.g. legally-reviewed disclaimer wording), RAG alone won't guarantee that discipline — the LLM still has freedom in how it stitches retrieved text into prose. That's a case for fine-tuning the output behavior, sometimes on top of RAG rather than instead of it.`]},
+
+{sec:"frame",c:"teal",eyebrow:"Tooling",t:"q",q:`LangChain hides a lot of manual wiring behind reusable chains. When a chain gives a bad answer in production, where does that <b>convenience start working against you</b>?`},
+
+{sec:"frame",c:"teal",eyebrow:"Tooling",t:"a",h:"LangChain 101 — why use a framework at all?",body:`
+<div class="ascii">WITHOUT a framework:            WITH LangChain:
+one prompt --> one reply         search -> summarize -> translate
+(build every piece yourself)     (chained steps, reusable pieces)
+
+LangChain's building blocks:
+[prompts] [memory] [tools/plugins] [agents] [retrieval/RAG] <- this project</div>
+<div class="note">The moment something breaks. A chain that "just works" hides which specific step failed — retrieval (wrong chunks found), prompt assembly (context stuffed badly), or the LLM call itself (right context, bad generation). The same abstraction that saves you from hand-wiring these steps also removes your visibility into them by default. The fix isn't avoiding frameworks — it's insisting on step-by-step tracing/logging so the black box stays debuggable, not just convenient.</div>`,
+cto:[`An "opinionated framework" like LangChain bundles someone else's assumptions about how a RAG pipeline should be built. If your use case doesn't fit, do you fight it or drop back to raw API calls? LangChain plays the same role Next.js played elsewhere — a genuine speed win when your use case matches its assumptions. The line to drop back to raw calls is when you find yourself fighting the framework's defaults more than using them — configuring around a chain type instead of just writing the three lines of logic yourself.`]},
+
+{sec:"frame",c:"teal",eyebrow:"What RAG Is · Recall",t:"r",h:"Quick recall: what RAG is",qs:[
+{q:`RAG changes what, exactly — and what doesn't it change?`,a:`It changes only the <b>prompt</b> — retrieved chunks get appended to it at request time. Model weights are <b>never</b> touched. RAG improves what a model knows, not how well it reasons.`},
+{q:`When would fine-tuning be the right call even though "the facts change often"?`,a:`When "changes often" actually means the phrasing/tone must follow a strict, non-negotiable format (e.g. legal disclaimer wording) — RAG supplies facts but the LLM still has freedom in how it stitches them into prose; that discipline needs fine-tuning.`},
+{q:`What does a "chain that just works" hide from you, and what's the fix?`,a:`It hides WHICH step failed — retrieval, prompt assembly, or generation. The fix is step-by-step tracing/logging, not avoiding frameworks altogether.`}]},
+
+/* ---------- LOAD + CHUNK + EMBED ---------- */
+{sec:"setup",c:"gold",eyebrow:"Setup",t:"q",q:`<code>TextLoader</code> reads the whole file as ONE document before anything is split. Why does that <b>order</b> matter — could you embed the whole document first and split it into pieces later instead?`},
+
+{sec:"setup",c:"gold",eyebrow:"Setup",t:"a",h:"Loading the source document",body:`
+<div class="ascii">11madisonpark.com --(scrape)--> one .txt file
+                                       |
+                          TextLoader(file, encoding="utf-8")
+                                       |
+                        ONE big document object
+                        (menu + contact + chef bio + partnerships
+                         all still stuck together, not split yet)
+
+Windows note: needs Microsoft Visual C++ 14+ installed,
+              or LangChain won't install/run correctly</div>
+<div class="note">Order matters for a structural reason. An embedding compresses a chunk of text into ONE vector representing its overall meaning. Embed the entire document as one blob, and the menu, chef bio, and partnership info all get blended into a single averaged vector — representing none of them well. Splitting BEFORE embedding is what lets each chunk's vector stay sharply about one topic, which is the entire reason retrieval can tell "menu questions" apart from "dress code questions" later. Embed-then-split isn't just unusual — it defeats the purpose.</div>`},
+
+{sec:"setup",c:"gold",eyebrow:"Chunking",t:"q",q:`chunk_size=1000, overlap=150 was tuned for a casual restaurant website. Applied to IDFC's <b>compliance policy documents</b> instead — safe default, or does regulated text need a fundamentally different approach?`},
+
+{sec:"setup",c:"gold",eyebrow:"Chunking",t:"a",h:"Splitting the document — chunk size and overlap",body:`
+<div class="ascii">ONE big document
+   | RecursiveCharacterTextSplitter(chunk_size=1000,
+   |   chunk_overlap=150)
+   v
+[chunk1][chunk2][chunk3]...[chunk38]  --> 38 chunks total
+  each chunk also carries METADATA -> source file name
+                                        (= later citations)
+
+WHY OVERLAP?  zero overlap:
+  "...the chef trained  |  in Switzerland before..."
+                        CUT HERE -- sentence broken, meaning lost
+  150-char overlap: text repeats on both sides of the cut,
+  so no idea gets sliced clean in half
+
+EXPERIMENT: chunk_size 1000 -> 38 chunks | 500 -> 79 chunks
+            overlap=0 -> chunk count barely changes, but
+                          boundary context gets WORSE</div>
+<div class="note">Almost certainly not safe as-is. A restaurant's ideas are short and independent — cutting mid-sentence loses a little color. A compliance clause cut mid-condition ("...eligible UNLESS [cut here] the transaction exceeds ₹X") can flip the legal meaning of the retrieved chunk, and the model may confidently answer from the incomplete half. Regulated text usually wants chunking aligned to structural boundaries (clause, section) rather than a fixed character count, plus enough overlap to guarantee no condition ever gets orphaned from its clause.</div>`,
+cto:[`"Pick a sane default, then tune against real results" sounds obvious. What would actually tell you your chunk_size is wrong, if the demo's answers already look fine? A demo "looking fine" is the trap — easy test questions pass even with a badly tuned chunk size. The real signal shows up on edge-case questions that straddle a chunk boundary, or questions needing two related facts split into different chunks. Tune against deliberately hard queries, not the easy ones that happen to work either way.`]},
+
+{sec:"setup",c:"gold",eyebrow:"Embeddings",t:"q",q:`"king" sits near "queen" because they're close in MEANING. If your users type Hindi/Hinglish but every source document is in English, does semantic closeness still hold across languages — or does retrieval quietly fail?`},
+
+{sec:"setup",c:"gold",eyebrow:"Embeddings",t:"a",h:"Turning text into vectors — and storing them in ChromaDB",body:`
+<div class="ascii">EASY EXAMPLE (3 imaginary axes: gender, age, "royalty"):
+     royalty
+        | king          queen
+        |  *              *
+        |    prince    princess
+        |      *          *
+--------+------------------------- gender
+        | boy         girl
+        |  *           *
+        | man         woman
+        |  *            *
+      age
+"king" is near "queen" and near "prince" -- close in MEANING,
+not because the letters match
+
+REAL PROJECT: 1,536 numbers per chunk (OpenAI embeddings)
+STORING: Chroma.from_documents(chunks, OpenAIEmbeddings())
+  for each of 38 chunks, ChromaDB stores 3 things:
+   1. the embedding vector (1,536 numbers -- the "meaning")
+   2. the original chunk text (human-readable)
+   3. the metadata (which source file it came from)</div>
+<div class="note">It depends entirely on whether the embedding model was trained on multilingual data. Some models place semantically equivalent phrases from different languages reasonably close — but "reasonably close" is weaker than same-language matching, varying a lot by language pair and phrasing style. This isn't something to assume — it's something to test with real Hinglish queries before trusting it in an India-facing product. A silent, subtle retrieval failure is far more dangerous than an obvious one, because the model will still answer fluently from whatever it got.</div>`,
+cto:[`Retrieval just returned the wrong chunks for a real question. Given only "bad chunking" and "bad embedding match" as suspects, how do you tell which, without guessing? Look at what came back, not just that it was wrong. Completely different topic than the query -> embedding/query-phrasing mismatch. Right topic but missing the specific detail -> chunking problem, the idea got split away from the answering fact. Diagnose starts by asking which of these two happened, not by re-tuning both at once.`]},
+
+{sec:"setup",c:"gold",eyebrow:"Load+Chunk+Embed · Recall",t:"r",h:"Quick recall: loading, chunking, embedding",qs:[
+{q:`Why must splitting happen BEFORE embedding, not after?`,a:`An embedding compresses a chunk into one vector representing its overall meaning. Embedding the whole document first blends every topic into a single averaged vector representing none of them well — splitting first keeps each chunk's vector sharply about one topic.`},
+{q:`Why does 1000/150 chunk_size/overlap need rethinking for regulated legal text?`,a:`A restaurant's ideas are short and independent; a compliance clause cut mid-condition can flip legal meaning. Regulated text wants chunking aligned to structural boundaries (clause/section) with enough overlap that no condition gets orphaned.`},
+{q:`Given a bad retrieval result, how do you tell "bad chunking" from "bad embedding match" without guessing?`,a:`Look at WHAT came back: completely off-topic results point to an embedding/query-phrasing mismatch; on-topic-but-missing-the-detail results point to a chunking problem where the answering fact got split away.`}]},
+
+/* ---------- TEST + CHAIN ---------- */
+{sec:"test",c:"violet",eyebrow:"Testing",t:"q",q:`If <code>similarity_search</code> returns confident, plausible-looking chunks that are actually subtly off-topic — not obviously wrong, just slightly off — would a quick manual spot-check even <b>catch</b> that?`},
+
+{sec:"test",c:"violet",eyebrow:"Testing",t:"a",h:"Verifying retrieval before building the full chain",body:`
+<div class="ascii">vector_store.similarity_search("what menus are offered?", k=3)
+     |
+does the top-3 come back menu-related?  YES -- retrieval works
+
+more test questions tried:
+  "Who is Daniel Humm?" | "Is there a dress code?"
+  "Tell me about the partnership with Magic Farms"
+
+k = how many chunks come back:
+  k=1 -> * (single best match)
+  k=2 -> * *
+  k=5 -> * * * * * (more context, but more noise too)
+
+WHY TEST THIS SEPARATELY?
+  bad final answer could mean:
+   (a) retrieval found the WRONG chunks -> fix chunking/k/query
+   (b) retrieval found the RIGHT chunks, LLM wrote a bad answer
+       -> fix the prompt/LLM
+  testing retrieval alone tells you which one broke</div>
+<div class="note">Probably not. Eyeballing 3-5 test questions catches obvious misses but not "confidently wrong" retrieval — chunks related enough to look right at a glance but not actually the best match. That needs a labeled test set of queries with expected correct chunks, and a real precision/recall@k metric — not just a human reading the output and nodding. Manual spot-checks are a fine first pass, not a substitute for a measured retrieval-quality benchmark before production.</div>`,
+cto:[`Testing retrieval alone, before generation, is good discipline with 38 chunks and a handful of questions. Does that same isolated-testing approach scale once you have thousands of chunks and can't eyeball every result? Manually checking "does the top-3 look right" stops working almost immediately after 38 chunks — nobody eyeballs a thousand test queries. The PRINCIPLE still holds (retrieval and generation are two separate failure points); the METHOD has to change from "look and judge" to "score automatically" — a labeled query set with measured precision/recall@k, run on a schedule.`]},
+
+{sec:"test",c:"violet",eyebrow:"Chain",t:"q",q:`The "stuff" chain works today because 3 chunks fit the context window. The day your document set outgrows that, what would you actually <b>see</b> go wrong — a clean error, a crash, or something quieter and more dangerous?`},
+
+{sec:"test",c:"violet",eyebrow:"Chain",t:"a",h:"Assembling the full RAG chain — RetrievalQAWithSourcesChain",body:`
+<div class="ascii">retriever = vector_store.as_retriever(search_kwargs={"k": 3})
+llm = OpenAI(temperature=0)
+chain = RetrievalQAWithSourcesChain.from_chain_type(
+    llm=llm, chain_type="stuff", retriever=retriever)
+result = chain.invoke(query)</div>
+<div class="ascii">question -> retriever(k=3) -> top 3 chunks
+   -> chain_type="stuff" -- shove all 3 chunks straight into the
+      prompt, as-is. Simplest strategy.
+      LIMIT: only works if chunks+question fit inside the
+      context window. Fine for 3 chunks; would break on a huge
+      document set (full policy library) -- need map-reduce/
+      refine chain instead.
+   -> llm = OpenAI(temperature=0) <- factual, no creativity
+   -> result["answer"], result["sources"], result["source_documents"]
+
+TEMPERATURE EXPERIMENT:
+  temperature=0   -> same facts, plain/consistent wording
+  temperature=1.3 -> SAME facts, different wording/style
+  conclusion: temperature changes HOW it's said, not WHETHER
+              it's grounded (retrieval supplies facts either way)</div>
+<div class="note">Often something quieter. Depending on the client library and model, context overflow can raise a clear token-limit error — the "safe" failure — but it can also silently truncate the stuffed context, meaning the model answers fluently and confidently from an incomplete set of chunks, with <b>no error at all</b>. That silent case is dangerous: the answer looks exactly as trustworthy as a correct one. Worth deliberately testing at and beyond the context limit before trusting this pattern at scale.</div>`,
+cto:[`If this exact "stuff" pattern had to grow from a 38-chunk restaurant site to a 10,000-document IDFC policy library tomorrow, what's the FIRST thing that needs to change? The chain type is the obvious answer but not necessarily the first bottleneck — retrieval itself (k=3, plain similarity search) likely needs upgrading first, since a 10,000-document corpus makes top-3-by-similarity far more likely to miss the genuinely relevant chunk among near-duplicates. Fix retrieval precision first, THEN worry about "stuff" vs map-reduce. Changing chain type without fixing retrieval just stuffs more of the wrong context, faster.`]},
+
+{sec:"test",c:"violet",eyebrow:"Test+Chain · Recall",t:"r",h:"Quick recall: testing &amp; chain assembly",qs:[
+{q:`Why isn't a 3-5 question manual spot-check sufficient to trust retrieval?`,a:`It catches obvious misses (wrong topic entirely) but not "confidently wrong" retrieval — chunks related enough to look right at a glance but not the actual best match. Needs a labeled test set with measured precision/recall@k.`},
+{q:`What's the "stuff" chain's fundamental limit, and what's the danger when it's exceeded?`,a:`It only works if the retrieved chunks plus question fit inside the context window. Beyond that, failure can be a clean token-limit error OR silent truncation — the model answers fluently from an incomplete context with no error raised, which is the dangerous case.`}]},
+
+/* ---------- UI + RECAP ---------- */
+{sec:"ui",c:"amber",eyebrow:"Interface",t:"q",q:`A citation tells the user WHICH document an answer came from. It does not tell them whether that document is still accurate. What's missing from a "trustworthy" RAG answer if the cited source itself is <b>stale</b>?`},
+
+{sec:"ui",c:"amber",eyebrow:"Interface",t:"a",h:"Gradio front end — questions, citations, and polish",body:`
+<div class="ascii">+---------------------------------------------------+
+| Ask 11 Madison Park                                |
+| [ question box.......................... ]         |
+| try: "Is there a dress code?"                       |
+|      "Do I need a reservation for the bar?"         |
+|      "Can I buy gift cards?"                        |
+| [ Ask 11 Madison Park ]  <- submit button           |
+| Answer: "Yes, smart casual is required..."          |
+| Source: 11madisonpark.com/faq  <- CITED, visible    |
++---------------------------------------------------+
+KEY: answer + citation shown together = transparency,
+     not just a plain LLM chat reply</div>
+<div class="note"><b>Freshness.</b> A citation creates a feeling of confidence ("it's grounded, it's sourced!") even when it's grounded in an outdated document. RAG only ever guarantees the answer matches what's IN the database — not that the database is current. A genuinely trustworthy setup would surface the source document's last-updated date alongside the citation, and have a real process for re-scraping when the underlying source changes — otherwise "cited" quietly gets mistaken for "correct."</div>`,
+cto:[`Would a regulator, auditor, or compliance reviewer accept "the UI displayed a source link" as proof of where an answer came from — or does auditable mean something stricter than visible? Visible-in-the-UI and auditable are not the same bar. A citation shown to a user is a trust signal for them in the moment — it doesn't by itself create a durable record. A real audit trail needs the retrieved chunk, the exact prompt sent, the model's response, and the citation all logged together with a timestamp, so a reviewer can reconstruct "why did the system say this" months later.`]},
+
+{sec:"ui",c:"amber",eyebrow:"Wrap-up",t:"q",q:`Across the whole pipeline — load, split, embed, retrieve, generate, display — which single step, if it silently degrades, would be <b>hardest to notice</b> just by reading the final answer?`},
+
+{sec:"ui",c:"amber",eyebrow:"Wrap-up",t:"a",h:"Full pipeline recap",body:`
+<div class="ascii">website text file
+   | TextLoader
+ONE big document
+   | RecursiveCharacterTextSplitter (size=1000, overlap=150)
+38 chunks (+ metadata: source file)
+   | OpenAIEmbeddings (1,536-dim)
+chunk --> vector, stored in ChromaDB
+   | similarity_search()  <- tested ALONE first
+confirmed: right chunks come back for real questions
+   | RetrievalQAWithSourcesChain (k=3, chain_type="stuff")
+question + top-3 chunks --> one prompt --> LLM (temp=0)
+   |
+grounded answer + cited source
+   | Gradio UI
+question box + example questions + answer + citation, all visible
+
+RAG vs fine-tuning, in one line:
+  changing facts often? -> RAG (edit the database)
+  changing style/behavior deeply? -> fine-tune (retrain)</div>
+<div class="note">Chunking and retrieval quality are hardest to catch from the final answer alone — the LLM will still generate a fluent, confident-sounding response even from mediocre or subtly-wrong chunks. It never says "I'm not sure these sources are relevant." A crash in loading or embedding is loud and obvious; a slow slide in retrieval relevance is silent and shows up only as answers that are "a bit off," easy to write off as flukes. Real production monitoring needs to check the middle of the pipeline directly — logging retrieved-chunk relevance scores, periodic spot-audits.</div>
+<ol style="color:#c9c7bf;line-height:1.8;padding-left:20px;font-size:.92rem">
+<li>RAG concept: Retrieve &rarr; Augment &rarr; Generate, no weights touched</li>
+<li>RAG vs fine-tuning: RAG for changing/niche facts, fine-tune for behavioral/stylistic adaptation</li>
+<li>LangChain: framework for chaining LLM steps, tools, memory, retrieval</li>
+<li>Load raw document (TextLoader) &rarr; one large document object</li>
+<li>Split into chunks (size=1000, overlap=150) &rarr; 38 chunks with metadata</li>
+<li>Embed chunks (OpenAI, 1536-dim) &rarr; store in ChromaDB</li>
+<li>Test retrieval in isolation before building the full chain</li>
+<li>Assemble RetrievalQAWithSourcesChain (stuff) &rarr; grounded, cited answers</li>
+<li>Wrap in a Gradio UI with example questions and visible citations</li>
+</ol>`},
+
+{sec:"ui",c:"amber",eyebrow:"Final Recall",t:"r",h:"Final recall: questions worth carrying forward",qs:[
+{q:`Between this RAG project and the separately-studied LoRA fine-tuning project, which pattern more directly matches grounding answers in IDFC's own docs — and would a real tool need both layered together?`,a:`RAG maps directly onto "ground answers in our own documents." Fine-tuning maps onto "the model must always write/speak in a specific way." A real internal tool combining strict compliance tone with live policy facts would need both layered — RAG for facts, fine-tuning (or strict prompting) for the non-negotiable format.`},
+{q:`For a document corpus far larger than one restaurant's website, what would you prototype first before committing to an architecture?`,a:`Fix retrieval precision first (better k tuning, possibly re-ranking) before touching the chain type — a 10,000-document corpus makes top-3-by-similarity far more likely to miss the truly relevant chunk among near-duplicates. Only once retrieval is solid does "stuff" vs map-reduce/refine become the real question.`}]}
+];
+
+let i=0;
+const stage=document.getElementById('stage'),dots=document.getElementById('dots'),
+tabs=document.getElementById('tabs'),counter=document.getElementById('counter'),
+prevBtn=document.getElementById('prevBtn'),nextBtn=document.getElementById('nextBtn');
+SECTIONS.forEach(s=>{const b=document.createElement('button');b.className='tab';b.dataset.c=s.c;b.dataset.sec=s.id;b.textContent=s.label;b.onclick=()=>go(S.findIndex(x=>x.sec===s.id));tabs.appendChild(b);});
+S.forEach((sl,k)=>{const d=document.createElement('span');d.className='dot'+(sl.t==='q'?' q':'');d.tabIndex=0;d.setAttribute('role','button');d.setAttribute('aria-label','Slide '+(k+1));d.onclick=()=>go(k);d.onkeydown=e=>{if(e.key==='Enter')go(k)};dots.appendChild(d);});
+function lens(cto,dir){
+  let out='';
+  if(cto&&cto.length) out+='<details class="lens"><summary>CTO LENS</summary><div class="body"><ul class="pts">'+cto.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+  if(dir&&dir.length) out+='<details class="lens dir"><summary>DIRECTOR LENS</summary><div class="body"><ul class="pts">'+dir.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+  return out;
+}
+function go(k){
+  i=Math.max(0,Math.min(S.length-1,k));
+  const s=S[i];stage.innerHTML='';
+  const el=document.createElement('div');el.className='slide';
+  try{
+    if(s.t==='q'){
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div>'
+        +'<div class="qcard"><div class="qlabel">Think first &middot; predict before you peek</div>'
+        +'<div class="qtext">'+s.q+'</div>'
+        +'<div class="qsub">Form your answer in your head. Then press Next to compare.</div></div>';
+    } else if(s.t==='r'){
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'
+        +'<p>Answer from memory first. Tap a question to reveal the answer.</p>'
+        +s.qs.map(x=>'<details class="recall-item"><summary>'+x.q+'</summary><div class="ans">'+x.a+'</div></details>').join('')
+        +'<div class="recall-hint">Struggled on any? Jump back with the tabs above, then return.</div>';
+    } else {
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'+s.body+(((s.cto&&s.cto.length)||(s.dir&&s.dir.length))?lens(s.cto,s.dir):'');
+    }
+  }catch(err){
+    el.innerHTML='<div class="eyebrow rose">Render error</div><h2>Slide '+(i+1)+' failed to render</h2><p>'+String(err&&err.message||err)+'</p>';
+  }
+  stage.appendChild(el);
+  counter.textContent=(i+1)+' / '+S.length;
+  document.querySelectorAll('.dot').forEach((d,k2)=>d.classList.toggle('on',k2===i));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.sec===s.sec));
+  prevBtn.disabled=(i===0);
+  nextBtn.textContent=(i===S.length-1)?'Done \u2713':'Next \u2192';
+  nextBtn.disabled=(i===S.length-1);
+  document.querySelector('main').scrollTop=0;window.scrollTo(0,0);
+}
+prevBtn.onclick=()=>go(i-1);nextBtn.onclick=()=>go(i+1);
+document.addEventListener('keydown',e=>{if(e.target.closest('details'))return;if(e.key==='ArrowRight')go(i+1);if(e.key==='ArrowLeft')go(i-1);});
+go(0);
+</script>
+</body>
+</html>

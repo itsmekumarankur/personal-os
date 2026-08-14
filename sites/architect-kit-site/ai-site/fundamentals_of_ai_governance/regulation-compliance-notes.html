@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Governance — Architects Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0d14;
+    --bg-panel:#0f1420;
+    --bg-panel-2:#121828;
+    --grid-line:rgba(94,177,255,0.07);
+    --grid-line-strong:rgba(94,177,255,0.14);
+    --border:#1c2333;
+    --border-soft:#171d2c;
+    --text:#e7ecf5;
+    --text-dim:#93a0b8;
+    --text-faint:#5c6780;
+    --blue:#5eb1ff;
+    --blue-dim:#2b6ea8;
+    --amber:#eab04a;
+    --amber-dim:#8a672a;
+    --green:#5fcf9a;
+    --green-dim:#2f6d51;
+    --red:#f0665c;
+    --red-dim:#8a3630;
+    --purple:#b18fef;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', sans-serif;
+    --disp: 'Space Grotesk', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:
+      linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0/48px 48px,
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0/48px 48px,
+      var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.65;
+    padding-bottom:120px;
+  }
+  a{color:var(--blue);}
+
+  /* ===== HERO ===== */
+  .hero{
+    position:relative;
+    padding:64px 24px 40px;
+    border-bottom:1px solid var(--border);
+    overflow:hidden;
+  }
+  .hero::before{
+    content:"";
+    position:absolute; inset:0;
+    background: radial-gradient(600px 300px at 15% 0%, rgba(94,177,255,0.10), transparent 60%),
+                radial-gradient(500px 260px at 85% 20%, rgba(234,176,74,0.07), transparent 60%);
+    pointer-events:none;
+  }
+  .hero-inner{max-width:980px; margin:0 auto; position:relative;}
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:var(--mono); font-size:12px; letter-spacing:.14em;
+    color:var(--amber); text-transform:uppercase;
+    border:1px solid var(--amber-dim); background:rgba(234,176,74,0.06);
+    padding:5px 12px; border-radius:3px;
+  }
+  .eyebrow::before{content:"◆"; font-size:10px;}
+  h1.title{
+    font-family:var(--disp); font-weight:700;
+    font-size:clamp(30px,5vw,50px);
+    margin:18px 0 8px; letter-spacing:-0.02em;
+    background:linear-gradient(120deg,#fff,#a9c7ef 60%,var(--blue));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .subtitle{color:var(--text-dim); font-size:16px; max-width:620px;}
+  .meta-row{
+    display:flex; flex-wrap:wrap; gap:10px; margin-top:22px;
+    font-family:var(--mono); font-size:12px; color:var(--text-faint);
+  }
+  .meta-chip{
+    border:1px solid var(--border); padding:5px 10px; border-radius:3px;
+    background:var(--bg-panel);
+  }
+  .meta-chip b{color:var(--text-dim); font-weight:500;}
+
+  /* ===== CONTROL BAR ===== */
+  .controlbar{
+    position:sticky; top:0; z-index:50;
+    background:rgba(10,13,20,0.92); backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:14px;
+    padding:10px 24px; overflow-x:auto;
+  }
+  .cb-title{
+    font-family:var(--mono); font-size:11px; color:var(--text-faint);
+    text-transform:uppercase; letter-spacing:.1em; white-space:nowrap;
+  }
+  .cb-btn{
+    font-family:var(--mono); font-size:11.5px; color:var(--text);
+    background:var(--bg-panel-2); border:1px solid var(--border);
+    padding:6px 12px; border-radius:3px; cursor:pointer; white-space:nowrap;
+    transition:.15s;
+  }
+  .cb-btn:hover{border-color:var(--blue-dim); color:var(--blue);}
+  .cb-nav{display:flex; gap:6px; margin-left:auto;}
+  .cb-nav a{
+    font-family:var(--mono); font-size:11px; color:var(--text-faint);
+    text-decoration:none; border:1px solid transparent; padding:5px 8px; border-radius:3px;
+  }
+  .cb-nav a:hover{color:var(--blue); border-color:var(--border);}
+
+  /* ===== MAIN ===== */
+  main{max-width:980px; margin:0 auto; padding:40px 24px;}
+
+  section.chapter{
+    margin-bottom:26px;
+    border:1px solid var(--border);
+    border-radius:8px;
+    background:linear-gradient(180deg, var(--bg-panel), rgba(15,20,32,0.4));
+    scroll-margin-top:70px;
+    overflow:hidden;
+  }
+  .chapter-head{
+    display:flex; align-items:flex-start; gap:16px;
+    padding:22px 24px;
+    border-bottom:1px solid var(--border-soft);
+  }
+  .chapter-num{
+    font-family:var(--mono); font-size:13px; color:var(--bg);
+    background:var(--blue); min-width:34px; height:34px;
+    border-radius:6px; display:flex; align-items:center; justify-content:center;
+    font-weight:700; flex-shrink:0;
+  }
+  .chapter-titlewrap h2{
+    font-family:var(--disp); font-size:22px; margin:0 0 4px; letter-spacing:-0.01em;
+  }
+  .chapter-titlewrap .tag{
+    font-family:var(--mono); font-size:11px; color:var(--text-faint);
+    text-transform:uppercase; letter-spacing:.08em;
+  }
+  .chapter-body{padding:0 24px 24px;}
+
+  /* Recall question - click to reveal */
+  .recall{
+    margin:18px 0; border:1px dashed var(--blue-dim); border-radius:6px;
+    background:rgba(94,177,255,0.04); overflow:hidden;
+  }
+  .recall > summary{
+    list-style:none; cursor:pointer; padding:14px 16px;
+    display:flex; align-items:center; gap:10px;
+    font-family:var(--mono); font-size:12.5px; color:var(--blue);
+  }
+  .recall > summary::-webkit-details-marker{display:none;}
+  .recall > summary::before{content:"▸"; transition:.2s; display:inline-block; color:var(--blue);}
+  .recall[open] > summary::before{transform:rotate(90deg);}
+  .recall-label{text-transform:uppercase; letter-spacing:.1em; color:var(--text-faint); font-size:10.5px;}
+  .recall-q{color:var(--text);}
+  .recall-answer{
+    padding:0 16px 16px 40px; color:var(--text-dim); font-size:14.5px;
+    border-top:1px solid rgba(94,177,255,0.12); margin-top:2px; padding-top:14px;
+  }
+
+  h3.sub{
+    font-family:var(--disp); font-size:16.5px; color:var(--text);
+    margin:26px 0 10px; padding-left:12px; border-left:3px solid var(--amber);
+  }
+  p{color:var(--text-dim); font-size:15px; margin:10px 0;}
+  strong{color:var(--text); font-weight:600;}
+  ul, ol{color:var(--text-dim); font-size:15px; padding-left:22px;}
+  li{margin:6px 0;}
+  li::marker{color:var(--blue);}
+  code.inline{
+    font-family:var(--mono); font-size:12.5px; background:var(--bg-panel-2);
+    border:1px solid var(--border); padding:1px 6px; border-radius:3px; color:var(--amber);
+  }
+
+  /* Diagram frame */
+  .blueprint{
+    margin:18px 0; border:1px solid var(--border); border-radius:6px;
+    background:#0b0f1a;
+    background-image:linear-gradient(var(--grid-line-strong) 1px, transparent 1px),
+                      linear-gradient(90deg, var(--grid-line-strong) 1px, transparent 1px);
+    background-size:22px 22px;
+    position:relative; overflow-x:auto;
+  }
+  .blueprint::before{
+    content:"FIG";
+    position:absolute; top:8px; right:12px;
+    font-family:var(--mono); font-size:10px; color:var(--text-faint);
+    letter-spacing:.15em;
+  }
+  .blueprint pre{
+    margin:0; padding:20px 18px 16px;
+    font-family:var(--mono); font-size:12px; line-height:1.5;
+    color:var(--blue); white-space:pre; overflow-x:auto;
+  }
+  .blueprint .cap{
+    font-family:var(--mono); font-size:11px; color:var(--text-faint);
+    border-top:1px solid var(--border); padding:8px 16px; background:rgba(0,0,0,0.2);
+  }
+
+  /* Table */
+  .tablewrap{overflow-x:auto; margin:16px 0; border:1px solid var(--border); border-radius:6px;}
+  table{width:100%; border-collapse:collapse; font-size:13.5px; min-width:520px;}
+  thead th{
+    font-family:var(--mono); text-transform:uppercase; letter-spacing:.06em;
+    font-size:11px; color:var(--amber); text-align:left;
+    background:var(--bg-panel-2); padding:10px 14px; border-bottom:1px solid var(--border);
+  }
+  tbody td{padding:10px 14px; border-bottom:1px solid var(--border-soft); color:var(--text-dim);}
+  tbody tr:hover{background:rgba(94,177,255,0.03);}
+  tbody tr:last-child td{border-bottom:none;}
+
+  /* Architect's Lens - CTO/Director perspectives */
+  .lens{
+    margin:22px 0 6px; border:1px solid var(--amber-dim); border-radius:6px;
+    background:linear-gradient(180deg, rgba(234,176,74,0.06), transparent);
+    overflow:hidden;
+  }
+  .lens > summary{
+    list-style:none; cursor:pointer; display:flex; align-items:center; gap:10px;
+    padding:12px 16px; font-family:var(--mono); font-size:12px; color:var(--amber);
+    text-transform:uppercase; letter-spacing:.08em;
+  }
+  .lens > summary::-webkit-details-marker{display:none;}
+  .lens > summary::before{content:"⌂"; font-size:14px;}
+  .lens-arrow{margin-left:auto; transition:.2s; color:var(--text-faint);}
+  .lens[open] .lens-arrow{transform:rotate(180deg);}
+  .lens-body{padding:2px 16px 16px;}
+  .voice{
+    display:flex; gap:12px; padding:12px 0; border-top:1px solid rgba(234,176,74,0.12);
+  }
+  .voice:first-child{border-top:none;}
+  .voice-badge{
+    flex-shrink:0; width:74px; text-align:center;
+    font-family:var(--mono); font-size:10px; letter-spacing:.06em;
+    padding:4px 0; border-radius:3px; height:fit-content; text-transform:uppercase;
+  }
+  .voice.cto .voice-badge{background:rgba(94,177,255,0.12); color:var(--blue); border:1px solid var(--blue-dim);}
+  .voice.director .voice-badge{background:rgba(95,207,154,0.12); color:var(--green); border:1px solid var(--green-dim);}
+  .voice p{margin:0; font-size:14px; font-style:italic; color:var(--text-dim);}
+
+  /* Section-level collapsible wrapper toggle already via <details> on chapter */
+  details.chapter > summary{list-style:none; cursor:pointer;}
+  details.chapter > summary::-webkit-details-marker{display:none;}
+  .chevron{
+    margin-left:auto; font-family:var(--mono); font-size:16px; color:var(--text-faint);
+    transition:transform .2s; flex-shrink:0; align-self:center;
+  }
+  details.chapter[open] .chevron{transform:rotate(90deg);}
+
+  /* Nested mini-collapse for lists inside sections (used for pillar/factor breakdowns) */
+  .minifold{border:1px solid var(--border); border-radius:5px; margin:10px 0; background:var(--bg-panel-2);}
+  .minifold > summary{
+    list-style:none; cursor:pointer; padding:10px 14px; font-family:var(--mono);
+    font-size:12.5px; color:var(--text); display:flex; gap:8px; align-items:center;
+  }
+  .minifold > summary::-webkit-details-marker{display:none;}
+  .minifold > summary::before{content:"+"; color:var(--blue); font-weight:700; width:14px;}
+  .minifold[open] > summary::before{content:"–";}
+  .minifold-body{padding:0 14px 14px 36px;}
+  .minifold-body p, .minifold-body ul{margin:6px 0;}
+
+  /* Risk pyramid special */
+  .pyramid{display:flex; flex-direction:column; align-items:center; gap:0; padding:26px 16px;}
+  .pyramid-tier{
+    font-family:var(--mono); font-size:11.5px; text-align:center; padding:12px 20px;
+    margin:2px 0; border-radius:3px; color:#0a0d14; font-weight:700;
+    letter-spacing:.03em; width:100%; max-width:640px;
+  }
+  .pyramid-tier small{display:block; font-weight:500; font-size:10px; margin-top:3px; opacity:.85;}
+  .t1{background:var(--red); max-width:220px;}
+  .t2{background:var(--amber); max-width:360px;}
+  .t3{background:var(--blue); max-width:500px;}
+  .t4{background:var(--green); max-width:640px;}
+
+  /* Footer / progress */
+  .progress-note{
+    max-width:980px; margin:0 auto; padding:0 24px;
+    font-family:var(--mono); font-size:11.5px; color:var(--text-faint);
+    text-align:center; margin-top:10px;
+  }
+  footer{
+    max-width:980px; margin:60px auto 0; padding:24px; text-align:center;
+    border-top:1px solid var(--border); color:var(--text-faint); font-family:var(--mono); font-size:11.5px;
+  }
+
+  ::-webkit-scrollbar{height:8px; width:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--border); border-radius:4px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  /* notes width expansion - matches learning plan box */
+  .wrap,.container,main,header.hero,header.masthead,nav.toc,section.block,footer{max-width:100%!important;padding-left:24px!important;padding-right:24px!important;}
+</style>
+</head>
+<body>
+<div style="position:sticky;top:0;z-index:9999;background:#0a0d14;border-bottom:1px solid #1c2333;padding:10px 20px;font-family:-apple-system,'Segoe UI',sans-serif;"><a href="https://ai.shivawithin.in" style="color:#5eb1ff;text-decoration:none;font-size:13px;font-weight:600;letter-spacing:.04em;">← Back to Home</a></div>
+<!-- LEARNING PLAN -->
+<div style="margin:24px;background:#0f1520;border:1px solid #1e2836;border-left:4px solid #e0a030;border-radius:8px;padding:24px 28px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;">
+  <div style="color:#e0a030;font-size:13px;font-weight:700;letter-spacing:.08em;margin-bottom:14px;">&#9670; LEARNING PLAN — 2.5 HOURS DAILY</div>
+  <div style="overflow-x:auto;">
+  <table style="width:100%;border-collapse:collapse;font-size:13px;color:#c8d3e0;margin-bottom:18px;white-space:nowrap;">
+    <thead><tr style="color:#7c8ba0;border-bottom:1px solid #1e2836;">
+      <th style="padding:6px 10px;text-align:left;width:48px;">Step</th>
+      <th style="padding:6px 10px;text-align:left;">Activity</th>
+      <th style="padding:6px 10px;text-align:left;">Outcome</th>
+    </tr></thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">1</td><td style="padding:7px 10px;"><b>Complete the Udemy Course</b> — watch videos, understand concepts, don't rush</td><td style="padding:7px 10px;color:#5fbf7f;">Build strong fundamentals</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">2</td><td style="padding:7px 10px;"><b>Practice Everything</b> — complete exercises, assignments, and source code</td><td style="padding:7px 10px;color:#5fbf7f;">Gain hands-on experience</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">3</td><td style="padding:7px 10px;"><b>Revise with these notes</b></td><td style="padding:7px 10px;color:#5fbf7f;">Reinforce concepts and fill knowledge gaps</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">4</td><td style="padding:7px 10px;"><b>Earn the Udemy Certificate</b></td><td style="padding:7px 10px;color:#5fbf7f;">Ensure the course is completed end-to-end</td></tr>
+      <tr><td style="padding:7px 10px;color:#e0a030;font-weight:700;">5</td><td style="padding:7px 10px;"><b>Practise real world tough scenario</b> — scenario-based questions &amp; interview problems</td><td style="padding:7px 10px;color:#5fbf7f;">Develop practical and interview-ready skills</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">1.5 HRS</div>
+      <div style="font-size:12px;color:#c8d3e0;">Udemy Videos + Exercises + Source Code</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Notes Revision</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Scenario-Based Questions &amp; Practical Problems</div>
+    </div>
+  </div>
+  <div style="color:#f0f4f8;font-size:12px;font-weight:600;letter-spacing:.04em;">GOAL: <span style="color:#e0a030;">Learn &#8594; Practice &#8594; Revise &#8594; Complete &#8594; Apply</span></div>
+</div>
+<!-- END LEARNING PLAN -->
+
+<div class="hero">
+  <div class="hero-inner">
+    <span class="eyebrow">Architects Lab · Governance Module</span>
+    <h1 class="title">Regulation &amp; Compliance Landscape</h1>
+    <p class="subtitle">From GDPR's foundations to the EU AI Act's risk pyramid, the US's fragmented sectoral approach, China's centralized model, and the documentation that ties it all into a defensible record.</p>
+    <div class="meta-row">
+      <span class="meta-chip"><b>Source:</b> Ultimate AI Governance Master Notes — Regulation &amp; Compliance Landscape</span>
+      <span class="meta-chip"><b>Sections:</b> 6</span>
+      <span class="meta-chip"><b>Format:</b> Recall → Structure → Diagram → Lens</span>
+      <span class="meta-chip"><b>Context:</b> Wealth/Demat platform, regulated fintech</span>
+    </div>
+  </div>
+</div>
+
+<div class="controlbar">
+  <span class="cb-title">Controls</span>
+  <button class="cb-btn" id="expandAll">▾ Expand all</button>
+  <button class="cb-btn" id="collapseAll">▸ Collapse all</button>
+  <div class="cb-nav">
+    <a href="#s1">01</a><a href="#s2">02</a><a href="#s3">03</a><a href="#s4">04</a><a href="#s5">05</a><a href="#s6">06</a>
+  </div>
+</div>
+
+<main>
+
+<!-- ============ SECTION 1 ============ -->
+<details class="chapter" id="s1" open>
+  <summary class="chapter-head">
+    <span class="chapter-num">01</span>
+    <div class="chapter-titlewrap">
+      <h2>Existing Regulatory Frameworks: GDPR &amp; Beyond</h2>
+      <span class="tag">Regulation · Foundations</span>
+    </div>
+    <span class="chevron">›</span>
+  </summary>
+  <div class="chapter-body">
+
+    <details class="recall">
+      <summary><span class="recall-label">Recall</span><span class="recall-q">Even without a global AI-specific law, what existing binding regulations already shape AI governance, and why must they be addressed from a project's very start?</span></summary>
+      <div class="recall-answer">A powerful stack of general and sectoral laws already applies — <strong>GDPR, anti-discrimination law, consumer protection, labor law, and sector-specific rules</strong> — none of them AI-specific, all of them binding today. They must be addressed at the start because retrofitting purpose limitation, minimization, or Article 22 human oversight after launch is far costlier than designing for them upfront.</div>
+    </details>
+
+    <h3 class="sub">The Regulatory Foundation Already Exists</h3>
+    <p>Many teams imagine they operate in a legal vacuum until an "AI law" arrives. In reality, a powerful framework of general and sectoral laws already applies to AI systems, especially those processing personal data.</p>
+
+    <h3 class="sub">GDPR: The Cornerstone (Since 2018)</h3>
+    <p>The General Data Protection Regulation is not AI-specific, but applies to any processing of personal data — which covers most AI training and inference. Key principles:</p>
+
+    <details class="minifold">
+      <summary>Purpose Limitation</summary>
+      <div class="minifold-body"><p>Data must be used only for the explicit purpose for which they were collected. Repurposing data for a new AI model often requires new consent or a new legal basis.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Data Minimization</summary>
+      <div class="minifold-body"><p>Only collect and use the minimum data necessary. AI projects are notorious for hoarding data "just in case" — this violates GDPR.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Transparency &amp; Right to Information</summary>
+      <div class="minifold-body"><p>Individuals must be told what data are processed, why, and how. This includes when they are subject to automated decisions.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Accountability</summary>
+      <div class="minifold-body"><p>Organizations must be able to <em>demonstrate</em> compliance. This means documentation, records of processing activities, and DPIAs.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Article 22 — Automated Decision-Making</summary>
+      <div class="minifold-body"><p>Individuals have the right <strong>not to be subject to a decision based solely on automated processing</strong> which produces legal or similarly significant effects. Exceptions exist, but they require human intervention, the right to obtain an explanation, and the ability to contest the decision.</p></div>
+    </details>
+
+    <h3 class="sub">Mandatory Data Protection Impact Assessment (DPIA)</h3>
+    <p>When using new technologies to process data at scale with high risk to individuals' rights, a DPIA is mandatory. Most high-risk AI systems fall squarely into this category. The DPIA must:</p>
+    <ul>
+      <li>Describe the processing and its purpose</li>
+      <li>Assess necessity and proportionality</li>
+      <li>Identify risks to rights and freedoms</li>
+      <li>Detail measures to mitigate those risks</li>
+    </ul>
+
+    <h3 class="sub">Sectoral &amp; National Laws Overlay</h3>
+    <ul>
+      <li><strong>Consumer Protection Laws:</strong> apply to AI-driven personalized pricing, offers, or contract decisions.</li>
+      <li><strong>Anti-Discrimination / Equal Treatment Laws:</strong> if an AI system causes disparate impact based on protected characteristics, it's illegal even without intent.</li>
+      <li><strong>Labor Laws:</strong> AI used for employee evaluation, monitoring, or hiring must respect employment rights, worker consultation, and non-discrimination.</li>
+      <li><strong>Sector-Specific Regulations:</strong> healthcare (HIPAA in US, medical device regulations), banking (credit scoring, KYC), insurance, public sector — each have their own rules that AI must respect.</li>
+    </ul>
+
+    <div class="blueprint">
+<pre>
+   REGULATORY LAYER CAKE FOR AI SYSTEMS
+   +-------------------------------------------+
+   |            AI-Specific Future Laws         |
+   |           (EU AI Act, etc.)               |
+   +-------------------------------------------+
+   |       Sectoral Regulations                 |
+   |  (Health, Finance, Employment, etc.)       |
+   +-------------------------------------------+
+   |    Anti-Discrimination & Consumer Laws     |
+   +-------------------------------------------+
+   |        GDPR (Data Protection)              |
+   |  Purpose limitation, minimization,         |
+   |  transparency, Art.22, DPIA               |
+   +-------------------------------------------+
+   |   Fundamental Rights & Constitutional Law  |
+   +-------------------------------------------+
+   ALL AI PROJECTS MUST COMPLY WITH THIS STACK
+</pre>
+      <div class="cap">Fig 1.1 — The regulatory stack: general law underneath, sector and AI-specific rules layered on top.</div>
+    </div>
+
+    <details class="lens">
+      <summary>Architect's Lens — CTO &amp; Director Perspective <span class="lens-arrow">▾</span></summary>
+      <div class="lens-body">
+        <div class="voice cto">
+          <span class="voice-badge">CTO</span>
+          <p>"Compliance isn't optional; it's a system requirement. I make sure our architecture supports data minimization by design — only ingest what's needed, pseudonymize early, and log consent. Art.22 means we must design human-override interfaces and explanation APIs from the start. Retrofitting those is a nightmare."</p>
+        </div>
+        <div class="voice director">
+          <span class="voice-badge">Director</span>
+          <p>"Ignoring GDPR isn't just about fines — it's about losing our license to process data. I see early legal involvement as an investment, not a cost. Every AI project charter must have a legal sign-off confirming lawful basis and DPIA completion. Without that, the project doesn't get funded."</p>
+        </div>
+      </div>
+    </details>
+
+  </div>
+</details>
+
+<!-- ============ SECTION 2 ============ -->
+<details class="chapter" id="s2">
+  <summary class="chapter-head">
+    <span class="chapter-num">02</span>
+    <div class="chapter-titlewrap">
+      <h2>The European AI Act: A Risk-Based Revolution</h2>
+      <span class="tag">Regulation · EU</span>
+    </div>
+    <span class="chevron">›</span>
+  </summary>
+  <div class="chapter-body">
+
+    <details class="recall">
+      <summary><span class="recall-label">Recall</span><span class="recall-q">How does the EU AI Act fundamentally change the game by categorizing AI systems by risk, and what obligations cascade from each tier?</span></summary>
+      <div class="recall-answer">The EU AI Act is the first law written specifically for AI, sorting every system into <strong>unacceptable (banned), high (heavily regulated), limited (transparency only), or minimal (voluntary)</strong> risk. Obligations scale sharply with tier — high-risk systems need a full risk management system, data governance, technical documentation, logging, transparency, human oversight, and robustness; low-risk systems need almost nothing.</div>
+    </details>
+
+    <h3 class="sub">The First Comprehensive AI Law</h3>
+    <p>Adopted in 2024 and phased in from 2025, the EU AI Act is the first regulation designed <em>specifically</em> for artificial intelligence. It introduces a <strong>risk-based classification</strong> that determines the level of governance required.</p>
+
+    <h3 class="sub">The Four Risk Categories</h3>
+
+    <div class="pyramid">
+      <div class="pyramid-tier t1">UNACCEPTABLE — Prohibited<small>social scoring by governments, real-time biometric ID in public (narrow exceptions), cognitive-behavioral manipulation, exploiting vulnerabilities</small></div>
+      <div class="pyramid-tier t2">HIGH RISK — Heavily Regulated<small>biometric ID, critical infrastructure, education, employment/hiring, essential services (credit, healthcare, insurance), law enforcement, migration, justice, democratic processes</small></div>
+      <div class="pyramid-tier t3">LIMITED RISK — Transparency Obligations<small>chatbots, emotion recognition, deepfake generators — must disclose AI status, label AI-generated content</small></div>
+      <div class="pyramid-tier t4">MINIMAL / NO RISK — Voluntary Codes<small>spam filters, AI in video games, inventory management — no legal obligations</small></div>
+    </div>
+    <p style="text-align:center;font-family:var(--mono);font-size:11.5px;color:var(--text-faint);">Fig 2.1 — EU AI Act's four risk tiers, obligations increasing toward the top.</p>
+
+    <details class="minifold">
+      <summary>High-risk obligations, in full</summary>
+      <div class="minifold-body">
+        <ul>
+          <li><strong>Risk management system</strong> throughout lifecycle</li>
+          <li><strong>Data governance</strong> — training data must be relevant, representative, free of errors</li>
+          <li><strong>Technical documentation</strong> — detailed description of design and purpose</li>
+          <li><strong>Record-keeping</strong> — traceability of events (logging)</li>
+          <li><strong>Transparency &amp; user information</strong> — clear instructions, disclosure of AI status</li>
+          <li><strong>Human oversight</strong> — interface enabling human to understand, monitor, override</li>
+          <li><strong>Accuracy, robustness, and cybersecurity</strong> — resistance to errors, failures, attacks</li>
+        </ul>
+      </div>
+    </details>
+
+    <h3 class="sub">Preparing for the AI Act</h3>
+    <ul>
+      <li><strong>Inventory all AI systems</strong> and classify them against the Act's categories</li>
+      <li><strong>Conduct conformity assessments</strong> and prepare technical dossiers for high-risk systems</li>
+      <li><strong>Establish a post-market monitoring plan</strong> — the obligations continue after deployment</li>
+    </ul>
+
+    <details class="lens">
+      <summary>Architect's Lens — CTO &amp; Director Perspective <span class="lens-arrow">▾</span></summary>
+      <div class="lens-body">
+        <div class="voice cto">
+          <span class="voice-badge">CTO</span>
+          <p>"I need to build a system classification engine into our AI platform. When a new model is proposed, it auto-assesses risk category and triggers the required controls. For high-risk models, the pipeline must enforce explainability, logging, and human-override interfaces. This is infrastructure we can't live without."</p>
+        </div>
+        <div class="voice director">
+          <span class="voice-badge">Director</span>
+          <p>"The AI Act makes AI governance a board-level issue. Non-compliance can mean fines up to €35 million or 7% of global turnover — higher than GDPR. I want a quarterly AI Act readiness review, and I want the legal team to train product managers on risk classification. We can't afford to misclassify a high-risk system as low-risk."</p>
+        </div>
+      </div>
+    </details>
+
+  </div>
+</details>
+
+<!-- ============ SECTION 3 ============ -->
+<details class="chapter" id="s3">
+  <summary class="chapter-head">
+    <span class="chapter-num">03</span>
+    <div class="chapter-titlewrap">
+      <h2>The United States Approach: Decentralized &amp; Sector-Driven</h2>
+      <span class="tag">Regulation · US</span>
+    </div>
+    <span class="chevron">›</span>
+  </summary>
+  <div class="chapter-body">
+
+    <details class="recall">
+      <summary><span class="recall-label">Recall</span><span class="recall-q">How does the US model, with no single AI law, shape governance through sectoral regulators, state laws, and influential frameworks like the NIST AI RMF?</span></summary>
+      <div class="recall-answer">Instead of one AI Act, existing agencies (<strong>FDA, FTC, EEOC, SEC, CFPB, DOJ</strong>) regulate AI within their own domains, states pass their own laws (NYC Local Law 144, CCPA/CPRA), and the voluntary <strong>NIST AI RMF</strong> — Govern, Map, Measure, Manage — fills the gap as a de-facto standard, especially for government contractors.</div>
+    </details>
+
+    <h3 class="sub">No Single Federal AI Law</h3>
+    <p>The US follows a <strong>decentralized, sector-specific</strong> model. Instead of one AI Act, existing agencies regulate AI within their domains, and states experiment with their own laws.</p>
+
+    <h3 class="sub">Key Federal Regulators &amp; Their AI Scope</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Regulator</th><th>Domain</th><th>AI Focus</th></tr></thead>
+        <tbody>
+          <tr><td>FDA</td><td>Healthcare, medical devices</td><td>AI/ML-based diagnostic tools, software as medical device</td></tr>
+          <tr><td>FTC</td><td>Consumer protection, advertising, privacy</td><td>Deceptive AI claims, biased algorithms, unfair practices</td></tr>
+          <tr><td>EEOC</td><td>Employment</td><td>AI hiring tools, bias in promotion algorithms</td></tr>
+          <tr><td>SEC</td><td>Financial markets</td><td>AI in robo-advising, fraud detection, market manipulation</td></tr>
+          <tr><td>CFPB</td><td>Banking, credit</td><td>AI-driven lending decisions, fair credit reporting</td></tr>
+          <tr><td>DOJ</td><td>Civil rights</td><td>Algorithmic discrimination under Fair Housing, Civil Rights Acts</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="sub">State-Level Leadership</h3>
+    <ul>
+      <li><strong>New York City Local Law 144:</strong> requires bias audits for automated employment decision tools and public disclosure of results.</li>
+      <li><strong>California (CCPA/CPRA):</strong> strong privacy laws that impact automated processing and profiling, with rights to opt-out and access explanations.</li>
+    </ul>
+
+    <h3 class="sub">The NIST AI Risk Management Framework (AI RMF)</h3>
+    <p>A voluntary but highly influential federal guidance. Its core functions:</p>
+    <details class="minifold">
+      <summary>Govern</summary>
+      <div class="minifold-body"><p>Cultivate a culture of risk management.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Map</summary>
+      <div class="minifold-body"><p>Understand the context and risks.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Measure</summary>
+      <div class="minifold-body"><p>Quantify risks using metrics.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Manage</summary>
+      <div class="minifold-body"><p>Treat risks and monitor.</p></div>
+    </details>
+    <p>Based on characteristics of trustworthy AI: fairness, accountability, transparency, privacy &amp; security, reliability &amp; robustness, safety, and explainability.</p>
+
+    <div class="blueprint">
+<pre>
+   US AI GOVERNANCE FRAGMENTED LANDSCAPE
+   +-----------------------------------------+
+   | Federal Agencies (Sectoral)             |
+   | FDA, FTC, EEOC, SEC, CFPB, DOJ...       |
+   | Each enforces existing laws on AI use   |
+   +-----------------------------------------+
+   | State Laws (NYC 144, CCPA, others)      |
+   +-----------------------------------------+
+   | Voluntary Frameworks (NIST AI RMF)      |
+   | Adopted by industry as best practice    |
+   +-----------------------------------------+
+   | No single comprehensive federal AI law  |
+   +-----------------------------------------+
+</pre>
+      <div class="cap">Fig 3.1 — A fragmented stack: sectoral enforcement, state experimentation, and voluntary guidance filling the federal gap.</div>
+    </div>
+
+    <h3 class="sub">Implications for Organizations</h3>
+    <ul>
+      <li>Requires <strong>multi-regulator awareness</strong> — a single AI product may face overlapping compliance demands</li>
+      <li>Voluntary frameworks like NIST AI RMF often become de-facto standards, especially for government contractors</li>
+      <li>Proactive alignment with NIST can ease future compliance with inevitable federal legislation</li>
+    </ul>
+
+    <details class="lens">
+      <summary>Architect's Lens — CTO &amp; Director Perspective <span class="lens-arrow">▾</span></summary>
+      <div class="lens-body">
+        <div class="voice cto">
+          <span class="voice-badge">CTO</span>
+          <p>"In the US, I can't just ask 'is this AI legal?' — I have to ask 'is it legal for this use case in this sector and state?' Our compliance tooling must map models to applicable regulators. I also want to align our internal standards with NIST AI RMF because it's the most coherent benchmark available and likely to influence any future federal law."</p>
+        </div>
+        <div class="voice director">
+          <span class="voice-badge">Director</span>
+          <p>"The fragmented US approach means legal risk is uneven and hard to predict. I want a regulatory horizon-scanning function that tracks state bills and agency guidance. We should also voluntarily adopt the NIST framework — it's a competitive advantage when selling to government and large enterprises who require responsible AI credentials."</p>
+        </div>
+      </div>
+    </details>
+
+  </div>
+</details>
+
+<!-- ============ SECTION 4 ============ -->
+<details class="chapter" id="s4">
+  <summary class="chapter-head">
+    <span class="chapter-num">04</span>
+    <div class="chapter-titlewrap">
+      <h2>China's Centralized Model: State-Controlled AI Governance</h2>
+      <span class="tag">Regulation · China</span>
+    </div>
+    <span class="chevron">›</span>
+  </summary>
+  <div class="chapter-body">
+
+    <details class="recall">
+      <summary><span class="recall-label">Recall</span><span class="recall-q">How does China's centralized, state-driven AI regulation contrast with Western models, and what concrete obligations does it impose on algorithm registration and content control?</span></summary>
+      <div class="recall-answer">China treats AI as both strategic asset and social risk requiring alignment with state priorities. Concrete obligations: <strong>mandatory algorithm registration with the CAC, pre-release security review for generative AI, content that must reflect socialist core values, and strict provider liability</strong> — a level of prescriptive, ideologically-integrated control absent from Western frameworks.</div>
+    </details>
+
+    <h3 class="sub">A National Strategic Priority Under Tight Control</h3>
+    <p>China views AI as both a strategic asset and a social risk that must be aligned with government priorities. Its regulatory approach is <strong>centralized, detailed, and interventionist</strong>.</p>
+
+    <h3 class="sub">Regulation on Recommendation Algorithms (2022)</h3>
+    <p>Targets platforms that use algorithmic recommendations. Obligations:</p>
+    <details class="minifold">
+      <summary>Algorithm Registration</summary>
+      <div class="minifold-body"><p>Platforms must register their algorithms with the Cyberspace Administration of China (CAC), disclosing technical parameters and operation.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Content Control</summary>
+      <div class="minifold-body"><p>Algorithms must not disseminate prohibited information or content deemed against public interest.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Anti-Manipulation</summary>
+      <div class="minifold-body"><p>Prohibits practices that manipulate user behavior without consent (e.g. addictive designs, price discrimination).</p></div>
+    </details>
+    <details class="minifold">
+      <summary>User Rights</summary>
+      <div class="minifold-body"><p>Users must be given options to adjust or disable personalized recommendations.</p></div>
+    </details>
+
+    <h3 class="sub">Generative AI Regulations (2023)</h3>
+    <p>Specifically targets text, image, video generation. Requirements:</p>
+    <details class="minifold">
+      <summary>Content Alignment</summary>
+      <div class="minifold-body"><p>Generated content must "reflect socialist core values" and must not endanger national security or social stability.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Pre-Release Approval</summary>
+      <div class="minifold-body"><p>Models must undergo security review and approval before public deployment.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>False Information Prevention</summary>
+      <div class="minifold-body"><p>Providers must implement mechanisms to detect and block false or inappropriate content.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>Accountability</summary>
+      <div class="minifold-body"><p>Providers are fully responsible for outputs and must maintain traceability.</p></div>
+    </details>
+
+    <h3 class="sub">Ethical &amp; Institutional Framework</h3>
+    <ul>
+      <li><strong>AI Ethics Guidelines</strong> issued by the Ministry of Science and Technology promote "controllability" and alignment with national laws</li>
+      <li>Dedicated oversight institutions enforce compliance</li>
+    </ul>
+
+    <div class="blueprint">
+<pre>
+   CHINA'S AI REGULATORY MODEL
+   +----------------------------------------+
+   | Central Government (CAC, MIIT, MOST)    |
+   | Sets national AI strategy & values      |
+   +----------------------------------------+
+   | Mandatory Algorithm Registration       |
+   | (All recommendation algorithms)         |
+   +----------------------------------------+
+   | Pre-Release Security Review             |
+   | (Generative AI models)                 |
+   +----------------------------------------+
+   | Content Must Reflect Socialist Values   |
+   | and Not Endanger National Security      |
+   +----------------------------------------+
+   | Strict Liability for Providers         |
+   +----------------------------------------+
+</pre>
+      <div class="cap">Fig 4.1 — China's regulatory stack: strategy flows top-down into registration, review, content rules, and liability.</div>
+    </div>
+
+    <h3 class="sub">Business Implications</h3>
+    <ul>
+      <li>Any company operating in China or with Chinese partners must comply with registration and content requirements</li>
+      <li>Development is more rigid but also highly predictable: the rules are explicit, and the state enforces them consistently</li>
+      <li>There is no separation between political values and technical requirements — governance must integrate ideological alignment</li>
+    </ul>
+
+    <details class="lens">
+      <summary>Architect's Lens — CTO &amp; Director Perspective <span class="lens-arrow">▾</span></summary>
+      <div class="lens-body">
+        <div class="voice cto">
+          <span class="voice-badge">CTO</span>
+          <p>"If we deploy in China, our technical architecture must support content filtering, algorithm registration APIs, and audit trails that can be handed to regulators. This isn't optional — it's a build-or-buy decision that affects our entire tech stack. We must design for compliance from day one, not patch it later."</p>
+        </div>
+        <div class="voice director">
+          <span class="voice-badge">Director</span>
+          <p>"China's model shows that AI governance can be a tool of state control. For us, it means that market access is conditional on meeting explicit government values. We need a dedicated China compliance team that understands both the technology and the political landscape. Failure is not just a fine — it's losing the ability to operate in that market entirely."</p>
+        </div>
+      </div>
+    </details>
+
+  </div>
+</details>
+
+<!-- ============ SECTION 5 ============ -->
+<details class="chapter" id="s5">
+  <summary class="chapter-head">
+    <span class="chapter-num">05</span>
+    <div class="chapter-titlewrap">
+      <h2>Balancing Compliance &amp; Innovation: The Strategic Art</h2>
+      <span class="tag">Regulation · Strategy</span>
+    </div>
+    <span class="chevron">›</span>
+  </summary>
+  <div class="chapter-body">
+
+    <details class="recall">
+      <summary><span class="recall-label">Recall</span><span class="recall-q">Is it truly possible to comply with a growing web of AI regulations without stifling innovation, and what concrete practices turn regulation from a brake into a framework for sustainable growth?</span></summary>
+      <div class="recall-answer">Yes — <strong>non-compliance kills innovation more surely</strong> than regulation does, through fines, bans, and lost trust. The practices that make it work: compliance by design, multidisciplinary teams from day one, living documentation, proportional risk management, and a proactive horizon-scanning mindset.</div>
+    </details>
+
+    <h3 class="sub">The False Choice Between Compliance and Speed</h3>
+    <p>Many see regulation as an innovation killer. In reality, <strong>non-compliance kills innovation more surely</strong> — through fines, bans, reputational damage, and lost trust. The goal is to integrate governance so seamlessly that compliance becomes an enabler of scalable, trustworthy AI.</p>
+
+    <h3 class="sub">Key Practices for the Balance</h3>
+    <details class="minifold">
+      <summary>1. Compliance by Design</summary>
+      <div class="minifold-body"><p>Integrate legal, ethical, and technical requirements from the earliest design phase. This prevents costly retrofits and reduces the risk of last-minute blocking issues. Build in data minimization, explainability hooks, and consent management as core features, not afterthoughts.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>2. Multidisciplinary Teams from Day One</summary>
+      <div class="minifold-body"><p>Include business, technology, legal, data protection, UX, and ethics experts. When diverse perspectives collaborate early, they find creative solutions that satisfy both functional and regulatory requirements — without sacrificing user experience or time-to-market.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>3. Clear, Living Documentation</summary>
+      <div class="minifold-body"><p>Traceability is both a compliance requirement and an operational asset. Documenting decisions (why a dataset was chosen, why a variable was excluded) builds institutional knowledge and speeds up future projects. It also provides a ready defense in audits.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>4. Proportional Risk Management</summary>
+      <div class="minifold-body"><p>Apply governance intensity based on risk classification (EU AI Act logic). A chatbot needs transparency; a hiring algorithm needs full documentation, fairness testing, and human oversight. Over-governing low-risk systems wastes resources and frustrates teams. Under-governing high-risk systems invites disaster.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>5. Proactive Compliance Mindset</summary>
+      <div class="minifold-body"><p>Regulation is not static. Adopt a horizon-scanning capability. Voluntarily align with emerging standards (like NIST AI RMF) to get ahead of mandates. Early adopters shape the conversation and avoid panic when laws take effect.</p></div>
+    </details>
+
+    <div class="blueprint">
+<pre>
+   BALANCING COMPLIANCE & INNOVATION
+   +-------------------------------------------+
+   |  INNOVATION DRIVERS        | COMPLIANCE   |
+   |  - Speed to market         | MANDATES     |
+   |  - Experimentation         | - GDPR       |
+   |  - Novel architectures     | - AI Act     |
+   |  - Data-rich features      | - Sector laws|
+   +----------------------------+--------------+
+                    |
+            INTEGRATED GOVERNANCE
+   +-------------------------------------------+
+   | Compliance by Design        | Proactive   |
+   | Multidisciplinary Teams     | Proportional|
+   | Living Documentation        | Horizon Scan|
+   +-------------------------------------------+
+   RESULT: Sustainable, Trusted, Scalable AI
+</pre>
+      <div class="cap">Fig 5.1 — Innovation drivers and compliance mandates resolving into integrated governance, not opposing forces.</div>
+    </div>
+
+    <details class="lens">
+      <summary>Architect's Lens — CTO &amp; Director Perspective <span class="lens-arrow">▾</span></summary>
+      <div class="lens-body">
+        <div class="voice cto">
+          <span class="voice-badge">CTO</span>
+          <p>"I see compliance as a non-functional requirement, like security or scalability. We invest in building a 'paved road' — a governed ML platform where the easiest path is also the compliant one. Automated fairness checks, explainability tools, and audit logging don't slow down my engineers; they give them confidence to deploy faster without fear of breaking regulations."</p>
+        </div>
+        <div class="voice director">
+          <span class="voice-badge">Director</span>
+          <p>"Responsible innovation is our moat. While competitors scramble to fix biased systems or pay fines, we'll be earning customer trust and winning regulated contracts. I'd rather invest in governance upfront than in crisis management later. I want our brand associated with AI you can trust — that's a long-term competitive advantage that regulation only amplifies."</p>
+        </div>
+      </div>
+    </details>
+
+  </div>
+</details>
+
+<!-- ============ SECTION 6 ============ -->
+<details class="chapter" id="s6">
+  <summary class="chapter-head">
+    <span class="chapter-num">06</span>
+    <div class="chapter-titlewrap">
+      <h2>Documentation: The Compliance and Governance Shield</h2>
+      <span class="tag">Regulation · Documentation</span>
+    </div>
+    <span class="chevron">›</span>
+  </summary>
+  <div class="chapter-body">
+
+    <details class="recall">
+      <summary><span class="recall-label">Recall</span><span class="recall-q">Why is proper documentation the single most powerful tool for both demonstrating compliance and protecting the organization, and what exactly should be documented throughout the AI lifecycle?</span></summary>
+      <div class="recall-answer">Documentation is the only way to <strong>prove</strong> governance was exercised on a probabilistic, opaque system — it turns an invisible process into an auditable trail. Minimum coverage: purpose, data provenance, model design decisions, validation results, review history, version control, impact/risk assessments, and the human oversight mechanism.</div>
+    </details>
+
+    <h3 class="sub">Documentation Is Governance Made Visible</h3>
+    <p>In AI, where decisions are complex and models are probabilistic, documentation is the only way to <strong>prove</strong> that governance was exercised. It transforms an opaque process into a transparent, auditable trail. It's not bureaucratic overhead — it's the foundation of accountability.</p>
+
+    <h3 class="sub">What Must Be Documented (Minimum)</h3>
+    <details class="minifold">
+      <summary>1. System Purpose &amp; Justification</summary>
+      <div class="minifold-body"><p>Why AI was chosen, what problem it solves, what are its boundaries of use.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>2. Data Provenance &amp; Licensing</summary>
+      <div class="minifold-body"><p>Origin of training data, legal basis for processing, license terms, and any restrictions.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>3. Model Design Decisions</summary>
+      <div class="minifold-body"><p>Which variables were included and excluded, with rationale. Algorithm selection, hyperparameters, and evaluation methodology.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>4. Validation Results</summary>
+      <div class="minifold-body"><p>Performance metrics, fairness and bias assessments, robustness tests, explainability analysis. Both technical and ethical review outcomes.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>5. Review History</summary>
+      <div class="minifold-body"><p>Ethical, legal, and technical reviews conducted at each phase, with dates and responsible persons.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>6. Version Control &amp; Change Log</summary>
+      <div class="minifold-body"><p>Model versions, data versions, retraining events, and modifications made over time. Who made changes and why.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>7. Impact &amp; Risk Assessments</summary>
+      <div class="minifold-body"><p>DPIA, Fundamental Rights Impact Assessment, risk classification decisions.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>8. Human Oversight Mechanism</summary>
+      <div class="minifold-body"><p>How humans can intervene, override, or appeal decisions. Logs of actual overrides.</p></div>
+    </details>
+
+    <h3 class="sub">The Living Document Principle</h3>
+    <p>Documentation is not a one-time deliverable to be archived. It must evolve with the system — updated upon retraining, new data sources, regulatory changes, or incident responses. Treat it as an active, version-controlled asset that grows alongside the model.</p>
+
+    <h3 class="sub">Why Documentation Protects You</h3>
+    <ul>
+      <li><strong>Audits:</strong> regulators or internal auditors can see the full decision trail without interrogating individuals.</li>
+      <li><strong>Litigation:</strong> if a decision is challenged in court, you can produce evidence of due diligence.</li>
+      <li><strong>Knowledge Transfer:</strong> when team members leave, the knowledge remains. New members can onboard faster.</li>
+      <li><strong>Continuous Improvement:</strong> teams can learn from past projects, spotting patterns and improving practices.</li>
+    </ul>
+
+    <div class="blueprint">
+<pre>
+   DOCUMENTATION ANCHORS THE LIFECYCLE
+   +--------------------------------------------+
+   | DESIGN: Purpose, boundaries, risk class    |
+   +--------------------------------------------+
+   | DATA: Origin, license, bias assessment     |
+   +--------------------------------------------+
+   | MODEL: Variables, algorithm, results       |
+   +--------------------------------------------+
+   | VALIDATION: Fairness, robustness, explain. |
+   +--------------------------------------------+
+   | DEPLOYMENT: Oversight, fallback, alerts    |
+   +--------------------------------------------+
+   | MAINTENANCE: Monitoring, retraining logs   |
+   +--------------------------------------------+
+   | RETIREMENT: Archival of decisions & logs   |
+   +--------------------------------------------+
+   Every phase generates a structured, auditable record
+</pre>
+      <div class="cap">Fig 6.1 — Documentation as a spine running through every lifecycle phase, not a single end-of-project report.</div>
+    </div>
+
+    <details class="lens">
+      <summary>Architect's Lens — CTO &amp; Director Perspective <span class="lens-arrow">▾</span></summary>
+      <div class="lens-body">
+        <div class="voice cto">
+          <span class="voice-badge">CTO</span>
+          <p>"I want automated documentation generation from our ML pipeline. When a model is trained, the platform should auto-produce a data card, a model card, and a fairness report. This eliminates manual effort and ensures consistency. If a regulator asks, we can pull up the entire trail in minutes."</p>
+        </div>
+        <div class="voice director">
+          <span class="voice-badge">Director</span>
+          <p>"Documentation is my best defense if something goes wrong. It shows we didn't act recklessly — we had a process, we followed it, and we recorded it. I mandate that no AI system goes live without a complete, signed-off documentation package. It's a non-negotiable release gate, and it gives me confidence to stand behind our AI in public."</p>
+        </div>
+      </div>
+    </details>
+
+  </div>
+</details>
+
+</main>
+
+<div class="progress-note">— End of module · 6/6 sections · use ▾ Expand all to review before an interview run-through —</div>
+
+<footer>
+  ARCHITECTS LAB &nbsp;·&nbsp; Regulation &amp; Compliance Landscape &nbsp;·&nbsp; compiled from Ultimate AI Governance Master Notes
+</footer>
+
+<script>
+  document.getElementById('expandAll').addEventListener('click', () => {
+    document.querySelectorAll('details').forEach(d => d.open = true);
+  });
+  document.getElementById('collapseAll').addEventListener('click', () => {
+    document.querySelectorAll('details.chapter').forEach(d => d.open = false);
+    document.querySelectorAll('details:not(.chapter)').forEach(d => d.open = false);
+  });
+</script>
+
+</body>
+</html>

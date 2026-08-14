@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architects Lab // Fine-Tuning & Customization</title>
+<style>
+  :root{
+    --bg:#0a0e14;
+    --bg-panel:#0f1520;
+    --bg-raised:#131a26;
+    --line:#1e2836;
+    --line-bright:#2a3a4d;
+    --amber:#e0a030;
+    --amber-dim:#8a6520;
+    --cyan:#4fd1c5;
+    --cyan-dim:#2a6b64;
+    --text:#c8d3e0;
+    --text-dim:#7c8ba0;
+    --text-bright:#f0f4f8;
+    --red:#e05a4f;
+    --green:#5fbf7f;
+    --violet:#9d7ce0;
+    --mono:'JetBrains Mono','Fira Code',Consolas,monospace;
+    --serif:'Georgia','Iowan Old Style',serif;
+    --sans:-apple-system,'Segoe UI',Roboto,sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--text); font-family:var(--sans); line-height:1.65; padding-bottom:120px;}
+  ::selection{background:var(--amber-dim); color:var(--text-bright);}
+
+  .blueprint-band{
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(79,209,197,0.045) 28px),
+      repeating-linear-gradient(90deg, transparent, transparent 27px, rgba(79,209,197,0.045) 28px),
+      linear-gradient(180deg,#0c1119,#0a0e14);
+    border-bottom:1px solid var(--line-bright);
+    padding:56px 8vw 40px;
+  }
+  .eyebrow{font-family:var(--mono); font-size:12px; letter-spacing:0.28em; color:var(--cyan); text-transform:uppercase; margin-bottom:18px;}
+  .eyebrow::before{content:"◆ "; color:var(--amber);}
+  h1.title{font-family:var(--serif); font-size:clamp(30px,4.8vw,54px); color:var(--text-bright); font-weight:600; letter-spacing:-0.01em; max-width:17ch;}
+  .title .accent{color:var(--amber); font-style:italic;}
+  .subtitle{font-family:var(--mono); color:var(--text-dim); font-size:14px; margin-top:16px; max-width:66ch; border-left:2px solid var(--line-bright); padding-left:14px;}
+  .meta-row{display:flex; gap:28px; margin-top:32px; flex-wrap:wrap; font-family:var(--mono); font-size:11px; color:var(--text-dim);}
+  .meta-row span b{color:var(--cyan); font-weight:600;}
+
+  .wrap{max-width:920px; margin:0 auto; padding:0 8vw;}
+
+  section.block{padding:56px 0; border-bottom:1px dashed var(--line);}
+  section.block:last-of-type{border-bottom:none;}
+
+  .qnum{font-family:var(--mono); font-size:11px; color:var(--amber-dim); letter-spacing:0.2em; margin-bottom:10px;}
+
+  .provoke{background:var(--bg-panel); border:1px solid var(--line-bright); border-left:3px solid var(--amber); border-radius:4px; padding:26px 28px; margin:18px 0 26px;}
+  .provoke .q-label{font-family:var(--mono); font-size:11px; color:var(--amber); letter-spacing:0.15em; margin-bottom:10px; text-transform:uppercase;}
+  .provoke p{font-family:var(--serif); font-size:19px; color:var(--text-bright); font-style:italic; line-height:1.5;}
+
+  h2.q-title{font-family:var(--serif); font-size:clamp(23px,2.8vw,30px); color:var(--text-bright); margin-bottom:6px; font-weight:600;}
+  h3{font-family:var(--mono); font-size:15px; color:var(--cyan); margin:28px 0 12px; letter-spacing:0.02em;}
+  h3::before{content:"// "; color:var(--text-dim);}
+
+  p{margin-bottom:14px; color:var(--text); font-size:15.5px;}
+  strong{color:var(--text-bright); font-weight:600;}
+  em.term{color:var(--amber); font-style:normal; font-weight:600;}
+  em.term2{color:var(--violet); font-style:normal; font-weight:600;}
+
+  ul,ol{margin:0 0 16px 22px; color:var(--text);}
+  li{margin-bottom:8px; font-size:15.5px;}
+  li::marker{color:var(--cyan);}
+
+  .diagram{background:#070a10; border:1px solid var(--line-bright); border-radius:4px; padding:20px 22px; margin:20px 0; overflow-x:auto;}
+  .diagram pre{font-family:var(--mono); font-size:12.3px; line-height:1.5; color:var(--cyan); white-space:pre;}
+  .diagram .cap{font-family:var(--mono); font-size:11px; color:var(--text-dim); margin-top:12px; padding-top:10px; border-top:1px dotted var(--line);}
+
+  details.expand{background:var(--bg-panel); border:1px solid var(--line); border-radius:4px; margin:16px 0; overflow:hidden;}
+  details.expand summary{cursor:pointer; padding:14px 18px; font-family:var(--mono); font-size:13.5px; color:var(--text-bright); display:flex; align-items:center; justify-content:space-between; list-style:none; user-select:none;}
+  details.expand summary::-webkit-details-marker{display:none;}
+  details.expand summary::after{content:"+ expand"; color:var(--cyan); font-size:11px; letter-spacing:0.05em;}
+  details.expand[open] summary::after{content:"– collapse";}
+  details.expand[open] summary{border-bottom:1px solid var(--line);}
+  details.expand .inner{padding:18px;}
+
+  table{width:100%; border-collapse:collapse; margin:18px 0; font-size:13.8px;}
+  th{font-family:var(--mono); font-size:10.8px; letter-spacing:0.06em; text-transform:uppercase; color:var(--cyan); text-align:left; padding:10px 12px; border-bottom:1px solid var(--line-bright);}
+  td{padding:10px 12px; border-bottom:1px solid var(--line); color:var(--text); vertical-align:top;}
+  tr:hover td{background:rgba(79,209,197,0.03);}
+
+  .code{background:#070a10; border:1px solid var(--line-bright); border-radius:4px; padding:16px 18px; margin:16px 0; overflow-x:auto;}
+  .code pre{font-family:var(--mono); font-size:12.6px; color:#a8e0d0; line-height:1.55;}
+  .code .kw{color:var(--amber);} .code .cm{color:var(--text-dim); font-style:italic;} .code .str{color:var(--green);}
+
+  .callout{border-radius:4px; padding:16px 18px; margin:18px 0; font-size:14.5px; border-left:3px solid;}
+  .callout.warn{background:rgba(224,90,79,0.06); border-color:var(--red); color:#e8c0bb;}
+  .callout.tip{background:rgba(95,191,127,0.06); border-color:var(--green); color:#c3e5cc;}
+  .callout.note{background:rgba(157,124,224,0.06); border-color:var(--violet); color:#d5c9f0;}
+  .callout .label{font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px; display:block;}
+  .callout.warn .label{color:var(--red);} .callout.tip .label{color:var(--green);} .callout.note .label{color:var(--violet);}
+
+  .recall{background:linear-gradient(135deg, rgba(224,160,48,0.05), rgba(79,209,197,0.04)); border:1px solid var(--line-bright); border-radius:6px; padding:20px 22px; margin:16px 0;}
+  .recall .rq{font-family:var(--mono); font-size:14px; color:var(--text-bright); margin-bottom:10px; cursor:pointer;}
+  .recall .rq::before{content:"▸ "; color:var(--amber);}
+  .recall .ra{display:none; padding:10px 0 0 20px; color:var(--text-dim); border-top:1px dotted var(--line); margin-top:10px; font-size:14px;}
+  .recall.open .ra{display:block;}
+  .recall.open .rq::before{content:"▾ ";}
+
+  .fintech-tag{display:inline-block; font-family:var(--mono); font-size:10.5px; color:var(--bg); background:var(--amber); padding:3px 8px; border-radius:3px; letter-spacing:0.06em; margin-bottom:10px; font-weight:700;}
+
+  .toc{background:var(--bg-panel); border:1px solid var(--line-bright); border-radius:6px; padding:24px 26px; margin:34px 0;}
+  .toc-title{font-family:var(--mono); font-size:11px; color:var(--cyan); letter-spacing:0.2em; margin-bottom:14px;}
+  .toc ol{margin:0; list-style:none;}
+  .toc li{margin-bottom:9px;}
+  .toc a{color:var(--text); text-decoration:none; font-size:14.5px; font-family:var(--mono);}
+  .toc a:hover{color:var(--amber);}
+  .toc .n{color:var(--amber-dim); margin-right:8px;}
+
+  footer{text-align:center; padding:60px 8vw 20px; color:var(--text-dim); font-family:var(--mono); font-size:11.5px; letter-spacing:0.08em;}
+
+  @media (max-width:640px){
+    .blueprint-band{padding:40px 6vw 30px;}
+    .wrap{padding:0 6vw;}
+    .provoke p{font-size:16.5px;}
+  }
+  /* notes width expansion - matches learning plan box */
+  .wrap,.container,main,header.hero,header.masthead,nav.toc,section.block,footer{max-width:100%!important;padding-left:24px!important;padding-right:24px!important;}
+</style>
+</head>
+<body>
+<!-- LEARNING PLAN -->
+<div style="margin:24px;background:#0f1520;border:1px solid #1e2836;border-left:4px solid #e0a030;border-radius:8px;padding:24px 28px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;">
+  <div style="color:#e0a030;font-size:13px;font-weight:700;letter-spacing:.08em;margin-bottom:14px;">&#9670; LEARNING PLAN — 2.5 HOURS DAILY</div>
+  <div style="overflow-x:auto;">
+  <table style="width:100%;border-collapse:collapse;font-size:13px;color:#c8d3e0;margin-bottom:18px;white-space:nowrap;">
+    <thead><tr style="color:#7c8ba0;border-bottom:1px solid #1e2836;">
+      <th style="padding:6px 10px;text-align:left;width:48px;">Step</th>
+      <th style="padding:6px 10px;text-align:left;">Activity</th>
+      <th style="padding:6px 10px;text-align:left;">Outcome</th>
+    </tr></thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">1</td><td style="padding:7px 10px;"><b>Complete the Udemy Course</b> — watch videos, understand concepts, don't rush</td><td style="padding:7px 10px;color:#5fbf7f;">Build strong fundamentals</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">2</td><td style="padding:7px 10px;"><b>Practice Everything</b> — complete exercises, assignments, and source code</td><td style="padding:7px 10px;color:#5fbf7f;">Gain hands-on experience</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">3</td><td style="padding:7px 10px;"><b>Revise with these notes</b></td><td style="padding:7px 10px;color:#5fbf7f;">Reinforce concepts and fill knowledge gaps</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">4</td><td style="padding:7px 10px;"><b>Earn the Udemy Certificate</b></td><td style="padding:7px 10px;color:#5fbf7f;">Ensure the course is completed end-to-end</td></tr>
+      <tr><td style="padding:7px 10px;color:#e0a030;font-weight:700;">5</td><td style="padding:7px 10px;"><b>Practise real world tough scenario</b> — scenario-based questions &amp; interview problems</td><td style="padding:7px 10px;color:#5fbf7f;">Develop practical and interview-ready skills</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">1.5 HRS</div>
+      <div style="font-size:12px;color:#c8d3e0;">Udemy Videos + Exercises + Source Code</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Notes Revision</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Scenario-Based Questions &amp; Practical Problems</div>
+    </div>
+  </div>
+  <div style="color:#f0f4f8;font-size:12px;font-weight:600;letter-spacing:.04em;">GOAL: <span style="color:#e0a030;">Learn &#8594; Practice &#8594; Revise &#8594; Complete &#8594; Apply</span></div>
+</div>
+<!-- END LEARNING PLAN -->
+<a href="https://ai.shivawithin.in" id="home-return-btn" title="Back to Home" style="position:fixed;bottom:24px;right:24px;z-index:99999;display:inline-flex;align-items:center;gap:6px;background:#0d1b2a;color:#3fb6ff;border:1px solid #3fb6ff;padding:9px 15px;border-radius:8px;text-decoration:none;font-family:system-ui,-apple-system,sans-serif;font-size:13px;font-weight:600;box-shadow:0 2px 16px rgba(0,0,0,0.5);transition:background 0.2s,box-shadow 0.2s;" onmouseover="this.style.background='#1a2f47';this.style.boxShadow='0 4px 20px rgba(63,182,255,0.25)'" onmouseout="this.style.background='#0d1b2a';this.style.boxShadow='0 2px 16px rgba(0,0,0,0.5)'">&#8592; Home</a>
+
+<div class="blueprint-band">
+  <div class="eyebrow">Architects Lab — Study Note 016</div>
+  <h1 class="title">Fine-Tuning & <span class="accent">Customization</span></h1>
+  <p class="subtitle">If a model can already follow instructions reasonably well, what exactly are you buying when you fine-tune it — and is it ever the wrong purchase?</p>
+  <div class="meta-row">
+    <span>DOMAIN: <b>LLM Systems / Applied AI</b></span>
+    <span>DEPTH: <b>Mechanism → Decision Framework</b></span>
+    <span>FORMAT: <b>Socratic + Active Recall</b></span>
+    <span>CONTEXT: <b>Engineering-leadership grounded</b></span>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="toc">
+    <div class="toc-title">◆ CONTENTS</div>
+    <ol>
+      <li><a href="#s1"><span class="n">01</span>Why Customize a Model At All?</a></li>
+      <li><a href="#s2"><span class="n">02</span>Full Fine-Tuning — Updating Every Weight</a></li>
+      <li><a href="#s3"><span class="n">03</span>LoRA — Parameter-Efficient Fine-Tuning</a></li>
+      <li><a href="#s4"><span class="n">04</span>QLoRA — Fine-Tuning a 70B Model on One GPU</a></li>
+      <li><a href="#s5"><span class="n">05</span>Other PEFT Methods — The Wider Family</a></li>
+      <li><a href="#s6"><span class="n">06</span>Instruction Tuning — Teaching a Model to Follow Instructions</a></li>
+      <li><a href="#s7"><span class="n">07</span>Building an Instruction-Tuning Dataset</a></li>
+      <li><a href="#s8"><span class="n">08</span>The Decision — Fine-Tune vs RAG vs Prompt Engineering</a></li>
+      <li><a href="#s9"><span class="n">09</span>Applied Decision Walkthrough</a></li>
+      <li><a href="#s10"><span class="n">10</span>Active Recall Deck</a></li>
+    </ol>
+  </div>
+
+  <!-- S1 -->
+  <section class="block" id="s1">
+    <div class="qnum">§ 01 — FIRST PRINCIPLES</div>
+    <div class="provoke">
+      <div class="q-label">Thought experiment</div>
+      <p>A general-purpose model can already write reasonably fluent text, follow instructions, and reason about most topics. If you can already just <em>tell</em> it what you want in the prompt, what is fine-tuning actually changing that a well-written prompt cannot?</p>
+    </div>
+
+    <h2 class="q-title">What fine-tuning buys you that prompting can't</h2>
+    <p>Prompting steers a fixed set of weights toward a desired behavior at inference time — every instruction, every example, every constraint has to be re-stated (and re-paid-for, in tokens) on every single call. <em class="term">Fine-tuning</em> instead updates the model's weights themselves, so the desired behavior becomes baked into the model's default response pattern, without needing to be re-explained each time.</p>
+
+    <p>This distinction matters most along a few axes:</p>
+    <ul>
+      <li><strong>Consistency at scale</strong> — a fine-tuned model produces the target style/format reliably without depending on a long, carefully-worded system prompt surviving every edge case.</li>
+      <li><strong>Token/cost efficiency</strong> — instructions and even few-shot examples baked into weights don't consume prompt tokens on every call, which matters enormously at high request volume.</li>
+      <li><strong>Learning patterns too subtle for prompting</strong> — some behaviors (a very specific tone, a domain-specific reasoning pattern, a structured output format used thousands of times) are easier to demonstrate through hundreds of examples than to describe in words.</li>
+      <li><strong>Latent knowledge the prompt can't reach</strong> — fine-tuning can shift <em>how</em> a model uses what it already knows, though it's a poor tool for teaching genuinely new facts (more on this in §08 — that's RAG's job).</li>
+    </ul>
+
+    <div class="callout note">
+      <span class="label">The framing to hold onto through this whole note</span>
+      Fine-tuning changes <em>behavior</em> (how the model responds — tone, format, task-specific skill). It is a weak, expensive tool for changing <em>knowledge</em> (what facts the model has access to). Keep that distinction in mind — it's the backbone of §08's decision framework.
+    </div>
+  </section>
+
+  <!-- S2 -->
+  <section class="block" id="s2">
+    <div class="qnum">§ 02 — FULL FINE-TUNING</div>
+    <div class="provoke">
+      <div class="q-label">Thought experiment</div>
+      <p>A 70-billion-parameter model has 70 billion numbers that could, in principle, all be nudged during training. If your fine-tuning dataset only meaningfully touches on a narrow skill — say, generating a specific JSON schema — does updating all 70 billion parameters make sense, or is that solving a small problem with a wildly oversized tool?</p>
+    </div>
+
+    <h2 class="q-title">Full fine-tuning — the original, expensive approach</h2>
+    <p><em class="term">Full fine-tuning</em> updates every parameter in the model via standard backpropagation on your custom dataset, exactly like the original pretraining process, just on a smaller, task-specific dataset with typically much lower learning rates to avoid destroying pretrained capability.</p>
+
+    <h3>Why it's expensive — and where the cost actually comes from</h3>
+    <ul>
+      <li><strong>Optimizer state</strong> — training doesn't just need memory for the model weights; optimizers like Adam store additional state (momentum, variance estimates) per parameter, typically <em>doubling or tripling</em> the memory footprint beyond the raw weight size.</li>
+      <li><strong>Gradients</strong> — a full gradient tensor, the same size as the weights, must be held in memory for every parameter being updated.</li>
+      <li><strong>Activation memory</strong> — intermediate activations from the forward pass need to be retained for backpropagation, scaling with sequence length and batch size.</li>
+      <li><strong>Multi-GPU orchestration</strong> — for anything beyond small models, full fine-tuning requires distributed training (data/tensor/pipeline parallelism), adding real systems-engineering complexity on top of the raw compute cost.</li>
+    </ul>
+
+    <div class="diagram">
+<pre>
+   MEMORY FOOTPRINT — WHY FULL FINE-TUNING IS SO EXPENSIVE
+
+   For a 7B parameter model, fp16 training (rough order of magnitude):
+
+   ┌─────────────────────────┬───────────────┐
+   │ Model weights (fp16)    │   ~14 GB       │
+   │ Gradients (fp16)        │   ~14 GB       │
+   │ Optimizer state (Adam)  │   ~56 GB       │  ◀── the dominant cost
+   │ Activations             │   varies (GBs) │
+   ├─────────────────────────┼───────────────┤
+   │ TOTAL                   │   ~85GB+       │  → needs multiple high-end GPUs
+   └─────────────────────────┴───────────────┘
+
+   Compare to LoRA (§03): only a small fraction of parameters need
+   gradients + optimizer state at all → fits on a single GPU
+</pre>
+      <div class="cap">The optimizer state, not the raw weights, is usually the single biggest memory cost in full fine-tuning — this is exactly the line item PEFT methods attack.</div>
+    </div>
+
+    <h3>When full fine-tuning still makes sense</h3>
+    <p>Despite the cost, full fine-tuning remains the right choice when: the target behavior requires substantial capability shift (not just style/format adaptation), you have a very large, high-quality dataset that justifies the investment, or you're building a foundation model / doing continued pretraining rather than task adaptation. For most applied, task-specific customization work, though, this is now the exception rather than the default — which is exactly why parameter-efficient methods emerged.</p>
+  </section>
+
+  <!-- S3 -->
+  <section class="block" id="s3">
+    <div class="qnum">§ 03 — LoRA</div>
+    <div class="provoke">
+      <div class="q-label">Thought experiment</div>
+      <p>Research on fine-tuned models has repeatedly observed that the actual <em>change</em> a fine-tuning process makes to a weight matrix tends to have low "intrinsic rank" — meaning the update, despite being the same size as the full matrix, can be well-approximated by a much smaller, low-rank structure. If that's true, why train a full-size update at all?</p>
+    </div>
+
+    <h2 class="q-title">LoRA — Low-Rank Adaptation</h2>
+    <p><em class="term">LoRA</em> freezes the entire pretrained model and, for selected weight matrices (commonly the attention projection matrices), injects a pair of small, trainable low-rank matrices <em>alongside</em> the frozen original. Instead of learning a full-size weight update ΔW, LoRA learns ΔW as the product of two much smaller matrices, A and B, where the "rank" r is a small number (often 4-64) compared to the matrix's full dimensions.</p>
+
+    <div class="diagram">
+<pre>
+   HOW LoRA MODIFIES A WEIGHT MATRIX
+
+   Original weight matrix W (frozen, untouched):    d × d,  e.g. 4096 × 4096
+                                                      ≈ 16.7M parameters
+
+   LoRA adds:  ΔW = B × A        where
+      A is  r × d     (e.g.  8 × 4096  = 32,768 params)
+      B is  d × r     (e.g.  4096 × 8  = 32,768 params)
+                                                      ≈ 65K trainable params
+
+   Effective weight at inference:  W_new = W (frozen) + B·A (trained)
+
+   → ~99.6% fewer trainable parameters for this matrix, in this example
+</pre>
+      <div class="cap">The rank r is the key hyperparameter: higher rank = more expressive capacity to learn, but more trainable parameters and higher risk of overfitting on small datasets.</div>
+    </div>
+
+    <h3>Why this works so well in practice</h3>
+    <ul>
+      <li><strong>Drastically less memory</strong> — only A and B need gradients and optimizer state; the frozen base weights need neither, collapsing the dominant cost identified in §02.</li>
+      <li><strong>No inference latency penalty (when merged)</strong> — after training, B·A can be mathematically merged back into the original weight matrix (W_new = W + B·A), so the deployed model has the exact same architecture and speed as the base model, with zero added inference cost.</li>
+      <li><strong>Small, swappable artifacts</strong> — a LoRA adapter is often just tens to hundreds of megabytes (versus tens of gigabytes for a full model checkpoint), making it practical to train and store many task-specific adapters on top of one shared base model, and swap between them at serve time.</li>
+      <li><strong>Lower overfitting risk on small datasets</strong> — because far fewer parameters are being learned, LoRA is naturally more resistant to overfitting when your fine-tuning dataset is modest in size, which is the common case for task-specific customization.</li>
+    </ul>
+
+    <div class="callout tip">
+      <span class="label">The multi-tenant serving pattern this unlocks</span>
+      Because a base model can stay loaded once in GPU memory while multiple small LoRA adapters are swapped in per-request (a pattern supported natively by serving engines like vLLM), you can serve many customers' or many tasks' fine-tuned behavior from a single shared deployment — a meaningfully different cost profile than needing a dedicated full-model deployment per customization.
+    </div>
+  </section>
+
+  <!-- S4 -->
+  <section class="block" id="s4">
+    <div class="qnum">§ 04 — QLoRA</div>
+    <div class="provoke">
+      <div class="q-label">Thought experiment</div>
+      <p>LoRA already avoids storing gradients and optimizer state for the frozen base weights — but those frozen weights still have to sit in GPU memory in full precision just to be read during the forward/backward pass. If the base weights are never being updated, do they really need to be stored at full 16-bit precision at all?</p>
+    </div>
+
+    <h2 class="q-title">QLoRA — quantization meets LoRA</h2>
+    <p><em class="term">QLoRA</em> combines LoRA with quantizing the frozen base model down to 4-bit precision (using a specialized data type — NF4, "NormalFloat4," designed to represent normally-distributed weight values with less information loss than naive 4-bit quantization). The LoRA adapters themselves are still trained in higher precision (typically bf16), so learning quality is preserved while the memory-dominant frozen base is compressed roughly 4x compared to fp16.</p>
+
+    <div class="diagram">
+<pre>
+   LoRA vs QLoRA — WHERE THE MEMORY SAVINGS COME FROM
+
+   LoRA:    [ Base model: fp16, frozen ] + [ LoRA adapters: fp16, trainable ]
+                    ~14GB for 7B model         ~tens of MB
+
+   QLoRA:   [ Base model: 4-bit (NF4), frozen ] + [ LoRA adapters: bf16, trainable ]
+                    ~3.5GB for 7B model              ~tens of MB
+                    (further reduced via
+                     double quantization +
+                     paged optimizers)
+
+   → QLoRA made it practical to fine-tune 65B+ parameter models
+     on a single consumer/prosumer-grade GPU (e.g. one 48GB card)
+     rather than requiring a multi-GPU cluster
+</pre>
+    </div>
+
+    <h3>Additional QLoRA-specific techniques</h3>
+    <ul>
+      <li><strong>Double quantization</strong> — quantizes the quantization constants themselves, squeezing out additional memory savings on top of the base 4-bit compression.</li>
+      <li><strong>Paged optimizers</strong> — uses NVIDIA unified memory to page optimizer state between GPU and CPU memory when GPU memory spikes, avoiding out-of-memory crashes during training on long sequences, at some cost to training speed during those spikes.</li>
+    </ul>
+
+    <div class="callout tip">
+      <span class="label">Why QLoRA was a genuine inflection point</span>
+      Before QLoRA, fine-tuning a large (30B+) model realistically required institutional-scale multi-GPU infrastructure. QLoRA's contribution was showing that near-full-fine-tuning-quality results were achievable on dramatically cheaper hardware, which is a large part of why fine-tuning open-weight models became broadly accessible to individual practitioners and smaller teams, not just large labs.
+    </div>
+  </section>
+
+  <!-- S5 -->
+  <section class="block" id="s5">
+    <div class="qnum">§ 05 — WIDER PEFT FAMILY</div>
+    <div class="provoke">
+      <div class="q-label">Thought experiment</div>
+      <p>LoRA attacks the memory problem by shrinking <em>how many</em> parameters get updated. Is that the only axis you could optimize along — or could you instead change <em>where</em> in the model you intervene, or <em>what kind</em> of thing you're learning rather than raw weight deltas at all?</p>
+    </div>
+
+    <h2 class="q-title">Beyond LoRA — the broader PEFT landscape</h2>
+    <p>LoRA is the dominant, most widely-adopted PEFT method today, but it's one point in a broader design space of ways to adapt a model cheaply.</p>
+
+    <table>
+      <tr><th>Method</th><th>Core idea</th></tr>
+      <tr><td>Prefix tuning</td><td>Prepends a small number of trainable "virtual token" vectors to the input at every transformer layer, steering attention without touching any existing weights at all</td></tr>
+      <tr><td>Prompt tuning</td><td>A simpler variant — learns a small set of trainable embeddings prepended only at the input layer (not every layer), even fewer parameters than prefix tuning but generally lower expressive power</td></tr>
+      <tr><td>Adapter layers</td><td>Inserts small trainable bottleneck feed-forward layers between existing frozen transformer layers, rather than modifying existing weight matrices at all</td></tr>
+      <tr><td>(IA)³</td><td>Learns per-channel scaling vectors that rescale activations, an even more parameter-frugal approach than LoRA in some setups</td></tr>
+      <tr><td>DoRA (Weight-Decomposed LoRA)</td><td>Decomposes weight updates into magnitude and direction components, often improving on plain LoRA's learning capacity at similar parameter budgets</td></tr>
+    </table>
+
+    <div class="callout note">
+      <span class="label">Why LoRA still dominates despite alternatives</span>
+      LoRA's key practical advantage — that its trained update can be exactly merged back into the base weights with zero added inference latency — is not shared by all PEFT methods (prefix/prompt tuning add tokens to every forward pass, adapter layers add extra computation layers). This makes LoRA/QLoRA the default starting point for most practitioners, with the other methods used in more specialized situations.
+    </div>
+  </section>
+
+  <!-- S6 -->
+  <section class="block" id="s6">
+    <div class="qnum">§ 06 — INSTRUCTION TUNING</div>
+    <div class="provoke">
+      <div class="q-label">Thought experiment</div>
+      <p>A raw pretrained model, asked "explain photosynthesis," is just as likely to continue with "...to a 10-year-old" or list five more similar exam questions as it is to actually answer — because its training objective was only ever "predict the next plausible token," not "recognize this as a request and fulfill it." What has to change to turn a next-token predictor into something that reliably behaves like it understands it's being asked to do something?</p>
+    </div>
+
+    <h2 class="q-title">Instruction tuning — teaching the shape of "being helpful"</h2>
+    <p><em class="term">Instruction tuning</em> is a specific, foundational application of fine-tuning (usually the first stage after pretraining, and typically done via full fine-tuning or LoRA on top of a base model): training on a large, diverse set of (instruction, response) pairs so the model learns the general pattern of "recognize this text as a request, then produce a response that fulfills it" — across many different task types, phrasings, and domains.</p>
+
+    <h3>What instruction tuning teaches, specifically</h3>
+    <ul>
+      <li><strong>Task recognition</strong> — distinguishing "summarize this" from "translate this" from "answer this question," and responding in the appropriate mode rather than just continuing the text.</li>
+      <li><strong>Format compliance</strong> — following explicit formatting requests (bullet points, JSON, specific length constraints) rather than defaulting to free-form continuation.</li>
+      <li><strong>Generalization across unseen instructions</strong> — a model instruction-tuned on a sufficiently diverse dataset learns to follow <em>novel</em> instructions it never saw during training, not just to memorize the training examples — this generalization is the entire point, and is what separates a genuinely useful instruction-tuned model from mere memorization.</li>
+      <li><strong>Conversational structure</strong> — recognizing turn-taking, multi-turn context, and system/user/assistant role structure, rather than the flat text-continuation format pretraining used.</li>
+    </ul>
+
+    <div class="diagram">
+<pre>
+   BASE MODEL vs INSTRUCTION-TUNED MODEL — SAME PROMPT
+
+   Prompt: "Summarize the following in one sentence: [long paragraph]"
+
+   BASE MODEL (pretraining only) might continue:
+   "...Summarize the following in one sentence: [ANOTHER paragraph]
+    Summarize the following in one sentence: ..."
+   → treats it as a pattern to CONTINUE, not an instruction to FOLLOW
+
+   INSTRUCTION-TUNED MODEL:
+   "[Actual one-sentence summary of the paragraph]"
+   → recognizes the instruction and fulfills it directly
+</pre>
+      <div class="cap">This gap — between "completing plausible text" and "recognizing and fulfilling a request" — is exactly what instruction tuning closes, and it's the reason base models and their instruction-tuned counterparts (often suffixed "-Instruct" or "-Chat") behave so differently on identical prompts.</div>
+    </div>
+
+    <div class="callout note">
+      <span class="label">Where this sits relative to alignment (Study Note 015, §10.9)</span>
+      Instruction tuning is typically the supervised fine-tuning (SFT) stage of the broader alignment pipeline — it teaches the model <em>how</em> to respond to instructions in general. RLHF/DPO, which come after, further shape <em>which</em> responses are preferred among the many "instruction-following" responses the SFT stage made possible — safety, helpfulness, and tone refinement layer on top of instruction tuning, not instead of it.
+    </div>
+  </section>
+
+  <!-- S7 -->
+  <section class="block" id="s7">
+    <div class="qnum">§ 07 — DATASET CONSTRUCTION</div>
+    <div class="provoke">
+      <div class="q-label">Thought experiment</div>
+      <p>If a model instruction-tuned on 500 examples that are all phrased as polite, well-formed questions is then asked a terse, typo-ridden, real-world query — does its "generalization" actually hold, or did it just learn to recognize one narrow style of instruction?</p>
+    </div>
+
+    <h2 class="q-title">What makes an instruction-tuning (or task fine-tuning) dataset actually work</h2>
+    <ul>
+      <li><strong>Diversity over raw volume</strong> — a smaller dataset covering many distinct task types, phrasings, and difficulty levels generalizes better than a much larger dataset that's narrowly repetitive; this is a well-documented finding (LIMA-style results showed a relatively small number of very high-quality, diverse examples can rival much larger, noisier datasets).</li>
+      <li><strong>Response quality over response quantity</strong> — since the model is learning to imitate the style and correctness of the target responses, low-quality or inconsistent responses in the training set directly teach the model those same flaws.</li>
+      <li><strong>Realistic input distribution</strong> — training examples should reflect the actual phrasing, length, and messiness of real user queries, not an idealized, cleaned-up version of them, or the model will generalize poorly to production traffic.</li>
+      <li><strong>Consistent formatting/schema</strong> — for task-specific fine-tuning (e.g. structured extraction), consistent input/output formatting across every training example is critical, since the model is partly learning the format itself, not just the content.</li>
+      <li><strong>Held-out evaluation set</strong> — a portion of curated examples should be set aside, never trained on, and used to actually measure whether the fine-tune improved the target behavior (tying back to Study Note 015's evaluation frameworks) rather than assuming success from training loss alone.</li>
+    </ul>
+
+    <div class="callout warn">
+      <span class="label">A common trap in applied fine-tuning projects</span>
+      Training loss going down does not mean task performance is going up — a model can overfit to superficial patterns in a small, homogeneous dataset (identical phrasing, identical formatting) while actually getting worse at the underlying task on realistic inputs. Always evaluate on held-out, diverse examples, not training loss curves alone.
+    </div>
+  </section>
+
+  <!-- S8 -->
+  <section class="block" id="s8">
+    <div class="qnum">§ 08 — THE DECISION FRAMEWORK</div>
+    <div class="provoke">
+      <div class="q-label">Thought experiment</div>
+      <p>Someone on your team says "the model keeps getting our fund's expense ratio wrong — let's fine-tune it to know the correct number." Is fine-tuning actually the right fix for that specific complaint — or does the complaint itself reveal exactly why it's the wrong tool?</p>
+    </div>
+
+    <h2 class="q-title">Fine-tuning vs RAG vs prompt engineering — matching the tool to the problem</h2>
+    <p>The single most common applied-AI mistake is reaching for fine-tuning to solve a knowledge problem. Fine-tuning is a poor mechanism for teaching new facts reliably — it doesn't guarantee the model will recall a specific fact correctly at inference time (facts get blended into weights probabilistically, not stored discretely), and every time the underlying fact changes (a rate, a policy, a NAV), you'd need to fine-tune again. That's precisely the problem RAG was built for (Study Note 014).</p>
+
+    <table>
+      <tr><th>Approach</th><th>Changes</th><th>Best for</th><th>Poor fit for</th></tr>
+      <tr><td>Prompt engineering</td><td>Nothing persistent — steers behavior per-call via instructions/examples</td><td>Fast iteration, low volume, behavior that's easy to describe in words, one-off or evolving requirements</td><td>High-volume cost efficiency, very subtle style patterns hard to describe, large few-shot examples eating context budget</td></tr>
+      <tr><td>RAG</td><td>What the model can see at query time</td><td>Fresh/volatile facts, private/proprietary data, source attribution requirements, frequently-changing information</td><td>Teaching a new skill, style, or reasoning pattern — RAG doesn't change how the model behaves, only what it can reference</td></tr>
+      <tr><td>Fine-tuning (incl. LoRA/QLoRA)</td><td>The model's default behavior/weights</td><td>Consistent tone/style/format at scale, teaching a specific task-execution pattern, reducing prompt length/cost at high volume, domain-specific reasoning style</td><td>Teaching volatile or frequently-updated facts, anything requiring source attribution/auditability, low-data situations</td></tr>
+    </table>
+
+    <div class="diagram">
+<pre>
+   A SIMPLE DECISION TREE
+
+   Is the problem "the model doesn't know a FACT"?
+        │
+        ├── YES ──▶ Is that fact static/rarely changing and small in volume?
+        │               ├── YES ──▶ Prompt engineering (put it directly in the prompt/system prompt)
+        │               └── NO  ──▶ RAG (retrieve it fresh at query time)
+        │
+        └── NO, it's a BEHAVIOR problem (wrong tone/format/style/reasoning pattern)
+                │
+                ├── Can you describe the desired behavior clearly in words,
+                │   and is call volume low/moderate?
+                │       └── YES ──▶ Prompt engineering first — cheapest, fastest iteration
+                │
+                └── Is the behavior hard to describe in words, but easy to
+                    DEMONSTRATE with examples, at meaningful call volume?
+                        └── YES ──▶ Fine-tuning (LoRA/QLoRA as the default starting point)
+</pre>
+      <div class="cap">Prompt engineering and RAG are almost always cheaper and faster to iterate on than fine-tuning — the strong default is to reach for fine-tuning only after prompting/RAG have been genuinely tried and found insufficient for a <em>behavior</em> problem, not a knowledge problem.</div>
+    </div>
+
+    <div class="callout tip">
+      <span class="label">These are not mutually exclusive</span>
+      Production systems very commonly combine all three: a fine-tuned model (for consistent domain tone/format and task-specific skill) that's also given RAG-retrieved context (for current facts) inside a well-engineered prompt (for task framing and edge-case instructions). The question isn't "which one," it's "which layer is this specific problem actually a symptom of."
+    </div>
+  </section>
+
+  <!-- S9 -->
+  <section class="block" id="s9">
+    <div class="qnum">§ 09 — APPLIED WALKTHROUGH</div>
+    <span class="fintech-tag">FINTECH GROUNDED</span>
+    <div class="provoke">
+      <div class="q-label">Thought experiment</div>
+      <p>Picture three real complaints from a wealth-platform AI assistant: (1) it gives today's NAV incorrectly, (2) its answers don't sound like your compliance team's approved tone and always forget to add the mandatory risk disclaimer, (3) it can't reliably extract structured fields (scheme code, folio number, amount) from messy free-text customer requests into a fixed JSON schema for downstream processing. Are these the same problem wearing different clothes, or three genuinely different problems needing three different fixes?</p>
+    </div>
+
+    <h2 class="q-title">Mapping three real complaints to three different tools</h2>
+
+    <details class="expand">
+      <summary>Complaint 1 — wrong NAV / stale numbers</summary>
+      <div class="inner">
+        <p><strong>Diagnosis:</strong> a knowledge-freshness problem, not a behavior problem. Fine-tuning would bake in today's NAV as if it were a permanent fact — actively harmful the moment the NAV changes tomorrow.<br><strong>Fix:</strong> RAG routed to a live data source/API for volatile numeric facts (as covered in Study Note 014, §13), not a static vector index and definitely not fine-tuning.</p>
+      </div>
+    </details>
+
+    <details class="expand">
+      <summary>Complaint 2 — wrong tone, missing mandatory disclaimer</summary>
+      <div class="inner">
+        <p><strong>Diagnosis:</strong> a consistent-behavior-at-scale problem. This is describable in words (a system prompt instruction) but the failure is happening because the instruction isn't being followed reliably across many varied real queries — a classic sign that prompting alone is hitting its ceiling for volume/consistency.<br><strong>Fix:</strong> start with prompt engineering (explicit instruction + a couple of strong few-shot examples) and measure compliance rate; if compliance still isn't reliable enough at production volume, a LoRA fine-tune on a curated dataset of correctly-toned, disclaimer-included responses directly bakes the behavior in — this is a textbook case for instruction-style fine-tuning.</p>
+      </div>
+    </details>
+
+    <details class="expand">
+      <summary>Complaint 3 — unreliable structured extraction into a fixed schema</summary>
+      <div class="inner">
+        <p><strong>Diagnosis:</strong> a task-execution-skill problem with a precise, learnable input→output mapping — a strong candidate for fine-tuning because the pattern (messy text in, exact schema out) is easy to demonstrate with hundreds of examples and hard to fully guarantee with prompting alone at high volume, especially against edge cases and messy real input.<br><strong>Fix:</strong> a LoRA/QLoRA fine-tune on a diverse, high-quality dataset of (messy input, correct JSON output) pairs, likely combined with structured-output constraints (schema validation as an output guardrail, per Study Note 015 §10.7) as a safety net even after fine-tuning.</p>
+      </div>
+    </details>
+
+    <div class="callout note">
+      <span class="label">The pattern across all three</span>
+      Notice that only one of the three genuinely called for fine-tuning, and even that one started with the cheaper prompt-engineering attempt first. This mirrors the general rule from §08: fine-tuning is usually the last tool reached for, and only after the problem has been correctly diagnosed as a behavior/skill problem rather than a knowledge/freshness problem.
+    </div>
+  </section>
+
+  <!-- S10 — ACTIVE RECALL -->
+  <section class="block" id="s10">
+    <div class="qnum">§ 10 — ACTIVE RECALL</div>
+    <h2 class="q-title">Test yourself — click each question to reveal the answer</h2>
+    <p>Cover the answers first. Try to answer from memory before expanding.</p>
+
+    <div class="recall" onclick="this.classList.toggle('open')">
+      <div class="rq">What's the fundamental distinction between what fine-tuning changes and what RAG changes?</div>
+      <div class="ra">Fine-tuning changes the model's behavior — its default tone, format, and task-execution pattern — by updating weights. RAG changes what the model can see at query time — the facts/context available to it — without touching weights at all. Fine-tuning is a poor tool for teaching new or frequently-changing facts; RAG is a poor tool for teaching a new skill or behavioral pattern.</div>
+    </div>
+
+    <div class="recall" onclick="this.classList.toggle('open')">
+      <div class="rq">In full fine-tuning, why does optimizer state (not the raw weights) dominate the memory cost?</div>
+      <div class="ra">Optimizers like Adam store additional per-parameter state (momentum and variance estimates) alongside the gradient, typically doubling or tripling the memory footprint beyond just the weights and their gradients. For large models this optimizer state is usually the single largest memory line item during training.</div>
+    </div>
+
+    <div class="recall" onclick="this.classList.toggle('open')">
+      <div class="rq">How does LoRA reduce trainable parameters, and why does this not add any inference latency once training is done?</div>
+      <div class="ra">LoRA freezes the original weight matrix and learns a low-rank decomposition (two small matrices A and B) that approximates the needed weight update, requiring far fewer trainable parameters than the full matrix. After training, B·A can be mathematically merged directly back into the original frozen weights, so the deployed model has identical architecture and speed to the base model — no added computation at inference time.</div>
+    </div>
+
+    <div class="recall" onclick="this.classList.toggle('open')">
+      <div class="rq">What does QLoRA add on top of LoRA, and why did it matter practically?</div>
+      <div class="ra">QLoRA quantizes the frozen base model down to 4-bit precision (using the NF4 data type) while still training the LoRA adapters in higher precision, cutting the dominant memory cost (the frozen base weights) roughly 4x. This made it practical to fine-tune very large models (65B+) on a single GPU rather than requiring a multi-GPU cluster, significantly broadening who could afford to fine-tune large models.</div>
+    </div>
+
+    <div class="recall" onclick="this.classList.toggle('open')">
+      <div class="rq">What specifically does instruction tuning teach a base pretrained model that pretraining alone does not?</div>
+      <div class="ra">Pretraining only teaches next-token prediction over raw text, with no inherent notion of "this is a request, fulfill it." Instruction tuning trains on diverse (instruction, response) pairs so the model learns to recognize text as a request and generate a response that fulfills it, generalizing that pattern to novel instructions it wasn't explicitly trained on — rather than simply continuing the text as if it were more of the same pattern.</div>
+    </div>
+
+    <div class="recall" onclick="this.classList.toggle('open')">
+      <div class="rq">Why is dataset diversity generally more important than raw dataset size for instruction/task fine-tuning?</div>
+      <div class="ra">A model learns to generalize from the range of task types, phrasings, and difficulty levels it sees during training. A large but repetitive/narrow dataset teaches the model to handle only that narrow style well, while a smaller but genuinely diverse, high-quality dataset produces better generalization to novel, real-world inputs — a finding borne out by results like LIMA showing a small number of high-quality diverse examples can rival much larger datasets.</div>
+    </div>
+
+    <div class="recall" onclick="this.classList.toggle('open')">
+      <div class="rq">A team wants to fine-tune a model so it "knows" a frequently-changing interest rate. Why is this the wrong fix, and what should they do instead?</div>
+      <div class="ra">Fine-tuning doesn't reliably store discrete facts and would require re-training every time the rate changes — an operationally unsustainable and factually unreliable approach for volatile data. The correct fix is RAG routed to a live data source/API for that specific fact, reserving fine-tuning for behavior/skill problems rather than knowledge-freshness problems.</div>
+    </div>
+
+    <div class="recall" onclick="this.classList.toggle('open')">
+      <div class="rq">Why should prompt engineering and RAG typically be tried before fine-tuning, even when fine-tuning is ultimately the right tool?</div>
+      <div class="ra">Prompt engineering and RAG are cheaper, faster to iterate on, and don't require building/curating a training dataset or managing a training pipeline. Fine-tuning is comparatively expensive and slower to iterate, so the practical default is to exhaust the cheaper options first and confirm the problem is genuinely a behavior/skill problem that words and retrieved context can't solve, before committing to a fine-tuning effort.</div>
+    </div>
+  </section>
+
+</div>
+
+<footer>ARCHITECTS LAB — Study Note 016 — Fine-Tuning & Customization — built for deep, active-recall learning</footer>
+
+</body>
+</html>

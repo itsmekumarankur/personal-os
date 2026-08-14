@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architects Lab · Open-Source LLMs — Hugging Face, Quantization &amp; Document Q&amp;A</title>
+<style>
+  :root{
+    --bg:#0d0f14; --panel:#151823; --panel2:#1b1f2e;
+    --ink:#e8e6df; --dim:#8b8fa3;
+    --gold:#d4af5a; --gold-soft:#b8964a;
+    --teal:#5ad4c8; --rose:#d47a8a; --violet:#9a8ad4; --amber:#d4915a;
+    --line:#2a2f42;
+    --mono:'Courier New', ui-monospace, monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif;display:flex;flex-direction:column;min-height:100vh}
+  header{padding:16px 26px 12px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  header .k{font-family:var(--mono);font-size:.68rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase}
+  header h1{font-size:1rem;font-weight:normal}
+  header .count{margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--dim)}
+  .tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
+  .tab{flex:1;min-width:110px;padding:9px 10px;text-align:center;font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;color:var(--dim);border-right:1px solid var(--line);cursor:pointer;white-space:nowrap;transition:.2s;background:transparent;border-top:none;border-bottom:none;border-left:none}
+  .tab:last-child{border-right:none}
+  .tab.active{color:var(--bg);font-weight:bold}
+  .tab[data-c="gold"].active{background:var(--gold)}
+  .tab[data-c="teal"].active{background:var(--teal)}
+  .tab[data-c="rose"].active{background:var(--rose)}
+  .tab[data-c="violet"].active{background:var(--violet)}
+  .tab[data-c="amber"].active{background:var(--amber)}
+  .tab[data-c="ink"].active{background:var(--ink)}
+  main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px 96px;overflow-y:auto}
+  .slide{max-width:780px;width:100%;animation:fadeUp .4s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @media (prefers-reduced-motion: reduce){.slide{animation:none}}
+  .eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px}
+  .eyebrow.gold{color:var(--gold)} .eyebrow.teal{color:var(--teal)} .eyebrow.rose{color:var(--rose)}
+  .eyebrow.violet{color:var(--violet)} .eyebrow.amber{color:var(--amber)} .eyebrow.ink{color:var(--dim)}
+  .slide h2{font-size:1.55rem;font-weight:normal;line-height:1.3;margin-bottom:14px}
+  .slide h2 em{font-style:italic;color:var(--gold)}
+  .slide p{color:#c9c7bf;line-height:1.75;font-size:1rem;margin-bottom:13px}
+  .slide p strong, .slide li strong{color:var(--ink)}
+  .slide code{font-family:var(--mono);font-size:.85em;background:var(--panel2);padding:2px 6px;border-radius:3px;color:var(--gold)}
+  .ascii{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:6px;padding:14px 16px;margin:14px 0;font-family:var(--mono);font-size:.74rem;line-height:1.5;color:#b9c2d8;overflow-x:auto;white-space:pre}
+  .ascii .hl{color:var(--gold)} .ascii .tl{color:var(--teal)} .ascii .rs{color:var(--rose)}
+  .note{border:1px dashed var(--gold-soft);border-radius:6px;padding:11px 15px;margin:14px 0;font-size:.9rem;color:#cfc9ae;line-height:1.65}
+  .note b{color:var(--gold)}
+  ul.pts{margin:10px 0 13px 2px;list-style:none}
+  ul.pts li{padding:6px 0 6px 21px;position:relative;color:#c9c7bf;line-height:1.6;font-size:.95rem}
+  ul.pts li::before{content:"\203A";position:absolute;left:4px;color:var(--gold);font-family:var(--mono)}
+  /* ---- Think First (question) slides ---- */
+  .qcard{border:2px solid var(--gold);border-radius:10px;background:linear-gradient(160deg,#1a1608,#151823);padding:30px 28px;margin:6px 0 18px;position:relative}
+  .qcard::before{content:"?";position:absolute;top:-20px;left:22px;width:38px;height:38px;border-radius:50%;background:var(--gold);color:var(--bg);font-family:var(--mono);font-weight:bold;font-size:1.3rem;display:flex;align-items:center;justify-content:center}
+  .qcard .qlabel{font-family:var(--mono);font-size:.64rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;margin-bottom:12px}
+  .qcard .qtext{font-size:1.25rem;line-height:1.55;color:var(--ink);font-style:italic}
+  .qcard .qsub{margin-top:14px;font-size:.86rem;color:var(--dim);font-style:normal;font-family:var(--mono)}
+  /* ---- lenses (CTO / Director) ---- */
+  details.lens{margin:10px 0;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+  details.lens summary{cursor:pointer;padding:10px 14px;font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;color:var(--teal);list-style:none}
+  details.lens summary::before{content:"+ ";color:var(--gold)}
+  details.lens[open] summary::before{content:"\2212 "}
+  details.lens.dir summary{color:var(--rose)}
+  details.lens .body{padding:2px 16px 13px}
+  details.lens .body li{font-size:.9rem}
+  /* ---- recall quiz slides ---- */
+  .recall-item{border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:6px;background:var(--panel);margin:12px 0;overflow:hidden}
+  .recall-item summary{cursor:pointer;padding:13px 16px;font-size:.98rem;color:var(--ink);list-style:none;line-height:1.55}
+  .recall-item summary::before{content:"Q  ";font-family:var(--mono);color:var(--teal);font-weight:bold}
+  .recall-item .ans{padding:0 16px 13px;color:#b9c2b0;font-size:.92rem;line-height:1.65;border-top:1px dashed var(--line);padding-top:11px;margin:0 16px 13px;padding-left:0;padding-right:0}
+  .recall-item .ans b{color:var(--teal)}
+  .recall-hint{font-family:var(--mono);font-size:.7rem;color:var(--dim);margin-top:6px}
+  footer{position:fixed;left:0;right:0;bottom:0;background:rgba(13,15,20,.93);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:11px 20px;display:flex;align-items:center;gap:14px}
+  .dots{display:flex;gap:4px;flex:1;justify-content:center;flex-wrap:wrap}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--line);cursor:pointer;transition:.2s}
+  .dot.on{background:var(--gold);transform:scale(1.45)}
+  .dot.q{border:1px solid var(--gold);background:transparent}
+  .dot.q.on{background:var(--gold)}
+  button.nav{font-family:var(--mono);font-size:.78rem;letter-spacing:.1em;background:transparent;color:var(--ink);border:1px solid var(--line);padding:9px 18px;border-radius:5px;cursor:pointer;transition:.2s}
+  button.nav:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+  button.nav.primary{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:bold}
+  button.nav.primary:hover{background:#e2c070}
+  button.nav:disabled{opacity:.25;cursor:default}
+  button.nav:focus-visible,.tab:focus-visible,.dot:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .hint{position:fixed;bottom:62px;right:18px;font-family:var(--mono);font-size:.6rem;color:var(--dim);letter-spacing:.1em}
+  @media(max-width:600px){.slide h2{font-size:1.28rem}.ascii{font-size:.58rem;padding:11px}.hint{display:none}.qcard .qtext{font-size:1.08rem}}
+</style>
+</head>
+<body>
+<header>
+  <span class="k">Architects Lab</span>
+  <h1>Open-Source LLMs · Hugging Face, Quantization &amp; Document Q&amp;A</h1>
+  <span class="count" id="counter"></span>
+</header>
+<div class="tabs" id="tabs"></div>
+<main><div id="stage"></div></main>
+<div class="hint">&larr; &rarr; keys work too</div>
+<footer>
+  <button class="nav" id="prevBtn">&larr; Prev</button>
+  <div class="dots" id="dots"></div>
+  <button class="nav primary" id="nextBtn">Next &rarr;</button>
+</footer>
+<script>
+const SECTIONS=[
+ {id:"intro",label:"START",c:"ink"},
+ {id:"decide",label:"OPEN-WEIGHT DECISION",c:"teal"},
+ {id:"hub",label:"HUB+NAMES",c:"gold"},
+ {id:"hw",label:"HARDWARE",c:"rose"},
+ {id:"ctrl",label:"3 LEVELS OF CONTROL",c:"violet"},
+ {id:"docqa",label:"DOCUMENT Q&A",c:"amber"}
+];
+const S=[
+
+{sec:"intro",c:"ink",eyebrow:"Open-Source LLMs",t:"a",h:"Open-Source LLMs — Hugging Face, Quantization &amp; <em>Document Q&amp;A</em>",body:`
+<p>You can own the brain. Now you own the problems too. In an API you rented a model over the wire. Here you download it — billions of numbers — and run it yourself. That one change moves the hard part from writing prompts to memory, tokenizers, quantization and serving.</p>
+<div class="ascii">3 abstraction levels (pipeline · auto · raw) · 14 ASCII sketches
+30+ thinking prompts · 3 live tools (VRAM calc, templates, quiz)</div>
+<div class="note"><b>How to use:</b> "?" slides ask you to predict first. Press Next to compare. Recall quizzes close each section.</div>`},
+
+/* ---------- THE OPEN-WEIGHT DECISION ---------- */
+{sec:"decide",c:"teal",eyebrow:"01 · Owning Weights",t:"q",q:`In Section 5 you called GPT-4o, Gemini, Claude over an API. Here you download the model itself and run it on your own hardware. Sketch it out: <b>what exactly moves from "their problem" to "your problem"?</b>`},
+
+{sec:"decide",c:"teal",eyebrow:"01 · Owning Weights",t:"a",h:"What changes when you own the weights",body:`
+<div class="ascii">CLOSED API                        OPEN WEIGHTS
+[ your prompt ]                   [ your prompt ]
+------ vendor boundary ------            |
+tokenizer  they own               tokenizer  you own
+weights    they own               weights    you own
+GPU/serving they own               GPU/serving you own
+batching   they own                batching   you own
+scaling    they own                 scaling   you own
+uptime     they own                 uptime    you own
+versioning they own                 versioning you own
+[ answer ] + invoice              [ answer ] + a GPU bill
+                                              + an on-call rota</div>
+<div class="note">You did not buy a cheaper model. You bought a <b>different set of responsibilities.</b></div>
+<ul class="pts">
+<li><strong>Data residency</strong> — nothing leaves the perimeter. If KYC docs can't leave your network, it's the only legal option.</li>
+<li><strong>Unit economics at volume</strong> — fixed cost beats per-token above a certain traffic line.</li>
+<li><strong>Customisation</strong> — fine-tuning on your own data is only possible here.</li>
+<li><strong>Version stability</strong> — the model you downloaded never changes under you.</li>
+<li><strong>Offline &amp; edge</strong> — isolated networks, factories, phones — an API simply cannot work here.</li>
+<li><strong>Bonus: Transparency</strong> — you can inspect how it's built.</li>
+</ul>
+<div class="note"><b>The honest counter-argument:</b> a top API is usually cheaper and better until you hit a legal wall or very high volume. "Let's self-host to save money" is the most common wrong reason.</div>`},
+
+{sec:"decide",c:"teal",eyebrow:"01 · Owning Weights",t:"q",q:`Name the <b>one</b> reason to self-host that no amount of API improvement can ever overturn.`},
+
+{sec:"decide",c:"teal",eyebrow:"01 · Owning Weights",t:"a",h:"The one reason that never moves",body:`
+<p>The legal one — <strong>data cannot leave your network.</strong> Arguments about cost, quality and speed all change as vendors improve and prices drop. But if the law or your contract says the data must stay inside, no API becomes allowed, however cheap or good it gets. Every other reason moves. This one does not.</p>
+<div class="note">Your CFO asks: "at what point does self-hosting actually become cheaper?" Give them a number, not an opinion. <b>API cost</b> = tokens/request &times; requests/month &times; price/token. <b>Self-host cost</b> = GPU hours/month + engineering time + storage. Find where they're equal.</div>
+<div class="ascii">TWO THINGS PEOPLE FORGET
+Idle time: a GPU rented all day but used 6% of the time makes
+  your real cost per answer huge. An API only charges when used.
+Retries: if the open model needs 3 attempts to match one answer
+  from a top model, your token count is wrong.
+Honest answer: "cheaper above roughly X million tokens/month if
+  the GPU stays busy, and today we're at 5% of X."</div>`,
+cto:[`Frozen weights are listed as an advantage — but the moment everyone else's model gets better and yours doesn't, it's a liability. A frozen model keeps every bias, security hole and factual error it shipped with, forever. "Stable version" is not free — it moves a job the vendor used to do onto your team. The grown-up version is a planned upgrade rhythm: fixed version in production, reviewed every quarter against your own test set.`]},
+
+{sec:"decide",c:"teal",eyebrow:"Decision · Recall",t:"r",h:"Quick recall: the open-weight decision",qs:[
+{q:`Which of the five self-hosting reasons never gets overturned by API improvements, and why?`,a:`<b>Data residency</b> — if the law or contract says data can't leave the network, no API becomes allowed however cheap or good it gets. All other reasons (cost, customisation, stability) shift as vendors improve.`},
+{q:`Why is a "stable, frozen model" not automatically a safe choice?`,a:`It keeps every bias, security hole, and factual error it shipped with — forever. Hosted models get fixed for you; yours doesn't unless you download and re-test a new version. Stability requires a planned quarterly upgrade rhythm, or it's just slow decay.`}]},
+
+/* ---------- HUB + NAMES ---------- */
+{sec:"hub",c:"gold",eyebrow:"02 · The Hub",t:"q",q:`Hugging Face lists ~1.6 million models. Is that number a <b>feature</b>, a <b>problem</b>, or both — and why?`},
+
+{sec:"hub",c:"gold",eyebrow:"02 · The Hub",t:"a",h:"The Hugging Face Hub, read like an engineer",body:`
+<div class="ascii">THE THREE FLOORS OF THE HUB
+MODELS   ~1.6M pre-trained checkpoints, grouped by TASK not vendor
+DATASETS ~370,000 training/eval corpora, filter by modality/licence
+SPACES   hosted demo apps (mostly Gradio) — try before you download</div>
+<p><strong>How to read a model card in 90 seconds — in order:</strong> Licence (legal gate, not a footnote) &rarr; Gated? (needs a token) &rarr; Parameter count (sets VRAM) &rarr; Base or Instruct? (base models don't follow instructions) &rarr; Context length &rarr; Chat template &rarr; Training data notes &rarr; Downloads/likes (a weak, lagging signal).</p>
+<div class="note">Both — huge choice, no quality signal at all. Anyone can upload; most are half-finished experiments. <b>The fix:</b> filter by task, then by an organisation you trust to still exist next year (Meta, Google, Mistral, DeepSeek), then licence, then size. That turns 1.6 million into about a dozen. Pick models the way you pick libraries — you wouldn't drop a random 4-star package into a payments system.</div>`,
+cto:[`Downloads are a lagging, biased metric — the most-downloaded text model in the course had 35M downloads, vs Llama 3.1's 5.4M, and that does NOT mean the small one is better. Downloads go up when a model is small enough to be re-downloaded constantly by build servers, or is the tutorial default. Downloads measure how easy a model is to grab, not how good it is.`]},
+
+{sec:"hub",c:"gold",eyebrow:"02 · The Hub",t:"q",q:`You are downloading files from a public site and loading them into a program that touches your GPU and disk. What's the <b>supply-chain security question</b> nobody in most tutorials asks?`},
+
+{sec:"hub",c:"gold",eyebrow:"02 · The Hub",t:"a",h:"The supply-chain security question",body:`
+<ul class="pts">
+<li><strong>File format</strong> — safetensors or the old pickle format? Pickle files can run code when opened. Always prefer safetensors.</li>
+<li><strong>Custom code</strong> — does it need <code>trust_remote_code=True</code>? That means "run this repo's Python on my machine."</li>
+<li><strong>Who published it</strong> — the official account, or a copycat with a similar name?</li>
+<li><strong>Version</strong> — latest, or a fixed commit? If unfixed, the file can change under you.</li>
+<li><strong>Copy it once</strong> — in a regulated company, download once, scan it, serve from your own internal store — never pull from the internet every container start.</li>
+</ul>
+<div class="note">A model is a much bigger act of trust than a pip package — you can read a package's code; a model is gigabytes of numbers you cannot read, plus sometimes code you can. <b>Risk packages don't have:</b> the weights themselves can be poisoned, trained to behave normally except when they see a secret trigger phrase. No file scan will ever find that.</div>`,
+cto:[`You load a model and it rambles instead of answering. First thing to check: did you download the base model instead of instruct? Base models only continue text. Second: did you apply the model's chat template? Right model, wrong formatting produces the exact same symptom.`]},
+
+{sec:"hub",c:"gold",eyebrow:"03 · Model Names",t:"q",q:`<code>microsoft/Phi-3-mini-4k-instruct</code> vs <code>Phi-3-mini-128k-instruct</code> — same family, same size. When does the <b>smaller-context</b> 4k version still win?`},
+
+{sec:"hub",c:"gold",eyebrow:"03 · Model Names",t:"a",h:"Decoding a model name",body:`
+<div class="ascii">microsoft / Phi-3-mini-4k-instruct
+   org      family size ctx  instruction-tuned
+
+MORE EXAMPLES
+Qwen/Qwen2.5-3B-Instruct         3B params, instruct
+meta-llama/Llama-3.2-3B-Instruct gated: must accept licence
+google/gemma-3-4b-it             "it" = instruction tuned
+deepseek-ai/DeepSeek-R1-...      R = reasoning model, thinks first
+...-GGUF / -AWQ / -GPTQ          already quantized by someone else
+...-base (or no suffix)          completion only, NOT chat
+
+READ IT AS: who made it / what family / how big / how much
+            context / has it been taught to obey</div>
+<ul class="pts">
+<li><strong>0.5-3B</strong> — laptop or free Colab GPU, extraction/sorting/simple Q&amp;A.</li>
+<li><strong>7-14B</strong> — sweet spot for most real self-hosted work.</li>
+<li><strong>30B+</strong> — serious hardware, feels like a top model on narrow tasks.</li>
+</ul>
+<div class="note">The 4k version wins when your inputs are short. A longer context isn't free — more GPU memory, slower, and long-context versions are sometimes slightly weaker on short inputs. Renting a warehouse to store one envelope. The 128k version wins the moment a document genuinely can't be split without losing meaning.</div>`,
+cto:[`You see -GGUF and -AWQ variants of a model you like. Their existence tells you real people run it on small hardware — a healthy community signal: tools that support it, bugs already found and written down. It also saves you work: a good compressed version already tested often loads faster and is better tuned than compressing it yourself.`]},
+
+{sec:"hub",c:"gold",eyebrow:"Hub &amp; Names · Recall",t:"r",h:"Quick recall: the Hub &amp; model names",qs:[
+{q:`What's the correct order to read a model card, and why licence first?`,a:`Licence &rarr; gated? &rarr; parameter count &rarr; base/instruct &rarr; context length &rarr; chat template &rarr; training data &rarr; downloads. Licence is a <b>legal gate</b>, not a footnote — it can block commercial use entirely regardless of how good the model is.`},
+{q:`What risk does a model carry that a pip package doesn't?`,a:`The weights themselves can be <b>poisoned</b> — trained to behave normally except when triggered by a secret phrase. No file scan can find that; it's intent hidden inside a pile of numbers.`},
+{q:`When does the smaller-context model variant (e.g. 4k) beat the larger one (128k)?`,a:`When inputs are genuinely short — longer context isn't free (more VRAM, slower, sometimes weaker on short inputs). Use the big-context version only when a document can't be split without losing meaning.`}]},
+
+/* ---------- HARDWARE ---------- */
+{sec:"hw",c:"rose",eyebrow:"04 · GPUs",t:"q",q:`A GPU has thousands of narrow, slower cores. A CPU has a handful of very fast ones. For running an LLM, <b>why does the wide, slower machine win by a mile</b>?`},
+
+{sec:"hw",c:"rose",eyebrow:"04 · GPUs",t:"a",h:"Why a GPU, and which one",body:`
+<div class="ascii">CPU (a few very fast lanes)      GPU (thousands of narrow lanes)
+[====>]                          [=>][=>][=>][=>][=>][=>][=>][=>]
+~8-64 cores                      ~thousands of CUDA cores
+
+One token = multiply a vector through BILLIONS of weights.
+That work is embarrassingly parallel -> the wide machine wins.
+
+Rough Colab ladder:
+  CPU     1x     baseline. Fine for tokenizers, hopeless for 3B+
+  T4 GPU  5-10x  free/Pro tier, ~15GB VRAM, the workhorse here
+  A100    20-50x Pro+/enterprise, 40-80GB, what frontier models
+                 were trained on</div>
+<div class="note"><b>VRAM matters more than speed.</b> A slow GPU with enough memory runs your model. A fast GPU without enough memory throws <code>CUDA out of memory</code> and runs nothing at all. Check that the model fits first. Worry about speed second. Always verify the GPU from code, not the menu — <code>torch.cuda.get_device_name(0)</code> and <code>total_memory</code>.</div>`,
+cto:[`Your notebook idles 20 minutes, then every cell fails with "torch is not defined." Colab took your machine back — everything is gone, run from the top again. The lesson: a notebook is not real infrastructure. Anything that takes five minutes to rebuild and only lives in memory is a demo, not a system. Real deployments load the model once into a long-running service exactly to avoid this.`]},
+
+{sec:"hw",c:"rose",eyebrow:"04 · GPUs",t:"q",q:`Why would a production team ever accept a <b>slower</b> GPU than the one their benchmark says is fastest?`},
+
+{sec:"hw",c:"rose",eyebrow:"04 · GPUs",t:"a",h:"The real question is never &quot;which GPU is fastest&quot;",body:`
+<p>What drives cost is how <strong>busy</strong> the GPU is, not how fast it is. A cheap GPU busy 70% of the time beats an expensive one busy 8% of the time, every time. The best GPUs are also often simply unavailable in your region, and a bigger card only helps if your model actually fills it.</p>
+<div class="note">The real question is never "which GPU is fastest?" It's <b>"what does a thousand answers cost me at real traffic, counting idle time?"</b> Asked that way, the answer is usually a smaller card, better batching, scaling down to zero when idle — or, honestly, going back to the API.</div>`},
+
+{sec:"hw",c:"rose",eyebrow:"05 · Quantization",t:"q",q:`Every weight is a number, and you choose how many bits to store it in. A 7B model at fp16 needs ~14GB — won't fit a 15GB T4 with room for anything else. Predict: what happens to that number at <b>int4</b>?`},
+
+{sec:"hw",c:"rose",eyebrow:"05 · Quantization",t:"a",h:"Precision and quantization",body:`
+<div class="ascii">FORMAT   BITS  BYTES/WEIGHT  7B MODEL   WHAT YOU GIVE UP
+fp32       32      4.0         ~26 GB    nothing (training default)
+fp16/bf16  16      2.0         ~13 GB    almost nothing for inference
+int8        8      1.0         ~6.5 GB   very little
+int4        4      0.5         ~3.5 GB   a little; usually acceptable
+
+THE FORMULA TO MEMORISE
+  VRAM for weights (GB) ~= params(B) x bytes-per-weight
+  7B x 2 bytes (fp16) = 14 GB -> will NOT fit a 15GB T4 with room
+  7B x 0.5 (int4)     = 3.5 GB -> fits comfortably</div>
+<div class="note">Quantization is lossy compression for weights — you round billions of numbers to a coarser grid. The remarkable empirical finding is how little that costs you at 8 and even 4 bits. Always leave 10-15% spare — a GPU at 99% crashes on the first unusual request.</div>
+<div class="ascii">4-bit via bitsandbytes:
+bnb = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
+  bnb_4bit_compute_dtype=torch.float16, bnb_4bit_use_double_quant=True)</div>
+<div class="note">The subtlety: weights sit in memory at 4 bits, but are expanded back to 16 bits to do the actual maths — that's what <code>compute_dtype</code> is for. This is why 4-bit saves huge memory but doesn't make the model much faster. You shrank what you store, not the work you do. Quantization buys the ability to run the model at all — not speed.</div>`},
+
+{sec:"hw",c:"rose",eyebrow:"05 · Quantization",t:"q",q:`Quantization is lossy — like compressing a spreadsheet. Why doesn't it <b>destroy</b> the model the way lossy compression destroys a spreadsheet?`},
+
+{sec:"hw",c:"rose",eyebrow:"05 · Quantization",t:"a",h:"Why models survive squashing (and where they don't)",body:`
+<p>A neural network has enormous overlap built in and is used to noise. No single weight decides anything — behaviour comes from patterns across billions of them. Tiny rounding errors mostly cancel out. A spreadsheet is the opposite: every cell matters on its own, one wrong digit is one wrong answer. That overlap is what makes squashing survivable — and why the same trick fails anywhere each value stands alone.</p>
+<div class="note"><b>Worth sitting with:</b> the damage isn't spread evenly. It shows up first in the rarest, most exact skills — long arithmetic, obscure facts, less common languages — while normal conversation still sounds fine. A squashed model can pass casual testing and fail exactly on the cases you care about.</div>
+<ul class="pts">
+<li><strong>Quality drops noticeably? Options in order of cost:</strong> move to 8-bit (2&times; memory, most quality back) &rarr; better compression method (NF4 + double quant, tuned AWQ/GPTQ) &rarr; smaller model at higher precision (3B fp16 often beats 7B at int4) &rarr; rent a bigger GPU (honest last resort).</li>
+</ul>
+<div class="note"><b>When is quantization actively the wrong call, even though it fits?</b> When failures are silent and stakes are high. In a system reading numbers from financial filings, a 4-bit model that swaps two digits gives a fluent, confident, wrong answer that no error check catches. The test is not "does it still sound good" — it's "does it still get the numbers right on my own list of known answers."</div>`},
+
+{sec:"hw",c:"rose",eyebrow:"06 · KV Cache",t:"q",q:`Model weights fit in 4GB of a 15GB GPU. You test with a 500-token prompt — everything fits, ship it. A user pastes a 50-page contract. <b>Predict what happens.</b>`},
+
+{sec:"hw",c:"rose",eyebrow:"06 · KV Cache",t:"a",h:"The memory budget nobody warns you about",body:`
+<div class="ascii">+--------------------------------------------------+  15 GB (T4)
+| ACTIVATIONS + framework overhead      <- varies    |
+| KV CACHE  <- grows with CONTEXT LENGTH and BATCH   |
+|    every token attends to every previous token,    |
+|    so K/V for the whole sequence gets cached        |
+| MODEL WEIGHTS <- fixed once loaded                 |
++--------------------------------------------------+
+
+THE TRAP
+You test with a 500-token prompt.  Everything fits. Ship it.
+A user pastes a 50-page contract.  KV cache explodes. OOM.
+The weights are constant. The cache is a function of your INPUT,
+which means your memory ceiling is set by your WORST request,
+not your average one.</div>
+<div class="note">Memory grows with input length and concurrent users. A self-hosted service must <b>cap the input size at the front door</b>, before it reaches the model. Politely rejecting a huge request beats accepting it and crashing the server for everyone else — same rule as a max file upload size.</div>`,
+cto:[`Q&A service must serve 50 concurrent users on one GPU. Levers: cap input size at the door (biggest single win); use a proper model server (vLLM, TGI) instead of pipeline() in a loop, which packs requests together; pick a model with grouped-query attention (smaller cache, same quality); compress the cache too, not just the weights; add a queue so the 51st person waits instead of everyone failing. Handling many users isn't a setting turned on later — it comes from the serving layer picked at the start.`]},
+
+{sec:"hw",c:"rose",eyebrow:"Hardware · Recall",t:"r",h:"Quick recall: hardware",qs:[
+{q:`State the VRAM formula and compute 7B at int4.`,a:`VRAM(GB) &asymp; params(B) &times; bytes-per-weight. 7B &times; 0.5 bytes (int4) = <b>3.5 GB</b> — fits comfortably on a 15GB T4.`},
+{q:`Why doesn't 4-bit quantization make inference faster, only smaller?`,a:`Weights are stored at 4 bits but expanded back to 16 bits (<code>compute_dtype</code>) to actually do the maths. You shrank what you store, not the computation itself — quantization buys the ability to run at all, not speed.`},
+{q:`Why is your memory ceiling set by your WORST request, not your average one?`,a:`Model weights are fixed once loaded, but the <b>KV cache</b> grows with input length and concurrent users. A 500-token test prompt fits fine; a 50-page contract explodes the cache and triggers OOM in production.`}]},
+
+/* ---------- 3 LEVELS OF CONTROL ---------- */
+{sec:"ctrl",c:"violet",eyebrow:"07 · Pipeline",t:"q",q:`<code>pipeline()</code> hides five steps: tokenize, model, softmax/argmax, decode, output. Abstractions that hide five steps also hide <b>five failure modes</b>. Name some before peeking.`},
+
+{sec:"ctrl",c:"violet",eyebrow:"07 · Pipeline",t:"a",h:"Pipeline — the easy door, and what it hides",body:`
+<div class="ascii">WITHOUT pipeline                 WITH pipeline
+text -> tokenizer -> input IDs   text -> [pipeline] -> output
+     -> model -> logits
+     -> softmax/argmax/decode
+     -> output
+Five steps you write and can get wrong, versus one you cannot.</div>
+<div class="ascii">clf = pipeline("text-classification", model="ProsusAI/finbert")
+clf("Tesla stock surges after record earnings")
+  -> [{'label':'positive','score':0.94}]
+clf("Microsoft is scheduled to release its earnings report")
+  -> [{'label':'neutral','score':0.88}]  <- correctly NOT positive</div>
+<div class="note">A keyword checker sees "earnings report" and guesses positive. FinBERT correctly sees announcing a date carries no opinion. Telling event from opinion is exactly what training on one domain buys — why a tiny specialist model can beat a giant general one on a narrow job at a thousandth the cost.</div>
+<ul class="pts">
+<li><strong>Quiet cutting</strong> — input past the limit gets chopped, usually with no warning.</li>
+<li><strong>Hidden default model</strong> — <code>pipeline("sentiment-analysis")</code> with no model named quietly picks a small English one.</li>
+<li><strong>Label names</strong> — one model says "POSITIVE", another "LABEL_1", another "positive". Code checking one breaks on the next.</li>
+<li><strong>Where it runs</strong> — chosen for you, which is how you end up on CPU without noticing.</li>
+</ul>
+<div class="note">Shortcuts make the working path shorter and the broken path harder to understand. Use them, but know what you'd have written by hand. This module's actual approach: load tokenizer and model yourself with full control, <em>then</em> wrap in a pipeline — settings you need, convenience you want.</div>`},
+
+{sec:"ctrl",c:"violet",eyebrow:"08 · Tokenizer",t:"q",q:`Feed BERT's token IDs into a GPT model. Both are just "a list of numbers" — will you get an error, or something worse?`},
+
+{sec:"ctrl",c:"violet",eyebrow:"08 · Tokenizer",t:"a",h:"AutoTokenizer — the model's private language",body:`
+<div class="ascii">TEXT: "AI is transforming industries and the future of work."
+BERT (WordPiece, uncased)         GPT-2 (byte-level BPE)
+lowercases everything             PRESERVES case
+['ai','is','transforming',...]    ['AI','Ġis','Ġtransforming',...]
+IDs: [9932, 2003, 17903, ...]     IDs: [20185, 318, 25449, ...]
+        THE SAME WORDS -> COMPLETELY DIFFERENT NUMBERS
+
+Feed BERT's IDs to a GPT model and you get NO ERROR AT ALL.
+ID 9932 is valid in both vocabularies - it just means something
+entirely different. You get FLUENT NONSENSE.</div>
+<div class="note">The rule you must not break: <b>the tokenizer must come from the same model as the weights.</b> Always <code>AutoTokenizer.from_pretrained(model_id)</code> with the exact same ID given to the model. Mixing them doesn't crash — it quietly produces nonsense, which just looks like a bad model.</div>
+<ul class="pts">
+<li><strong>It's your billing unit</strong> — API pricing and context limits are in tokens, not words.</li>
+<li><strong>It's unfair across languages</strong> — most tokenizers are built mainly from English text. Hindi/Tamil/Arabic often use 2-3&times; more tokens for the same sentence.</li>
+<li><strong>It explains silly failures</strong> — counting letters, spelling, maths go wrong because the model never sees letters.</li>
+<li><strong>It shapes document splitting</strong> — chunk sizes are measured in tokens.</li>
+</ul>`},
+
+{sec:"ctrl",c:"violet",eyebrow:"08 · Tokenizer",t:"q",q:`Your Hindi-language support bot costs 2.5&times; more per conversation than the English one, <b>on the same model</b>. Explain it to your finance team.`},
+
+{sec:"ctrl",c:"violet",eyebrow:"08 · Tokenizer",t:"a",h:"The Hindi cost problem",body:`
+<p>You pay per token, and the tokenizer was built from the text it was trained on. A dictionary learned mostly from English stores common English words as one token each, but breaks Devanagari into many small pieces. Same meaning, more tokens, higher bill — and less conversation fits before it gets cut off.</p>
+<div class="note"><b>Fixes, in order:</b> choose a model whose tokenizer was trained on many languages (several Qwen and Gemma versions handle Indian scripts far better); measure tokens per message on real traffic, not guesses; shorten your system prompt (you pay for it every turn); summarise old conversation instead of resending all of it.</div>
+<div class="note">If you build for Indian users: how efficiently a tokenizer handles your language is a real selection criterion — and it never shows up on any leaderboard.</div>`},
+
+{sec:"ctrl",c:"violet",eyebrow:"09 · Loading Models",t:"q",q:`Causal just means left-to-right — the model predicts the next word from everything before it and can never look ahead. What <b>consequence</b> follows directly from that loop structure — for latency, and for errors?`},
+
+{sec:"ctrl",c:"violet",eyebrow:"09 · Loading Models",t:"a",h:"AutoModelForCausalLM — loading the brain",body:`
+<div class="ascii">prompt: "The capital of France is"
+  -> forward pass -> next-token probs: Paris 0.91, the 0.03...
+  -> pick one (temperature/top_p) -> "...is Paris"
+  -> feed the WHOLE thing back in, predict again
+  -> repeat until max_new_tokens or a stop token
+
+Consequences that follow directly:
+* generation is SEQUENTIAL -> can't parallelise one response,
+  latency scales with output length
+* the model never revises. A wrong 3rd token becomes "evidence"
+  for token 4. Errors compound forwards.
+* the KV cache exists so you don't recompute the whole prefix
+  every step</div>
+<div class="ascii">bnb = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.float16)
+model = AutoModelForCausalLM.from_pretrained(model_id,
+  quantization_config=bnb, device_map="auto")</div>
+<ul class="pts">
+<li><strong>device_map="auto"</strong> — can silently offload to CPU or disk when VRAM is short. "Works" but 50&times; slower.</li>
+<li><strong>trust_remote_code</strong> — downloads and runs Python from the repo. A security decision, not a convenience flag.</li>
+<li><strong>revision</strong> — pin a specific commit. Not in most tutorials, essential for production reproducibility.</li>
+</ul>`,
+cto:[`Loading succeeded, GPU barely used, but generation takes 90 seconds per answer. device_map="auto" almost certainly pushed part of the model onto CPU or disk because it didn't fit in GPU memory — any layer in normal RAM is shuttled back and forth every pass, hundreds of times slower. Check print(model.hf_device_map). "It loaded" and "it is on the GPU" are two different statements, and only one of them is fast.`]},
+
+{sec:"ctrl",c:"violet",eyebrow:"10 · Generation",t:"q",q:`Same prompt, same model, temperature 0.2 in a document Q&amp;A system. Would you expect the answer to change run to run — and is that a bug?`},
+
+{sec:"ctrl",c:"violet",eyebrow:"10 · Generation",t:"a",h:"Generating text: the knobs that matter",body:`
+<div class="ascii">Parameter          What it controls              Doc Q&amp;A setting
+max_new_tokens      length cap on the answer       300-500
+do_sample            random sampling on/off         False for max determinism
+temperature          flatten/sharpen distribution    0.1-0.2
+top_p                 nucleus sampling                0.9
+repetition_penalty     discourage loops               1.1 if it loops</div>
+<div class="note">In Section 5 you wanted variety. Here you want the opposite: the answer that is actually in the document, the same way every time. A high temperature doesn't make document Q&amp;A creative — it makes it <b>wrong more often</b>. A made-up number written with confidence is the most dangerous thing your system can produce.</div>
+<div class="note">Not a bug by itself — that's <code>do_sample=True</code> doing exactly what you asked. Set <code>do_sample=False</code> for near-determinism. Note "near" — small GPU maths differences can still shift results slightly. If you need the exact same text every time for an audit trail, the model alone cannot give you that; save the answer and audit the saved copy.</div>`},
+
+{sec:"ctrl",c:"violet",eyebrow:"10 · Generation",t:"q",q:`Latency is proportional to output length, not input length. <b>Why</b> — and what does that imply for your UX design?`},
+
+{sec:"ctrl",c:"violet",eyebrow:"10 · Generation",t:"a",h:"Why latency scales with output, not input",body:`
+<p>The whole prompt is read in one go. But every word of the answer needs its own separate pass through the model. 500 words out means 500 sequential passes.</p>
+<div class="note"><b>Implications:</b> stream the words as they appear, so the wait feels like "time until it starts" not "time until it finishes." Ask for short answers in the prompt — brevity is a speed setting, not just style. Set <code>max_new_tokens</code> to what you'll actually show. It also explains something surprising: feeding in a much longer document usually adds <em>less</em> time than asking for a slightly longer answer.</div>`},
+
+{sec:"ctrl",c:"violet",eyebrow:"3 Levels of Control · Recall",t:"r",h:"Quick recall: the three levels of control",qs:[
+{q:`Name the four failure modes pipeline() hides.`,a:`Quiet cutting (silent truncation), hidden default model, inconsistent label names across models, and where it runs (silently landing on CPU).`},
+{q:`Why does mismatching a tokenizer produce fluent nonsense instead of an error?`,a:`Both vocabularies use valid integer ranges — the model has no way to know the IDs came from a different dictionary. It does what it always does: predicts a sensible continuation of the numbers it was given.`},
+{q:`Why does latency scale with output length rather than input length?`,a:`The prompt is read in one parallel pass, but each output word needs its own sequential forward pass through the model — 500 words out means 500 passes, one after another.`}]},
+
+/* ---------- DOCUMENT Q&A ---------- */
+{sec:"docqa",c:"amber",eyebrow:"11 · PDFs",t:"q",q:`Reading a PDF with <code>pypdf</code> takes four lines. What does <code>extract_text()</code> throw away on a two-column layout, and on a scanned image page?`},
+
+{sec:"docqa",c:"amber",eyebrow:"11 · PDFs",t:"a",h:"PDFs: extraction is lossy",body:`
+<div class="ascii">WHAT YOU SEE                  WHAT extract_text() RETURNS
+Column A | Column B       ->  "Revenue rose Costs also rose 12%
+Revenue rose | Costs rose      in the 8% in the quarter quarter"
+12%       | 8%                (columns interleaved!)
+Q1 Q2 Q3 table             ->  "Q1 Q2 Q3 12.4 13.1 14.0"
+12.4 13.1 14.0                 (structure gone; which number
+                                 belongs to which?)
+scanned image of text      ->  "" (empty. no OCR happened.)
+
+THE RULE: a PDF is a description of MARKS ON A PAGE, not a
+document with structure. Text extraction guesses reading order.
+For tables and multi-column layouts, it guesses badly.</div>
+<div class="note"><b>Three automated checks every ingestion step should run:</b> (1) is there enough text per page? Very few characters usually means a scan — flag for OCR. (2) do page counts match, with no silently-empty middle page? (3) does the text look like text — a sensible share of letters, not scrambled symbols? A fourth if numbers matter: check that something you know should be there (a heading, a total) actually appears.</div>`,
+cto:[`Document ingestion, not the model, is usually the biggest quality lever in a real RAG system — because everything after it is limited by it. The best model reading scrambled text gives confident wrong answers; a modest model reading clean text gives good ones. No prompt rescues broken input. Teams get this backwards: weeks comparing models, one afternoon on the PDF reader, then confusion about why accuracy stalls. Effort order: clean input first, then retrieval, then the prompt, then the model.`]},
+
+{sec:"docqa",c:"amber",eyebrow:"12 · Chat Templates",t:"q",q:`With OpenAI/Anthropic you pass <code>messages=[...]</code> and they format it for you. With open weights, <b>you're the one doing that job.</b> What happens if you get the special tokens wrong?`},
+
+{sec:"docqa",c:"amber",eyebrow:"12 · Chat Templates",t:"a",h:"Chat templates and special tokens",body:`
+<div class="ascii">The model only ever sees one flat stream of tokens. Special
+tokens are the punctuation that tells it WHO IS SPEAKING:
+  &lt;|system|&gt;   here are your instructions       &lt;|end|&gt;
+  &lt;|user|&gt;     here is the human's question      &lt;|end|&gt;
+  &lt;|assistant|&gt;  &lt;-- and now it is YOUR TURN
+
+These strings appeared millions of times in fine-tuning data.
+They are not decoration - they are the PROTOCOL.
+
+GET THEM WRONG AND:
+  * the model doesn't know where its turn starts
+  * it may answer, then invent the next user question too
+  * it may ignore the system instruction entirely
+  * quality drops in a way that looks like "this model is bad"</div>
+<div class="note">Every instruct model on the Hub carries its own template inside the tokenizer. Use it — <code>tokenizer.apply_chat_template()</code> — and switching models becomes a one-line change instead of rewriting your formatting code. Do not hand-write these; the general rule: when a vendor ships instructions for how to talk to their thing, use their instructions instead of writing your own copy.</div>`},
+
+{sec:"docqa",c:"amber",eyebrow:"12 · Chat Templates",t:"q",q:`Your model answers a question <b>correctly</b>, but the answer is nowhere in the uploaded document. Bug or feature?`},
+
+{sec:"docqa",c:"amber",eyebrow:"12 · Chat Templates",t:"a",h:"The grounding instruction, dissected",body:`
+<div class="ascii">Clause                              What it defends against
+"Answer ONLY from the document      stops answering from what it
+ text"                                already knows instead of yours
+"If not in the document, reply      gives it permission to say no;
+ exactly: ..."                        without an exit, models invent
+A fixed refusal string              lets code spot "no answer"
+                                       reliably instead of parsing prose
+"Do not use prior knowledge"        blocks the sneakiest failure: a
+                                       right-sounding, unverifiable answer</div>
+<div class="note">A bug — and a dangerous one, because being right hides it. An answer from training data can't be checked, can't be cited, may be out of date, and will be confidently wrong the day your document disagrees. Worse, it makes testing lie to you: test on Google's earnings call (already memorised) — everything looks great. Point it at internal documents it's never seen — accuracy collapses. <b>Always include documents the model cannot possibly have memorised in your test set.</b></div>
+<div class="note">An instruction is a request, not a constraint — none of this is enforced. If it matters that answers come from the document, check it in code: confirm the key facts actually appear in the supplied text, and show page references so a person can verify.</div>`},
+
+{sec:"docqa",c:"amber",eyebrow:"12 · Chat Templates",t:"q",q:`Why does giving the model an explicit way to say <b>"I don't know"</b> improve accuracy more than just telling it "don't hallucinate"?`},
+
+{sec:"docqa",c:"amber",eyebrow:"12 · Chat Templates",t:"a",h:"Say what to do instead, not just what not to do",body:`
+<p>The model's whole job is to produce a believable next word. "Don't make things up" tells it what not to do but gives it nothing to do instead. It still has to write something, and something believable is exactly what making things up looks like. Giving it one specific sentence to use when the answer is missing gives it a real alternative to compete with invention — a vague ban becomes a simple choice between two paths.</p>
+<div class="note">This holds far beyond AI: <b>saying what to do instead works better than saying what not to do.</b> Same reason proper error handling beats telling a program "don't crash."</div>`},
+
+{sec:"docqa",c:"amber",eyebrow:"13 · The RAG Hole",t:"q",q:`The transcript is ~64,000 characters. The code truncates to <code>[:6000]</code> — the first 9% of the document. This is the <b>most important line in the entire project.</b> What does it actually decide?`},
+
+{sec:"docqa",c:"amber",eyebrow:"13 · The RAG Hole",t:"a",h:"The 6,000-character truncation — and the RAG-shaped hole",body:`
+<div class="ascii">MAX_CONTEXT_CHARS = 6000
+if len(document_text) > MAX_CONTEXT_CHARS:
+    context = document_text[:MAX_CONTEXT_CHARS]
+# <-- the first 6,000 chars. the other 58,000 are GONE.</div>
+<div class="ascii">WHAT THIS PROJECT DOES (truncation)
+[############################################]  64,000 chars
+[#####]                                          send first 6,000
+ ^^^^^ 91% invisible. Questions about page 12 are UNANSWERABLE
+       BY DESIGN.
+
+WHAT A REAL SYSTEM DOES (retrieval / RAG)
+[############################################]  64,000 chars
+  1. CHUNK (~500-1000 tokens, overlap)
+  2. EMBED each chunk -> vector, store in a vector DB
+  3. question -> embed -> find nearest chunks (top 3)
+  4. send ONLY those chunks as context + system: answer only
+     from this context
+  5. answer + CITATIONS back to source chunks
+
+Same model. Same GPU. Entire document now answerable.
+The difference is ARCHITECTURE, not compute.</div>
+<div class="note">Adding search and a vector database would triple the module's length and bury the actual lesson (how to load and run an open model) — cutting the document is a fair <b>teaching shortcut</b>. The mistake is not taking the shortcut — it's <b>not noticing you took it</b>, and carrying the same pattern into something real. Seeing <code>[:6000]</code> as a placeholder for a search step is the most valuable thing in this section.</div>
+<div class="note"><b>Even without a vector database, you can do better:</b> split into ~1,000-char pieces, rank by shared words with the question, send the best 5. Cut from the middle, not the end (documents set the scene at the start, conclusions at the end). Summarise in two passes. Tell the user what you did — "Answering from pages 1-3 of 21" is honest; silent truncation is not.</div>`},
+
+{sec:"docqa",c:"amber",eyebrow:"13 · The RAG Hole",t:"q",q:`Why is truncating by <b>characters</b> rather than tokens a second, separate bug — on top of the truncation itself?`},
+
+{sec:"docqa",c:"amber",eyebrow:"13 · The RAG Hole",t:"a",h:"Characters vs tokens — the wrong unit",body:`
+<p>The model's limit is counted in tokens, and characters convert to tokens at different rates depending on content and language. 6,000 characters of English prose is about 1,500 tokens. The same 6,000 characters of tables, code or Hindi can be two or three times that. <strong>You have set your limit in the wrong unit.</strong></p>
+<div class="note">The result: your safety margin is fake. It holds for the document you tested and quietly bursts through the limit on a different one — which then gets cut again, invisibly, inside the tokenizer. <b>Always measure in the unit the system actually enforces.</b></div>`},
+
+{sec:"docqa",c:"amber",eyebrow:"13 · The RAG Hole",t:"q",q:`Your team wants document Q&amp;A over 10,000 internal PDFs. This notebook has only the <b>answering</b> step. Sketch the parts it doesn't have.`},
+
+{sec:"docqa",c:"amber",eyebrow:"13 · The RAG Hole",t:"a",h:"The real architecture: what this notebook doesn't have",body:`
+<ul class="pts">
+<li><strong>Loading</strong> — a pipeline that reads each PDF (falling back to OCR for scans), checks quality, records provenance (file, page, date, who may see it), splits with overlap, and can be re-run when your reader improves.</li>
+<li><strong>Indexing</strong> — a model turning text into vectors, a place to store them, and keyword search alongside it, because vector search is poor at exact things like invoice numbers and ticker symbols.</li>
+<li><strong>Search</strong> — fetch the best few pieces, re-rank, and <strong>filter by what this user is allowed to see, at search time</strong>. Most prototypes get this badly wrong — an unfiltered search happily summarises documents the user was never allowed to open.</li>
+<li><strong>Answering</strong> — the model, with page references it must include.</li>
+<li><strong>Testing</strong> — questions with known answers, measuring two things separately: did search find the right piece, and did the answer stick to it.</li>
+<li><strong>Running it</strong> — re-indexing new documents, cost per question, a speed budget, a log of who asked what.</li>
+</ul>
+<div class="note">This notebook has the answering step and nothing else. That is not a criticism — it is a map of the work ahead.</div>`},
+
+{sec:"docqa",c:"amber",eyebrow:"13 · The RAG Hole",t:"q",q:`RAG adds retrieval failure modes on top of generation failure modes. Name two, and how you'd <b>detect</b> each one.`},
+
+{sec:"docqa",c:"amber",eyebrow:"13 · The RAG Hole",t:"a",h:"Two retrieval failure modes RAG adds",body:`
+<ul class="pts">
+<li><strong>Search missed it</strong> — the right piece is in the document but wasn't found, so the model correctly says "not in the document." The output looks polite and well-behaved, and is wrong. Catch it by checking search on its own: for each test question, was the correct piece in the results?</li>
+<li><strong>Search found a lookalike</strong> — pieces that read similarly but are about a different quarter/company/year get pulled in, and the model faithfully answers from the wrong one. Worse than a miss, because it's confident and specific. Catch it by requiring page references and checking the cited page really says what's claimed.</li>
+</ul>
+<div class="note">The general lesson: when a system has several steps, an overall score tells you something broke and never which step. <b>Measure each step.</b></div>`},
+
+{sec:"docqa",c:"amber",eyebrow:"Final Recall",t:"r",h:"Final recall: the document Q&amp;A system",qs:[
+{q:`Name three automated checks a document ingestion step should always run.`,a:`Enough text per page (few chars &rarr; likely a scan, flag for OCR); page counts match with no silently-empty pages; text looks like text (sensible share of letters, not scrambled symbols). Optionally: a known heading/date/total actually appears.`},
+{q:`Recite the RAG pipeline in order.`,a:`Chunk (with overlap) &rarr; embed each chunk into a vector &rarr; store in a vector DB &rarr; embed the question, find nearest chunks &rarr; send only those chunks as context with a grounding instruction &rarr; generate the answer with citations.`},
+{q:`Why is "answer ONLY from the document, and here's exactly what to say if it's missing" better than "don't hallucinate"?`,a:`It gives the model a concrete alternative sentence to produce instead of inventing one — the model always has to write <i>something</i>; a fixed refusal string competes directly with invention, where a vague ban gives it nothing to do instead.`},
+{q:`Name the two RAG-specific failure modes and how to catch each.`,a:`<b>Search missed it</b> — correct piece exists but wasn't retrieved; catch by checking search results against known-correct pieces per test question. <b>Search found a lookalike</b> — wrong-but-similar chunk retrieved confidently; catch by requiring page citations and verifying the cited page actually supports the claim.`}]}
+];
+
+let i=0;
+const stage=document.getElementById('stage'),dots=document.getElementById('dots'),
+tabs=document.getElementById('tabs'),counter=document.getElementById('counter'),
+prevBtn=document.getElementById('prevBtn'),nextBtn=document.getElementById('nextBtn');
+SECTIONS.forEach(s=>{const b=document.createElement('button');b.className='tab';b.dataset.c=s.c;b.dataset.sec=s.id;b.textContent=s.label;b.onclick=()=>go(S.findIndex(x=>x.sec===s.id));tabs.appendChild(b);});
+S.forEach((sl,k)=>{const d=document.createElement('span');d.className='dot'+(sl.t==='q'?' q':'');d.tabIndex=0;d.setAttribute('role','button');d.setAttribute('aria-label','Slide '+(k+1));d.onclick=()=>go(k);d.onkeydown=e=>{if(e.key==='Enter')go(k)};dots.appendChild(d);});
+function lens(cto,dir){
+  let out='';
+  if(cto&&cto.length) out+='<details class="lens"><summary>CTO LENS</summary><div class="body"><ul class="pts">'+cto.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+  if(dir&&dir.length) out+='<details class="lens dir"><summary>DIRECTOR LENS</summary><div class="body"><ul class="pts">'+dir.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+  return out;
+}
+function go(k){
+  i=Math.max(0,Math.min(S.length-1,k));
+  const s=S[i];stage.innerHTML='';
+  const el=document.createElement('div');el.className='slide';
+  try{
+    if(s.t==='q'){
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div>'
+        +'<div class="qcard"><div class="qlabel">Think first &middot; predict before you peek</div>'
+        +'<div class="qtext">'+s.q+'</div>'
+        +'<div class="qsub">Form your answer in your head. Then press Next to compare.</div></div>';
+    } else if(s.t==='r'){
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'
+        +'<p>Answer from memory first. Tap a question to reveal the answer.</p>'
+        +s.qs.map(x=>'<details class="recall-item"><summary>'+x.q+'</summary><div class="ans">'+x.a+'</div></details>').join('')
+        +'<div class="recall-hint">Struggled on any? Jump back with the tabs above, then return.</div>';
+    } else {
+      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'+s.body+(((s.cto&&s.cto.length)||(s.dir&&s.dir.length))?lens(s.cto,s.dir):'');
+    }
+  }catch(err){
+    el.innerHTML='<div class="eyebrow rose">Render error</div><h2>Slide '+(i+1)+' failed to render</h2><p>'+String(err&&err.message||err)+'</p>';
+  }
+  stage.appendChild(el);
+  counter.textContent=(i+1)+' / '+S.length;
+  document.querySelectorAll('.dot').forEach((d,k2)=>d.classList.toggle('on',k2===i));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.sec===s.sec));
+  prevBtn.disabled=(i===0);
+  nextBtn.textContent=(i===S.length-1)?'Done \u2713':'Next \u2192';
+  nextBtn.disabled=(i===S.length-1);
+  document.querySelector('main').scrollTop=0;window.scrollTo(0,0);
+}
+prevBtn.onclick=()=>go(i-1);nextBtn.onclick=()=>go(i+1);
+document.addEventListener('keydown',e=>{if(e.target.closest('details'))return;if(e.key==='ArrowRight')go(i+1);if(e.key==='ArrowLeft')go(i-1);});
+go(0);
+</script>
+</body>
+</html>

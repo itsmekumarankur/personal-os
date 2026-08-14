@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Architects Lab — Day 1: Instant Gratification Deploy</title>
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#121821; --panel2:#161d28; --border:#22303f;
+    --text:#dbe4ee; --muted:#7d92a8; --accent:#39d3ac; --accent2:#f2b84b;
+    --danger:#ef6a6a; --code:#0d1319; --tag:#1c2a3a;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    line-height:1.6; padding:0 0 80px 0;
+  }
+  header{
+    padding:36px 24px 24px; border-bottom:1px solid var(--border);
+    background:linear-gradient(180deg,#0e141c,#0b0f14);
+  }
+  .eyebrow{color:var(--accent); font-size:12px; letter-spacing:2px; text-transform:uppercase; font-weight:600;}
+  h1{margin:8px 0 6px; font-size:28px; color:#f2f6fa;}
+  .sub{color:var(--muted); font-size:14px; max-width:780px;}
+  .course-link{
+    display:inline-block; margin-top:14px; font-size:13px; font-weight:600;
+    color:var(--accent); text-decoration:none; border:1px solid var(--border);
+    background:var(--panel2); padding:8px 14px; border-radius:6px;
+  }
+  .course-link:hover{border-color:var(--accent); background:#152030;}
+  .toolbar{
+    display:flex; gap:10px; padding:16px 24px; position:sticky; top:0;
+    background:rgba(11,15,20,0.95); backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--border); z-index:10; flex-wrap:wrap;
+  }
+  button.ctrl{
+    background:var(--panel2); color:var(--text); border:1px solid var(--border);
+    padding:8px 14px; border-radius:6px; cursor:pointer; font-size:13px;
+  }
+  button.ctrl:hover{border-color:var(--accent); color:var(--accent);}
+  .wrap{max-width:920px; margin:0 auto; padding:24px;}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    margin-bottom:16px; overflow:hidden;
+  }
+  .card-head{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:16px 20px; cursor:pointer; user-select:none;
+  }
+  .card-head:hover{background:var(--panel2);}
+  .card-title{font-size:16px; font-weight:600; color:#f2f6fa; display:flex; align-items:center; gap:10px;}
+  .tag{
+    font-size:10px; text-transform:uppercase; letter-spacing:1px;
+    background:var(--tag); color:var(--accent); padding:3px 8px; border-radius:4px; font-weight:700;
+  }
+  .tag.arch{color:var(--accent2);}
+  .chevron{color:var(--muted); transition:transform .2s;}
+  .card.open .chevron{transform:rotate(90deg);}
+  .card-body{
+    max-height:0; overflow:hidden; transition:max-height .25s ease;
+    padding:0 20px;
+  }
+  .card.open .card-body{ max-height:4000px; padding:0 20px 20px; }
+  p{margin:8px 0;}
+  .questions{
+    background:var(--code); border-left:3px solid var(--accent);
+    border-radius:6px; padding:12px 16px; margin:14px 0;
+  }
+  .questions h4{margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--accent);}
+  .questions ul{margin:0; padding-left:18px;}
+  .questions li{margin:6px 0; color:#c8d6e2;}
+  .archnote{
+    background:var(--code); border-left:3px solid var(--accent2);
+    border-radius:6px; padding:12px 16px; margin:14px 0;
+  }
+  .archnote h4{margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--accent2);}
+  pre{
+    background:var(--code); border:1px solid var(--border); border-radius:8px;
+    padding:14px; overflow-x:auto; font-size:12.5px; color:#a9e6c9; line-height:1.5;
+  }
+  code{color:var(--accent2); font-family:'Cascadia Code',Consolas,monospace;}
+  .recall{
+    margin-top:12px; border:1px dashed var(--border); border-radius:6px; padding:10px 14px;
+    cursor:pointer; background:#0e1620;
+  }
+  .recall .q{color:var(--accent2); font-weight:600; font-size:13.5px;}
+  .recall .a{display:none; margin-top:8px; color:var(--muted); font-size:13.5px; border-top:1px solid var(--border); padding-top:8px;}
+  .recall.show .a{display:block;}
+  .recall .hint{font-size:11px; color:var(--muted); float:right;}
+  ul.plain li{margin:4px 0;}
+  .foot{color:var(--muted); text-align:center; padding:30px; font-size:12px;}
+  .progress{font-size:11px; color:var(--muted);}
+  /* notes width expansion - matches learning plan box */
+  .wrap,.container,main,header.hero,header.masthead,nav.toc,section.block,footer{max-width:100%!important;padding-left:24px!important;padding-right:24px!important;}
+</style>
+</head>
+<body>
+<!-- LEARNING PLAN -->
+<div style="margin:24px;background:#0f1520;border:1px solid #1e2836;border-left:4px solid #e0a030;border-radius:8px;padding:24px 28px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;">
+  <div style="color:#e0a030;font-size:13px;font-weight:700;letter-spacing:.08em;margin-bottom:14px;">&#9670; LEARNING PLAN — 2.5 HOURS DAILY</div>
+  <div style="overflow-x:auto;">
+  <table style="width:100%;border-collapse:collapse;font-size:13px;color:#c8d3e0;margin-bottom:18px;white-space:nowrap;">
+    <thead><tr style="color:#7c8ba0;border-bottom:1px solid #1e2836;">
+      <th style="padding:6px 10px;text-align:left;width:48px;">Step</th>
+      <th style="padding:6px 10px;text-align:left;">Activity</th>
+      <th style="padding:6px 10px;text-align:left;">Outcome</th>
+    </tr></thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">1</td><td style="padding:7px 10px;"><b>Complete the Udemy Course</b> — watch videos, understand concepts, don't rush</td><td style="padding:7px 10px;color:#5fbf7f;">Build strong fundamentals</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">2</td><td style="padding:7px 10px;"><b>Practice Everything</b> — complete exercises, assignments, and source code</td><td style="padding:7px 10px;color:#5fbf7f;">Gain hands-on experience</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">3</td><td style="padding:7px 10px;"><b>Revise with these notes</b></td><td style="padding:7px 10px;color:#5fbf7f;">Reinforce concepts and fill knowledge gaps</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">4</td><td style="padding:7px 10px;"><b>Earn the Udemy Certificate</b></td><td style="padding:7px 10px;color:#5fbf7f;">Ensure the course is completed end-to-end</td></tr>
+      <tr><td style="padding:7px 10px;color:#e0a030;font-weight:700;">5</td><td style="padding:7px 10px;"><b>Practise real world tough scenario</b> — scenario-based questions &amp; interview problems</td><td style="padding:7px 10px;color:#5fbf7f;">Develop practical and interview-ready skills</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">1.5 HRS</div>
+      <div style="font-size:12px;color:#c8d3e0;">Udemy Videos + Exercises + Source Code</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Notes Revision</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Scenario-Based Questions &amp; Practical Problems</div>
+    </div>
+  </div>
+  <div style="color:#f0f4f8;font-size:12px;font-weight:600;letter-spacing:.04em;">GOAL: <span style="color:#e0a030;">Learn &#8594; Practice &#8594; Revise &#8594; Complete &#8594; Apply</span></div>
+</div>
+<!-- END LEARNING PLAN -->
+<a href="https://ai.shivawithin.in" id="home-return-btn" title="Back to Home" style="position:fixed;bottom:24px;right:24px;z-index:99999;display:inline-flex;align-items:center;gap:6px;background:#0d1b2a;color:#3fb6ff;border:1px solid #3fb6ff;padding:9px 15px;border-radius:8px;text-decoration:none;font-family:system-ui,-apple-system,sans-serif;font-size:13px;font-weight:600;box-shadow:0 2px 16px rgba(0,0,0,0.5);transition:background 0.2s,box-shadow 0.2s;" onmouseover="this.style.background='#1a2f47';this.style.boxShadow='0 4px 20px rgba(63,182,255,0.25)'" onmouseout="this.style.background='#0d1b2a';this.style.boxShadow='0 2px 16px rgba(0,0,0,0.5)'">&#8592; Home</a>
+
+<header>
+  <div class="eyebrow">Architects Lab · LLM &amp; Agentic AI Bootcamp</div>
+  <h1>Week 1 · Day 1 — "Instant Gratification": Ship First, Learn Why Later</h1>
+  <div class="sub">Notes from Ed Donner's opening lecture of the "Gen AI &amp; Agentic AI in Production" course.
+  Structured for a Senior Engineering Manager evaluating this as both a learning path and a hiring-manager
+  signal — not just a transcript summary.</div>
+  <a class="course-link" href="https://www.udemy.com/course/generative-and-agentic-ai-in-production/learn/lecture/52442087#overview" target="_blank" rel="noopener noreferrer">
+    ↗ Open on Udemy — Generative and Agentic AI in Production (Lecture 52442087)
+  </a>
+</header>
+
+<div class="toolbar">
+  <button class="ctrl" onclick="expandAll()">▾ Expand All</button>
+  <button class="ctrl" onclick="collapseAll()">▸ Collapse All</button>
+  <button class="ctrl" onclick="revealAllRecall()">💡 Reveal All Recall Answers</button>
+  <span class="progress" id="progressLabel"></span>
+</div>
+
+<div class="wrap">
+
+  <!-- SECTION 1 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Framing</span> Why "Deploy First, Explain Later"?</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>Donner deliberately skips the usual objectives/curriculum/logistics opener. Day 1 minute 1 is a live
+      Vercel deployment of a Python FastAPI app — before any AI concept is even mentioned. The pedagogical bet:
+      <strong>a working URL in your browser in the first 20 minutes beats a slide about "what you'll learn."</strong></p>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>This is the same instinct behind a "walking skeleton" in software architecture — get a thin, ugly,
+        end-to-end path into production before you add any real logic. It de-risks the deployment pipeline
+        early, so that when Week 4's multi-agent capstone breaks, you're debugging <em>agent logic</em>, not
+        rediscovering that your Vercel routes were misconfigured all along.</p>
+      </div>
+
+      <div class="questions">
+        <h4>Questions worth sitting with</h4>
+        <ul>
+          <li>In your own team's onboarding at IDFC — does a new engineer get something live in production
+          (even a "hello world" microservice) on day one, or do they spend week one reading wiki pages first?</li>
+          <li>Could this "walking skeleton first" approach be applied to your Optimus Project rollout —
+          i.e., get one squad shipping via idfc-coder end-to-end before writing the full playbook?</li>
+        </ul>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: What is the ONE thing deployed in the very first few minutes, before any AI is added? <span class="hint">tap to reveal</span></div>
+        <div class="a">A FastAPI Python app with a single route ("/") that returns the plain text "live from production" — no LLM call yet.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Pipeline</span> The Deployment Stack, Step by Step</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>The toolchain assembled in real time:</p>
+      <pre>
+GitHub repo (instructions)
+   └── Vercel account (cloud host, "sign up is one click from first deploy")
+         └── Cursor IDE (VS Code fork — any IDE works)
+               └── local project folder "instant"
+                     ├── instant.py        (FastAPI app)
+                     ├── requirements.txt  (fastapi, uvicorn → later + openai)
+                     └── vercel.json       (build + routing config)
+                           └── Node.js (installed, npm confirms via --version)
+                                 └── npm i -g vercel  (CLI installed)
+                                       └── vercel login
+                                             └── vercel .   (deploy!)
+      </pre>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>Notice <code>vercel.json</code> maps <em>all</em> incoming routes to a single Python module
+        (<code>instant.py</code>). That's a serverless-function pattern — Vercel spins up your FastAPI app as
+        a function-per-request, not a long-running server. Good for near-zero idle cost; something to watch
+        if you later need persistent connections (websockets, long-lived DB pools) since serverless functions
+        are stateless and short-lived by design.</p>
+      </div>
+
+      <div class="questions">
+        <h4>Questions worth sitting with</h4>
+        <ul>
+          <li>Vercel's serverless model trades cold-start latency for near-zero idle cost — where does that
+          trade-off break down for a fintech workload like yours (e.g. demat order placement, KYC callbacks)?</li>
+          <li>What's the equivalent "5-minute deploy" story for idfc-coder — could a new BA/TL see a live
+          artifact within their first working session with it?</li>
+        </ul>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: What does <code>vercel.json</code> actually configure? <span class="hint">tap to reveal</span></div>
+        <div class="a">Two sections — "builds" (tells Vercel to build instant.py as the deployable unit) and "routes" (tells Vercel to route all incoming requests to that same Python module).</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Security</span> The "Production" URL Isn't Really Public Yet</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>First deploy is gated by <strong>Vercel Authentication (Deployment Protection)</strong> — only the
+      signed-in Vercel team can view it, even though it has a public-looking URL. Donner manually disables
+      this in Project Settings to make it visible to anyone (verified via an incognito window).</p>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>This is a good, small, real example of a <em>secure-by-default</em> platform choice — new deployments
+        are private until a human explicitly opens them up. Worth noting for your own team: does your internal
+        idfc-coder tooling default new environments to locked-down access, or does it default open and rely on
+        someone remembering to lock it down later? Secure-by-default is cheaper to enforce than secure-by-review.</p>
+      </div>
+
+      <div class="questions">
+        <h4>Questions worth sitting with</h4>
+        <ul>
+          <li>What's your team's default posture for newly spun-up microservices at IDFC — locked down until
+          reviewed, or open until flagged?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 4 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">AI Layer</span> Adding the First LLM Call</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>Part 2 wires OpenAI into the same app:</p>
+      <ul class="plain">
+        <li>Get an OpenAI API key (platform.openai.com), pre-fund $5, <strong>disable auto-recharge</strong> as a spend guardrail.</li>
+        <li>Store the key as a Vercel environment variable via <code>vercel env add OPENAI_API_KEY</code> —
+        applied to all three environments (dev/preview/production), never hardcoded in the repo.</li>
+        <li>Add <code>openai</code> to requirements.txt — explicitly <strong>not an "LLM"</strong>, just an
+        open-source HTTP client wrapper that also works against many other providers using the same interface.</li>
+        <li>Code calls <code>client.chat.completions.create()</code> with model <code>gpt-5-nano</code> (the
+        lightest/cheapest tier), one user-role prompt, returns <code>response.choices[0].message.content</code>.</li>
+      </ul>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>Two things worth flagging for a fintech context: (1) storing secrets as platform env vars rather
+        than in code/repo is the bare minimum — your IDFC environment likely has a secrets manager or vault;
+        this Vercel pattern is the "toy" version of that same discipline. (2) The OpenAI Python SDK being
+        provider-agnostic in shape (same interface works for many LLM vendors) is exactly the abstraction you'd
+        want if you're evaluating multi-LLM vendor lock-in risk for Optimus — same client code, swap the
+        base_url/model, minimal blast radius if you ever need to switch providers.</p>
+      </div>
+
+      <div class="questions">
+        <h4>Questions worth sitting with</h4>
+        <ul>
+          <li>If idfc-coder or a future internal tool needs an LLM call, what's your bank's approved pattern
+          for secret storage — and does it map cleanly onto this "env var per environment" model?</li>
+          <li>Given your multi-LLM bootcamp work — is "same SDK shape, swap the provider" a pattern you can
+          formalize into a reusable internal wrapper for Optimus, so squads aren't hand-rolling provider-specific code?</li>
+        </ul>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: Why does Donner insist the OpenAI Python package "contains no LLM code"? <span class="hint">tap to reveal</span></div>
+        <div class="a">Because it's just a convenience HTTP client — it builds a web request and parses the JSON response into Python objects. The actual model/intelligence lives entirely on OpenAI's servers, not in the library.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 5 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Credibility</span> Instructor Background — Ed Donner</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>Co-founder/CTO of Nebula.io. Previously an MD at JPMorgan leading ~300 technologists; founded and
+      exited a prior startup, Untapped. London-born, based in NYC.</p>
+      <div class="questions">
+        <h4>Question worth sitting with</h4>
+        <ul>
+          <li>Given his JPMorgan fintech background — does his framing of "production AI = mostly DevOps"
+          match your own 16 years of experience shipping fintech platforms, or does it undersell the domain
+          complexity (regulatory, reconciliation, audit) you deal with daily at IDFC?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 6 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Expectation Setting</span> The Real Ratio: ~20% AI, ~70–80% Platform Engineering</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>Explicit expectation reset: most of the four weeks is cloud/DevOps work — Vercel today, then AWS
+      (primary focus), with touches of GCP and Azure. AI-specific concerns (vector DBs, Bedrock, SageMaker,
+      MCP servers, observability) are real but layered on top of standard platform engineering, not the bulk of the hours.</p>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>This matches a pattern you'll recognize from your own career arc — the "AI" part of an AI system is
+        often the smallest engineering surface area; the majority is the same distributed-systems discipline
+        you've applied to payments, settlement, and demat platforms: infra-as-code, CI/CD, secrets, scaling,
+        observability. It reframes "AI engineer" as "platform engineer who also knows how to call an LLM well."</p>
+      </div>
+
+      <div class="questions">
+        <h4>Questions worth sitting with</h4>
+        <ul>
+          <li>If ~80% of "AI in production" is platform engineering you already do daily — does that change
+          how you'd position yourself for AI/ML-focused roles at Sarvam AI, PhonePe, or Razorpay? Is your gap
+          really "AI knowledge," or is it "hands-on with AWS Bedrock/SageMaker specifically"?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 7 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Curriculum Map</span> How This Course Fits the Six-Course Ecosystem</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <pre>
+Broad audience (technical or not):
+  1. AI Builder    → no-code agents & voice agents (n8n, ElevenLabs)
+  2. AI Coder      → build software fast with coding agents (Claude Code etc.)
+  3. AI Leader     → deliver AI projects, transform a business commercially
+
+Technical / aspiring technical:
+  4. AI Engineer — Core     → LLMs, APIs, RAG, fine-tuning
+  5. AI Engineer — Agentic  → agent loops, OpenAI Agents SDK, MCP
+
+Already technical (this course):
+  6. AI Engineer — Production → deploy LLMs & agents to AWS/GCP/Azure at scale
+      </pre>
+      <p>Suggested order is 1→6, but each is designed to be independently useful. Completing all six +
+      projects = "proficient AI engineer," positioned for AI Engineer / Applied AI Engineer / Forward
+      Deployed Engineer roles.</p>
+
+      <div class="questions">
+        <h4>Questions worth sitting with</h4>
+        <ul>
+          <li>Given you're already deep into multi-LLM development (course 4/5 territory) — is jumping
+          straight to course 6 (Production) the right sequencing for you, or would course 5 (Agentic, MCP,
+          agent loops) close a bigger gap first, especially since MCP is directly relevant to your idfc-coder work?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 8 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Roadmap</span> The Four-Week Arc — What to Expect Next</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <pre>
+Week 1  Build a SaaS project → deploy to internet
+        (auth + subscriptions, "healthcare app", first Vercel deploy → first AWS deploy)
+
+Week 2  AWS deep-dive: platform engineering for AI
+        Revisit "Digital Twin" project v2 using Bedrock
+        + Terraform (infra-as-code) + GitHub Actions (CI/CD)
+
+Week 3  Breadth week
+        Azure + GCP exposure · new project "Cybersecurity Analyst"
+        deployed on Azure & GCP via MCP servers
+        SageMaker · data ingestion pipelines · S3 vectors + MCP
+
+Week 4  Agentic AI in production
+        Multi-agent system → Capstone: "Agentic Financial Planner"
+        + Observability, monitoring, security
+        + Survey of Agentic AI platforms
+      </pre>
+
+      <div class="questions">
+        <h4>Questions to carry into Day 2</h4>
+        <ul>
+          <li>What does "authentication + subscription" actually look like end-to-end with Clerk — and how
+          does that compare to what you'd design for a regulated fintech signup flow?</li>
+          <li>Why Terraform over AWS CDK specifically — is "same technique across AWS/GCP/Azure" a strong
+          enough reason for you to prefer Terraform for any future IaC work post-IDFC?</li>
+          <li>What will the "Digital Twin" project (revisited in Week 2 with Bedrock) actually demonstrate
+          that the Day 1 toy app didn't?</li>
+          <li>How does the Week 4 capstone's use of multiple cooperating agents (portfolio rebalancing,
+          retirement advice) map onto domain knowledge you already have from wealth/demat platform work?</li>
+        </ul>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: Why Terraform instead of AWS CDK, and why Clerk instead of a cloud-native auth service? <span class="hint">tap to reveal</span></div>
+        <div class="a">Both choices are made explicitly for transferability — Terraform works the same way across AWS, GCP, and Azure (CDK locks you into AWS), and Clerk is used consistently "across the board" rather than tying the course to one cloud vendor's native auth componentry.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 9 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Scope</span> What's Explicitly Out of Scope</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>Frontend development and Docker are touched only at a surface level — deep dives are left as
+      self-study. The stated goal isn't full-stack mastery, it's <em>transferable deployment principles</em>
+      you can re-apply to services/APIs not explicitly covered.</p>
+      <div class="questions">
+        <h4>Question worth sitting with</h4>
+        <ul>
+          <li>Given your existing Architects Lab site is already GitHub Pages + Google OAuth + Drive
+          integration — is frontend/Docker depth actually your gap, or is it AWS-native AI services
+          (Bedrock/SageMaker) specifically, which the course does go deep on?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 10 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Cost Governance</span> API Spend — Pay-as-you-go vs. Enterprise Cloud Billing</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>Expected total course spend: ~$5–10 (mostly OpenAI, small AWS charges), plus optional domain
+      registration. Key distinction he draws:</p>
+      <ul class="plain">
+        <li><strong>OpenAI:</strong> pre-paid drawdown model — you can't overspend beyond what you've funded.</li>
+        <li><strong>AWS / GCP / Azure:</strong> no hard spending ceiling — a card is on file, usage accrues,
+        and you're responsible for setting your own budget alerts and quotas. There's no built-in floor
+        below which billing simply stops.</li>
+      </ul>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>This is a real and recurring cost-governance gap in cloud-native orgs, not just a beginner's
+        tripwire — enterprises solve it with budget alerts, tagging + chargeback, and hard service quotas,
+        but the underlying billing model is the same "no ceiling" one Donner describes. Worth asking whether
+        your own Optimus/idfc-coder rollout has equivalent guardrails defined before squads start calling
+        LLM APIs at scale internally.</p>
+      </div>
+
+      <div class="questions">
+        <h4>Questions worth sitting with</h4>
+        <ul>
+          <li>Does IDFC's cloud governance already have per-team budget alerts and hard quotas for AI API
+          usage, or is that a gap the Optimus rollout should explicitly close before wider adoption?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 11 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Mindset</span> Debugging Environment Issues — Root Cause vs. Band-Aid</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>Roughly 80% of student frustration on this kind of course comes from environment/setup issues
+      (typos in <code>.env</code> keys, region-string typos, architecture mismatches when a binary built on
+      Mac is deployed to AWS Lambda), not from AI concepts themselves.</p>
+
+      <p>The one genuinely useful technique called out: when using an LLM to debug a stack trace, it will
+      tend to <strong>patch the symptom</strong> rather than question the root cause. His own example — a
+      Mac-built binary failing on Lambda threw a "pydantic" error; the LLM's advice chased the pydantic
+      symptom for a long detour before he stepped back and asked "why would this only fail on deploy, not
+      locally?" — which pointed at the real cause (CPU architecture mismatch), not the reported one.</p>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>This is a textbook "five whys" failure mode, just mediated through an LLM instead of a junior
+        engineer's first guess. The fix isn't "don't use LLMs to debug" — it's <strong>constantly re-inject
+        the constraint that's ruled out</strong> ("this works locally, so it can't be a code logic issue")
+        so the model's search space narrows toward environment/infra causes instead of application causes.
+        Same discipline you'd expect from a senior engineer pairing with a junior one.</p>
+      </div>
+
+      <div class="questions">
+        <h4>Questions worth sitting with</h4>
+        <ul>
+          <li>Have you seen this same "LLM patches the symptom, not the root cause" pattern show up in
+          idfc-coder usage across your squads — and if so, is it worth adding an explicit prompt-template
+          rule ("state what's ruled out before asking for a fix") to your Optimus prompt library?</li>
+        </ul>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: What was the actual root cause of the "pydantic" error, and why did the LLM's first advice miss it? <span class="hint">tap to reveal</span></div>
+        <div class="a">A CPU/system architecture mismatch — a binary built locally on a Mac was deployed to AWS Lambda's different architecture. The LLM chased the surface-level pydantic error message instead of questioning why the same code worked fine locally, which was the clue pointing to an environment/architecture issue rather than an application bug.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 12: NEXT UP -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag arch">Preview</span> What Day 2 Will Likely Cover</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>Day 1 ends at "5% complete" on the 4-week journey, still inside Week 1 ("build a SaaS project,
+      deploy with auth + subscription"). Based on the stated Week 1 arc, Day 2 most likely moves from the
+      toy "instant" app toward the real Week 1 project — introducing authentication (Clerk) and/or the
+      first pass at the "healthcare SaaS app."</p>
+
+      <div class="questions">
+        <h4>Questions to answer once you watch Day 2</h4>
+        <ul>
+          <li>How does Clerk's auth flow integrate with a FastAPI + Vercel serverless backend specifically —
+          session tokens, middleware, or something else?</li>
+          <li>Does the healthcare SaaS app reuse the same <code>vercel.json</code> single-route pattern from
+          Day 1, or does it introduce proper API routing for multiple endpoints?</li>
+          <li>Where does subscription/billing (Stripe or similar) get introduced — Day 2, or later in Week 1?</li>
+          <li>Does the course address data residency / compliance concerns at all, or is that left as an
+          exercise — relevant given your own regulated-industry context?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="foot">Architects Lab · Study Notes · Source: "Gen AI &amp; Agentic AI in Production," Week 1 Day 1 (Ed Donner)</div>
+
+<script>
+  function toggleCard(headEl){
+    const card = headEl.parentElement;
+    card.classList.toggle('open');
+    updateProgress();
+  }
+  function toggleRecall(el){
+    el.classList.toggle('show');
+  }
+  function expandAll(){
+    document.querySelectorAll('.card').forEach(c=>c.classList.add('open'));
+    updateProgress();
+  }
+  function collapseAll(){
+    document.querySelectorAll('.card').forEach(c=>c.classList.remove('open'));
+    updateProgress();
+  }
+  function revealAllRecall(){
+    document.querySelectorAll('.recall').forEach(r=>r.classList.add('show'));
+  }
+  function updateProgress(){
+    const total = document.querySelectorAll('.card').length;
+    const open = document.querySelectorAll('.card.open').length;
+    document.getElementById('progressLabel').textContent = open + ' / ' + total + ' sections expanded';
+  }
+  updateProgress();
+</script>
+
+</body>
+</html>

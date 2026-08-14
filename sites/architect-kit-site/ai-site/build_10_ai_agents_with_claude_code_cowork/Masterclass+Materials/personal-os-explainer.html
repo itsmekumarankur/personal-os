@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personal OS · 4 Files Explained</title>
+<style>
+  :root{
+    --bg:#0d0f14;
+    --panel:#151823;
+    --panel2:#1b1f2e;
+    --ink:#e8e6df;
+    --dim:#8b8fa3;
+    --gold:#d4af5a;
+    --gold-soft:#b8964a;
+    --teal:#5ad4c8;
+    --rose:#d47a8a;
+    --violet:#9a8ad4;
+    --line:#2a2f42;
+    --mono:'Courier New', ui-monospace, monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:Georgia,'Times New Roman',serif;
+    display:flex;flex-direction:column;
+    min-height:100vh;
+  }
+  /* ---------- header ---------- */
+  header{
+    padding:18px 28px 14px;
+    border-bottom:1px solid var(--line);
+    display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+  }
+  header .k{
+    font-family:var(--mono);font-size:.7rem;letter-spacing:.25em;
+    color:var(--gold);text-transform:uppercase;
+  }
+  header h1{font-size:1.05rem;font-weight:normal;color:var(--ink)}
+  header .count{margin-left:auto;font-family:var(--mono);font-size:.75rem;color:var(--dim)}
+
+  /* ---------- file tabs (progress by section) ---------- */
+  .tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
+  .tab{
+    flex:1;min-width:120px;padding:10px 12px;text-align:center;
+    font-family:var(--mono);font-size:.7rem;letter-spacing:.08em;
+    color:var(--dim);border-right:1px solid var(--line);
+    cursor:pointer;white-space:nowrap;transition:color .2s, background .2s;
+    background:transparent;border-top:none;border-bottom:none;border-left:none;
+  }
+  .tab:last-child{border-right:none}
+  .tab.active{color:var(--bg);font-weight:bold}
+  .tab[data-c="gold"].active{background:var(--gold)}
+  .tab[data-c="teal"].active{background:var(--teal)}
+  .tab[data-c="rose"].active{background:var(--rose)}
+  .tab[data-c="violet"].active{background:var(--violet)}
+  .tab[data-c="ink"].active{background:var(--ink)}
+
+  /* ---------- stage ---------- */
+  main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:26px 18px 90px;overflow-y:auto}
+  .slide{
+    max-width:760px;width:100%;
+    animation:fadeUp .45s ease both;
+  }
+  @keyframes fadeUp{
+    from{opacity:0;transform:translateY(14px)}
+    to{opacity:1;transform:translateY(0)}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .slide{animation:none}
+  }
+  .eyebrow{
+    font-family:var(--mono);font-size:.68rem;letter-spacing:.22em;
+    text-transform:uppercase;margin-bottom:10px;
+  }
+  .eyebrow.gold{color:var(--gold)} .eyebrow.teal{color:var(--teal)}
+  .eyebrow.rose{color:var(--rose)} .eyebrow.violet{color:var(--violet)}
+  .eyebrow.ink{color:var(--dim)}
+  .slide h2{font-size:1.7rem;font-weight:normal;line-height:1.25;margin-bottom:14px}
+  .slide h2 em{font-style:italic;color:var(--gold)}
+  .slide p{color:#c9c7bf;line-height:1.75;font-size:1.02rem;margin-bottom:14px}
+  .slide p strong{color:var(--ink)}
+  .slide p code, .slide li code{
+    font-family:var(--mono);font-size:.85em;background:var(--panel2);
+    padding:2px 6px;border-radius:3px;color:var(--gold);
+  }
+  .ascii{
+    background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);
+    border-radius:6px;padding:16px 18px;margin:16px 0;
+    font-family:var(--mono);font-size:.78rem;line-height:1.5;
+    color:#b9c2d8;overflow-x:auto;white-space:pre;
+  }
+  .ascii .hl{color:var(--gold)}
+  .ascii .tl{color:var(--teal)}
+  .ascii .rs{color:var(--rose)}
+  .note{
+    border:1px dashed var(--gold-soft);border-radius:6px;
+    padding:12px 16px;margin:16px 0;font-size:.92rem;color:#cfc9ae;
+    line-height:1.65;
+  }
+  .note b{color:var(--gold)}
+  ul.pts{margin:12px 0 14px 2px;list-style:none}
+  ul.pts li{
+    padding:7px 0 7px 22px;position:relative;color:#c9c7bf;line-height:1.6;font-size:.98rem;
+  }
+  ul.pts li::before{
+    content:"›";position:absolute;left:4px;color:var(--gold);font-family:var(--mono);
+  }
+
+  /* ---------- footer controls ---------- */
+  footer{
+    position:fixed;left:0;right:0;bottom:0;
+    background:rgba(13,15,20,.92);backdrop-filter:blur(6px);
+    border-top:1px solid var(--line);
+    padding:12px 22px;display:flex;align-items:center;gap:16px;
+  }
+  .dots{display:flex;gap:5px;flex:1;justify-content:center;flex-wrap:wrap}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--line);cursor:pointer;transition:background .2s, transform .2s}
+  .dot.on{background:var(--gold);transform:scale(1.35)}
+  button.nav{
+    font-family:var(--mono);font-size:.8rem;letter-spacing:.12em;
+    background:transparent;color:var(--ink);border:1px solid var(--line);
+    padding:9px 20px;border-radius:5px;cursor:pointer;transition:all .2s;
+  }
+  button.nav:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+  button.nav.primary{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:bold}
+  button.nav.primary:hover{background:#e2c070}
+  button.nav:disabled{opacity:.25;cursor:default}
+  button.nav:focus-visible,.tab:focus-visible,.dot:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .hint{position:fixed;bottom:64px;right:20px;font-family:var(--mono);font-size:.62rem;color:var(--dim);letter-spacing:.1em}
+  @media(max-width:600px){
+    .slide h2{font-size:1.35rem}
+    .ascii{font-size:.62rem;padding:12px}
+    .hint{display:none}
+    header{padding:14px 16px 10px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="k">Architects Lab</span>
+  <h1>Personal OS — the 4 files, one slide at a time</h1>
+  <span class="count" id="counter">1 / 18</span>
+</header>
+
+<div class="tabs" id="tabs"></div>
+
+<main><div id="stage"></div></main>
+
+<div class="hint">← → keys work too</div>
+
+<footer>
+  <button class="nav" id="prevBtn">← Prev</button>
+  <div class="dots" id="dots"></div>
+  <button class="nav primary" id="nextBtn">Next →</button>
+</footer>
+
+<script>
+const S = [
+
+/* ================= INTRO ================= */
+{sec:"intro", c:"ink", eyebrow:"Overview", h:"What is this <em>Personal OS</em>?", body:`
+<p>It's a starter kit that turns <strong>Claude Code</strong> into your personal Jarvis. Four files, four jobs. Think of it like hiring an assistant:</p>
+<div class="ascii">
+ GETTING-STARTED.md  ──▶  the <span class="hl">onboarding form</span> (do this first)
+ soul.md             ──▶  <span class="hl">who</span> the assistant is (your voice)
+ CLAUDE.md           ──▶  <span class="hl">how</span> it works (the rulebook / brain)
+ SCHEDULING-GUIDE.md ──▶  <span class="hl">when</span> it runs by itself (cron)
+</div>
+<p>Press <strong>Next</strong> to walk through them one by one.</p>`},
+
+{sec:"intro", c:"ink", eyebrow:"Overview", h:"How the four files connect", body:`
+<div class="ascii">
+        ┌────────────────────────┐
+        │  GETTING-STARTED.md    │  step 0: install + connect
+        └───────────┬────────────┘
+                    │  run /setup
+                    ▼
+   ┌────────────┐        ┌──────────────────┐
+   │  soul.md   │───────▶│    CLAUDE.md     │
+   │  identity  │ voice  │   orchestrator   │
+   └────────────┘        └────────┬─────────┘
+                                  │ automations run
+                                  ▼
+        ┌────────────────────────┐
+        │  SCHEDULING-GUIDE.md   │  cron fires them daily
+        └────────────────────────┘
+</div>
+<p><strong>Simple mental model:</strong> GETTING-STARTED sets it up once. soul.md gives it a personality. CLAUDE.md tells it how to think and store knowledge. SCHEDULING makes it run without you.</p>`},
+
+/* ================= GETTING STARTED ================= */
+{sec:"start", c:"teal", eyebrow:"File 1 · GETTING-STARTED.md", h:"The 5-minute onboarding", body:`
+<p>This is the <strong>"read me first"</strong> file. Four steps, done once, before anything else works.</p>
+<div class="ascii">
+ STEP 1              STEP 2              STEP 3         STEP 4
+ ┌──────────┐        ┌──────────┐        ┌────────┐     ┌──────────┐
+ │ Install  │──────▶ │ Connect  │──────▶ │ /setup │───▶ │ Dispatch │
+ │ Claude   │        │ tools    │        │ wizard │     │ (phone,  │
+ │ Code +   │        │ via /mcp │        │        │     │ optional)│
+ │ Obsidian │        └──────────┘        └────────┘     └──────────┘
+ └──────────┘
+</div>`},
+
+{sec:"start", c:"teal", eyebrow:"File 1 · GETTING-STARTED.md", h:"Connecting your tools with /mcp", body:`
+<p>Step 2 is the important one. You type <code>/mcp</code> in Claude Code and sign in to your services <strong>once</strong>. After that, every session can use them.</p>
+<div class="ascii">
+      you type /mcp
+           │
+           ▼
+   ┌───────────────────┐
+   │ Connection manager │
+   └───┬────┬────┬───┬──┘
+       │    │    │   │
+       ▼    ▼    ▼   ▼
+    Gmail  GCal Notion GitHub
+     ✓      ✓    ✓     ✓   ◀── one-time sign-in, persists forever
+</div>
+<div class="note"><b>Why this matters:</b> without these connections, the agent can't read your email, check your calendar, or write to Notion. Everything else in the system depends on this step.</div>`},
+
+{sec:"start", c:"teal", eyebrow:"File 1 · GETTING-STARTED.md", h:"Then /setup takes over", body:`
+<p>After tools are connected, you open Claude Code inside the <code>personal-os</code> folder and run <code>/setup</code>. It's a wizard that:</p>
+<ul class="pts">
+<li>Verifies your MCP connections actually work</li>
+<li>Interviews you to fill in <strong>soul.md</strong> (your identity, next file)</li>
+<li>Optionally sets up brand assets (logo, colors for decks and sheets)</li>
+<li>Points Obsidian at the vault so you can browse your knowledge visually</li>
+</ul>
+<p>That's the whole file. Install → connect → wizard → done.</p>`},
+
+/* ================= SOUL ================= */
+{sec:"soul", c:"rose", eyebrow:"File 2 · soul.md", h:"The personality file", body:`
+<p><code>soul.md</code> answers one question: <strong>who is this agent pretending to be?</strong> Answer: you. It's currently a blank template that <code>/setup</code> fills in.</p>
+<div class="ascii">
+ ┌─────────────── soul.md (under 2KB) ───────────────┐
+ │                                                   │
+ │  Writing Style ──── 3 real sentences you wrote    │
+ │  How I Communicate─ formal? terse? bullets?       │
+ │  My Priorities ──── top 5, used to filter info    │
+ │  My Role ────────── one sentence                  │
+ │  My Company ─────── 2-3 sentences                 │
+ │  Voice Rules ────── <span class="rs">non-negotiable, always on</span>    │
+ │  Never-list ─────── things banned from outputs    │
+ │                                                   │
+ └───────────────────────────────────────────────────┘
+</div>`},
+
+{sec:"soul", c:"rose", eyebrow:"File 2 · soul.md", h:"The voice rules — the interesting part", body:`
+<p>The pre-baked rules are all about <strong>not sounding like an AI</strong>:</p>
+<ul class="pts">
+<li>No polished, corporate, robotic tone. Write like a real person.</li>
+<li>Never use em-dashes (a known AI writing "tell")</li>
+<li>No filler: "It's important to note that...", "Let's dive in"</li>
+<li>No generic AI patterns like three parallel bullets with identical phrasing</li>
+<li>The voice should <strong>evolve</strong> as the agent learns how you actually write</li>
+</ul>
+<div class="note"><b>How it's used:</b> a hook injects soul.md at the start of every session. CLAUDE.md then orders the agent to keep this voice in <b>every single response</b>, even deep into long tasks.</div>`},
+
+{sec:"soul", c:"rose", eyebrow:"File 2 · soul.md", h:"Why only 2KB?", body:`
+<p>The file is deliberately tiny. It gets loaded into <strong>every session</strong>, so it must be cheap and dense.</p>
+<div class="ascii">
+   raw inputs                    synthesized
+   ┌───────────┐
+   │ LinkedIn  │──┐
+   ├───────────┤  │    /setup     ┌───────────────┐
+   │ your posts│──┼──────────────▶│   soul.md     │
+   ├───────────┤  │  (distills)   │  2KB, specific │
+   │ docs      │──┘               │  + actionable  │
+   └───────────┘                  └───────────────┘
+</div>
+<p><strong>Key idea:</strong> it's not a biography. It's a compressed instruction set: 3 sample sentences beat 3 paragraphs of description, because the agent learns tone from examples.</p>`},
+
+/* ================= CLAUDE.md ================= */
+{sec:"brain", c:"gold", eyebrow:"File 3 · CLAUDE.md", h:"The orchestrator — the <em>brain</em>", body:`
+<p>This is the biggest and most important file. It defines <strong>how the agent operates</strong>: memory, tools, error handling, output rules. Six major systems inside:</p>
+<div class="ascii">
+ ┌──────────────────── CLAUDE.md ────────────────────┐
+ │                                                   │
+ │  1. Identity lock ── "you are Jarvis, not Claude" │
+ │  2. Vault protocol ─ the <span class="hl">memory system</span> (wiki)     │
+ │  3. MCP reference ── tool quirks + fixes          │
+ │  4. Bootstrap ────── first-run Notion DB setup    │
+ │  5. Routing table ── list of built automations    │
+ │  6. Hygiene rules ── outputs, ingestion, voice    │
+ │                                                   │
+ └───────────────────────────────────────────────────┘
+</div>
+<p>Next slides break each one down.</p>`},
+
+{sec:"brain", c:"gold", eyebrow:"File 3 · CLAUDE.md", h:"The vault — a 3-layer memory", body:`
+<p>The vault is an <strong>Obsidian wiki the agent maintains for you</strong>. Modeled on the "Karpathy wiki pattern". Three layers with different ownership:</p>
+<div class="ascii">
+ LAYER 1: vault/sources/     <span class="rs">READ-ONLY</span>
+ ─ raw emails, docs, transcripts. Agent NEVER edits.
+
+ LAYER 2: the wiki (rest of vault/)   <span class="tl">AGENT-OWNED</span>
+ ─ vault/me/        facts about you
+ ─ vault/people/    one page per person
+ ─ vault/business/  companies, competitors
+ ─ vault/projects/  status pages
+ ─ pages link with [[wiki links]] → Obsidian graph
+
+ LAYER 3: the schema          <span class="hl">THE RULES</span>
+ ─ CLAUDE.md + soul.md define how layers 1-2 work
+</div>
+<div class="note"><b>The golden rule:</b> "If you'd lose the information when this session ends, save it now." No command needed. Learn a person's name mid-task? Write <code>vault/people/name.md</code> immediately.</div>`},
+
+{sec:"brain", c:"gold", eyebrow:"File 3 · CLAUDE.md", h:"Vault operations: ingest, query, lint", body:`
+<div class="ascii">
+ /ingest ─ read a source ──▶ create/update 10-15 wiki
+           pages, add [[links]], flag contradictions,
+           update index.md + log.md
+
+ query ── read vault/index.md first (the catalog)
+           └─▶ drill into pages ──▶ answer
+           └─▶ valuable answers become NEW pages
+
+ /lint ── health check: orphan pages, stale pages,
+           contradictions, missing links
+</div>
+<p>Two bookkeeping files hold it together: <code>vault/index.md</code> (catalog, read first, updated on every ingest) and <code>vault/log.md</code> (append-only timeline of everything the agent did).</p>
+<p>Projects use <strong>two tiers</strong>: <code>status.md</code> as a quick summary on top, dense history in subfolders below. You read tier 1; the agent digs into tier 2.</p>`},
+
+{sec:"brain", c:"gold", eyebrow:"File 3 · CLAUDE.md", h:"MCP reference — hard-won tool quirks", body:`
+<p>This section is basically an <strong>error-log turned into rules</strong>. Real API gotchas the author hit, written down so the agent never repeats them:</p>
+<ul class="pts">
+<li>MCP tools are deferred: load with <code>ToolSearch</code> <em>before</em> calling</li>
+<li>If an MCP tool exists, use it. Chrome browser is only for sites <em>without</em> MCP</li>
+<li>Calendar wants <code>timeMin</code>/<code>timeMax</code> in ISO 8601, not <code>start</code>/<code>end</code></li>
+<li>Notion checkboxes are <code>"__YES__"</code>/<code>"__NO__"</code>, not true/false</li>
+<li>Notion DB creation is a strict 6-step sequence (create → move → alter → view → pages → update)</li>
+<li>All Notion writes stay under one "Personal OS" parent page — sandboxed</li>
+</ul>
+<div class="ascii">
+ Self-correction loop when a call fails:
+ error ──▶ check vault/projects/error-log.md
+             │ known fix?  ──▶ apply it
+             │ new error?  ──▶ fix, then <span class="hl">log the fix</span>
+             └─ never retry the same wrong approach
+</div>`},
+
+{sec:"brain", c:"gold", eyebrow:"File 3 · CLAUDE.md", h:"Bootstrap — first run of any automation", body:`
+<p>Every automation that writes to Notion checks if its database exists yet. If not, it builds it before doing the real work:</p>
+<div class="ascii">
+ automation starts
+       │
+       ▼
+ read vault/projects/{name}/status.md
+       │
+   db_id found? ──── yes ──▶ proceed with main flow
+       │
+       no (first run)
+       ▼
+ read notion-parent-id.md ── missing? ──▶ <span class="rs">halt: "run /setup"</span>
+       │
+       ▼
+ create DB → move under parent → alter columns → create view
+       │
+       ▼
+ save db_id to status.md + append to vault/log.md
+       │
+       ▼
+ proceed with main flow          (next runs skip all this)
+</div>`},
+
+{sec:"brain", c:"gold", eyebrow:"File 3 · CLAUDE.md", h:"After every run: ingest + clean up", body:`
+<p>Two closing rituals happen after <strong>every</strong> automation, before showing you results:</p>
+<div class="ascii">
+ POST-RUN INGESTION (mandatory)
+ ─ new person found?    ──▶ vault/people/{name}.md
+ ─ new company found?   ──▶ vault/business/
+ ─ project changed?     ──▶ vault/projects/
+ ─ always              ──▶ update index.md + log.md
+
+ OUTPUT HYGIENE
+ ─ deliverables ──▶ outputs/{name}/YYYY-MM-DD/
+ ─ temp files, build scripts, .tmp ──▶ <span class="rs">DELETED</span>
+ ─ only final .pptx / .xlsx / .pdf remain
+</div>
+<p><strong>Why:</strong> this is what makes the system <em>compound</em>. Every task run makes the vault smarter, and the workspace never fills with junk.</p>`},
+
+/* ================= SCHEDULING ================= */
+{sec:"cron", c:"violet", eyebrow:"File 4 · SCHEDULING-GUIDE.md", h:"Making it run without you", body:`
+<p>This file explains how to run automations <strong>on a timer</strong> using your OS scheduler (cron on Mac/Linux, Task Scheduler on Windows).</p>
+<div class="ascii">
+  8:00 AM weekdays
+       │
+       ▼
+ ┌──────────┐   ┌────────────────────────────────┐
+ │  cron    │──▶│ claude -p "Run /morning-brief" │
+ │  fires   │   │ --dangerously-skip-permissions │
+ └──────────┘   └───────────────┬────────────────┘
+                                │  fresh session,
+                                │  does the work
+                                ▼
+                 output saved + log written
+                                │
+                                ▼
+                        process exits
+</div>
+<p><strong>Key insight:</strong> each run is a brand-new session with no memory of the last one. That's exactly why the vault exists — it's the memory <em>between</em> runs.</p>`},
+
+{sec:"cron", c:"violet", eyebrow:"File 4 · SCHEDULING-GUIDE.md", h:"One-time prerequisites", body:`
+<ul class="pts">
+<li><code>claude --version</code> — confirm the CLI is installed</li>
+<li><code>claude setup-token</code> — generates an auth token (<code>sk-ant-oat01-...</code>), valid 1 year. Needed because cron can't do interactive login.</li>
+<li><code>which claude</code> and <code>which python3</code> — note the full binary paths</li>
+</ul>
+<div class="note"><b>Why full paths and inline tokens?</b> Cron runs in a <b>bare environment</b>. No <code>.bashrc</code>, no <code>.zshrc</code>, no PATH from your shell. Anything the job needs must be written directly into the cron line.</div>`},
+
+{sec:"cron", c:"violet", eyebrow:"File 4 · SCHEDULING-GUIDE.md", h:"Anatomy of one cron line", body:`
+<div class="ascii">
+ 0 8 * * 1-5  cd /path/to/personal-os
+ <span class="hl">└─┬─────┘</span>    <span class="tl">└──────┬──────────┘</span>
+  8AM Mon-Fri   go to project first
+
+ && export CLAUDE_CODE_OAUTH_TOKEN=sk-ant-...  ◀ auth inline
+ && export PATH=/opt/homebrew/bin:...          ◀ paths inline
+ && claude -p "Run /morning-brief"             ◀ the task
+    --dangerously-skip-permissions             ◀ no prompts
+ >> outputs/logs/morning-brief.log 2>&1        ◀ capture output
+ # personal-os:morning-brief                   ◀ tag for mgmt
+</div>
+<p>The tag at the end lets management commands find these jobs: <code>crontab -l | grep personal-os</code> lists them all, and <code>/cron-setup off</code> can pause everything or one job by name.</p>`},
+
+{sec:"cron", c:"violet", eyebrow:"File 4 · SCHEDULING-GUIDE.md", h:"The five key rules", body:`
+<ul class="pts">
+<li>Cron has no shell profile → all env vars inline in the job line</li>
+<li>Use full paths for every binary</li>
+<li>Always <code>cd</code> into the project folder first (so relative paths work)</li>
+<li>Always <code>--dangerously-skip-permissions</code> (nobody's there to click "allow")</li>
+<li>Always redirect output to a log file → your only window into what happened</li>
+</ul>
+<div class="note"><b>Debugging tip baked in:</b> when a scheduled run misbehaves, <code>cat outputs/logs/morning-brief.log</code> is the first thing to check.</div>`},
+
+/* ================= WRAP ================= */
+{sec:"wrap", c:"ink", eyebrow:"Recap", h:"The whole system on one screen", body:`
+<div class="ascii">
+ SETUP (once)
+ GETTING-STARTED: install → /mcp connect → /setup
+                                   │
+                                   ▼ fills
+                            soul.md (your voice)
+                                   │
+ DAILY LOOP                        ▼ injected into
+ cron fires ──▶ claude -p ──▶ CLAUDE.md rules apply
+                    │
+        ┌───────────┼───────────────┐
+        ▼           ▼               ▼
+   do the task   save knowledge   deliverables
+   (MCP tools)   to vault/ wiki   to outputs/
+        │           │
+        └───────────┴──▶ next run is <span class="hl">smarter</span>
+</div>
+<p><strong>One sentence each:</strong> GETTING-STARTED wires it up. soul.md makes it sound like you. CLAUDE.md makes it think, remember, and self-correct. SCHEDULING makes it show up for work every morning.</p>
+<p>That's all four files. Use the tabs above to revisit any section.</p>`}
+];
+
+const SECTIONS=[
+  {id:"intro",label:"OVERVIEW",c:"ink"},
+  {id:"start",label:"GETTING-STARTED",c:"teal"},
+  {id:"soul",label:"SOUL.MD",c:"rose"},
+  {id:"brain",label:"CLAUDE.MD",c:"gold"},
+  {id:"cron",label:"SCHEDULING",c:"violet"},
+  {id:"wrap",label:"RECAP",c:"ink"}
+];
+
+let i=0;
+const stage=document.getElementById('stage');
+const dots=document.getElementById('dots');
+const tabs=document.getElementById('tabs');
+const counter=document.getElementById('counter');
+const prevBtn=document.getElementById('prevBtn');
+const nextBtn=document.getElementById('nextBtn');
+
+SECTIONS.forEach(s=>{
+  const b=document.createElement('button');
+  b.className='tab';b.dataset.c=s.c;b.dataset.sec=s.id;b.textContent=s.label;
+  b.onclick=()=>go(S.findIndex(x=>x.sec===s.id));
+  tabs.appendChild(b);
+});
+S.forEach((_,k)=>{
+  const d=document.createElement('span');
+  d.className='dot';d.tabIndex=0;
+  d.setAttribute('role','button');
+  d.setAttribute('aria-label','Slide '+(k+1));
+  d.onclick=()=>go(k);
+  d.onkeydown=e=>{if(e.key==='Enter')go(k)};
+  dots.appendChild(d);
+});
+
+function go(k){
+  i=Math.max(0,Math.min(S.length-1,k));
+  const s=S[i];
+  stage.innerHTML='';
+  const el=document.createElement('div');
+  el.className='slide';
+  el.innerHTML=`<div class="eyebrow ${s.c}">${s.eyebrow}</div><h2>${s.h}</h2>${s.body}`;
+  stage.appendChild(el);
+  counter.textContent=(i+1)+' / '+S.length;
+  document.querySelectorAll('.dot').forEach((d,k2)=>d.classList.toggle('on',k2===i));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.sec===s.sec));
+  prevBtn.disabled=(i===0);
+  nextBtn.textContent=(i===S.length-1)?'Done ✓':'Next →';
+  nextBtn.disabled=(i===S.length-1);
+  document.querySelector('main').scrollTop=0;
+}
+prevBtn.onclick=()=>go(i-1);
+nextBtn.onclick=()=>go(i+1);
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' ')go(i+1);
+  if(e.key==='ArrowLeft')go(i-1);
+});
+go(0);
+</script>
+</body>
+</html>

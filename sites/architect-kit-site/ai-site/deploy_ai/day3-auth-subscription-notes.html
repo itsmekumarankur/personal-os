@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Architects Lab — Day 3: Authentication &amp; Subscription with Clerk</title>
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#121821; --panel2:#161d28; --border:#22303f;
+    --text:#dbe4ee; --muted:#7d92a8; --accent:#39d3ac; --accent2:#f2b84b;
+    --danger:#ef6a6a; --code:#0d1319; --tag:#1c2a3a;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    line-height:1.6; padding:0 0 80px 0;
+  }
+  header{
+    padding:36px 24px 24px; border-bottom:1px solid var(--border);
+    background:linear-gradient(180deg,#0e141c,#0b0f14);
+  }
+  .eyebrow{color:var(--accent); font-size:12px; letter-spacing:2px; text-transform:uppercase; font-weight:600;}
+  h1{margin:8px 0 6px; font-size:28px; color:#f2f6fa;}
+  .sub{color:var(--muted); font-size:14px; max-width:780px;}
+  .course-link{
+    display:inline-block; margin-top:14px; font-size:13px; font-weight:600;
+    color:var(--accent); text-decoration:none; border:1px solid var(--border);
+    background:var(--panel2); padding:8px 14px; border-radius:6px;
+  }
+  .course-link:hover{border-color:var(--accent); background:#152030;}
+  .toolbar{
+    display:flex; gap:10px; padding:16px 24px; position:sticky; top:0;
+    background:rgba(11,15,20,0.95); backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--border); z-index:10; flex-wrap:wrap;
+  }
+  button.ctrl{
+    background:var(--panel2); color:var(--text); border:1px solid var(--border);
+    padding:8px 14px; border-radius:6px; cursor:pointer; font-size:13px;
+  }
+  button.ctrl:hover{border-color:var(--accent); color:var(--accent);}
+  .wrap{max-width:920px; margin:0 auto; padding:24px;}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    margin-bottom:16px; overflow:hidden;
+  }
+  .card-head{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:16px 20px; cursor:pointer; user-select:none;
+  }
+  .card-head:hover{background:var(--panel2);}
+  .card-title{font-size:16px; font-weight:600; color:#f2f6fa; display:flex; align-items:center; gap:10px;}
+  .tag{
+    font-size:10px; text-transform:uppercase; letter-spacing:1px;
+    background:var(--tag); color:var(--accent); padding:3px 8px; border-radius:4px; font-weight:700;
+  }
+  .tag.arch{color:var(--accent2);}
+  .tag.risk{color:var(--danger);}
+  .chevron{color:var(--muted); transition:transform .2s;}
+  .card.open .chevron{transform:rotate(90deg);}
+  .card-body{
+    max-height:0; overflow:hidden; transition:max-height .25s ease;
+    padding:0 20px;
+  }
+  .card.open .card-body{ max-height:4000px; padding:0 20px 20px; }
+  p{margin:8px 0;}
+  .questions{
+    background:var(--code); border-left:3px solid var(--accent);
+    border-radius:6px; padding:12px 16px; margin:14px 0;
+  }
+  .questions h4{margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--accent);}
+  .questions ul{margin:0; padding-left:18px;}
+  .questions li{margin:6px 0; color:#c8d6e2;}
+  .archnote{
+    background:var(--code); border-left:3px solid var(--accent2);
+    border-radius:6px; padding:12px 16px; margin:14px 0;
+  }
+  .archnote h4{margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--accent2);}
+  .risknote{
+    background:var(--code); border-left:3px solid var(--danger);
+    border-radius:6px; padding:12px 16px; margin:14px 0;
+  }
+  .risknote h4{margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--danger);}
+  pre{
+    background:var(--code); border:1px solid var(--border); border-radius:8px;
+    padding:14px; overflow-x:auto; font-size:12.5px; color:#a9e6c9; line-height:1.5;
+  }
+  code{color:var(--accent2); font-family:'Cascadia Code',Consolas,monospace;}
+  .recall{
+    margin-top:12px; border:1px dashed var(--border); border-radius:6px; padding:10px 14px;
+    cursor:pointer; background:#0e1620;
+  }
+  .recall .q{color:var(--accent2); font-weight:600; font-size:13.5px;}
+  .recall .a{display:none; margin-top:8px; color:var(--muted); font-size:13.5px; border-top:1px solid var(--border); padding-top:8px;}
+  .recall.show .a{display:block;}
+  .recall .hint{font-size:11px; color:var(--muted); float:right;}
+  ul.plain li{margin:4px 0;}
+  .foot{color:var(--muted); text-align:center; padding:30px; font-size:12px;}
+  .progress{font-size:11px; color:var(--muted);}
+  /* notes width expansion - matches learning plan box */
+  .wrap,.container,main,header.hero,header.masthead,nav.toc,section.block,footer{max-width:100%!important;padding-left:24px!important;padding-right:24px!important;}
+</style>
+</head>
+<body>
+<!-- LEARNING PLAN -->
+<div style="margin:24px;background:#0f1520;border:1px solid #1e2836;border-left:4px solid #e0a030;border-radius:8px;padding:24px 28px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;">
+  <div style="color:#e0a030;font-size:13px;font-weight:700;letter-spacing:.08em;margin-bottom:14px;">&#9670; LEARNING PLAN — 2.5 HOURS DAILY</div>
+  <div style="overflow-x:auto;">
+  <table style="width:100%;border-collapse:collapse;font-size:13px;color:#c8d3e0;margin-bottom:18px;white-space:nowrap;">
+    <thead><tr style="color:#7c8ba0;border-bottom:1px solid #1e2836;">
+      <th style="padding:6px 10px;text-align:left;width:48px;">Step</th>
+      <th style="padding:6px 10px;text-align:left;">Activity</th>
+      <th style="padding:6px 10px;text-align:left;">Outcome</th>
+    </tr></thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">1</td><td style="padding:7px 10px;"><b>Complete the Udemy Course</b> — watch videos, understand concepts, don't rush</td><td style="padding:7px 10px;color:#5fbf7f;">Build strong fundamentals</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">2</td><td style="padding:7px 10px;"><b>Practice Everything</b> — complete exercises, assignments, and source code</td><td style="padding:7px 10px;color:#5fbf7f;">Gain hands-on experience</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">3</td><td style="padding:7px 10px;"><b>Revise with these notes</b></td><td style="padding:7px 10px;color:#5fbf7f;">Reinforce concepts and fill knowledge gaps</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">4</td><td style="padding:7px 10px;"><b>Earn the Udemy Certificate</b></td><td style="padding:7px 10px;color:#5fbf7f;">Ensure the course is completed end-to-end</td></tr>
+      <tr><td style="padding:7px 10px;color:#e0a030;font-weight:700;">5</td><td style="padding:7px 10px;"><b>Practise real world tough scenario</b> — scenario-based questions &amp; interview problems</td><td style="padding:7px 10px;color:#5fbf7f;">Develop practical and interview-ready skills</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">1.5 HRS</div>
+      <div style="font-size:12px;color:#c8d3e0;">Udemy Videos + Exercises + Source Code</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Notes Revision</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Scenario-Based Questions &amp; Practical Problems</div>
+    </div>
+  </div>
+  <div style="color:#f0f4f8;font-size:12px;font-weight:600;letter-spacing:.04em;">GOAL: <span style="color:#e0a030;">Learn &#8594; Practice &#8594; Revise &#8594; Complete &#8594; Apply</span></div>
+</div>
+<!-- END LEARNING PLAN -->
+<a href="https://ai.shivawithin.in" id="home-return-btn" title="Back to Home" style="position:fixed;bottom:24px;right:24px;z-index:99999;display:inline-flex;align-items:center;gap:6px;background:#0d1b2a;color:#3fb6ff;border:1px solid #3fb6ff;padding:9px 15px;border-radius:8px;text-decoration:none;font-family:system-ui,-apple-system,sans-serif;font-size:13px;font-weight:600;box-shadow:0 2px 16px rgba(0,0,0,0.5);transition:background 0.2s,box-shadow 0.2s;" onmouseover="this.style.background='#1a2f47';this.style.boxShadow='0 4px 20px rgba(63,182,255,0.25)'" onmouseout="this.style.background='#0d1b2a';this.style.boxShadow='0 2px 16px rgba(0,0,0,0.5)'">&#8592; Home</a>
+
+<header>
+  <div class="eyebrow">Architects Lab · LLM &amp; Agentic AI Bootcamp</div>
+  <h1>Week 1 · Day 3 — Authentication &amp; Subscription with Clerk</h1>
+  <div class="sub">Notes from Ed Donner's Day 3 lecture — bolting user auth (JWT, social login) and a
+  billing/subscription layer onto yesterday's Next.js + FastAPI app, using Clerk. Structured for a Senior
+  Engineering Manager comparing this to enterprise-grade IAM and payment-flow patterns.</div>
+  <a class="course-link" href="https://www.udemy.com/course/generative-and-agentic-ai-in-production/learn/lecture/52442087#overview" target="_blank" rel="noopener noreferrer">
+    ↗ Open on Udemy — Generative and Agentic AI in Production
+  </a>
+</header>
+
+<div class="toolbar">
+  <button class="ctrl" onclick="expandAll()">▾ Expand All</button>
+  <button class="ctrl" onclick="collapseAll()">▸ Collapse All</button>
+  <button class="ctrl" onclick="revealAllRecall()">💡 Reveal All Recall Answers</button>
+  <span class="progress" id="progressLabel"></span>
+</div>
+
+<div class="wrap">
+
+  <!-- SECTION 1 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Recap</span> Where Day 2 Left Off</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>Stack recap from Day 2: Next.js (Pages Router) front end, FastAPI back end, Tailwind CSS for
+      styling, deployed via Vercel with separate <strong>preview</strong> and <strong>production</strong>
+      environments. Repo layout: <code>production</code> (course instructions/guides, cloned once) +
+      <code>SaaS</code> (the actual app, built from scratch) — kept as two separate repos deliberately,
+      rather than nesting SaaS inside production, "to keep things neat and tidy."</p>
+
+      <div class="questions">
+        <h4>Question worth sitting with</h4>
+        <ul>
+          <li>Day 3 explicitly flags that Weeks 3–4 will introduce yet more separate repos — is that
+          repo-per-project sprawl a fair trade for teaching clarity, or would you already be pushing back on
+          this structure if a squad proposed it for a real production system?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Auth</span> Why Clerk, and What JWT Is Doing Under the Hood</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>Clerk is chosen as a lightweight, powerful auth platform (AWS has its own more sophisticated
+      built-in user auth, but isn't used here). Users sign in via email or social auth (Google, GitHub,
+      Apple). Under the hood, Clerk issues a <strong>JWT (JSON Web Token)</strong> that the front end
+      attaches to backend requests to prove "this is a signed-in user" — treated deliberately as a black
+      box for this course ("ask ChatGPT if you want the deep dive").</p>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>The instructor's choice to explicitly not go down the JWT rabbit hole is itself a useful signal:
+        for a demo/teaching app, trusting a managed IAM provider's token issuance is fine. In a regulated
+        fintech context, though, this is exactly the boundary you can't treat as a black box — token
+        expiry/rotation policy, audience/issuer validation, and where the JWT secret material lives are all
+        things your team would need to own explicitly, not delegate blindly to a third-party's defaults.</p>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: What mechanism does the front end use to prove to the back end that a request comes from a signed-in user? <span class="hint">tap to reveal</span></div>
+        <div class="a">A JWT (JSON Web Token) issued by Clerk, attached to backend requests, which the FastAPI backend verifies using the fastapi-clerk-auth library before allowing access to protected routes.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Setup</span> Wiring Clerk Into the App — The Steps</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <pre>
+1. Create Clerk account → sign up (Google/GitHub) → Clerk dashboard
+2. Create application "SaaS" → choose sign-in methods (email, Google, GitHub)
+3. Install SDKs:
+     npm install @clerk/nextjs        (front end)
+     npm install fetch-event-source   (streaming, by Microsoft)
+4. Collect 3 keys from Clerk dashboard → Configure → API Keys:
+     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY   (safe to expose client-side)
+     CLERK_SECRET_KEY                    (server-side only)
+     JWT verification URL                (used by the backend)
+5. Store all 3 in .env.local (auto-covered by .gitignore — never pushed to the repo)
+6. Wrap the whole app in &lt;ClerkProvider&gt; inside _app.tsx
+7. Create a protected route: pages/product.tsx (only for logged-in users)
+8. Rebuild pages/index.tsx as a public landing page using Clerk's
+   &lt;SignedIn&gt; / &lt;SignedOut&gt; components — Clerk decides which renders
+9. Backend: add fastapi-clerk-auth to requirements.txt
+   → route now requires valid credentials before executing
+10. Push the same 3 keys to Vercel: vercel env add ... (×3, all environments)
+11. Test locally: vercel dev  (runs the JS/Next.js part only — Python
+    backend does NOT run locally this way, so LLM calls can't be tested locally)
+12. In Vercel → Settings → Deployment Protection: turn OFF Vercel's own
+    auth wall, since Clerk is now the auth layer — don't stack two auth systems
+13. vercel --prod → deploy
+      </pre>
+
+      <div class="risknote">
+        <h4>Risk Flag</h4>
+        <p>Two very "one typo away from disaster" moments are called out explicitly: (1) the three env var
+        names must match exactly what Clerk expects, or auth silently breaks; (2) forgetting to disable
+        Vercel's own Deployment Protection after adding Clerk means visitors hit Vercel's auth wall <em>before</em>
+        ever reaching Clerk's — a classic "two authentication layers stacked without realizing it" misconfiguration.</p>
+      </div>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>Step 12 is a small but real lesson in layered-security bookkeeping — when you introduce a new
+        auth layer, you must also audit and retire whatever the previous layer was doing, or you end up with
+        silent double-gating (annoying) or, worse, a forgotten permissive layer nobody remembers to check
+        (dangerous). Worth a mental checklist item any time IDFC introduces a new auth/session layer on top
+        of an existing one across your 80+ microservices: "what does this replace, and did we actually turn
+        the old thing off?"</p>
+      </div>
+
+      <div class="questions">
+        <h4>Questions worth sitting with</h4>
+        <ul>
+          <li>Where in your own systems might two access-control layers currently be silently stacked
+          because nobody explicitly retired the older one after a newer one was introduced?</li>
+        </ul>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: Why does <code>vercel dev</code> not let you fully test the app locally? <span class="hint">tap to reveal</span></div>
+        <div class="a">Because vercel dev only runs the JavaScript/Next.js front-end part locally — it does not run the Python FastAPI backend locally, so anything depending on the backend (like the LLM call) can't be tested that way; you can only verify the Vercel connection and front-end auth flow.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 4 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Billing</span> Adding Subscriptions — Clerk Billing</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>Clerk doubles as a billing platform, either through its own built-in <strong>Clerk payment
+      gateway</strong> (used here, test mode only) or by connecting a real <strong>Stripe</strong> account
+      for production payments. Setup: Clerk dashboard → Configure → Subscription Plans → create a plan
+      (name, key like <code>premium_subscription</code> — underscores only, no hyphens — monthly price,
+      optional annual discount).</p>
+
+      <pre>
+Front end (product.tsx):
+  &lt;Protect plan="premium_subscription" fallback={...pricing table...}&gt;
+     ...idea generator UI...
+  &lt;/Protect&gt;
+
+  → If subscribed: idea generator renders
+  → If not: Clerk-generated pricing table renders instead (auto-priced
+    correctly — unlike the hardcoded price on the landing page, which
+    the developer must manually keep in sync)
+      </pre>
+
+      <div class="risknote">
+        <h4>Risk Flag</h4>
+        <p>The landing page's pricing display is hand-written and can drift out of sync with the actual
+        Clerk-configured price (exactly what happens in the demo — $100/month configured in Clerk, but a
+        stale number shown on the public landing page). The <code>&lt;Protect&gt;</code> component's own
+        fallback pricing table, by contrast, is generated live from Clerk's config and can't go stale.</p>
+      </div>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>This is a "single source of truth" lesson in miniature — any place you hardcode a value that's
+        also defined authoritatively somewhere else (a price, a rate, a limit) is a guaranteed future
+        inconsistency bug. The fix here is simple: prefer the live-generated component over the hand-written
+        one wherever both exist. Same principle applies to things like interest rates or fee schedules shown
+        in multiple places across your Wealth/Demat surfaces — one canonical source, everything else reads from it.</p>
+      </div>
+
+      <div class="questions">
+        <h4>Question worth sitting with</h4>
+        <ul>
+          <li>Are there any hardcoded values in IDFC-facing UIs today (fees, rates, limits) that have a
+          canonical source elsewhere and could silently drift the same way this demo's landing-page price did?</li>
+        </ul>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: What's the difference between Clerk's built-in payment gateway and connecting Stripe? <span class="hint">tap to reveal</span></div>
+        <div class="a">Clerk's built-in gateway is the simple, out-of-the-box option (used here, in test mode) — no external payment provider needed. Connecting Stripe is the more sophisticated option for real production payments if you already use or want Stripe specifically; both are accessed through the same Clerk billing configuration.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 5 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Verification</span> The End-to-End Test — Two Personas</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>Two flows were verified live in production:</p>
+      <ul class="plain">
+        <li><strong>Existing subscriber</strong> (Google sign-in, already subscribed from earlier testing) → straight through to the idea generator, no payment prompt.</li>
+        <li><strong>Brand-new user</strong> (signed up fresh via Apple ID) → hit the pricing table → chose the plan → paid with a Clerk test card → payment confirmed → access granted.</li>
+      </ul>
+      <p>A subtle detail: signing in via Apple with the same underlying Gmail address that was already
+      used for Google auth would have been recognized by Clerk as the same person (account linking by
+      email) — the instructor had to use "Hide My Email" specifically to force a genuinely new, distinct user for the test.</p>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>That account-linking behavior — Clerk silently merging identities that share an email across
+        different social-auth providers — is worth flagging as a design decision with real implications:
+        convenient for users, but it means "provider used to sign in" isn't a reliable way to distinguish
+        accounts if identity linking is on. If your own systems ever integrate multi-provider social auth,
+        this is exactly the kind of default behavior to test for explicitly rather than assume.</p>
+      </div>
+
+      <div class="recall" onclick="toggleRecall(this)">
+        <div class="q">Active Recall: Why did the instructor need to use "Hide My Email" when testing Apple sign-in? <span class="hint">tap to reveal</span></div>
+        <div class="a">Because Clerk automatically links accounts that share the same underlying email address across different social-auth providers. Since his Apple ID resolved to the same Gmail address already used for Google sign-in, Clerk would have treated it as the same existing user rather than creating a genuinely new one — so he hid the email to force a distinct new-user test.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 6 -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag">Big Picture</span> What Clerk Just Saved You (And What It Hides)</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>Explicit framing: hand-building social login + Stripe billing from scratch used to be a multi-month,
+      multi-engineer project. Clerk collapsed the auth portion to roughly one lecture and the billing portion
+      to a second. The summarized request flow for <code>/product</code>:</p>
+      <pre>
+1. User hits /product
+2. Clerk checks subscription status (via the JWT + backend credential check)
+3. No subscription → &lt;Protect&gt; renders Clerk's live pricing table
+4. User subscribes → Clerk billing handles payment (test card or real Stripe)
+5. Subscribed → idea generator UI renders
+6. User can self-manage their subscription later via Clerk's account UI
+      </pre>
+
+      <div class="archnote">
+        <h4>Architect's Lens</h4>
+        <p>The speed here is real, but it's speed bought by fully outsourcing identity and payment trust
+        boundaries to a third party. That's a completely reasonable trade for a demo or an early-stage SaaS —
+        but worth naming explicitly as a build-vs-buy decision with real long-term lock-in: your user identity
+        graph and your payment/subscription data now live in Clerk's system, not yours. For a regulated
+        institution, that's precisely the kind of dependency that needs its own risk review (data residency,
+        vendor lock-in, exit strategy) before it goes anywhere near production — a good contrast case to bring
+        up if this course's "just use Clerk" framing ever gets pitched internally as a pattern for anything
+        beyond a prototype.</p>
+      </div>
+
+      <div class="questions">
+        <h4>Questions worth sitting with</h4>
+        <ul>
+          <li>If a squad proposed "just use Clerk" for a real IDFC-facing product, what would your first three
+          questions be — data residency, vendor exit strategy, and audit/compliance controls being the obvious
+          candidates? What else would you add?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 7: NEXT UP -->
+  <div class="card">
+    <div class="card-head" onclick="toggleCard(this)">
+      <div class="card-title"><span class="tag arch">Preview</span> What Day 4 Will Likely Cover</div>
+      <span class="chevron">▸</span>
+    </div>
+    <div class="card-body">
+      <p>Day 3 closes at "15% complete." The stated next step: swap the generic "idea generator" for real
+      business functionality in the <strong>healthcare</strong> vertical — same auth + subscription
+      scaffolding, now applied to a domain-specific product, with the explicit challenge to make it "more
+      sophisticated" than the toy version built so far.</p>
+
+      <div class="questions">
+        <h4>Questions to answer once you watch Day 4</h4>
+        <ul>
+          <li>Does the healthcare vertical introduce any new compliance-shaped requirements (HIPAA-equivalent
+          handling, PII treatment) that this app's current architecture doesn't yet account for — and if so,
+          how does the course address that, if at all?</li>
+          <li>Does the <code>&lt;Protect&gt;</code> / subscription-plan pattern extend naturally to
+          feature-gating (e.g. "premium users get X, free users get Y") within a single healthcare product,
+          or does it need a different mechanism once real business logic branches on subscription tier?</li>
+          <li>Is the healthcare app still on the same Vercel serverless deployment shape, or does its
+          business logic complexity push toward a different backend hosting model?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="foot">Architects Lab · Study Notes · Source: "Gen AI &amp; Agentic AI in Production," Week 1 Day 3 (Ed Donner)</div>
+
+<script>
+  function toggleCard(headEl){
+    const card = headEl.parentElement;
+    card.classList.toggle('open');
+    updateProgress();
+  }
+  function toggleRecall(el){
+    el.classList.toggle('show');
+  }
+  function expandAll(){
+    document.querySelectorAll('.card').forEach(c=>c.classList.add('open'));
+    updateProgress();
+  }
+  function collapseAll(){
+    document.querySelectorAll('.card').forEach(c=>c.classList.remove('open'));
+    updateProgress();
+  }
+  function revealAllRecall(){
+    document.querySelectorAll('.recall').forEach(r=>r.classList.add('show'));
+  }
+  function updateProgress(){
+    const total = document.querySelectorAll('.card').length;
+    const open = document.querySelectorAll('.card.open').length;
+    document.getElementById('progressLabel').textContent = open + ' / ' + total + ' sections expanded';
+  }
+  updateProgress();
+</script>
+
+</body>
+</html>

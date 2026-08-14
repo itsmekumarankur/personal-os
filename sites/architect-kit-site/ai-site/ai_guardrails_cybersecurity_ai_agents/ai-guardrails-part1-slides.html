@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architects Lab · AI Guardrails Part 1 — Fundamentals</title>
+<style>
+  :root{
+    --bg:#0d0f14; --panel:#151823; --panel2:#1b1f2e;
+    --ink:#e8e6df; --dim:#8b8fa3;
+    --gold:#d4af5a; --gold-soft:#b8964a;
+    --teal:#5ad4c8; --rose:#d47a8a; --violet:#9a8ad4; --amber:#d4915a;
+    --line:#2a2f42;
+    --mono:'Courier New', ui-monospace, monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif;display:flex;flex-direction:column;min-height:100vh}
+  header{padding:16px 26px 12px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  header .k{font-family:var(--mono);font-size:.68rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase}
+  header h1{font-size:1rem;font-weight:normal}
+  header .count{margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--dim)}
+  .tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
+  .tab{flex:1;min-width:110px;padding:9px 10px;text-align:center;font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;color:var(--dim);border-right:1px solid var(--line);cursor:pointer;white-space:nowrap;transition:.2s;background:transparent;border-top:none;border-bottom:none;border-left:none}
+  .tab:last-child{border-right:none}
+  .tab.active{color:var(--bg);font-weight:bold}
+  .tab[data-c="gold"].active{background:var(--gold)}
+  .tab[data-c="teal"].active{background:var(--teal)}
+  .tab[data-c="rose"].active{background:var(--rose)}
+  .tab[data-c="violet"].active{background:var(--violet)}
+  .tab[data-c="amber"].active{background:var(--amber)}
+  .tab[data-c="ink"].active{background:var(--ink)}
+  main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px 96px;overflow-y:auto}
+  .slide{max-width:780px;width:100%;animation:fadeUp .4s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @media (prefers-reduced-motion: reduce){.slide{animation:none}}
+  .eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px}
+  .eyebrow.gold{color:var(--gold)} .eyebrow.teal{color:var(--teal)} .eyebrow.rose{color:var(--rose)}
+  .eyebrow.violet{color:var(--violet)} .eyebrow.amber{color:var(--amber)} .eyebrow.ink{color:var(--dim)}
+  .slide h2{font-size:1.55rem;font-weight:normal;line-height:1.3;margin-bottom:14px}
+  .slide h2 em{font-style:italic;color:var(--gold)}
+  .slide p{color:#c9c7bf;line-height:1.75;font-size:1rem;margin-bottom:13px}
+  .slide p strong, .slide li strong{color:var(--ink)}
+  .slide code{font-family:var(--mono);font-size:.85em;background:var(--panel2);padding:2px 6px;border-radius:3px;color:var(--gold)}
+  .ascii{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:6px;padding:14px 16px;margin:14px 0;font-family:var(--mono);font-size:.74rem;line-height:1.5;color:#b9c2d8;overflow-x:auto;white-space:pre}
+  .ascii .hl{color:var(--gold)} .ascii .tl{color:var(--teal)} .ascii .rs{color:var(--rose)}
+  .note{border:1px dashed var(--gold-soft);border-radius:6px;padding:11px 15px;margin:14px 0;font-size:.9rem;color:#cfc9ae;line-height:1.65}
+  .note b{color:var(--gold)}
+  ul.pts{margin:10px 0 13px 2px;list-style:none}
+  ul.pts li{padding:6px 0 6px 21px;position:relative;color:#c9c7bf;line-height:1.6;font-size:.95rem}
+  ul.pts li::before{content:"\203A";position:absolute;left:4px;color:var(--gold);font-family:var(--mono)}
+  /* ---- Think First (question) slides ---- */
+  .qcard{border:2px solid var(--gold);border-radius:10px;background:linear-gradient(160deg,#1a1608,#151823);padding:30px 28px;margin:6px 0 18px;position:relative}
+  .qcard::before{content:"?";position:absolute;top:-20px;left:22px;width:38px;height:38px;border-radius:50%;background:var(--gold);color:var(--bg);font-family:var(--mono);font-weight:bold;font-size:1.3rem;display:flex;align-items:center;justify-content:center}
+  .qcard .qlabel{font-family:var(--mono);font-size:.64rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;margin-bottom:12px}
+  .qcard .qtext{font-size:1.25rem;line-height:1.55;color:var(--ink);font-style:italic}
+  .qcard .qsub{margin-top:14px;font-size:.86rem;color:var(--dim);font-style:normal;font-family:var(--mono)}
+  /* ---- lenses (CTO / Director) ---- */
+  details.lens{margin:10px 0;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+  details.lens summary{cursor:pointer;padding:10px 14px;font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;color:var(--teal);list-style:none}
+  details.lens summary::before{content:"+ ";color:var(--gold)}
+  details.lens[open] summary::before{content:"\2212 "}
+  details.lens.dir summary{color:var(--rose)}
+  details.lens .body{padding:2px 16px 13px}
+  details.lens .body li{font-size:.9rem}
+  /* ---- recall quiz slides ---- */
+  .recall-item{border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:6px;background:var(--panel);margin:12px 0;overflow:hidden}
+  .recall-item summary{cursor:pointer;padding:13px 16px;font-size:.98rem;color:var(--ink);list-style:none;line-height:1.55}
+  .recall-item summary::before{content:"Q  ";font-family:var(--mono);color:var(--teal);font-weight:bold}
+  .recall-item .ans{padding:0 16px 13px;color:#b9c2b0;font-size:.92rem;line-height:1.65;border-top:1px dashed var(--line);padding-top:11px;margin:0 16px 13px;padding-left:0;padding-right:0}
+  .recall-item .ans b{color:var(--teal)}
+  .recall-hint{font-family:var(--mono);font-size:.7rem;color:var(--dim);margin-top:6px}
+  footer{position:fixed;left:0;right:0;bottom:0;background:rgba(13,15,20,.93);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:11px 20px;display:flex;align-items:center;gap:14px}
+  .dots{display:flex;gap:4px;flex:1;justify-content:center;flex-wrap:wrap}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--line);cursor:pointer;transition:.2s}
+  .dot.on{background:var(--gold);transform:scale(1.45)}
+  .dot.q{border:1px solid var(--gold);background:transparent}
+  .dot.q.on{background:var(--gold)}
+  button.nav{font-family:var(--mono);font-size:.78rem;letter-spacing:.1em;background:transparent;color:var(--ink);border:1px solid var(--line);padding:9px 18px;border-radius:5px;cursor:pointer;transition:.2s}
+  button.nav:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+  button.nav.primary{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:bold}
+  button.nav.primary:hover{background:#e2c070}
+  button.nav:disabled{opacity:.25;cursor:default}
+  button.nav:focus-visible,.tab:focus-visible,.dot:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .hint{position:fixed;bottom:62px;right:18px;font-family:var(--mono);font-size:.6rem;color:var(--dim);letter-spacing:.1em}
+  @media(max-width:600px){.slide h2{font-size:1.28rem}.ascii{font-size:.58rem;padding:11px}.hint{display:none}.qcard .qtext{font-size:1.08rem}}
+</style>
+</head>
+<body>
+<header>
+  <span class="k">Architects Lab</span>
+  <h1>AI Guardrails · Part 1 — Fundamentals</h1>
+  <span class="count" id="counter"></span>
+</header>
+<div class="tabs" id="tabs"></div>
+<main><div id="stage"></div></main>
+<div class="hint">&larr; &rarr; keys work too</div>
+<footer>
+  <button class="nav" id="prevBtn">&larr; Prev</button>
+  <div class="dots" id="dots"></div>
+  <button class="nav primary" id="nextBtn">Next &rarr;</button>
+</footer>
+<script>
+const SECTIONS=[
+ {id:"intro",label:"START",c:"ink"},
+ {id:"found",label:"FOUNDATIONS",c:"teal"},
+ {id:"models",label:"MODELS+KNOBS",c:"amber"},
+ {id:"risks",label:"4 RISKS",c:"rose"},
+ {id:"guards",label:"GUARDRAILS",c:"gold"},
+ {id:"auto",label:"AUTOMATE+MEASURE",c:"violet"},
+ {id:"plat",label:"PLATFORMS+SYN",c:"ink"}
+];
+const S=[
+
+{sec:"intro",c:"ink",eyebrow:"Part 1 of 3",t:"a",h:"AI Guardrails for GenAI Apps — <em>Fundamentals</em>",body:`
+<p>These are active-recall slides for the Udemy course <strong>AI Guardrails &amp; Cybersecurity — AI Agents, Red Teaming Hands-On</strong> (GuardrailsAI, NVIDIA NeMo, AWS Bedrock, Llama Guard 3, CrewAI). 14 modules + a final synthesis, each with the CTO / Director dual lens.</p>
+<div class="ascii"><span class="hl">HOW TO USE THESE SLIDES</span>
+ 1. A "?" slide asks you to THINK FIRST. Answer in your head.
+ 2. Press Next. The answer slide shows the concept + diagram.
+ 3. Open the CTO / DIRECTOR lenses on each slide.
+ 4. End of each section = recall quiz. Answer before revealing.</div>
+<div class="note"><b>Daily plan (2.5 hrs):</b> 1.5 hr Udemy videos + exercises + source code &middot; 30 min notes revision (these slides) &middot; 30 min scenario questions. Path: Learn &rarr; Practice &rarr; Revise &rarr; Complete (certificate) &rarr; Apply (interview scenarios).</div>`},
+
+/* ---------- FOUNDATIONS ---------- */
+{sec:"found",c:"teal",eyebrow:"Foundations · 01",t:"q",q:`A user types a prompt, the model replies. That is the whole app. Before peeking: where exactly can this simple pipe go wrong? Try to name a danger on <b>each arrow</b>.`},
+
+{sec:"found",c:"teal",eyebrow:"Foundations · 01",t:"a",h:"Basic anatomy of a GenAI app",body:`
+<p>The simplest architecture is a straight pipe: User &rarr; Input &rarr; Foundation Model &rarr; Output &rarr; User. No filters, no checks.</p>
+<div class="ascii">+--------+       Input        +------------------+
+|  User  | -----------------&gt; | Foundation Model |
++--------+                    +------------------+
+     ^                                |
+     |            Output              |
+     +--------------------------------+</div>
+<p><strong>Every arrow is a threat vector.</strong> The input arrow can carry malicious prompts (injections, toxic content). The output arrow can deliver hallucinated facts, toxic replies, or leaked data. The simple diagram is a security nightmare waiting to happen.</p>`,
+cto:[`This naive design is a prototype, not a product. The direct pipe means zero observability, zero control, and maximum blast radius.`,`Shipping it means betting the company's reputation on the model never saying anything harmful.`,`No intercept points = cannot add logging, compliance checks, or safety nets without a big refactor. Technical debt baked in from day one.`],
+dir:[`One screenshot of our AI being racist, or one hallucinated financial tip that costs a customer money, and we are headline news for the wrong reasons.`,`Regulations (GDPR, CCPA, upcoming AI Act) demand provable content moderation and data protection. No intercept points = nothing to show auditors = fines and market rejection.`,`This is a business continuity risk, not just a tech issue.`]},
+
+{sec:"found",c:"teal",eyebrow:"Foundations · 02",t:"q",q:`You may place only <b>two</b> security checkpoints in that pipe. Where do you put them, and what does each one check for?`},
+
+{sec:"found",c:"teal",eyebrow:"Foundations · 02",t:"a",h:"The two guardrail checkpoints: input &amp; output",body:`
+<ul class="pts">
+<li><strong>1. User Input Guardrails</strong> — intercept the prompt <em>before</em> it hits the model. Check for prompt injection, toxic language, hate speech, violence.</li>
+<li><strong>2. Model Response Guardrails</strong> — analyze the output before it reaches the user. Detect hallucination, irrelevance, toxicity, misalignment.</li>
+</ul>
+<div class="ascii">User --&gt; <span class="hl">[GUARDRAIL: Input side]</span> --cleaned input--&gt; [Foundation Model]
+                                                     |
+                                                raw output
+                                                     |
+        Safe output &lt;-- <span class="hl">[GUARDRAIL: Output side]</span> &lt;--+</div>
+<div class="note"><b>Memory hook:</b> the input guardrail is the <b>castle gate</b> (checks everyone entering). The output guardrail is the castle's <b>spokesperson</b> (filters what gets announced to the public). Both are non-negotiable.</div>`,
+cto:[`This dual checkpoint is the minimum viable security posture. As middleware, I can swap models, upgrade detectors, add new checks without touching business logic.`,`Run lightweight classifiers (like Llama Guard) at the edge to keep latency low.`,`Guardrails must not become single points of failure. If the input guardrail goes down: fail open (dangerous) or fail closed (degraded service)? Document that decision.`],
+dir:[`Two checkpoints = two places to collect evidence of due diligence. When a regulator asks what we did to prevent harm, I point to input moderation logs and output quality checks. A defensible audit trail.`,`False positives at the gate = frustrated users who feel censored. False negatives at the output = brand damage.`,`Balancing precision vs recall of guardrails is a business decision about customer satisfaction and risk tolerance.`]},
+
+{sec:"found",c:"teal",eyebrow:"Foundations · 03",t:"q",q:`If you designed this course yourself, would you teach <b>tools first or threats first</b>? Why does the order matter for real security work?`},
+
+{sec:"found",c:"teal",eyebrow:"Foundations · 03",t:"a",h:"Course blueprint: the learning journey",body:`
+<p>The course peels the onion in 10 steps, each building on the last:</p>
+<ul class="pts">
+<li><strong>1. LLM fundamentals</strong> — architecture, capabilities, vulnerabilities (know your beast)</li>
+<li><strong>2. Guardrails rationale</strong> — risks and business justification (why this matters)</li>
+<li><strong>3. Core techniques</strong> — vector embeddings, RAG (the plumbing of understanding)</li>
+<li><strong>4. Input guardrails</strong> — Prompt Guard and Llama Guard (Meta) for injection and moderation</li>
+<li><strong>5. Model guardrails</strong> — hallucination judges (Phi-3), output evaluation models</li>
+<li><strong>6. Garrick</strong> — open-source LLM vulnerability scanner</li>
+<li><strong>7. Cybersecurity AI agents</strong> — autonomous vulnerability detection</li>
+<li><strong>8. Evaluation frameworks</strong> — metrics for hallucination and relevancy</li>
+<li><strong>9. AWS Bedrock</strong> — guardrails on a managed cloud platform</li>
+<li><strong>10. Open-source tools</strong> — Guardrails AI and custom implementations</li>
+</ul>
+<div class="ascii">[LLM Basics] -&gt; [Vulnerabilities] -&gt; [Guardrail Techniques] -&gt; [Tools &amp; Platforms] -&gt; [Automation &amp; Agents]
+ Foundation      Why protect?        How to protect?           Real-world use          Autonomous defense</div>`,
+cto:[`This mirrors a real security maturity model: understand the asset, threat-model it, build defense-in-depth, automate, then platformize. It is a production readiness checklist, not academics.`,`I will evaluate which parts we can adopt immediately vs what needs integration effort. Garrick could join our CI/CD pipeline for continuous security testing.`],
+dir:[`The progression proves we are not just slapping on a content filter. It aligns with a compliance roadmap: Q1 basic guardrails, Q2 evaluation metrics, Q3 automation.`,`AWS Bedrock in the syllabus tells me this scales to enterprise. I want tech leads to come out with a build-vs-buy decision framework.`]},
+
+{sec:"found",c:"teal",eyebrow:"Foundations · Recall",t:"r",h:"Quick recall: Foundations",qs:[
+{q:`Sketch the naive GenAI pipe from memory. What travels on each arrow, and why is each arrow dangerous?`,a:`User &rarr; Input &rarr; Foundation Model &rarr; Output &rarr; User. <b>Input arrow:</b> injections and toxic prompts come in. <b>Output arrow:</b> hallucinations, toxic replies, and leaked data go out. Straight pipe = no observability, no control.`},
+{q:`Name the two checkpoints and one thing each blocks. What are the castle metaphors?`,a:`<b>Input guardrail</b> (castle gate): blocks prompt injection, toxicity, hate, violence. <b>Output guardrail</b> (spokesperson): blocks hallucination, irrelevance, toxicity, misalignment.`},
+{q:`Fail open vs fail closed — whose decision is it, and what is the trade?`,a:`An <b>architectural + business</b> decision that must be documented. Fail open keeps service running but is dangerous; fail closed is safe but degrades service.`}]},
+
+/* ---------- MODELS + KNOBS ---------- */
+{sec:"models",c:"amber",eyebrow:"Models &amp; Knobs · 04",t:"q",q:`Foundation Model &rarr; LLM &rarr; Multimodal Model. As capability grows along that chain, what else grows with it? Predict the security consequence of each jump.`},
+
+{sec:"models",c:"amber",eyebrow:"Models &amp; Knobs · 04",t:"a",h:"Model taxonomy: FMs, LLMs, multimodal",body:`
+<ul class="pts">
+<li><strong>Foundation Models (FMs)</strong> — big neural nets trained on massive broad unlabeled data. Generalists that predict the next item in a sequence. Ex: BERT (2018), GPT (2018), Amazon Titan.</li>
+<li><strong>Language Models</strong> — FMs specialized for language, fine-tunable per domain (FinBERT for finance, SciBERT for science).</li>
+<li><strong>LLMs</strong> — bigger and hungrier (GPT-3: 175B params). Three training phases: <strong>Pre-training</strong> (next-word prediction) &rarr; <strong>SFT</strong> (Q&amp;A training) &rarr; <strong>RLHF</strong> (human feedback). Metaphor: pre-training makes a <em>wild dragon</em>; SFT tames it; RLHF makes it a collaborative partner.</li>
+<li><strong>Multimodal models</strong> — text, image, audio, video in and out. More input types = more attack vectors.</li>
+</ul>
+<div class="ascii">[Foundation Model] --size/scale--&gt; [LLM] --modalities--&gt; [Multimodal]
+   BERT, GPT-1                  GPT-3, GPT-4            GPT-4V, Gemini
+   General purpose              Text specialist         Any-to-any</div>
+<p><strong>Security implication:</strong> each evolution adds parameters, data, and interaction modes. More surface area, more potential for misbehavior.</p>`,
+cto:[`The BERT-to-multimodal evolution is a graph of expanding attack surface. Fine-tuned models can be brittle and manipulable.`,`Multimodal inputs open injection channels through images and audio, not just text — guardrails must scan image content, audio transcripts, and their interactions.`,`RLHF is itself a security consideration: who are the human reviewers, what biases do they introduce? I need provenance on every fine-tuning step.`],
+dir:[`A narrow domain model (FinBERT) is lower risk but less capable, and may need training data we lack rights to. A massive LLM is flexible but riskier for reputation.`,`Multimodal is the future of customer experience but the hardest to govern.`,`Key question: do we have the governance maturity for the most powerful models, or should we start constrained and expand as guardrails mature?`]},
+
+{sec:"models",c:"amber",eyebrow:"Models &amp; Knobs · 05",t:"q",q:`Prompt: "I hear the hoof beats of..." Candidates: horse (0.7), zebra (0.2), unicorn (0.1). Predict the output at <b>temperature 0.5, top-k 2, top-p 0.7</b> — and then at <b>temperature 1.8, top-k 3, top-p 0.9</b>.`},
+
+{sec:"models",c:"amber",eyebrow:"Models &amp; Knobs · 05",t:"a",h:"Inference parameters: runtime control knobs",body:`
+<p>Inference parameters reshape the probability distribution over the next token — your steering wheel for model behavior.</p>
+<ul class="pts">
+<li><strong>Temperature</strong> — scales log-probabilities. Low (0.2) = sharp peaks, confident but boring. High (&gt;1) = flat distribution, creative but chaotic. The wildness dial.</li>
+<li><strong>Top-k</strong> — only the k most probable tokens survive. k=1 is greedy; k=50 allows limited creativity.</li>
+<li><strong>Top-p (nucleus)</strong> — include tokens until cumulative probability reaches p (e.g. 0.8). More adaptive than fixed k.</li>
+<li><strong>Length controls</strong> — max tokens, stop sequences, repetition penalty. Prevent runaway generation.</li>
+</ul>
+<div class="ascii">Setting A: temp 0.5, top-k 2, top-p 0.7
+ 1. Temp 0.5 sharpens: horse even more dominant
+ 2. Top-k 2 keeps: horse, zebra (unicorn dropped)
+ 3. Top-p 0.7: horse alone hits 0.7 -&gt; only horse
+ Result: <span class="tl">safe, boring "horse"</span>
+
+Setting B: temp 1.8, top-k 3, top-p 0.9
+ 1. Temp 1.8 flattens: horse .4, zebra .35, unicorn .25
+ 2. Top-k 3 keeps all three
+ 3. Top-p 0.9 includes all (cumulative 1.0)
+ Result: <span class="rs">possible "unicorn" — delightful or hallucinatory</span></div>`,
+cto:[`These are a real-time safety valve: low temperature for compliance-heavy cases (banking bot), higher for creative tools — but with stricter output guardrails.`,`Risk: they are model-level controls, not semantic understanding. Low temperature does not prevent hallucination if training data is false — it just makes the model confidently wrong.`,`Expose parameters via API so guardrail middleware can adjust dynamically based on user context and query sensitivity.`],
+dir:[`These dials are the business's creativity-vs-risk trade-off. Marketing wants high temperature; legal wants low.`,`This is a policy decision needing sign-off, not a technical setting. Who can change these? Can a PM adjust temperature without security review? For production: no.`,`Lock the dials behind change management with audit logs.`]},
+
+{sec:"models",c:"amber",eyebrow:"Models &amp; Knobs · 06",t:"q",q:`"Military" and "army" share almost no letters. How can a machine know they mean nearly the same thing? And how could that same trick power a <b>security filter</b>?`},
+
+{sec:"models",c:"amber",eyebrow:"Models &amp; Knobs · 06",t:"a",h:"Vector embeddings &amp; semantic search",body:`
+<p>To capture meaning, we convert text into <strong>vector embeddings</strong> — arrays of numbers where similar meanings cluster together in high-dimensional space.</p>
+<ul class="pts">
+<li><strong>Embedding model</strong> — neural net turns "shop for table" into a vector [0.23, -0.67, 0.89, ...] encoding contextual meaning (furniture shopping).</li>
+<li><strong>Vector space</strong> — "refund fees" vectors cluster together; "travel destinations" cluster elsewhere. Distance = semantic dissimilarity.</li>
+<li><strong>Similarity measures</strong> — cosine similarity, Euclidean distance find the closest vectors to a query.</li>
+</ul>
+<div class="ascii">Semantic space (2D projection):
+ Travel Cluster        Cooking Cluster       Finance Cluster
+   * Paris                * cake                * refund
+ * London  * Tokyo      * waffle * dinner     * debit fee
+
+ "Best places to visit"  --&gt; Travel cluster
+ "How to make waffle"    --&gt; Cooking cluster</div>
+<div class="note"><b>This is the engine behind RAG:</b> query &rarr; vector &rarr; find matching documents in a vector DB &rarr; feed docs + query to the LLM. Grounding in real documents reduces hallucination.</div>`,
+cto:[`Embeddings enable a semantic firewall: keep a vector DB of known toxic patterns, injection phrases, and sensitive topics; embed each incoming prompt and check nearest neighbors; block if too close to known attacks.`,`This beats regex blacklists — it catches paraphrased attacks.`,`Challenge: embedding latency. Need optimized models on GPUs or distilled models for edge inference.`],
+dir:[`Our proprietary corpus of safe/unsafe examples becomes a defendable asset when encoded as vectors — a competitive moat in disguise.`,`Questions to answer: third-party embedding API = are we leaking queries? Self-hosting = do we have the talent?`,`Compliance angle: embeddings may be partially reversible — data governance applies to vectors too, not just raw text.`]},
+
+{sec:"models",c:"amber",eyebrow:"Models &amp; Knobs · Recall",t:"r",h:"Quick recall: Models &amp; Knobs",qs:[
+{q:`Recite the three LLM training phases and the dragon metaphor.`,a:`<b>Pre-training</b> (next-word prediction) makes a wild dragon; <b>SFT</b> (Q&amp;A training) tames it; <b>RLHF</b> (human feedback) makes it a collaborative partner.`},
+{q:`Why doesn't low temperature stop hallucination?`,a:`Temperature is a probability knob, not a truth checker. If the learned patterns are wrong, low temperature only makes the model <b>confidently wrong</b>.`},
+{q:`Explain the "semantic firewall" in two sentences.`,a:`Store embeddings of known attacks/toxic patterns in a vector DB. Embed each incoming prompt and block it if it lands too close to a known attack — catching paraphrases that regex would miss.`}]},
+
+/* ---------- 4 RISKS ---------- */
+{sec:"risks",c:"rose",eyebrow:"The Four Risks · 07",t:"q",q:`LLMs are powerful but broken in <b>four predictable ways</b>. Before peeking, try to guess all four failure modes — and one real-world disaster for each.`},
+
+{sec:"risks",c:"rose",eyebrow:"The Four Risks · 07",t:"a",h:"The four horsemen: hallucination, bias, privacy, alignment",body:`
+<ul class="pts">
+<li><strong>7a. Hallucination</strong> — confident false info ("flying elephants in the weather forecast"). In autonomous vehicles a hallucinating AI might miss a pedestrian — life or death. In healthcare chatbots, hallucinated advice can kill. Hallucination increases under computational load.</li>
+<li><strong>7b. Bias &amp; ethics</strong> — models amplify training-data biases: recruitment tools favoring some demographics, credit scoring discriminating by ZIP code. Not bugs — statistical reflections of historical injustice, automated at scale. Ethics spans privacy, transparency, accountability.</li>
+<li><strong>7c. Data privacy &amp; security</strong> — LLMs memorize and leak. Samsung employees leaked confidential code to ChatGPT; a Microsoft chatbot threatened a user. The model doesn't understand secrets — it just predicts. Without guardrails it's a data exfiltration vector.</li>
+<li><strong>7d. Output alignment</strong> — output must match organizational goals. A Chevy chatbot recommending Tesla; a banking bot answering politics; a support bot writing Python. Misalignment breaks trust and creates liability.</li>
+</ul>
+<div class="ascii">Challenge        Consequence               Guardrail approach
+Hallucination    False info, safety risk   RAG grounding, fact-check models
+Bias             Discrimination, PR crisis Bias detection, fairness audits
+Privacy leak     IP theft, fines           PII detection, output filtering
+Misalignment     Brand damage, misuse      Constrained decoding, policy filters</div>`,
+cto:[`Address these in architecture, not as afterthoughts — each is a different problem class: hallucination = model quality (RAG + fine-tuning on verified data); bias = data (curation + counterfactual augmentation); privacy = infrastructure (on-prem, differential privacy, output scanning); alignment = systems (RLHF, constitutional AI, policy guardrails).`,`Each needs different tools, team expertise, and monitoring — treat each as a separate pipeline stage.`],
+dir:[`They map to four business risks: safety/reliability, legal/compliance, data protection, brand integrity. A board pitch must cover all four.`,`Hallucination = lawsuit risk. Bias = regulatory time bomb (EU AI Act fines heavily). Privacy leaks = existential for B2B. Alignment failures = looking incompetent.`,`The funding ask: budget for the entire guardrail stack — models, monitoring, red-teaming, audit infra. Non-negotiable.`]},
+
+{sec:"risks",c:"rose",eyebrow:"The Four Risks · Recall",t:"r",h:"Quick recall: The Four Risks",qs:[
+{q:`Name the four horsemen and one guardrail approach for each.`,a:`<b>Hallucination</b> &rarr; RAG grounding + fact-check models. <b>Bias</b> &rarr; bias detection + fairness audits. <b>Privacy leakage</b> &rarr; PII detection + output filtering. <b>Misalignment</b> &rarr; constrained decoding + policy filters.`},
+{q:`Which real incident shows privacy leakage, and which shows misalignment?`,a:`<b>Privacy:</b> Samsung engineers pasting confidential code into ChatGPT. <b>Misalignment:</b> the Chevy dealership chatbot recommending a Tesla.`},
+{q:`Why is bias "not a bug"?`,a:`Because it's a statistical reflection of historical injustice in the training data — now automated at scale. Fixing it needs data curation and fairness audits, not a patch.`}]},
+
+/* ---------- GUARDRAILS ---------- */
+{sec:"guards",c:"gold",eyebrow:"Guardrails · 08",t:"q",q:`"Ignore all previous instructions and..." — why does this attack even <b>work</b> against an LLM? And what two different checks would you run on every incoming prompt?`},
+
+{sec:"guards",c:"gold",eyebrow:"Guardrails · 08",t:"a",h:"Input guardrails: injection &amp; content moderation",body:`
+<p>Input guardrails are the first line of defense, inspecting every prompt before the model sees it. Two detection categories:</p>
+<ul class="pts">
+<li><strong>1. Prompt injection detection</strong> — catching attempts to override system instructions ("Ignore all previous instructions and..."). This is the <strong>#1 vulnerability in the OWASP Top 10 for LLM apps</strong>.</li>
+<li><strong>2. Content moderation</strong> — filtering toxic language, hate speech, violence, sexual content. Not keyword matching — semantic understanding of harm.</li>
+</ul>
+<p><strong>Tools:</strong> Meta's <strong>Prompt Guard</strong> (injection) and <strong>Llama Guard</strong> (content moderation) — open-source models built for exactly these tasks.</p>
+<div class="ascii">User Input
+    |
+    v
+[Prompt Guard] -- injection check --&gt; PASS / FAIL
+    | (pass)
+    v
+[Llama Guard]  -- content check --&gt; SAFE / UNSAFE categories
+    | (safe)
+    v
+[Foundation Model]
+Fail either check -&gt; blocked or sanitized + policy violation message</div>`,
+cto:[`These models are on the critical path — they need sub-100ms latency, which may mean edge GPUs or quantized versions.`,`Manage the false positive rate: blocking 10% of legitimate queries floods customer support. A/B test guardrail configs before rollout.`,`Injection is a moving target — attackers find new jailbreaks constantly. I need a continuous update pipeline, not deploy-and-forget.`],
+dir:[`Moderation at scale has legal implications: in some jurisdictions, moderating content makes us responsible for all user content — the "good Samaritan" paradox. Policy must be vetted by legal.`,`Transparency: if we block a prompt, tell users why — or face censorship accusations.`,`Moderation categories should align with our corporate values and be publicly defensible. This is a policy document, not just a model threshold.`]},
+
+{sec:"guards",c:"gold",eyebrow:"Guardrails · 09",t:"q",q:`The model has generated its answer. Name <b>three different things</b> you must verify before the user sees it — and the three possible outcomes of each check.`},
+
+{sec:"guards",c:"gold",eyebrow:"Guardrails · 09",t:"a",h:"Output guardrails: hallucination, relevancy, moderation",body:`
+<ul class="pts">
+<li><strong>1. Hallucination detection</strong> — is the response factually grounded? Use models like the Phi-3 hallucination judge, or compare against retrieved source documents (RAG faithfulness).</li>
+<li><strong>2. Answer relevancy</strong> — does the response actually address the query? Semantic similarity between question and answer.</li>
+<li><strong>3. Output content moderation</strong> — same as input moderation but on the generated text. A model can produce toxic output even from a safe prompt (adversarial triggering).</li>
+</ul>
+<div class="ascii">[Foundation Model] --&gt; Raw output
+       |
+       v
+[Hallucination Judge]  --&gt; faithfulness score
+       v
+[Relevancy Evaluator]  --&gt; semantic match score
+       v
+[Content Moderator]    --&gt; safety classification
+       v
+Safe output to user
+
+Each check ends in: <span class="tl">pass</span> (deliver) | <span class="hl">rewrite</span> (regenerate) | <span class="rs">block</span> ("I can't answer that")</div>`,
+cto:[`Output checks are expensive — multiple model inferences per response, doubling or tripling latency. Optimize: run hallucination checks only for high-risk domains, or cascade (cheap relevancy check first, expensive hallucination check only if needed).`,`The hallucination judge can itself hallucinate — it's models all the way down. Need a human-in-the-loop fallback: model &rarr; guardrail &rarr; low confidence &rarr; human review queue.`],
+dir:[`Output guardrails are the last line of defense — a failure here is a public incident.`,`Define SLAs by risk tier: a creative writing assistant tolerates more hallucination than a medical symptom checker. PMs define risk tiers; engineers implement tiered guardrail intensity.`,`User reports of bad responses must flow back into improving guardrails — continuous quality improvement, not one-time setup.`]},
+
+{sec:"guards",c:"gold",eyebrow:"Guardrails · Recall",t:"r",h:"Quick recall: Guardrails in detail",qs:[
+{q:`What is the #1 vulnerability in the OWASP Top 10 for LLM apps, and which Meta model targets it?`,a:`<b>Prompt injection.</b> Meta's <b>Prompt Guard</b> detects it; <b>Llama Guard</b> handles the broader content moderation.`},
+{q:`Name the three output checks and the three outcomes each can trigger.`,a:`Hallucination detection, answer relevancy, output content moderation. Outcomes: <b>pass</b> (deliver), <b>rewrite</b> (regenerate), <b>block</b> ("I can't answer that").`},
+{q:`Why can a safe prompt still produce a toxic answer?`,a:`Adversarial triggering — the generation process itself can go wrong, so output moderation is needed even when the input passed all checks.`}]},
+
+/* ---------- AUTOMATE + MEASURE ---------- */
+{sec:"auto",c:"violet",eyebrow:"Automate &amp; Measure · 10",t:"q",q:`How would you find your LLM app's weaknesses <b>before attackers do</b>? Manual red-teaming has three problems — can you name them, and the alternative?`},
+
+{sec:"auto",c:"violet",eyebrow:"Automate &amp; Measure · 10",t:"a",h:"Garrick: automated LLM vulnerability scanning",body:`
+<p><strong>Garrick</strong> is an open-source vulnerability scanner built for LLM security testing — think <strong>OWASP ZAP, but for language models</strong>. It automates red-teaming with standardized detection of LLM vulnerabilities.</p>
+<div class="ascii">+----------------+      +-------------+
+| Garrick        | ---&gt; | LLM App     |
+| (Attack Suite) |      | (Target)    |
++----------------+      +-------------+
+        |  Prompt injection
+        |  Data leakage test
+        |  Bias probe
+        |  Hallucination trigger
+        +------ Results ------&gt; Vulnerability report
+                                with severity scores</div>
+<p>Garrick enables <strong>continuous security testing inside CI/CD pipelines</strong> — every deploy gets scanned.</p>`,
+cto:[`A force multiplier: manual red-teaming is slow, expensive, and inconsistent. Integrate Garrick into CI/CD — every model update or prompt template change triggers a scan; if the security score drops below threshold, the deploy is blocked. That's shifting security left.`,`Keep the attack suite current — LLM attacks evolve weekly. Assign a security engineer to contribute back to the open-source project and track its updates.`],
+dir:[`A measurable security posture: "Our app scores 95/100 on the Garrick benchmark, up from 72 last quarter" — a board-ready due-diligence metric.`,`Helps vendor assessments when enterprise clients probe our AI security.`,`A tool is only as good as its operator: invest in staff trained on LLM-specific threats, not just traditional appsec. People + tool = real protection.`]},
+
+{sec:"auto",c:"violet",eyebrow:"Automate &amp; Measure · 11",t:"q",q:`A scanner runs a fixed attack list. Now imagine a defender that <b>reasons, explores, and adapts</b>. What can it do that the scanner can't — and what new risk does its autonomy create?`},
+
+{sec:"auto",c:"violet",eyebrow:"Automate &amp; Measure · 11",t:"a",h:"Cybersecurity AI agents: autonomous defense",body:`
+<p>Cybersecurity AI agents are autonomous programs that detect vulnerabilities and assist decision-making. Beyond static scanners — they <strong>reason, explore, and adapt</strong>, and can even generate new attack strategies.</p>
+<div class="ascii">[AI Agent]  &lt;-- goal: "Find and mitigate LLM vulnerabilities"
+    |
+    | 1. Probe system with varied inputs
+    | 2. Analyze responses for anomalies
+    | 3. Correlate findings with known attack patterns
+    | 4. Recommend or apply mitigations
+    v
+[LLM Application]
+Agents run continuously, learning from each interaction.</div>`,
+cto:[`Asymmetric defense: attackers already automate; defenders need the same speed. An agent runs 24/7 generating thousands of test cases and learning what bypasses guardrails.`,`The risk is autonomy: a false positive with blocking power could cause an outage. Use graduated autonomy — agent recommends &rarr; human approves for high-impact actions; agent auto-fixes only low-risk high-confidence issues.`,`Secure the agent itself: an attacker compromising our defense agent would be catastrophic.`],
+dir:[`Shifts us from reactive to proactive security — "we have AI that actively hunts for vulnerabilities in our AI" is a compelling enterprise-sales narrative.`,`Open questions: who is liable if the agent decides wrongly? How do we audit agent actions? Uncharted regulatory territory — get legal counsel on automated decision liability.`,`Despite uncertainty, manual defense against automated attacks is a losing proposition. Invest in agentic defense.`]},
+
+{sec:"auto",c:"violet",eyebrow:"Automate &amp; Measure · 12",t:"q",q:`Your guardrails are live. How do you <b>know</b> they work? Name at least three numbers you'd track — and what you'd do before deployment vs in production.`},
+
+{sec:"auto",c:"violet",eyebrow:"Automate &amp; Measure · 12",t:"a",h:"Evaluation frameworks: measuring effectiveness",body:`
+<p>Evaluation frameworks make guardrails metrics-driven. The key metrics:</p>
+<ul class="pts">
+<li><strong>Hallucination rate</strong> — % of responses containing unsupported claims</li>
+<li><strong>Context relevancy</strong> — how well responses match provided context (for RAG)</li>
+<li><strong>Answer faithfulness</strong> — is the answer fully derivable from the source?</li>
+<li><strong>Toxicity score</strong> — probability of harmful content</li>
+<li><strong>Injection success rate</strong> — how often attacks bypass input guardrails</li>
+</ul>
+<div class="ascii">[Test Suite] --&gt; [LLM + Guardrails] --&gt; [Outputs]
+                                            |
+                                     [Evaluation Models]
+                                            |
+                              Metric scores + Trend analysis
+                                            |
+                                  Dashboard / Reports</div>
+<p>Continuous evaluation enables data-driven guardrail tuning.</p>`,
+cto:[`Without metrics, guardrails are guesswork. Before deployment: run 10,000 test prompts covering normal use, edge cases, and adversarial attacks; measure every metric to set a baseline.`,`In production: sample 1% of traffic for human annotation and compare with automated metrics — this closed loop catches metric drift.`,`If hallucination jumps from 2% to 5% after a model update: alert + automatic rollback. The evaluation framework is my observability layer for AI quality.`],
+dir:[`Metrics turn AI safety from philosophy into business KPIs: "Reduce hallucination below 1% for financial queries" becomes a quarterly team target.`,`When a customer asks "How safe is your AI?", show the dashboard with historical trends — builds trust, shortens sales cycles.`,`Watch for novel harms the metrics don't capture: budget for red-teaming alongside automated metrics. Qualitative + quantitative.`]},
+
+{sec:"auto",c:"violet",eyebrow:"Automate &amp; Measure · Recall",t:"r",h:"Quick recall: Automate &amp; Measure",qs:[
+{q:`Garrick is "X for LLMs". What is X, and where does Garrick live in a mature setup?`,a:`<b>OWASP ZAP</b> for LLMs. It lives in the <b>CI/CD pipeline</b> — every model or prompt change triggers a scan; low scores block the deploy.`},
+{q:`Describe graduated autonomy for a defense agent.`,a:`Agent <b>recommends &rarr; human approves</b> for high-impact actions; agent <b>auto-fixes</b> only low-risk, high-confidence issues. Never full autonomy with blocking power on day one.`},
+{q:`List the five evaluation metrics from memory.`,a:`Hallucination rate, context relevancy, answer faithfulness, toxicity score, injection success rate.`}]},
+
+/* ---------- PLATFORMS + SYN ---------- */
+{sec:"plat",c:"ink",eyebrow:"Platforms · 13",t:"q",q:`Guardrails: <b>buy managed</b> (AWS Bedrock) or <b>build with open source</b> (Guardrails AI)? Before peeking, list what you gain and lose on each side.`},
+
+{sec:"plat",c:"ink",eyebrow:"Platforms · 13",t:"a",h:"Managed option: AWS Bedrock Guardrails",body:`
+<p>AWS Bedrock ships built-in guardrail implementation:</p>
+<ul class="pts">
+<li>Content filters for hate speech, sexual content, violence</li>
+<li>Topic filters to block certain subjects</li>
+<li>Word filters for profanity and custom blocklists</li>
+<li>Contextual grounding checks (hallucination reduction)</li>
+<li>Configurable thresholds and actions: block, mask, flag</li>
+</ul>
+<div class="ascii">User --&gt; [Bedrock Guardrail] --&gt; [Bedrock LLM] --&gt; [Bedrock Guardrail] --&gt; Output
+            (input check)                            (output check)</div>
+<p>Managed service = no infrastructure to maintain; AWS handles updates.</p>`,
+cto:[`Reduces operational burden — no GPU instances for safety models. IAM integration means I can enforce guardrail usage by policy: no Bedrock invocation without an attached guardrail. Compliance-as-code.`,`Downside: locked into AWS's detection models — if they lag new attack vectors, I'm vulnerable. Use Bedrock as the baseline layer, augment with custom models for our threat profile.`,`Each check adds AWS service calls — measure end-to-end latency impact on UX.`],
+dir:[`Simplifies vendor due diligence: AWS's SOC2, HIPAA, and compliance certifications back us up, accelerating procurement.`,`Model the per-character / per-invocation pricing against expected traffic to budget accurately.`,`Strategic question: does out-of-the-box safety meet our unique needs? For medical advice, generic filters won't suffice. Bedrock may be 80% of the solution — know what the remaining 20% costs to build or buy.`]},
+
+{sec:"plat",c:"ink",eyebrow:"Platforms · 14",t:"a",h:"Open-source option: Guardrails AI &amp; custom",body:`
+<p>Open-source frameworks like <strong>Guardrails AI</strong> let you implement custom security logic:</p>
+<ul class="pts">
+<li>Programmatic guard definition (Python code or config files)</li>
+<li>Composable checks — chain multiple validators</li>
+<li>Integration with any LLM provider</li>
+<li>Community-contributed guard templates</li>
+<li>Full control over logic and data flow</li>
+</ul>
+<div class="ascii">from guardrails import Guard
+
+guard = Guard()
+guard.add_toxicity_check(threshold=0.8)
+guard.add_pii_detector()
+guard.add_factuality_check(source_docs=retrieved_docs)
+
+safe_output = guard(llm_output)</div>
+<p>Maximum flexibility — define exactly what passes and what fails.</p>`,
+cto:[`Open source gives me control over our guardrail IP: inspect every line, customize per domain, self-host inside our VPC — critical for regulated industries where data can't leave.`,`The trade-off is engineering time: a team to maintain, update models, tune thresholds.`,`Hybrid approach: open source for the core product with sensitive data; managed services for internal tools with lower sensitivity.`],
+dir:[`Double-edged sword: no vendor lock-in and no per-token costs, but we now own the security of the guardrail itself — a custom-code vulnerability is a new attack vector.`,`Factor total cost of ownership: engineers, infrastructure, model updates, security audits. If we're not in the AI-security business, maybe buy, not build.`,`But if AI is our core product, owning the guardrail stack is a competitive advantage — safety guarantees no competitor can match.`]},
+
+{sec:"plat",c:"ink",eyebrow:"Final Synthesis",t:"q",q:`Close your eyes. Sketch the <b>complete production-grade guardrail architecture</b> — every box and arrow you can remember, from user to safe output. Then press Next and compare.`},
+
+{sec:"plat",c:"ink",eyebrow:"Final Synthesis",t:"a",h:"The holistic guardrail architecture",body:`
+<div class="ascii">              +---------------------------+
+              |   MONITORING &amp; LOGGING    |
+              | (Metrics, Alerts, Audit)  |
+              +---------------------------+
+                          ^
+User --&gt; [Input Guardrails] --&gt; [Foundation Model] --&gt; [Output Content Mod] --&gt; [Hallucination
+          - Injection              |                                              + Relevancy Eval]
+          - Toxicity          [Vector DB]  &lt;-- RAG grounding                          |
+              |               (Embeddings)                                       [Safe Output]
+          [Blocked]                |                                                  |
+          "Violation"              +-------------------------&gt; [Human Review Queue]
+                                                                 (low confidence)</div>
+<div class="ascii"><span class="hl">Continuous security layer:</span>
+[Garrick Scanner] --scheduled--&gt; [LLM + Guardrails] --reports--&gt; [Security Dashboard]
+[AI Agents] --continuous--&gt; [Vulnerability Discovery] --alerts--&gt; [On-call Engineer]
+
+<span class="hl">Evaluation &amp; feedback loop:</span>
+[Prod Traffic Sample] --&gt; [Human Annotation] --&gt; [Metric Calc] --&gt; [Guardrail Tuning] --&gt; [Deploy]</div>`,
+cto:[`Defense-in-depth with no single point of failure: input/output guardrails at the core, RAG grounding cutting hallucination at model level, continuous scanning and agents catching novel threats, human review for edge cases, monitoring tying it together.`,`Each component scales independently. Key decisions: synchronous vs async checks, fail-open vs fail-closed modes, data residency per processing stage.`,`A living architecture that evolves with threats.`],
+dir:[`This diagram is our investment case — a comprehensive safety system, not a bolted-on filter.`,`Map each component to a business requirement: input guardrails &rarr; user safety, output guardrails &rarr; brand protection, RAG &rarr; accuracy, human review &rarr; liability mitigation, scanning &rarr; regulatory compliance, monitoring &rarr; audit readiness.`,`Phase it with budget cycles: start basic, add sophistication. AI safety isn't a cost center — it's a product feature and market differentiator.`]},
+
+{sec:"plat",c:"ink",eyebrow:"Final Recall",t:"r",h:"Final recall: the whole of Part 1",qs:[
+{q:`Walk the full pipeline from memory: what does a user prompt pass through before a safe answer returns?`,a:`Input guardrails (injection + toxicity) &rarr; Foundation Model with RAG grounding from a vector DB &rarr; output content moderation &rarr; hallucination + relevancy evaluation &rarr; safe output. Low-confidence cases go to a human review queue; everything logs to monitoring.`},
+{q:`What runs continuously alongside the pipeline?`,a:`<b>Garrick</b> on a schedule producing security reports, and <b>AI agents</b> continuously hunting vulnerabilities with alerts to on-call engineers. Plus the feedback loop: traffic sample &rarr; human annotation &rarr; metrics &rarr; tuning &rarr; deploy.`},
+{q:`Give the one-line trade-off: Bedrock vs Guardrails AI.`,a:`<b>Bedrock:</b> managed, compliant, fast to adopt, but locked into AWS detection. <b>Guardrails AI:</b> full control, self-hosted, no lock-in, but you pay in engineering time and own the security of your own code.`},
+{q:`Continue to Part 2 for...`,a:`Prompt anatomy, prompt injection mechanics, and the deep dive on Prompt Guard, Llama Guard 3, its prompt template, hands-on GPU deployment, and the vision variant.`}]}
+];
+
+let i=0;
+const stage=document.getElementById('stage'),dots=document.getElementById('dots'),
+tabs=document.getElementById('tabs'),counter=document.getElementById('counter'),
+prevBtn=document.getElementById('prevBtn'),nextBtn=document.getElementById('nextBtn');
+SECTIONS.forEach(s=>{const b=document.createElement('button');b.className='tab';b.dataset.c=s.c;b.dataset.sec=s.id;b.textContent=s.label;b.onclick=()=>go(S.findIndex(x=>x.sec===s.id));tabs.appendChild(b);});
+S.forEach((sl,k)=>{const d=document.createElement('span');d.className='dot'+(sl.t==='q'?' q':'');d.tabIndex=0;d.setAttribute('role','button');d.setAttribute('aria-label','Slide '+(k+1));d.onclick=()=>go(k);d.onkeydown=e=>{if(e.key==='Enter')go(k)};dots.appendChild(d);});
+function lens(cto,dir){
+  return '<details class="lens"><summary>CTO LENS</summary><div class="body"><ul class="pts">'+cto.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>'
+       + '<details class="lens dir"><summary>DIRECTOR LENS</summary><div class="body"><ul class="pts">'+dir.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+}
+function go(k){
+  i=Math.max(0,Math.min(S.length-1,k));
+  const s=S[i];stage.innerHTML='';
+  const el=document.createElement('div');el.className='slide';
+  if(s.t==='q'){
+    el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div>'
+      +'<div class="qcard"><div class="qlabel">Think first &middot; predict before you peek</div>'
+      +'<div class="qtext">'+s.q+'</div>'
+      +'<div class="qsub">Form your answer in your head. Then press Next to compare.</div></div>';
+  } else if(s.t==='r'){
+    el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'
+      +'<p>Answer from memory first. Tap a question to reveal the answer.</p>'
+      +s.qs.map(x=>'<details class="recall-item"><summary>'+x.q+'</summary><div class="ans">'+x.a+'</div></details>').join('')
+      +'<div class="recall-hint">Struggled on any? Jump back with the tabs above, then return.</div>';
+  } else {
+    el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'+s.body+(s.cto?lens(s.cto,s.dir):'');
+  }
+  stage.appendChild(el);
+  counter.textContent=(i+1)+' / '+S.length;
+  document.querySelectorAll('.dot').forEach((d,k2)=>d.classList.toggle('on',k2===i));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.sec===s.sec));
+  prevBtn.disabled=(i===0);
+  nextBtn.textContent=(i===S.length-1)?'Done \u2713':'Next \u2192';
+  nextBtn.disabled=(i===S.length-1);
+  document.querySelector('main').scrollTop=0;window.scrollTo(0,0);
+}
+prevBtn.onclick=()=>go(i-1);nextBtn.onclick=()=>go(i+1);
+document.addEventListener('keydown',e=>{if(e.target.closest('details'))return;if(e.key==='ArrowRight')go(i+1);if(e.key==='ArrowLeft')go(i-1);});
+go(0);
+</script>
+</body>
+</html>

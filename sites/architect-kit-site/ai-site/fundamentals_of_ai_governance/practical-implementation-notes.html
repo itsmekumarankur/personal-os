@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Governance — Architects Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0d14;
+    --bg-panel:#0f1420;
+    --bg-panel-2:#121828;
+    --grid-line:rgba(94,177,255,0.07);
+    --grid-line-strong:rgba(94,177,255,0.14);
+    --border:#1c2333;
+    --border-soft:#171d2c;
+    --text:#e7ecf5;
+    --text-dim:#93a0b8;
+    --text-faint:#5c6780;
+    --blue:#5eb1ff;
+    --blue-dim:#2b6ea8;
+    --amber:#eab04a;
+    --amber-dim:#8a672a;
+    --green:#5fcf9a;
+    --green-dim:#2f6d51;
+    --red:#f0665c;
+    --red-dim:#8a3630;
+    --purple:#b18fef;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', sans-serif;
+    --disp: 'Space Grotesk', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:
+      linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0/48px 48px,
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0/48px 48px,
+      var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.65;
+    padding-bottom:120px;
+  }
+  a{color:var(--blue);}
+
+  /* ===== HERO ===== */
+  .hero{
+    position:relative;
+    padding:64px 24px 40px;
+    border-bottom:1px solid var(--border);
+    overflow:hidden;
+  }
+  .hero::before{
+    content:"";
+    position:absolute; inset:0;
+    background: radial-gradient(600px 300px at 15% 0%, rgba(94,177,255,0.10), transparent 60%),
+                radial-gradient(500px 260px at 85% 20%, rgba(234,176,74,0.07), transparent 60%);
+    pointer-events:none;
+  }
+  .hero-inner{max-width:980px; margin:0 auto; position:relative;}
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:var(--mono); font-size:12px; letter-spacing:.14em;
+    color:var(--amber); text-transform:uppercase;
+    border:1px solid var(--amber-dim); background:rgba(234,176,74,0.06);
+    padding:5px 12px; border-radius:3px;
+  }
+  .eyebrow::before{content:"◆"; font-size:10px;}
+  h1.title{
+    font-family:var(--disp); font-weight:700;
+    font-size:clamp(30px,5vw,50px);
+    margin:18px 0 8px; letter-spacing:-0.02em;
+    background:linear-gradient(120deg,#fff,#a9c7ef 60%,var(--blue));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .subtitle{color:var(--text-dim); font-size:16px; max-width:620px;}
+  .meta-row{
+    display:flex; flex-wrap:wrap; gap:10px; margin-top:22px;
+    font-family:var(--mono); font-size:12px; color:var(--text-faint);
+  }
+  .meta-chip{
+    border:1px solid var(--border); padding:5px 10px; border-radius:3px;
+    background:var(--bg-panel);
+  }
+  .meta-chip b{color:var(--text-dim); font-weight:500;}
+
+  /* ===== CONTROL BAR ===== */
+  .controlbar{
+    position:sticky; top:0; z-index:50;
+    background:rgba(10,13,20,0.92); backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:14px;
+    padding:10px 24px; overflow-x:auto;
+  }
+  .cb-title{
+    font-family:var(--mono); font-size:11px; color:var(--text-faint);
+    text-transform:uppercase; letter-spacing:.1em; white-space:nowrap;
+  }
+  .cb-btn{
+    font-family:var(--mono); font-size:11.5px; color:var(--text);
+    background:var(--bg-panel-2); border:1px solid var(--border);
+    padding:6px 12px; border-radius:3px; cursor:pointer; white-space:nowrap;
+    transition:.15s;
+  }
+  .cb-btn:hover{border-color:var(--blue-dim); color:var(--blue);}
+  .cb-nav{display:flex; gap:6px; margin-left:auto;}
+  .cb-nav a{
+    font-family:var(--mono); font-size:11px; color:var(--text-faint);
+    text-decoration:none; border:1px solid transparent; padding:5px 8px; border-radius:3px;
+  }
+  .cb-nav a:hover{color:var(--blue); border-color:var(--border);}
+
+  /* ===== MAIN ===== */
+  main{max-width:980px; margin:0 auto; padding:40px 24px;}
+
+  section.chapter{
+    margin-bottom:26px;
+    border:1px solid var(--border);
+    border-radius:8px;
+    background:linear-gradient(180deg, var(--bg-panel), rgba(15,20,32,0.4));
+    scroll-margin-top:70px;
+    overflow:hidden;
+  }
+  .chapter-head{
+    display:flex; align-items:flex-start; gap:16px;
+    padding:22px 24px;
+    border-bottom:1px solid var(--border-soft);
+  }
+  .chapter-num{
+    font-family:var(--mono); font-size:13px; color:var(--bg);
+    background:var(--blue); min-width:34px; height:34px;
+    border-radius:6px; display:flex; align-items:center; justify-content:center;
+    font-weight:700; flex-shrink:0;
+  }
+  .chapter-titlewrap h2{
+    font-family:var(--disp); font-size:22px; margin:0 0 4px; letter-spacing:-0.01em;
+  }
+  .chapter-titlewrap .tag{
+    font-family:var(--mono); font-size:11px; color:var(--text-faint);
+    text-transform:uppercase; letter-spacing:.08em;
+  }
+  .chapter-body{padding:0 24px 24px;}
+
+  /* Recall question - click to reveal */
+  .recall{
+    margin:18px 0; border:1px dashed var(--blue-dim); border-radius:6px;
+    background:rgba(94,177,255,0.04); overflow:hidden;
+  }
+  .recall > summary{
+    list-style:none; cursor:pointer; padding:14px 16px;
+    display:flex; align-items:center; gap:10px;
+    font-family:var(--mono); font-size:12.5px; color:var(--blue);
+  }
+  .recall > summary::-webkit-details-marker{display:none;}
+  .recall > summary::before{content:"▸"; transition:.2s; display:inline-block; color:var(--blue);}
+  .recall[open] > summary::before{transform:rotate(90deg);}
+  .recall-label{text-transform:uppercase; letter-spacing:.1em; color:var(--text-faint); font-size:10.5px;}
+  .recall-q{color:var(--text);}
+  .recall-answer{
+    padding:0 16px 16px 40px; color:var(--text-dim); font-size:14.5px;
+    border-top:1px solid rgba(94,177,255,0.12); margin-top:2px; padding-top:14px;
+  }
+
+  h3.sub{
+    font-family:var(--disp); font-size:16.5px; color:var(--text);
+    margin:26px 0 10px; padding-left:12px; border-left:3px solid var(--amber);
+  }
+  p{color:var(--text-dim); font-size:15px; margin:10px 0;}
+  strong{color:var(--text); font-weight:600;}
+  ul, ol{color:var(--text-dim); font-size:15px; padding-left:22px;}
+  li{margin:6px 0;}
+  li::marker{color:var(--blue);}
+  code.inline{
+    font-family:var(--mono); font-size:12.5px; background:var(--bg-panel-2);
+    border:1px solid var(--border); padding:1px 6px; border-radius:3px; color:var(--amber);
+  }
+
+  /* Diagram frame */
+  .blueprint{
+    margin:18px 0; border:1px solid var(--border); border-radius:6px;
+    background:#0b0f1a;
+    background-image:linear-gradient(var(--grid-line-strong) 1px, transparent 1px),
+                      linear-gradient(90deg, var(--grid-line-strong) 1px, transparent 1px);
+    background-size:22px 22px;
+    position:relative; overflow-x:auto;
+  }
+  .blueprint::before{
+    content:"FIG";
+    position:absolute; top:8px; right:12px;
+    font-family:var(--mono); font-size:10px; color:var(--text-faint);
+    letter-spacing:.15em;
+  }
+  .blueprint pre{
+    margin:0; padding:20px 18px 16px;
+    font-family:var(--mono); font-size:12px; line-height:1.5;
+    color:var(--blue); white-space:pre; overflow-x:auto;
+  }
+  .blueprint .cap{
+    font-family:var(--mono); font-size:11px; color:var(--text-faint);
+    border-top:1px solid var(--border); padding:8px 16px; background:rgba(0,0,0,0.2);
+  }
+
+  /* Table */
+  .tablewrap{overflow-x:auto; margin:16px 0; border:1px solid var(--border); border-radius:6px;}
+  table{width:100%; border-collapse:collapse; font-size:13.5px; min-width:520px;}
+  thead th{
+    font-family:var(--mono); text-transform:uppercase; letter-spacing:.06em;
+    font-size:11px; color:var(--amber); text-align:left;
+    background:var(--bg-panel-2); padding:10px 14px; border-bottom:1px solid var(--border);
+  }
+  tbody td{padding:10px 14px; border-bottom:1px solid var(--border-soft); color:var(--text-dim);}
+  tbody tr:hover{background:rgba(94,177,255,0.03);}
+  tbody tr:last-child td{border-bottom:none;}
+
+  /* Architect's Lens - CTO/Director perspectives */
+  .lens{
+    margin:22px 0 6px; border:1px solid var(--amber-dim); border-radius:6px;
+    background:linear-gradient(180deg, rgba(234,176,74,0.06), transparent);
+    overflow:hidden;
+  }
+  .lens > summary{
+    list-style:none; cursor:pointer; display:flex; align-items:center; gap:10px;
+    padding:12px 16px; font-family:var(--mono); font-size:12px; color:var(--amber);
+    text-transform:uppercase; letter-spacing:.08em;
+  }
+  .lens > summary::-webkit-details-marker{display:none;}
+  .lens > summary::before{content:"⌂"; font-size:14px;}
+  .lens-arrow{margin-left:auto; transition:.2s; color:var(--text-faint);}
+  .lens[open] .lens-arrow{transform:rotate(180deg);}
+  .lens-body{padding:2px 16px 16px;}
+  .voice{
+    display:flex; gap:12px; padding:12px 0; border-top:1px solid rgba(234,176,74,0.12);
+  }
+  .voice:first-child{border-top:none;}
+  .voice-badge{
+    flex-shrink:0; width:74px; text-align:center;
+    font-family:var(--mono); font-size:10px; letter-spacing:.06em;
+    padding:4px 0; border-radius:3px; height:fit-content; text-transform:uppercase;
+  }
+  .voice.cto .voice-badge{background:rgba(94,177,255,0.12); color:var(--blue); border:1px solid var(--blue-dim);}
+  .voice.director .voice-badge{background:rgba(95,207,154,0.12); color:var(--green); border:1px solid var(--green-dim);}
+  .voice p{margin:0; font-size:14px; font-style:italic; color:var(--text-dim);}
+
+  /* Section-level collapsible wrapper toggle already via <details> on chapter */
+  details.chapter > summary{list-style:none; cursor:pointer;}
+  details.chapter > summary::-webkit-details-marker{display:none;}
+  .chevron{
+    margin-left:auto; font-family:var(--mono); font-size:16px; color:var(--text-faint);
+    transition:transform .2s; flex-shrink:0; align-self:center;
+  }
+  details.chapter[open] .chevron{transform:rotate(90deg);}
+
+  /* Nested mini-collapse for lists inside sections (used for pillar/factor breakdowns) */
+  .minifold{border:1px solid var(--border); border-radius:5px; margin:10px 0; background:var(--bg-panel-2);}
+  .minifold > summary{
+    list-style:none; cursor:pointer; padding:10px 14px; font-family:var(--mono);
+    font-size:12.5px; color:var(--text); display:flex; gap:8px; align-items:center;
+  }
+  .minifold > summary::-webkit-details-marker{display:none;}
+  .minifold > summary::before{content:"+"; color:var(--blue); font-weight:700; width:14px;}
+  .minifold[open] > summary::before{content:"–";}
+  .minifold-body{padding:0 14px 14px 36px;}
+  .minifold-body p, .minifold-body ul{margin:6px 0;}
+
+  /* Risk pyramid special */
+  .pyramid{display:flex; flex-direction:column; align-items:center; gap:0; padding:26px 16px;}
+  .pyramid-tier{
+    font-family:var(--mono); font-size:11.5px; text-align:center; padding:12px 20px;
+    margin:2px 0; border-radius:3px; color:#0a0d14; font-weight:700;
+    letter-spacing:.03em; width:100%; max-width:640px;
+  }
+  .pyramid-tier small{display:block; font-weight:500; font-size:10px; margin-top:3px; opacity:.85;}
+  .t1{background:var(--red); max-width:220px;}
+  .t2{background:var(--amber); max-width:360px;}
+  .t3{background:var(--blue); max-width:500px;}
+  .t4{background:var(--green); max-width:640px;}
+
+  /* Footer / progress */
+  .progress-note{
+    max-width:980px; margin:0 auto; padding:0 24px;
+    font-family:var(--mono); font-size:11.5px; color:var(--text-faint);
+    text-align:center; margin-top:10px;
+  }
+  footer{
+    max-width:980px; margin:60px auto 0; padding:24px; text-align:center;
+    border-top:1px solid var(--border); color:var(--text-faint); font-family:var(--mono); font-size:11.5px;
+  }
+
+  ::-webkit-scrollbar{height:8px; width:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--border); border-radius:4px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  /* notes width expansion - matches learning plan box */
+  .wrap,.container,main,header.hero,header.masthead,nav.toc,section.block,footer{max-width:100%!important;padding-left:24px!important;padding-right:24px!important;}
+</style>
+</head>
+<body>
+<div style="position:sticky;top:0;z-index:9999;background:#0a0d14;border-bottom:1px solid #1c2333;padding:10px 20px;font-family:-apple-system,'Segoe UI',sans-serif;"><a href="https://ai.shivawithin.in" style="color:#5eb1ff;text-decoration:none;font-size:13px;font-weight:600;letter-spacing:.04em;">← Back to Home</a></div>
+<!-- LEARNING PLAN -->
+<div style="margin:24px;background:#0f1520;border:1px solid #1e2836;border-left:4px solid #e0a030;border-radius:8px;padding:24px 28px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;">
+  <div style="color:#e0a030;font-size:13px;font-weight:700;letter-spacing:.08em;margin-bottom:14px;">&#9670; LEARNING PLAN — 2.5 HOURS DAILY</div>
+  <div style="overflow-x:auto;">
+  <table style="width:100%;border-collapse:collapse;font-size:13px;color:#c8d3e0;margin-bottom:18px;white-space:nowrap;">
+    <thead><tr style="color:#7c8ba0;border-bottom:1px solid #1e2836;">
+      <th style="padding:6px 10px;text-align:left;width:48px;">Step</th>
+      <th style="padding:6px 10px;text-align:left;">Activity</th>
+      <th style="padding:6px 10px;text-align:left;">Outcome</th>
+    </tr></thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">1</td><td style="padding:7px 10px;"><b>Complete the Udemy Course</b> — watch videos, understand concepts, don't rush</td><td style="padding:7px 10px;color:#5fbf7f;">Build strong fundamentals</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">2</td><td style="padding:7px 10px;"><b>Practice Everything</b> — complete exercises, assignments, and source code</td><td style="padding:7px 10px;color:#5fbf7f;">Gain hands-on experience</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">3</td><td style="padding:7px 10px;"><b>Revise with these notes</b></td><td style="padding:7px 10px;color:#5fbf7f;">Reinforce concepts and fill knowledge gaps</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">4</td><td style="padding:7px 10px;"><b>Earn the Udemy Certificate</b></td><td style="padding:7px 10px;color:#5fbf7f;">Ensure the course is completed end-to-end</td></tr>
+      <tr><td style="padding:7px 10px;color:#e0a030;font-weight:700;">5</td><td style="padding:7px 10px;"><b>Practise real world tough scenario</b> — scenario-based questions &amp; interview problems</td><td style="padding:7px 10px;color:#5fbf7f;">Develop practical and interview-ready skills</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">1.5 HRS</div>
+      <div style="font-size:12px;color:#c8d3e0;">Udemy Videos + Exercises + Source Code</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Notes Revision</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Scenario-Based Questions &amp; Practical Problems</div>
+    </div>
+  </div>
+  <div style="color:#f0f4f8;font-size:12px;font-weight:600;letter-spacing:.04em;">GOAL: <span style="color:#e0a030;">Learn &#8594; Practice &#8594; Revise &#8594; Complete &#8594; Apply</span></div>
+</div>
+<!-- END LEARNING PLAN -->
+
+<div class="hero">
+  <div class="hero-inner">
+    <span class="eyebrow">Architects Lab · Governance Module</span>
+    <h1 class="title">Practical Implementation &amp; Real-World Cases</h1>
+    <p class="subtitle">Where governance principles meet daily operations: writing policies teams actually follow, keeping traceable version and decision logs, agile governance tooling, and four industry case studies — finance, healthcare, generative AI, and the public sector.</p>
+    <div class="meta-row">
+      <span class="meta-chip"><b>Source:</b> Ultimate AI Governance Master Notes — Practical Implementation &amp; Real-World Cases</span>
+      <span class="meta-chip"><b>Sections:</b> 8</span>
+      <span class="meta-chip"><b>Format:</b> Recall → Structure → Diagram → Lens</span>
+      <span class="meta-chip"><b>Context:</b> Wealth/Demat platform, regulated fintech</span>
+    </div>
+  </div>
+</div>
+
+<div class="controlbar">
+  <span class="cb-title">Controls</span>
+  <button class="cb-btn" id="expandAll">▾ Expand all</button>
+  <button class="cb-btn" id="collapseAll">▸ Collapse all</button>
+  <div class="cb-nav">
+    <a href="#s1">01</a><a href="#s2">02</a><a href="#s3">03</a><a href="#s4">04</a>
+    <a href="#s5">05</a><a href="#s6">06</a><a href="#s7">07</a><a href="#s8">08</a>
+  </div>
+</div>
+
+<main>
+
+<!-- ============ SECTION 1 ============ -->
+<details class="chapter" id="s1" open>
+  <summary class="chapter-head">
+    <span class="chapter-num">01</span>
+    <div class="chapter-titlewrap">
+      <h2>Writing AI Policies, Requirements &amp; Internal Guidelines</h2>
+      <span class="tag">Implementation · Documentation Tiers</span>
+    </div>
+    <span class="chevron">›</span>
+  </summary>
+  <div class="chapter-body">
+
+    <details class="recall">
+      <summary><span class="recall-label">Recall</span><span class="recall-q">How can an organization create AI governance documents that are actually used by teams, rather than becoming shelf-ware, and what is the difference between a policy, a requirement, and a guideline?</span></summary>
+      <div class="recall-answer">Use a three-tier model: a short, C-suite-approved <strong>Policy</strong> that sets principles and boundaries; mandatory, auditable <strong>Requirements</strong> ("shall" statements) enforced through existing workflows; and flexible, educational <strong>Guidelines</strong> (templates, FAQs, case studies) that help teams execute them. Start minimal and expand only as the AI portfolio's maturity demands it.</div>
+    </details>
+
+    <h3 class="sub">The Three-Tier Documentation Model</h3>
+    <p>AI governance documentation must be <strong>practical, accessible, and role-appropriate</strong>. It's not about producing a thick manual nobody reads. There are three distinct levels:</p>
+
+    <details class="minifold">
+      <summary>1. AI Policy (Strategic Framework)</summary>
+      <div class="minifold-body">
+        <p>A short, board-approved document (2–4 pages) that defines the organization's stance on responsible AI. It answers:</p>
+        <ul>
+          <li>What do we mean by "responsible AI" in our context?</li>
+          <li>What core principles (fairness, transparency, accountability, privacy) apply to all AI projects?</li>
+          <li>What types of AI use are <strong>permitted</strong>, <strong>restricted</strong> (e.g. emotion recognition), or <strong>prohibited</strong> (e.g. social scoring)?</li>
+          <li>Who has authority to approve AI projects, and at what risk level?</li>
+          <li>How does the AI policy align with existing ethics, data protection, cybersecurity, and sustainability policies?</li>
+        </ul>
+        <p>The policy is the "constitution" — it sets boundaries and delegates authority. It must be signed by the C-suite to carry weight.</p>
+      </div>
+    </details>
+    <details class="minifold">
+      <summary>2. Corporate Requirements (Operational Standards)</summary>
+      <div class="minifold-body">
+        <p>More specific, mandatory rules that every AI project must follow. Examples:</p>
+        <ul>
+          <li>Every AI system must have a named responsible owner (not a team)</li>
+          <li>Training data must be evaluated for bias, provenance, and consent before use</li>
+          <li>No model may be deployed without a cross-functional review (technical, legal, business as minimum)</li>
+          <li>Key decisions must be logged and traceable across the lifecycle</li>
+          <li>A DPIA must be completed for any system processing personal data</li>
+        </ul>
+        <p>These are often expressed as a <strong>checklist</strong> or a set of "shall" statements. They are auditable and non-negotiable.</p>
+      </div>
+    </details>
+    <details class="minifold">
+      <summary>3. Internal Guidelines (Best Practice &amp; How-To)</summary>
+      <div class="minifold-body">
+        <p>Flexible, educational documents that help teams execute the requirements. They might contain:</p>
+        <ul>
+          <li>Templates and worked examples (e.g. a filled-out data justification report)</li>
+          <li>Self-assessment questionnaires (ethical, legal, risk)</li>
+          <li>Case studies of successful and failed projects from within the organization</li>
+          <li>Guidance tailored to different audiences (data scientists vs. business analysts vs. procurement)</li>
+        </ul>
+        <p>Guidelines should be concise, searchable, and iteratively improved based on user feedback.</p>
+      </div>
+    </details>
+
+    <h3 class="sub">Implementation Tip: Start Minimal, Evolve</h3>
+    <ul>
+      <li>Begin with a simple AI policy, a one-page requirements checklist, and a short guidance note</li>
+      <li>Enforce the requirements through existing workflows (e.g. project intake, architecture review)</li>
+      <li>Expand documentation only when the organisation's AI portfolio and maturity demand it</li>
+    </ul>
+
+    <div class="blueprint">
+<pre>
+   THREE-TIER AI DOCUMENTATION PYRAMID
+          /\
+         /AI\        POLICY (Strategic, C-suite approved)
+        /PO- \       2-4 pages, principles & boundaries
+       /LICY\ 
+      /------\
+     /CORPORATE\     REQUIREMENTS (Mandatory "shall" rules)
+    /REQUIREMENTS\    Checklist, auditable, integrated into workflows
+   /--------------\
+  /  GUIDELINES     \  GUIDELINES (Flexible, educational, role-specific)
+ /  Templates, FAQs, \  Best practices, examples, self-assessments
+/    case studies      \
++-----------------------+
+</pre>
+      <div class="cap">Fig 1.1 — Three tiers, narrowing from broad C-suite principles down to specific role-based how-tos.</div>
+    </div>
+
+    <details class="lens">
+      <summary>Architect's Lens — CTO &amp; Director Perspective <span class="lens-arrow">▾</span></summary>
+      <div class="lens-body">
+        <div class="voice cto">
+          <span class="voice-badge">CTO</span>
+          <p>"I want the requirements to be machine-readable where possible. For instance, 'must document data source' means our pipeline automatically prompts for that metadata and blocks training if missing. Policies set the culture; engineering makes them unavoidable without friction."</p>
+        </div>
+        <div class="voice director">
+          <span class="voice-badge">Director</span>
+          <p>"The AI policy is a public commitment. I want to publish a summary on our website to signal to customers and regulators that we take AI seriously. Internally, the requirements checklist is non-negotiable — no project gets funded without initialling it. That's how we embed governance into our investment decisions."</p>
+        </div>
+      </div>
+    </details>
+
+  </div>
+</details>
+
+<!-- ============ SECTION 2 ============ -->
+<details class="chapter" id="s2">
+  <summary class="chapter-head">
+    <span class="chapter-num">02</span>
+    <div class="chapter-titlewrap">
+      <h2>Version Control, Decision Logs &amp; Traceability</h2>
+      <span class="tag">Implementation · Traceability</span>
+    </div>
+    <span class="chevron">›</span>
+  </summary>
+  <div class="chapter-body">
+
+    <details class="recall">
+      <summary><span class="recall-label">Recall</span><span class="recall-q">Why are version control and a justified decision log not just good engineering practice, but legal and operational imperatives for AI governance?</span></summary>
+      <div class="recall-answer">Without them, an organization loses track of which model version is live, what data trained it, and why choices were made — a blind spot that undermines audits, incident response, and defensibility. A <strong>model version register</strong> plus a <strong>justified decision log</strong> (decision, decision-maker, alternatives considered, rationale) together form the contemporaneous record of due diligence regulators and courts expect.</div>
+    </details>
+
+    <h3 class="sub">The Problem of Drift and Lost Rationale</h3>
+    <p>AI models evolve — retraining, fine-tuning, data changes. Without version control, an organization quickly loses track of which model version is in production, what data it was trained on, and why certain choices were made. This is a governance blind spot that undermines audits, incident response, and continuous improvement.</p>
+
+    <h3 class="sub">Model Version Register</h3>
+    <p>Every AI system should maintain a <strong>single source of truth</strong> for its lineage:</p>
+    <ul>
+      <li>Unique model identifier and current version number</li>
+      <li>Date of creation/modification</li>
+      <li>Changes introduced (new data, hyperparameters, feature engineering, environment)</li>
+      <li>Who approved the change and based on what evaluation</li>
+      <li>Validation test results for the new version (performance, fairness, robustness)</li>
+      <li>Link to the data version and code commit</li>
+    </ul>
+    <p>This can be managed in a model registry (<code class="inline">MLflow</code>, <code class="inline">Kubeflow</code>) or a well-structured documented repository. The essential thing is accessibility and discipline.</p>
+
+    <h3 class="sub">Justified Decision Log</h3>
+    <p>At every critical lifecycle gate (design, data selection, model choice, deployment, retirement), significant decisions must be logged with:</p>
+    <ul>
+      <li><strong>Decision:</strong> what was chosen or decided</li>
+      <li><strong>Decision-maker:</strong> who (name, role)</li>
+      <li><strong>Date &amp; context:</strong> when and under what circumstances</li>
+      <li><strong>Alternatives considered:</strong> what other options were evaluated</li>
+      <li><strong>Risk assessment:</strong> what risks were identified and how they were mitigated</li>
+      <li><strong>Rationale:</strong> why this path was chosen over alternatives</li>
+    </ul>
+    <p>Examples: "Selected dataset X over Y because Y lacked consent for commercial use." "Excluded variable Z as it was a proxy for race, despite improving accuracy by 2%."</p>
+
+    <h3 class="sub">Governance Value</h3>
+    <ul>
+      <li><strong>Audits:</strong> regulators or internal audit can trace every critical choice</li>
+      <li><strong>Defensibility:</strong> if a model is challenged, you have a contemporaneous record of due diligence</li>
+      <li><strong>Knowledge continuity:</strong> team changes don't result in lost understanding</li>
+      <li><strong>Continuous improvement:</strong> patterns in past decisions inform future projects</li>
+    </ul>
+
+    <div class="blueprint">
+<pre>
+   VERSION & DECISION TRACEABILITY
+   +----------------------------------------------+
+   | MODEL REGISTRY (for each system)             |
+   |  - v1.0: trained on dataset D1, 2025-01     |
+   |  - v1.1: retrained on D2, new features,     |
+   |          approved by A. Smith, 2025-03      |
+   |  - v1.2: fix bias detected in subgroup X    |
+   +----------------------------------------------+
+              |
+              v
+   +----------------------------------------------+
+   | DECISION LOG (key gates)                     |
+   |  Gate: Data Selection                        |
+   |  Decision: Use internal CRM data only        |
+   |  Rationale: Third-party data lacked consent  |
+   |  Signed: Legal, DPO, Tech Lead              |
+   |  Date: 2025-01-15                           |
+   +----------------------------------------------+
+</pre>
+      <div class="cap">Fig 2.1 — Model registry feeding into a gate-linked decision log — two records, one lineage.</div>
+    </div>
+
+    <details class="lens">
+      <summary>Architect's Lens — CTO &amp; Director Perspective <span class="lens-arrow">▾</span></summary>
+      <div class="lens-body">
+        <div class="voice cto">
+          <span class="voice-badge">CTO</span>
+          <p>"I treat the model registry as a production system with SLAs. If we lose traceability, we can't roll back safely, and we can't debug. I'm investing in an MLOps platform that auto-logs every training run, links to code and data versions, and surfaces drift. The decision log is a human overlay on that, and I want it lightweight — just a structured comment in the registry, not a separate document."</p>
+        </div>
+        <div class="voice director">
+          <span class="voice-badge">Director</span>
+          <p>"If we're ever investigated, the decision log is our best evidence of good faith. I want a policy that says: no significant AI decision is valid unless logged within 24 hours. That log will be reviewed during internal audits. It's not paperwork; it's our institutional memory and our legal shield."</p>
+        </div>
+      </div>
+    </details>
+
+  </div>
+</details>
+
+<!-- ============ SECTION 3 ============ -->
+<details class="chapter" id="s3">
+  <summary class="chapter-head">
+    <span class="chapter-num">03</span>
+    <div class="chapter-titlewrap">
+      <h2>Agile Governance Tools: Templates, Minimal Records &amp; Checklists</h2>
+      <span class="tag">Implementation · Agile Tooling</span>
+    </div>
+    <span class="chevron">›</span>
+  </summary>
+  <div class="chapter-body">
+
+    <details class="recall">
+      <summary><span class="recall-label">Recall</span><span class="recall-q">How can an organization keep AI governance lightweight and efficient while still meeting regulatory standards, using three simple tools?</span></summary>
+      <div class="recall-answer">Standardize the repetitive parts so humans focus on judgment calls: <strong>Templates</strong> (project sheet, impact assessment, validation report), the <strong>Minimal Record / Model Passport</strong> (a living one-screen fact sheet per model), and a <strong>gate-based Operational Checklist</strong> that doubles as formal evidence governance steps were completed.</div>
+    </details>
+
+    <h3 class="sub">Governance Doesn't Have to Be Bureaucratic</h3>
+    <p>The secret is to standardize the repetitive parts so humans can focus on the judgment calls. Three tools form an agile governance backbone:</p>
+
+    <details class="minifold">
+      <summary>1. Templates (Pre-structured Documents)</summary>
+      <div class="minifold-body">
+        <ul>
+          <li><strong>AI Project Sheet:</strong> use case, objective, data sources, responsible parties, expected risks, success criteria (1–2 pages)</li>
+          <li><strong>Impact Assessment Template:</strong> prompts for ethical, legal, privacy, and fundamental rights impacts, tailored to risk level</li>
+          <li><strong>Validation Report Template:</strong> standard format for performance metrics, fairness results, robustness tests, and reviewer comments</li>
+        </ul>
+        <p>Templates ensure nothing is forgotten and allow comparability across projects.</p>
+      </div>
+    </details>
+    <details class="minifold">
+      <summary>2. Minimal Records (The Model Passport)</summary>
+      <div class="minifold-body">
+        <p>Every AI system must have a living, minimal record containing:</p>
+        <ul>
+          <li>Unique ID and current version</li>
+          <li>Purpose and limitations (plain language)</li>
+          <li>List of variables used and their sources</li>
+          <li>Deployment date and environment</li>
+          <li>Functional owner (business) and technical owner (engineering)</li>
+          <li>Change history (links to version register)</li>
+        </ul>
+        <p>This can live in a spreadsheet, a data catalog, or a dedicated governance platform. The key: <strong>always updated, easily accessible</strong>.</p>
+      </div>
+    </details>
+    <details class="minifold">
+      <summary>3. Operational Checklist (Gate-Based)</summary>
+      <div class="minifold-body">
+        <p>A simple checklist that follows the lifecycle. Sample items:</p>
+        <ul>
+          <li>Data quality validated?</li>
+          <li>Bias risk assessed and documented?</li>
+          <li>Model selection justified and explainability considered?</li>
+          <li>Cross-functional review completed (legal, tech, business)?</li>
+          <li>Post-launch monitoring plan defined?</li>
+          <li>Fallback and rollback procedures documented?</li>
+        </ul>
+        <p>Checklists serve as both a memory aid and <strong>formal evidence</strong> that governance steps were completed. They can be integrated into project management tools (Jira, Asana) or CI/CD pipelines.</p>
+      </div>
+    </details>
+
+    <h3 class="sub">The Agile Mindset</h3>
+    <p>These three tools make governance replicable, scalable, and self-service. Teams don't need a governance expert standing over them; they follow the templates and checklists, and the minimal record ensures visibility.</p>
+
+    <div class="blueprint">
+<pre>
+   AGILE GOVERNANCE TOOLKIT
+   +-------------------+   +-------------------+   +-------------------+
+   | TEMPLATES         |   | MINIMAL RECORDS   |   | CHECKLIST         |
+   | (What to fill in) |   | (Per-model fact   |   | (Steps to verify) |
+   +-------------------+   |     sheet)        |   +-------------------+
+   | Project Sheet     |   +-------------------+   | Data check        |
+   | Impact Assessment |   | ID, purpose,      |   | Bias check        |
+   | Validation Report |   | variables,        |   | Review sign-off   |
+   +-------------------+   | owners, history   |   | Monitoring plan   |
+                           +-------------------+   +-------------------+
+                                  |                       |
+                                  v                       v
+                            CENTRAL GOVERNANCE REPOSITORY
+                            (Searchable, auditable, updated)
+</pre>
+      <div class="cap">Fig 3.1 — Three lightweight tools feeding a single searchable, auditable governance repository.</div>
+    </div>
+
+    <details class="lens">
+      <summary>Architect's Lens — CTO &amp; Director Perspective <span class="lens-arrow">▾</span></summary>
+      <div class="lens-body">
+        <div class="voice cto">
+          <span class="voice-badge">CTO</span>
+          <p>"I want the checklist to be automated in our pipeline. When a data scientist pushes a model, the system checks if all items are completed. If not, it blocks. That way governance isn't a meeting; it's an engineering gate. Templates become pull-requests with predefined fields."</p>
+        </div>
+        <div class="voice director">
+          <span class="voice-badge">Director</span>
+          <p>"Simplicity is adoption. I want the minimal record to be so short it fits on one screen. If it's onerous, teams will bypass it. The checklist is my management dashboard — I can see at a glance which projects have passed each gate and which are stuck. That gives me the ability to manage AI risk like any other business risk."</p>
+        </div>
+      </div>
+    </details>
+
+  </div>
+</details>
+
+<!-- ============ SECTION 4 ============ -->
+<details class="chapter" id="s4">
+  <summary class="chapter-head">
+    <span class="chapter-num">04</span>
+    <div class="chapter-titlewrap">
+      <h2>Standardizing Templates: The Key to Scaling Governance</h2>
+      <span class="tag">Implementation · Scaling</span>
+    </div>
+    <span class="chevron">›</span>
+  </summary>
+  <div class="chapter-body">
+
+    <details class="recall">
+      <summary><span class="recall-label">Recall</span><span class="recall-q">How can an organization avoid becoming dependent on a handful of governance experts, and why do standardized templates hold the answer?</span></summary>
+      <div class="recall-answer">Relying on one or two experts to review every project is a single point of failure that doesn't scale. <strong>Standardized templates encode the organization's governance know-how</strong> so any team can start a project asking the right questions without waiting for an expert — trading tacit expert knowledge for a reusable, version-controlled library.</div>
+    </details>
+
+    <h3 class="sub">The Expert Bottleneck</h3>
+    <p>Many organizations rely on one or two people (a chief data scientist, a privacy lawyer) to review every AI project. This doesn't scale, creates delays, and becomes a single point of failure. Standardized templates democratize governance knowledge.</p>
+
+    <h3 class="sub">Designing Reusable Templates</h3>
+    <ul>
+      <li><strong>Standard Project Form:</strong> mandatory fields for purpose, data, stakeholders, risk self-assessment</li>
+      <li><strong>Data Description Form:</strong> origin, license, consent status, variables, known biases — forces critical thinking about data before modelling</li>
+      <li><strong>Ethical Impact Quick Screen:</strong> a short questionnaire (5–7 questions) that flags if a full impact assessment is needed</li>
+      <li><strong>Pre-Deployment Review Checklist:</strong> aggregates evidence from previous phases</li>
+    </ul>
+
+    <h3 class="sub">Benefits</h3>
+    <ul>
+      <li><strong>Autonomy:</strong> any team can start a project with the right questions without waiting for an expert</li>
+      <li><strong>Consistency:</strong> all projects are documented the same way, making portfolio management and auditing easier</li>
+      <li><strong>Embedded Learning:</strong> templates guide users to think about governance early; they are educational tools, not just forms</li>
+      <li><strong>Scalability:</strong> the organization can increase AI projects linearly without increasing governance headcount</li>
+    </ul>
+
+    <h3 class="sub">Implementation Advice</h3>
+    <ul>
+      <li>Co-design templates with the people who will use them. Usability drives adoption.</li>
+      <li>Keep them short: a template that takes more than 30 minutes to fill out is too long.</li>
+      <li>Version-control the templates themselves; improve them based on user feedback.</li>
+      <li>Pair templates with short training videos or guides.</li>
+    </ul>
+
+    <div class="blueprint">
+<pre>
+   SCALING GOVERNANCE WITH TEMPLATES
+   +----------------------------------------+
+   | Governance Expert Knowledge            |
+   | (Tacit, in few heads)                 |
+   +----+-----------------------------+----+
+        | Captured in                  |
+        v                             v
+   +---------+                   +---------+
+   |Template |                   |Template |
+   |Library  |<-- training &     |Library  |
+   +---------+    feedback        +---------+
+        |
+        v
+   Teams autonomously complete
+   projects with built-in governance
+</pre>
+      <div class="cap">Fig 4.1 — Tacit expert knowledge converted into a reusable template library, enabling team autonomy.</div>
+    </div>
+
+    <details class="lens">
+      <summary>Architect's Lens — CTO &amp; Director Perspective <span class="lens-arrow">▾</span></summary>
+      <div class="lens-body">
+        <div class="voice cto">
+          <span class="voice-badge">CTO</span>
+          <p>"I want our internal developer portal to include these templates as part of the 'create new AI project' flow. Auto-populate what you can from the data catalog and registry. Let the team focus on the novel decisions, not boilerplate. That's how we make governance a feature of our platform."</p>
+        </div>
+        <div class="voice director">
+          <span class="voice-badge">Director</span>
+          <p>"Relying on one hero is a business continuity risk. If our AI governance lead leaves, I don't want the program to collapse. Investing in templates and training now means governance is institutionalized, not person-dependent. It also signals to regulators that we have a systematic approach, which they love."</p>
+        </div>
+      </div>
+    </details>
+
+  </div>
+</details>
+
+<!-- ============ SECTION 5 ============ -->
+<details class="chapter" id="s5">
+  <summary class="chapter-head">
+    <span class="chapter-num">05</span>
+    <div class="chapter-titlewrap">
+      <h2>Case Study: AI Credit Scoring in Financial Services</h2>
+      <span class="tag">Case Study · Finance</span>
+    </div>
+    <span class="chevron">›</span>
+  </summary>
+  <div class="chapter-body">
+
+    <details class="recall">
+      <summary><span class="recall-label">Recall</span><span class="recall-q">What specific governance challenges arise when a bank deploys an ML-based credit scoring model, and how should they be addressed to ensure fairness, explainability, and regulatory compliance?</span></summary>
+      <div class="recall-answer">Five challenges: <strong>explainability (right to a meaningful reason for denial), indirect discrimination via proxies, data protection/DPIA, full audit-trail traceability, and mandatory human oversight</strong> for denials. Addressed through pre-deployment bias testing and committee sign-off, live monitoring by subgroup, and clear customer communication with an appeal channel.</div>
+    </details>
+
+    <h3 class="sub">The Use Case</h3>
+    <p>A bank deploys a machine learning model to assess loan applicants' creditworthiness. The model uses credit history, transactional data, digital behaviour, and self-declared variables. It outperforms traditional scorecards in predictive power and enables faster digital approvals.</p>
+
+    <h3 class="sub">Governance Challenges</h3>
+    <details class="minifold">
+      <summary>1. Explainability &amp; Right to Explanation</summary>
+      <div class="minifold-body"><p>If a loan is denied, the applicant has the right (under GDPR Art. 22 and many national laws) to know why. The bank must provide a <strong>meaningful explanation</strong> in plain language — e.g. "Your application was declined due to a high debt-to-income ratio and recent missed payments." Black-box models without interpretability tools are a legal liability.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>2. Algorithmic Discrimination</summary>
+      <div class="minifold-body"><p>Even if gender, race, or age are excluded, proxies (e.g. postal code, type of employer) can cause <strong>indirect discrimination</strong>. The model must be tested with fairness metrics (equal opportunity, demographic parity difference) across protected groups. Subgroup analysis is mandatory.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>3. Data Protection &amp; Consent</summary>
+      <div class="minifold-body"><p>Credit scoring uses personal data. The bank needs a lawful basis (likely legitimate interest or contractual necessity) and must transparently inform applicants. A DPIA is required. The DPO must be involved early.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>4. Traceability &amp; Audit Trail</summary>
+      <div class="minifold-body"><p>Every credit decision must be logged: input data, model version, score, reason codes, and whether a human override occurred. This is critical for handling disputes, regulatory audits, and internal model risk management.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>5. Human Oversight</summary>
+      <div class="minifold-body"><p>Fully automated denial without human review is restricted. The bank must provide a channel for applicants to contest the decision and have a human review it.</p></div>
+    </details>
+
+    <h3 class="sub">Governance Framework in Practice</h3>
+    <ul>
+      <li><strong>Pre-Deployment:</strong> bias testing, fairness thresholds, explainability validation, DPIA, and approval by a dedicated AI/Model Risk Committee</li>
+      <li><strong>Production Monitoring:</strong> track score distributions, approval rates by subgroup, drift detection — set alerts for anomalous shifts</li>
+      <li><strong>Customer Communication:</strong> provide a clear notice of automated processing, a plain-language explanation, and instructions for appeal</li>
+    </ul>
+
+    <div class="blueprint">
+<pre>
+   FINANCIAL AI GOVERNANCE LIFECYCLE
+   +------------+    +------------+    +------------+    +------------+
+   | DATA       | -> | MODEL      | -> | PRE-DEPLOY | -> | LIVE       |
+   | SOURCING   |    | TRAINING   |    | REVIEW     |    | MONITORING |
+   | (Consent,  |    | (Fairness, |    | (Committee |    | (Drift,    |
+   |  provenance|    |  explain.) |    |  sign-off) |    |  fairness, |
+   |  DPIA)     |    |            |    |            |    |  appeal log|
+   +------------+    +------------+    +------------+    +------------+
+</pre>
+      <div class="cap">Fig 5.1 — Credit scoring lifecycle: consent-checked sourcing through to live fairness-monitored operation.</div>
+    </div>
+
+    <details class="lens">
+      <summary>Architect's Lens — CTO &amp; Director Perspective <span class="lens-arrow">▾</span></summary>
+      <div class="lens-body">
+        <div class="voice cto">
+          <span class="voice-badge">CTO</span>
+          <p>"I want a model-risk management pipeline that automatically runs fairness reports and generates counterfactual explanations for every decision. If a model shows disparate impact, it gets quarantined before deployment. The technology exists; the governance challenge is integrating it into the workflow and making it as rigorous as our anti-money-laundering checks."</p>
+        </div>
+        <div class="voice director">
+          <span class="voice-badge">Director</span>
+          <p>"Lending is heavily regulated. A discriminatory model isn't just a PR problem — it's a regulatory enforcement action waiting to happen. I want the AI Model Risk Committee to have a direct line to the board risk committee. The sign-off for a credit model is as serious as a large credit exposure approval."</p>
+        </div>
+      </div>
+    </details>
+
+  </div>
+</details>
+
+<!-- ============ SECTION 6 ============ -->
+<details class="chapter" id="s6">
+  <summary class="chapter-head">
+    <span class="chapter-num">06</span>
+    <div class="chapter-titlewrap">
+      <h2>Case Study: AI Medical Diagnosis in Healthcare</h2>
+      <span class="tag">Case Study · Healthcare</span>
+    </div>
+    <span class="chevron">›</span>
+  </summary>
+  <div class="chapter-body">
+
+    <details class="recall">
+      <summary><span class="recall-label">Recall</span><span class="recall-q">How does AI governance adapt when a model assists in diagnosing life-threatening conditions from medical images, and what unique requirements arise around clinical safety and human responsibility?</span></summary>
+      <div class="recall-answer">Governance shifts to a <strong>safety-critical mindset</strong>: explanations must be clinically meaningful (not just a heatmap), validation must use representative local patient data with mandatory human review of every diagnosis, bias audits must cover subgroup performance, the system is regulated as a <strong>medical device (SaMD)</strong>, and clear liability lines between clinician, hospital, and vendor must be pre-established.</div>
+    </details>
+
+    <h3 class="sub">The Use Case</h3>
+    <p>A hospital uses an AI system to detect potential tumors in chest X-rays or mammograms. The model demonstrates high accuracy, sometimes exceeding radiologists, but its outputs influence treatment decisions.</p>
+
+    <h3 class="sub">Governance Challenges</h3>
+    <details class="minifold">
+      <summary>1. Clinical Explainability</summary>
+      <div class="minifold-body"><p>A radiologist must understand <strong>why</strong> the model flagged a region as suspicious. It's not enough to show a heatmap; the explanation must be clinically meaningful (e.g. "mass with spiculated margins, density X, correlated with feature Y"). Without this, the clinician cannot take responsibility.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>2. Patient Safety &amp; Robustness</summary>
+      <div class="minifold-body"><p>A false negative can be fatal. The model must be validated on <strong>representative, local patient data</strong>, not just a public benchmark. Performance must be monitored continuously. There must be mandatory human review of every diagnosis — AI is a support tool, not the final decision-maker.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>3. Bias &amp; Representativeness</summary>
+      <div class="minifold-body"><p>If the model was trained on a population (e.g. predominantly light-skinned, Western) different from the served population, it may perform poorly for underrepresented groups. Bias audits and performance by subgroup (age, sex, ethnicity) are essential.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>4. Regulatory Classification</summary>
+      <div class="minifold-body"><p>In the EU, diagnostic AI is a <strong>medical device</strong> (Software as a Medical Device, SaMD). It requires conformity assessment, CE marking, and post-market surveillance. The governance must align with MDR (Medical Device Regulation) and IVDR.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>5. Ethical &amp; Informed Consent</summary>
+      <div class="minifold-body"><p>Patients should be informed that AI is used in their diagnosis and have the right to refuse. Who is liable if the AI misses a tumor that a human would have caught? Clear lines of accountability between clinician, hospital, and AI vendor must be established.</p></div>
+    </details>
+
+    <h3 class="sub">Governance Approach</h3>
+    <ul>
+      <li><strong>Clinical Validation Committee</strong> (radiologists, data scientists, risk managers, legal, patient representative)</li>
+      <li><strong>Locked model versions</strong> with rigorous regression testing before updates</li>
+      <li><strong>Full audit trail</strong> of every AI-assisted diagnosis: image, model version, output, clinician's interpretation, final decision</li>
+      <li><strong>Continuous monitoring</strong> for drift and subgroup performance</li>
+    </ul>
+
+    <div class="blueprint">
+<pre>
+   HEALTHCARE AI GOVERNANCE SAFETY NET
+   +---------------------------------------------+
+   |          CLINICAL WORKFLOW                   |
+   |  Radiologist + AI Assistance                 |
+   +---------------------------------------------+
+         |                  |
+   AI output          Clinician review
+   (heatmap,         (verification,
+    explanation)      final report)
+         |                  |
+         +--------+---------+
+                  |
+         +--------v---------+
+         | AUDIT LOG         |
+         | (model ver.,      |
+         |  input image ID,  |
+         |  AI output,       |
+         |  clinician decision)
+         +------------------+
+                  |
+         +--------v---------+
+         | GOVERNANCE BOARD   |
+         | (periodic review,  |
+         |  bias analysis,    |
+         |  incident review)  |
+         +-------------------+
+</pre>
+      <div class="cap">Fig 6.1 — AI output and clinician review converge into an audit log, feeding a periodic governance board review.</div>
+    </div>
+
+    <details class="lens">
+      <summary>Architect's Lens — CTO &amp; Director Perspective <span class="lens-arrow">▾</span></summary>
+      <div class="lens-body">
+        <div class="voice cto">
+          <span class="voice-badge">CTO</span>
+          <p>"Healthcare AI demands a 'safety-critical' engineering mindset, like avionics or nuclear. I want our MLOps pipeline to include adversarial robustness testing and domain-specific validation sets. We need to lock down the model and control updates with the same rigor as a medical device manufacturer. No hotfixes to production."</p>
+        </div>
+        <div class="voice director">
+          <span class="voice-badge">Director</span>
+          <p>"This is a risk domain where 'sorry' doesn't cut it. The hospital's reputation, accreditation, and liability insurance are on the line. I want a clinical AI governance board that meets monthly and includes the Chief Medical Officer. Any adverse event linked to the AI is a reportable incident, and we must treat it with the same seriousness as a surgical error."</p>
+        </div>
+      </div>
+    </details>
+
+  </div>
+</details>
+
+<!-- ============ SECTION 7 ============ -->
+<details class="chapter" id="s7">
+  <summary class="chapter-head">
+    <span class="chapter-num">07</span>
+    <div class="chapter-titlewrap">
+      <h2>Case Study: Generative AI — Content Risks &amp; Unpredictability</h2>
+      <span class="tag">Case Study · Generative AI</span>
+    </div>
+    <span class="chevron">›</span>
+  </summary>
+  <div class="chapter-body">
+
+    <details class="recall">
+      <summary><span class="recall-label">Recall</span><span class="recall-q">Why does generative AI break traditional governance models, and what new controls are needed for systems that produce novel, unpredictable content?</span></summary>
+      <div class="recall-answer">Unlike a classifier, output <strong>cannot be pre-approved</strong> — a generative model can produce anything within its learned distribution, including offensive, hallucinated, or IP-infringing content. Governance shifts to <strong>post-hoc controls</strong>: automated content filters, a human review queue for sensitive categories, usage guardrails, prompt/output logging, vendor due diligence on training data provenance, and preference for curated/fine-tuned models over general-purpose ones.</div>
+    </details>
+
+    <h3 class="sub">The Use Case</h3>
+    <p>An organization deploys a generative AI tool: a customer service chatbot, a marketing content generator, or an internal code assistant. These models produce text, images, or code on demand based on prompts.</p>
+
+    <h3 class="sub">Unique Governance Challenges</h3>
+    <details class="minifold">
+      <summary>1. Unpredictable Outputs</summary>
+      <div class="minifold-body"><p>Unlike a classifier, a generative model can produce anything within its learned distribution — including offensive, biased, hallucinated, or legally problematic content. The output cannot be pre-approved. Governance must therefore include <strong>post-hoc review and filtering</strong>.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>2. Reputational &amp; Legal Risk</summary>
+      <div class="minifold-body">
+        <ul>
+          <li>A chatbot gives incorrect financial advice → customer harm, regulatory action</li>
+          <li>A marketing generator creates culturally insensitive imagery → brand crisis</li>
+          <li>A code assistant reproduces GPL-licensed code → IP infringement</li>
+        </ul>
+      </div>
+    </details>
+    <details class="minifold">
+      <summary>3. Copyright &amp; Intellectual Property</summary>
+      <div class="minifold-body"><p>Many generative models are trained on publicly available but copyrighted data. Using outputs commercially without understanding the model's training data provenance exposes the organisation to IP lawsuits.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>4. Transparency &amp; User Confusion</summary>
+      <div class="minifold-body"><p>Users may not know they are interacting with an AI. Deepfakes or synthetic media can be misleading. Regulations increasingly require labelling AI-generated content.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>5. Accountability</summary>
+      <div class="minifold-body"><p>Who is responsible for a harmful output — the prompt author, the model provider, or the deploying organization? Governance must define clear accountability, including human review for high-sensitivity outputs.</p></div>
+    </details>
+
+    <h3 class="sub">Governance Mitigations</h3>
+    <ul>
+      <li><strong>Content Moderation Pipelines:</strong> automated filters (toxicity, factual accuracy) plus human review for high-risk outputs</li>
+      <li><strong>Usage Policies &amp; Guardrails:</strong> restrict prompts that request medical, legal, or financial advice; block generation of certain categories</li>
+      <li><strong>Attribution &amp; Logging:</strong> log all prompts and outputs for audit; label AI-generated content publicly</li>
+      <li><strong>Vendor Due Diligence:</strong> when using third-party APIs, ensure contractual commitments on training data provenance, output filtering, and liability</li>
+      <li><strong>Custom/Curated Models:</strong> prefer fine-tuned models on proprietary or verified data to reduce unpredictability</li>
+    </ul>
+
+    <div class="blueprint">
+<pre>
+   GENERATIVE AI GOVERNANCE CONTROL LAYER
+   +-------------------------------------+
+   | USER PROMPT                        |
+   +-------------------------------------+
+                 |
+                 v
+   +-------------------------------------+
+   | CONTENT FILTERS (automated)         |
+   | - Toxicity, PII, off-topic,         |
+   |   prohibited topics                 |
+   +-------------------------------------+
+                 |
+        (if risky) v
+   +-------------------------------------+
+   | HUMAN REVIEW QUEUE                  |
+   | (for sensitive categories)          |
+   +-------------------------------------+
+                 |
+                 v
+   +-------------------------------------+
+   | OUTPUT + DISCLAIMER + LABEL         |
+   | (with traceability log)            |
+   +-------------------------------------+
+</pre>
+      <div class="cap">Fig 7.1 — Every prompt passes through automated filters, escalating risky cases to human review before labeled output.</div>
+    </div>
+
+    <details class="lens">
+      <summary>Architect's Lens — CTO &amp; Director Perspective <span class="lens-arrow">▾</span></summary>
+      <div class="lens-body">
+        <div class="voice cto">
+          <span class="voice-badge">CTO</span>
+          <p>"We need a generative AI gateway — a proxy that sits between users and any LLM, applying policy filters and logging everything. No one in the company should be able to send a prompt to an external model without going through that gateway. This gives us observability and control, and it's how we'll enforce our AI acceptable use policy."</p>
+        </div>
+        <div class="voice director">
+          <span class="voice-badge">Director</span>
+          <p>"Generative AI's greatest power — its creativity — is also its greatest risk. I'm comfortable deploying it only after we've established clear boundaries: what it can and cannot do, and a human review process for anything public-facing. I also want quarterly audits of prompt logs to spot patterns of misuse. This is a governance wild west; we need to bring order fast."</p>
+        </div>
+      </div>
+    </details>
+
+  </div>
+</details>
+
+<!-- ============ SECTION 8 ============ -->
+<details class="chapter" id="s8">
+  <summary class="chapter-head">
+    <span class="chapter-num">08</span>
+    <div class="chapter-titlewrap">
+      <h2>Case Study: AI in the Public Sector — Automated Decisions Affecting Citizens</h2>
+      <span class="tag">Case Study · Public Sector</span>
+    </div>
+    <span class="chevron">›</span>
+  </summary>
+  <div class="chapter-body">
+
+    <details class="recall">
+      <summary><span class="recall-label">Recall</span><span class="recall-q">What heightened governance obligations apply when a public authority uses AI to make or support decisions about citizens' rights, benefits, or access to services?</span></summary>
+      <div class="recall-answer">Public authority raises the bar: <strong>radical transparency</strong> (citizens must know AI was involved and how to appeal), plain-language <strong>explainability with human-override contestability</strong>, full <strong>audit-ready traceability</strong>, a mandatory pre-deployment <strong>Algorithmic Impact Assessment</strong>, and increasingly a <strong>public register</strong> of government algorithms with civil-society participation.</div>
+    </details>
+
+    <h3 class="sub">The Use Case</h3>
+    <p>Public administrations deploy AI for: prioritizing social service cases, detecting benefits fraud, providing administrative information via chatbots, or automating inspections. These decisions directly affect individuals' livelihoods.</p>
+
+    <h3 class="sub">Heightened Governance Obligations</h3>
+    <details class="minifold">
+      <summary>1. Radical Transparency</summary>
+      <div class="minifold-body">
+        <p>Citizens have a right to know:</p>
+        <ul>
+          <li>That an automated system was involved in their case</li>
+          <li>What data was used, and for what purpose</li>
+          <li>The general logic of the decision</li>
+          <li>How to appeal and request a human review</li>
+        </ul>
+        <p>This isn't just best practice — it's a legal obligation under the right to good administration and effective judicial protection.</p>
+      </div>
+    </details>
+    <details class="minifold">
+      <summary>2. Explainability &amp; Contestability</summary>
+      <div class="minifold-body"><p>Decisions must be explainable in non-technical language. There must be a <strong>simple, accessible appeal process</strong> with a human decision-maker who can override the algorithm.</p></div>
+    </details>
+    <details class="minifold">
+      <summary>3. Traceability &amp; Audit-Ready Records</summary>
+      <div class="minifold-body">
+        <p>Public bodies must be able to demonstrate:</p>
+        <ul>
+          <li>The model was trained on relevant, accurate, up-to-date data</li>
+          <li>Performance and fairness were validated before deployment</li>
+          <li>Monitoring is continuous and documented</li>
+          <li>A complete audit trail for each decision: input, model version, output, human override (if any)</li>
+        </ul>
+      </div>
+    </details>
+    <details class="minifold">
+      <summary>4. Algorithmic Impact Assessment (AIA)</summary>
+      <div class="minifold-body">
+        <p>Before deployment, an AIA must be conducted to evaluate:</p>
+        <ul>
+          <li>Risks to vulnerable groups (e.g. low-income, disabled, minorities)</li>
+          <li>Potential bias and its effect on equality</li>
+          <li>Impact on trust in public institutions</li>
+        </ul>
+        <p>This is increasingly mandated by national laws.</p>
+      </div>
+    </details>
+    <details class="minifold">
+      <summary>5. Public Registers &amp; Participation</summary>
+      <div class="minifold-body"><p>Many jurisdictions are establishing <strong>public registers of government algorithms</strong>, listing purpose, logic, risk category, and oversight. Governance must be inclusive, involving legal experts, ethicists, DPOs, and civil society representatives.</p></div>
+    </details>
+
+    <h3 class="sub">Governance Framework</h3>
+    <ul>
+      <li><strong>Algorithmic Transparency Officer</strong> or role within the existing data protection function</li>
+      <li><strong>Mandatory AIA</strong> before any automated decision system is used</li>
+      <li><strong>Citizen-facing explanation templates</strong> integrated into case management systems</li>
+      <li><strong>Regular audits</strong> by an independent body or oversight committee</li>
+    </ul>
+
+    <div class="blueprint">
+<pre>
+   PUBLIC SECTOR AI GOVERNANCE CYCLE
+   +------------------------------------------------+
+   | ALGORITHMIC IMPACT ASSESSMENT (AIA)            |
+   | (Risks to rights, bias, vulnerability)        |
+   +------------------------------------------------+
+                 |
+                 v
+   +------------------------------------------------+
+   | TRANSPARENCY & PUBLIC REGISTER                 |
+   | (Publish purpose, logic, redress)             |
+   +------------------------------------------------+
+                 |
+                 v
+   +------------------------------------------------+
+   | DECISION WITH EXPLANATION & APPEAL PATH        |
+   | (Plain language, human review accessible)     |
+   +------------------------------------------------+
+                 |
+                 v
+   +------------------------------------------------+
+   | CONTINUOUS MONITORING & INDEPENDENT AUDIT      |
+   | (Traceability log, fairness reports)          |
+   +------------------------------------------------+
+</pre>
+      <div class="cap">Fig 8.1 — Public-sector cycle: impact assessment → public transparency → explainable decisions → independent audit.</div>
+    </div>
+
+    <details class="lens">
+      <summary>Architect's Lens — CTO &amp; Director Perspective <span class="lens-arrow">▾</span></summary>
+      <div class="lens-body">
+        <div class="voice cto">
+          <span class="voice-badge">CTO</span>
+          <p>"Building AI for the public sector requires a 'glass box' architecture. Every decision must be logged immutably, and we need an API that serves a plain-language explanation on demand. I want the appeal process to be digitally native — citizens can click a button in the portal and trigger a human review, with the AI's reasoning attached."</p>
+        </div>
+        <div class="voice director">
+          <span class="voice-badge">Director</span>
+          <p>"In government, trust is everything. If citizens perceive the system as a Kafkaesque black box, we've failed even if it's technically perfect. I want to overinvest in transparency and public engagement. Before any rollout, we'll run citizen panels and publish the AIA. The governance standard here is higher because we're acting with public authority — we must be beyond reproach."</p>
+        </div>
+      </div>
+    </details>
+
+  </div>
+</details>
+
+</main>
+
+<div class="progress-note">— End of module · 8/8 sections · use ▾ Expand all to review before an interview run-through —</div>
+
+<footer>
+  ARCHITECTS LAB &nbsp;·&nbsp; Practical Implementation &amp; Real-World Cases &nbsp;·&nbsp; compiled from Ultimate AI Governance Master Notes
+</footer>
+
+<script>
+  document.getElementById('expandAll').addEventListener('click', () => {
+    document.querySelectorAll('details').forEach(d => d.open = true);
+  });
+  document.getElementById('collapseAll').addEventListener('click', () => {
+    document.querySelectorAll('details.chapter').forEach(d => d.open = false);
+    document.querySelectorAll('details:not(.chapter)').forEach(d => d.open = false);
+  });
+</script>
+
+</body>
+</html>
