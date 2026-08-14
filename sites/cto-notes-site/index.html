@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CTONotebook — Ankur Kumar</title>
+<style>
+:root {
+  --bg: #f0f0f2;
+  --bg-panel: #ffffff;
+  --bg-raised: #eaeaed;
+  --bg-item: #f8f8fa;
+  --bg-item-hover: #eef0f4;
+  --border: #d8d8dd;
+  --border-soft: #e5e5e9;
+  --text: #47474d;
+  --text-dim: #6e6e76;
+  --text-faint: #9b9ba2;
+  --text-bright: #18181b;
+
+  --yellow: #f2c94c;
+  --yellow-bright: #d9a600;
+  --yellow-dim: #8a6d0c;
+  --yellow-deep: #7a5c07;
+  --yellow-ink: #171502;
+  --yellow-soft: rgba(210,160,20,0.10);
+  --yellow-soft-strong: rgba(210,160,20,0.16);
+  --yellow-border: rgba(180,135,15,0.38);
+
+  --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', Consolas, monospace;
+  --sans: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(ellipse 900px 500px at 15% -10%, rgba(210,160,20,0.07), transparent 60%),
+    radial-gradient(ellipse 700px 450px at 90% 8%, rgba(210,160,20,0.045), transparent 60%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(240,240,242,0.85);
+  backdrop-filter: blur(12px);
+}
+
+.logo {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--yellow-deep);
+  letter-spacing: 0.04em;
+  text-decoration: none;
+}
+
+.logo span { color: var(--text-dim); }
+
+.nav-tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ── Hero ── */
+.hero {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 76px 32px 40px;
+  text-align: center;
+}
+
+.hero-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--yellow-deep);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+.hero h1 {
+  font-size: clamp(26px, 5vw, 44px);
+  font-weight: 700;
+  color: var(--text-bright);
+  margin: 0 0 16px;
+  line-height: 1.18;
+  letter-spacing: -0.02em;
+}
+
+.hero-sub {
+  font-size: 16px;
+  color: var(--text-dim);
+  max-width: 540px;
+  margin: 0 auto 40px;
+  line-height: 1.65;
+}
+
+.hero-divider {
+  width: 48px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--yellow), transparent);
+  margin: 0 auto;
+  border-radius: 2px;
+}
+
+/* ── Toolbar (expand/collapse-all, no search/filter) ── */
+.toolbar {
+  max-width: 900px;
+  margin: 36px auto 8px;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.tb-btn {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.tb-btn:hover {
+  color: var(--yellow-deep);
+  border-color: var(--yellow-border);
+  background: var(--yellow-soft);
+}
+
+/* ── Section label (top-level page section, e.g. "Resume") ── */
+.section-label {
+  max-width: 900px;
+  margin: 44px auto 16px;
+  padding: 0 32px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── Project group wrapper ── */
+.groups {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.group {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.group[open] {
+  border-color: var(--yellow-border);
+}
+
+.group > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 22px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+.group > summary::-webkit-details-marker { display: none; }
+
+.group > summary:hover {
+  background: var(--bg-raised);
+}
+
+.chevron {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--yellow-deep);
+  transition: transform 0.2s ease;
+}
+
+.group[open] > summary .chevron {
+  transform: rotate(90deg);
+}
+
+.group-heading { flex: 1; min-width: 0; }
+
+.group-title {
+  font-size: 17px;
+  font-weight: 650;
+  color: var(--text-bright);
+  margin: 0 0 4px;
+  letter-spacing: -0.01em;
+}
+
+.group-desc {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin: 0;
+  line-height: 1.55;
+}
+
+.group-count {
+  flex-shrink: 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--yellow-deep);
+  background: var(--yellow-soft);
+  border: 1px solid var(--yellow-border);
+  border-radius: 99px;
+  padding: 4px 11px;
+  white-space: nowrap;
+}
+
+.group-body {
+  padding: 4px 24px 22px;
+  border-top: 1px solid var(--border-soft);
+  padding-top: 18px;
+}
+
+/* Sub-groups inside a group (e.g. Strategy vs Finance modules) */
+.subgroup + .subgroup { margin-top: 18px; }
+
+.subgroup-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin: 0 0 10px 2px;
+}
+
+.items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 10px;
+}
+
+/* ── Item card ── */
+.item {
+  background: var(--bg-item);
+  border: 1px solid var(--border-soft);
+  border-radius: 9px;
+  padding: 16px 18px;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
+  position: relative;
+}
+
+.item:hover {
+  background: var(--bg-item-hover);
+  border-color: var(--yellow-border);
+  transform: translateY(-1px);
+}
+
+.item-tag {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--yellow-dim);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.item:hover .item-tag { color: var(--yellow-deep); }
+
+.item-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text-bright);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.item-desc {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.item-foot {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.item-pill {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--text-faint);
+  background: rgba(0,0,0,0.03);
+  border: 1px solid var(--border-soft);
+  border-radius: 99px;
+  padding: 2px 8px;
+}
+
+.item-arrow {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text-faint);
+  transition: color 0.15s, transform 0.15s;
+}
+
+.item:hover .item-arrow {
+  color: var(--yellow-deep);
+  transform: translateX(3px);
+}
+
+/* ── Resume — standalone highlighted card, no collapse ── */
+.resume-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--yellow-border);
+  border-radius: 12px;
+  padding: 26px 26px;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  transition: background 0.15s, transform 0.15s, border-color 0.15s;
+}
+
+.resume-card:hover {
+  background: var(--bg-raised);
+  border-color: var(--yellow);
+  transform: translateY(-2px);
+}
+
+.resume-body { flex: 1; display: flex; flex-direction: column; gap: 9px; }
+
+.resume-tag {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--yellow-ink);
+  background: var(--yellow);
+  border-radius: 4px;
+  padding: 3px 9px;
+  width: fit-content;
+}
+
+.resume-title {
+  font-size: 16px;
+  font-weight: 650;
+  color: var(--text-bright);
+  margin: 0;
+  line-height: 1.35;
+}
+
+.resume-desc {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.resume-arrow {
+  font-size: 20px;
+  color: var(--yellow-deep);
+  flex-shrink: 0;
+  transition: transform 0.15s;
+}
+
+.resume-card:hover .resume-arrow { transform: translateX(4px); }
+
+/* ── Footer ── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 26px 32px 60px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+}
+
+footer a { color: var(--yellow-dim); text-decoration: none; }
+footer a:hover { color: var(--yellow-deep); }
+
+@media (max-width: 640px) {
+  header { padding: 0 16px; }
+  .hero { padding: 52px 16px 32px; }
+  .toolbar { padding: 0 16px; justify-content: flex-start; }
+  .section-label { padding: 0 16px; }
+  .groups { padding: 0 16px; }
+  .group > summary { padding: 18px; gap: 12px; }
+  .group-body { padding: 4px 16px 18px; padding-top: 16px; }
+  .items { grid-template-columns: 1fr; }
+  .resume-card { flex-direction: column; align-items: flex-start; padding: 22px; }
+  .resume-arrow { display: none; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="index.html">CTO<span>/</span>Notebook</a>
+  <span class="nav-tag">ankur kumar</span>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="hero-label">&#9632; Personal Knowledge Base</div>
+    <h1>Engineering Notes &amp;<br>Architecture Documents</h1>
+    <p class="hero-sub">System designs, scenario analyses, and leadership artifacts — built in the open.</p>
+    <div class="hero-divider"></div>
+  </div>
+
+  <div class="toolbar">
+    <button class="tb-btn" id="expandAllBtn" type="button">Expand all</button>
+    <button class="tb-btn" id="collapseAllBtn" type="button">Collapse all</button>
+  </div>
+
+  <div class="groups">
+
+    <!-- ═══ Group: Optimus / idfc-coder Platform ═══ -->
+    <details class="group">
+      <summary>
+        <span class="chevron">&#9656;</span>
+        <div class="group-heading">
+          <h2 class="group-title">Optimus / idfc-coder — AI Coding Platform</h2>
+          <p class="group-desc">Architecture, CTO scenario testing, and codebase-context deep dive for the self-hosted AI coding assistant.</p>
+        </div>
+        <span class="group-count">3 docs</span>
+      </summary>
+      <div class="group-body">
+        <div class="items">
+
+          <a class="item" href="projects/idfc-coder-system-design.html">
+            <span class="item-tag">&#9670; System Design</span>
+            <h3 class="item-title">Self-Hosted AI Code Generation Platform</h3>
+            <p class="item-desc">End-to-end architecture for deploying a self-hosted AI coding assistant across a 10,000-person fintech organisation — LLM selection, AWS infra, Jira integration, and production runbook.</p>
+            <div class="item-foot">
+              <span class="item-pill">10 sections</span>
+              <span class="item-arrow">&#8594;</span>
+            </div>
+          </a>
+
+          <a class="item" href="projects/idfc-coder-cto-scenario-qa.html">
+            <span class="item-tag">&#9670; CTO Q&amp;A</span>
+            <h3 class="item-title">Optimus AI Platform — CTO Pressure Test</h3>
+            <p class="item-desc">21 deep scenario questions covering catastrophic failures, edge cases, organisational dynamics, technical deep-dives, strategic trade-offs, and future-proofing.</p>
+            <div class="item-foot">
+              <span class="item-pill">21 scenarios</span>
+              <span class="item-pill">7 categories</span>
+              <span class="item-arrow">&#8594;</span>
+            </div>
+          </a>
+
+          <a class="item" href="projects/helium-idfc-coder-context.html">
+            <span class="item-tag">&#9670; Deep Dive</span>
+            <h3 class="item-title">How idfc-coder Sees the Codebase — The Role of Helium</h3>
+            <p class="item-desc">How idfc-coder builds its understanding of the codebase for a Jira ticket — and how database documentation reaches the LLM via the Helium context layer.</p>
+            <div class="item-foot">
+              <span class="item-pill">Helium</span>
+              <span class="item-arrow">&#8594;</span>
+            </div>
+          </a>
+
+        </div>
+      </div>
+    </details>
+
+    <!-- ═══ Group: IIM CTO Course ═══ -->
+    <details class="group">
+      <summary>
+        <span class="chevron">&#9656;</span>
+        <div class="group-heading">
+          <h2 class="group-title">IIM CTO Course</h2>
+          <p class="group-desc">Strategy &amp; Technology and Finance-for-CTOs tracks — plain-language notes with a diagram for every idea.</p>
+        </div>
+        <span class="group-count">11 docs</span>
+      </summary>
+      <div class="group-body">
+
+        <div class="subgroup">
+          <p class="subgroup-label">Strategy &amp; Technology</p>
+          <div class="items">
+
+            <a class="item" href="iim_cto_course/module-1/cto-day1-role-archetypes.html">
+              <span class="item-tag">&#9670; Day 1</span>
+              <h3 class="item-title">Deconstructing the Modern CTO Role</h3>
+              <p class="item-desc">Why a mindset beats a framework, the two languages every CTO must speak, the four archetypes, and five hard case studies.</p>
+              <div class="item-foot">
+                <span class="item-pill">Module 1</span>
+                <span class="item-arrow">&#8594;</span>
+              </div>
+            </a>
+
+            <a class="item" href="iim_cto_course/module-2/cto-m1-strategists-playbook.html">
+              <span class="item-tag">&#9670; M2 · Session 1</span>
+              <h3 class="item-title">The Strategist's Playbook</h3>
+              <p class="item-desc">How to read a business case like a consultant — diagnosing problems, recommending solutions, and building analytical muscle.</p>
+              <div class="item-foot">
+                <span class="item-pill">Business cases</span>
+                <span class="item-arrow">&#8594;</span>
+              </div>
+            </a>
+
+            <a class="item" href="iim_cto_course/module-2/cto-m2-vrio-code.html">
+              <span class="item-tag">&#9670; M2 · Session 2</span>
+              <h3 class="item-title">IT, Value &amp; The VRIO Code</h3>
+              <p class="item-desc">Can technology actually give you a lasting competitive edge? MIS, VRIO, and strategic IT alignment explained simply.</p>
+              <div class="item-foot">
+                <span class="item-pill">VRIO</span>
+                <span class="item-arrow">&#8594;</span>
+              </div>
+            </a>
+
+            <a class="item" href="iim_cto_course/module-2/cto-m3-classify-govern-transform.html">
+              <span class="item-tag">&#9670; M2 · Session 3</span>
+              <h3 class="item-title">Classify, Govern &amp; Transform</h3>
+              <p class="item-desc">How to size up a technology before it reshapes the organization, decide build vs. buy, and read 50 years of hype cycles.</p>
+              <div class="item-foot">
+                <span class="item-pill">IT governance</span>
+                <span class="item-arrow">&#8594;</span>
+              </div>
+            </a>
+
+            <a class="item" href="iim_cto_course/module-2/cto-m4-iot-playbook.html">
+              <span class="item-tag">&#9670; M2 · Session 4</span>
+              <h3 class="item-title">The Internet of Things — Strategic Playbook</h3>
+              <p class="item-desc">Edge computing, distributed architectures, and the five management decisions every CTO must own in an IoT deployment.</p>
+              <div class="item-foot">
+                <span class="item-pill">IoT</span>
+                <span class="item-arrow">&#8594;</span>
+              </div>
+            </a>
+
+          </div>
+        </div>
+
+        <div class="subgroup">
+          <p class="subgroup-label">Finance for CTOs</p>
+          <div class="items">
+
+            <a class="item" href="iim_cto_course/module-3/finance-m1-money101.html">
+              <span class="item-tag">&#9670; M3 · Session 1</span>
+              <h3 class="item-title">Money 101 &amp; The Balance Sheet</h3>
+              <p class="item-desc">Real vs. financial assets, the three decisions every CFO makes, and how to read a balance sheet.</p>
+              <div class="item-foot">
+                <span class="item-pill">Balance sheet</span>
+                <span class="item-arrow">&#8594;</span>
+              </div>
+            </a>
+
+            <a class="item" href="iim_cto_course/module-3/finance-m2-capex-opex.html">
+              <span class="item-tag">&#9670; M3 · Session 2</span>
+              <h3 class="item-title">The CapEx vs. OpEx Playbook</h3>
+              <p class="item-desc">Cloud vs. data center, build vs. lease, buy vs. robot-as-a-service — worked through six real scenarios.</p>
+              <div class="item-foot">
+                <span class="item-pill">Tech budgeting</span>
+                <span class="item-arrow">&#8594;</span>
+              </div>
+            </a>
+
+            <a class="item" href="iim_cto_course/module-3/finance-m3-workingcapital-opportunitycost.html">
+              <span class="item-tag">&#9670; M3 · Session 3</span>
+              <h3 class="item-title">Working Capital &amp; Opportunity Cost</h3>
+              <p class="item-desc">Why "cash is king" beats profit every time, and ten scenarios where a CTO's best idea loses to an empty cash drawer.</p>
+              <div class="item-foot">
+                <span class="item-pill">Opportunity cost</span>
+                <span class="item-arrow">&#8594;</span>
+              </div>
+            </a>
+
+            <a class="item" href="iim_cto_course/module-3/finance-m4-capital-budgeting.html">
+              <span class="item-tag">&#9670; M3 · Session 4</span>
+              <h3 class="item-title">The Capital Budgeting Toolkit</h3>
+              <p class="item-desc">Shareholder wealth, agency theory, and the six tools — NPV, IRR, XIRR, PI, Payback — that decide if a project lives or dies.</p>
+              <div class="item-foot">
+                <span class="item-pill">NPV / IRR</span>
+                <span class="item-arrow">&#8594;</span>
+              </div>
+            </a>
+
+            <a class="item" href="iim_cto_course/module-3/finance-m5-sensitivity-scenario.html">
+              <span class="item-tag">&#9670; M3 · Session 5</span>
+              <h3 class="item-title">Sensitivity, Scenario &amp; Risk Analysis</h3>
+              <p class="item-desc">How to build best/base/worst case worlds, measure risk with real numbers, and know exactly how deep a CTO needs to go.</p>
+              <div class="item-foot">
+                <span class="item-pill">Risk analysis</span>
+                <span class="item-arrow">&#8594;</span>
+              </div>
+            </a>
+
+            <a class="item" href="iim_cto_course/module-3/finance-m6-cfo-cto-playbook.html">
+              <span class="item-tag">&#9670; M3 · Session 6</span>
+              <h3 class="item-title">The CFO-CTO Playbook</h3>
+              <p class="item-desc">The STEM model for CTO excellence, cost of capital as opportunity cost, and ten boardroom-grade battle scenarios.</p>
+              <div class="item-foot">
+                <span class="item-pill">STEM model</span>
+                <span class="item-arrow">&#8594;</span>
+              </div>
+            </a>
+
+          </div>
+        </div>
+
+      </div>
+    </details>
+
+  </div>
+
+  <!-- Resume -->
+  <div class="section-label">Resume</div>
+  <div class="groups" style="margin-bottom: 20px;">
+    <a class="resume-card" href="resume/Ankur_Resume_AI_Leadership.html">
+      <div class="resume-body">
+        <span class="resume-tag">&#9724; Resume</span>
+        <h2 class="resume-title">Ankur Kumar — Senior Engineering Leader, AI Systems &amp; Platforms</h2>
+        <p class="resume-desc">Professional resume covering AI platform leadership, systems architecture, and engineering management experience.</p>
+      </div>
+      <span class="resume-arrow">&#8594;</span>
+    </a>
+  </div>
+</main>
+
+<footer>
+  <span>CTONotebook &mdash; <a href="https://github.com/ankurkumar222" target="_blank" rel="noopener">github.com/ankurkumar222</a></span>
+</footer>
+
+<script>
+  var groups = document.querySelectorAll('.group');
+  document.getElementById('expandAllBtn').addEventListener('click', function () {
+    groups.forEach(function (g) { g.open = true; });
+  });
+  document.getElementById('collapseAllBtn').addEventListener('click', function () {
+    groups.forEach(function (g) { g.open = false; });
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architects Lab · GPU & Self-Hosting Cost Decision (₹)</title>
+<style>
+  :root{
+    --bg:#0d0f14; --panel:#151823; --panel2:#1b1f2e;
+    --ink:#e8e6df; --dim:#8b8fa3;
+    --gold:#d4af5a; --gold-soft:#b8964a;
+    --teal:#5ad4c8; --rose:#d47a8a; --violet:#9a8ad4; --amber:#d4915a;
+    --line:#2a2f42;
+    --mono:'Courier New', ui-monospace, monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif;display:flex;flex-direction:column;min-height:100vh}
+  header{padding:16px 26px 12px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  header .k{font-family:var(--mono);font-size:.68rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase}
+  header h1{font-size:1rem;font-weight:normal}
+  header .count{margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--dim)}
+  .tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
+  .tab{flex:1;min-width:110px;padding:9px 10px;text-align:center;font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;color:var(--dim);border-right:1px solid var(--line);cursor:pointer;white-space:nowrap;transition:.2s;background:transparent;border-top:none;border-bottom:none;border-left:none}
+  .tab:last-child{border-right:none}
+  .tab.active{color:var(--bg);font-weight:bold}
+  .tab[data-c="gold"].active{background:var(--gold)}
+  .tab[data-c="teal"].active{background:var(--teal)}
+  .tab[data-c="rose"].active{background:var(--rose)}
+  .tab[data-c="violet"].active{background:var(--violet)}
+  .tab[data-c="amber"].active{background:var(--amber)}
+  .tab[data-c="ink"].active{background:var(--ink)}
+  main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px 96px;overflow-y:auto}
+  .slide{max-width:780px;width:100%;animation:fadeUp .4s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @media (prefers-reduced-motion: reduce){.slide{animation:none}}
+  .eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px}
+  .eyebrow.gold{color:var(--gold)} .eyebrow.teal{color:var(--teal)} .eyebrow.rose{color:var(--rose)}
+  .eyebrow.violet{color:var(--violet)} .eyebrow.amber{color:var(--amber)} .eyebrow.ink{color:var(--dim)}
+  .slide h2{font-size:1.55rem;font-weight:normal;line-height:1.3;margin-bottom:14px}
+  .slide h2 em{font-style:italic;color:var(--gold)}
+  .slide p{color:#c9c7bf;line-height:1.75;font-size:1rem;margin-bottom:13px}
+  .slide p strong, .slide li strong{color:var(--ink)}
+  .slide code{font-family:var(--mono);font-size:.85em;background:var(--panel2);padding:2px 6px;border-radius:3px;color:var(--gold)}
+  .ascii{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:6px;padding:14px 16px;margin:14px 0;font-family:var(--mono);font-size:.74rem;line-height:1.5;color:#b9c2d8;overflow-x:auto;white-space:pre}
+  .ascii .hl{color:var(--gold)} .ascii .tl{color:var(--teal)} .ascii .rs{color:var(--rose)}
+  .note{border:1px dashed var(--gold-soft);border-radius:6px;padding:11px 15px;margin:14px 0;font-size:.9rem;color:#cfc9ae;line-height:1.65}
+  .note b{color:var(--gold)}
+  ul.pts{margin:10px 0 13px 2px;list-style:none}
+  ul.pts li{padding:6px 0 6px 21px;position:relative;color:#c9c7bf;line-height:1.6;font-size:.95rem}
+  ul.pts li::before{content:"\203A";position:absolute;left:4px;color:var(--gold);font-family:var(--mono)}
+  /* ---- Think First (question) slides ---- */
+  .qcard{border:2px solid var(--gold);border-radius:10px;background:linear-gradient(160deg,#1a1608,#151823);padding:30px 28px;margin:6px 0 18px;position:relative}
+  .qcard::before{content:"?";position:absolute;top:-20px;left:22px;width:38px;height:38px;border-radius:50%;background:var(--gold);color:var(--bg);font-family:var(--mono);font-weight:bold;font-size:1.3rem;display:flex;align-items:center;justify-content:center}
+  .qcard .qlabel{font-family:var(--mono);font-size:.64rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;margin-bottom:12px}
+  .qcard .qtext{font-size:1.25rem;line-height:1.55;color:var(--ink);font-style:italic}
+  .qcard .qsub{margin-top:14px;font-size:.86rem;color:var(--dim);font-style:normal;font-family:var(--mono)}
+  /* ---- lenses (CTO / Director) ---- */
+  details.lens{margin:10px 0;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+  details.lens summary{cursor:pointer;padding:10px 14px;font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;color:var(--teal);list-style:none}
+  details.lens summary::before{content:"+ ";color:var(--gold)}
+  details.lens[open] summary::before{content:"\2212 "}
+  details.lens.dir summary{color:var(--rose)}
+  details.lens .body{padding:2px 16px 13px}
+  details.lens .body li{font-size:.9rem}
+  /* ---- recall quiz slides ---- */
+  .recall-item{border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:6px;background:var(--panel);margin:12px 0;overflow:hidden}
+  .recall-item summary{cursor:pointer;padding:13px 16px;font-size:.98rem;color:var(--ink);list-style:none;line-height:1.55}
+  .recall-item summary::before{content:"Q  ";font-family:var(--mono);color:var(--teal);font-weight:bold}
+  .recall-item .ans{padding:0 16px 13px;color:#b9c2b0;font-size:.92rem;line-height:1.65;border-top:1px dashed var(--line);padding-top:11px;margin:0 16px 13px;padding-left:0;padding-right:0}
+  .recall-item .ans b{color:var(--teal)}
+  .recall-hint{font-family:var(--mono);font-size:.7rem;color:var(--dim);margin-top:6px}
+  footer{position:fixed;left:0;right:0;bottom:0;background:rgba(13,15,20,.93);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:11px 20px;display:flex;align-items:center;gap:14px}
+  .dots{display:flex;gap:4px;flex:1;justify-content:center;flex-wrap:wrap}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--line);cursor:pointer;transition:.2s}
+  .dot.on{background:var(--gold);transform:scale(1.45)}
+  .dot.q{border:1px solid var(--gold);background:transparent}
+  .dot.q.on{background:var(--gold)}
+  button.nav{font-family:var(--mono);font-size:.78rem;letter-spacing:.1em;background:transparent;color:var(--ink);border:1px solid var(--line);padding:9px 18px;border-radius:5px;cursor:pointer;transition:.2s}
+  button.nav:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+  button.nav.primary{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:bold}
+  button.nav.primary:hover{background:#e2c070}
+  button.nav:disabled{opacity:.25;cursor:default}
+  button.nav:focus-visible,.tab:focus-visible,.dot:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .hint{position:fixed;bottom:62px;right:18px;font-family:var(--mono);font-size:.6rem;color:var(--dim);letter-spacing:.1em}
+  @media(max-width:600px){.slide h2{font-size:1.28rem}.ascii{font-size:.58rem;padding:11px}.hint{display:none}.qcard .qtext{font-size:1.08rem}}
+</style>
+</head>
+<body>
+<header>
+  <span class="k">Architects Lab</span>
+  <h1>Optimus · GPU Selection &amp; Cost Decision (₹ INR)</h1>
+  <span class="count" id="counter"></span>
+</header>
+<div class="tabs" id="tabs"></div>
+<main><div id="stage"></div></main>
+<div class="hint">&larr; &rarr; keys work too</div>
+<footer>
+  <button class="nav" id="prevBtn">&larr; Prev</button>
+  <div class="dots" id="dots"></div>
+  <button class="nav primary" id="nextBtn">Next &rarr;</button>
+</footer>
+<script>
+const SECTIONS=[
+ {id:"intro",label:"START",c:"ink"},
+ {id:"vram",label:"VRAM+QUANT",c:"teal"},
+ {id:"gpus",label:"THE 5 GPUs",c:"gold"},
+ {id:"load",label:"SIZING+COST",c:"violet"},
+ {id:"buy",label:"HOW TO BUY",c:"rose"},
+ {id:"scale",label:"SCALING+VERDICT",c:"amber"}
+];
+const S=[
+
+{sec:"intro",c:"ink",eyebrow:"Optimus · Companion Note",t:"a",h:"Choosing Our Own GPU vs the <em>$200/mo Plan</em> — worked in ₹",body:`
+<p>Same reasoning and same math as the English walkthrough, converted to Indian Rupees (lakhs/crores) so the numbers are easier to hold in your head. Only the currency changes.</p>
+<div class="note"><b>FX assumption:</b> 1 USD &asymp; ₹95 (Aug 2026, mid-market). Re-run these if the rate moves meaningfully.</div>
+<div class="ascii">HEADLINE - 50 heavy users, 6 months
+₹57.0 L   third-party $200/mo plan × 50 users × 6 mo
+₹23.8 L   self-hosted (1× L4 GPU + engineering)
+₹33.2 L   savings (~58%)
+~21 users breakeven headcount</div>
+<p>Read that last number carefully: <strong>below ~21 heavy users the subscription is cheaper.</strong> Above it, self-hosting wins — and the gap widens fast, because one GPU has room for far more than 50 users before you'd need a second card.</p>`},
+
+/* ---- VRAM + QUANT ---- */
+{sec:"vram",c:"teal",eyebrow:"Fundamentals · 01",t:"q",q:`An AWS machine like <code>g6.2xlarge</code> has CPU, RAM, GPU, VRAM, disk and network. For an AI coding assistant, <b>which one actually decides whether this works</b> — and why?`},
+
+{sec:"vram",c:"teal",eyebrow:"Fundamentals · 01–02",t:"a",h:"What the &quot;machine&quot; is, and why VRAM rules",body:`
+<p>An instance is basically a virtual server: <strong>CPU</strong> handles normal application work &middot; <strong>RAM</strong> holds application/system data &middot; <strong>GPU</strong> does the AI computation &middot; <strong>GPU VRAM</strong> holds the model and its working data &middot; <strong>Disk</strong> stores model files and logs &middot; <strong>Network</strong> receives developer requests. For an AI coding assistant, <strong>the GPU is the important part</strong>.</p>
+<div class="ascii">REQUEST PATH
+Developer
+   |
+Your AI Coding API
+   |
+AI Model Server (vLLM)
+   |
+GPU
+   |
+LLM generates code</div>
+<div class="note"><b>The key concept:</b> when selecting a GPU for an LLM, <b>VRAM is often more important than raw GPU speed</b>. Think of VRAM as the GPU's workspace — your model has to fit inside it.</div>
+<div class="ascii">DeepSeek-Coder 33B (~33 billion parameters)
+Model format   Approx. model memory
+FP32           ~132 GB
+FP16           ~66 GB
+INT8           ~33 GB
+INT4           ~17 GB</div>
+<p>This is why <strong>quantization</strong> is extremely important — it's the lever that decides whether you need one cheap GPU or a rack of expensive ones.</p>`},
+
+{sec:"vram",c:"teal",eyebrow:"Fundamentals · 03",t:"q",q:`33 billion numbers have to be stored somewhere. If each number takes 2 bytes, then 1 byte, then half a byte — <b>compute all three totals</b> before peeking. Which one fits a 24 GB card?`},
+
+{sec:"vram",c:"teal",eyebrow:"Fundamentals · 03",t:"a",h:"FP16 / INT8 / INT4, computed",body:`
+<div class="ascii">FP16 - each number ~2 bytes   : 33B × 2    ~= 66 GB
+INT8 - each number ~1 byte    : 33B × 1    ~= 33 GB
+INT4 - each number ~0.5 byte  : 33B × 0.5  ~= 16.5 GB
+
+That's why a <span class="hl">24 GB GPU can potentially run a 33B model using INT4</span>.</div>
+<ul class="pts">
+<li><strong>FP16</strong> — highest quality, highest VRAM.</li>
+<li><strong>INT8</strong> — smaller, small quality trade-off.</li>
+<li><strong>INT4</strong> — smallest, some additional quality trade-off.</li>
+</ul>
+<div class="note">For a coding assistant, <b>INT4 is often a perfectly reasonable choice</b>.</div>`},
+
+{sec:"vram",c:"teal",eyebrow:"Fundamentals · Recall",t:"r",h:"Quick recall: VRAM &amp; quantization",qs:[
+{q:`Why is VRAM more important than raw GPU speed here?`,a:`Because the model must <b>fit inside VRAM</b> to run at all. Speed only matters once it fits — VRAM is the pass/fail gate.`},
+{q:`From memory: DeepSeek-33B at FP32, FP16, INT8, INT4.`,a:`~132 GB, ~66 GB, ~33 GB, ~17 GB. Quantization is the lever between "one cheap GPU" and "a rack of expensive ones".`}]},
+
+/* ---- THE 5 GPUs ---- */
+{sec:"gpus",c:"gold",eyebrow:"GPU Options · 04–07",t:"q",q:`Model needs ~17 GB (INT4). T4 has 16 GB. A10G has 24 GB at ₹115/hr. L4 has 24 GB at ₹93/hr. <b>Pick the winner and justify it</b> — and say why the "almost fits" option is a trap.`},
+
+{sec:"gpus",c:"gold",eyebrow:"GPU Options · 04–07",t:"a",h:"T4, A10G, L4 — the realistic candidates",body:`
+<p>Don't think of T4, A10G, L4, A100, H100 as different "brands". Think: <strong>different levels of GPU capability and VRAM, priced in ₹ per hour.</strong></p>
+<ul class="pts">
+<li><strong>NVIDIA T4 — 16 GB</strong> (<code>g4dn.xlarge</code>), <strong>₹50/hr</strong> ($0.526 × ₹95). Model needs ~17 GB, GPU has 16 GB &rarr; <strong>No, not comfortably.</strong> Even working around the raw ceiling there's no room for KV cache, runtime overhead, batching, or multiple users.</li>
+<li><strong>NVIDIA A10G — 24 GB</strong> (<code>g5.2xlarge</code>), <strong>₹115/hr</strong> ($1.212 × ₹95). DeepSeek 33B INT4 (~17–19 GB) fits inside 24 GB, without enormous headroom. Works, but costs more per hour than the next option.</li>
+<li><strong>NVIDIA L4 — 24 GB</strong> (<code>g6.2xlarge</code>), <strong>₹93/hr</strong> ($0.9776 × ₹95). <strong>WINNER for this scale</strong> — same 24 GB class as A10G, newer generation, cheaper per hour.</li>
+</ul>
+<div class="ascii">GPU    VRAM    ₹/hr (approx)
+T4     16 GB   ₹50
+A10G   24 GB   ₹115
+L4     24 GB   ₹93   &lt;-- <span class="hl">winner for 50 users</span></div>
+<div class="note"><b>The catch with the "150–300 users" claim:</b> that figure depends on model, context length, output tokens, batching, requests/second, latency target, concurrency, KV cache, and vLLM config. Treat it as <b>a hypothesis to benchmark, not a guarantee</b> — 50 users sending short prompts is a very different load from 50 users sending 100K-token repository context.</div>`},
+
+{sec:"gpus",c:"gold",eyebrow:"GPU Options · 08–10",t:"q",q:`An 8&times;A100 node costs ₹3,113/hr; an 8&times;H100 node ₹9,340/hr. For a 50-user pilot, <b>why would anyone ever need these</b> — name the only two real reasons, and check whether either applies.`},
+
+{sec:"gpus",c:"gold",eyebrow:"GPU Options · 08–10",t:"a",h:"A100 and H100 — a different class of machine",body:`
+<ul class="pts">
+<li><strong>A100</strong> — <code>p4d.24xlarge</code> = 8 × A100 (40 GB each) = <strong>320 GB VRAM total</strong>, priced as one instance: <strong>₹3,113/hr</strong> ($32.77 × ₹95) &rarr; <strong>₹22.7 L/month</strong> (730 hrs) &rarr; <strong>₹1.36 Cr / 6 months</strong>.</li>
+<li><strong>H100</strong> — <code>p5.48xlarge</code> = 8 × H100 (80 GB each) = <strong>640 GB VRAM</strong>: <strong>₹9,340/hr</strong> ($98.32 × ₹95) &rarr; <strong>₹68.2 L/month</strong> &rarr; <strong>₹4.09 Cr / 6 months</strong>.</li>
+</ul>
+<p><strong>Why would anyone need 8×A100?</strong> Two real reasons: (1) a model too large for one GPU (e.g. 100B+ params at FP16 needs ~200 GB, so it's split across GPUs), or (2) enough simultaneous developers that one GPU's queue backs up, so you load-balance across several. <strong>Neither applies at N=50.</strong></p>
+<div class="ascii">THE FIVE GPUs, AS CARS
+T4    🚗  Economy car - cheap, fine for light work, too small here
+L4    🚙  Modern SUV - best balance of price/perf/VRAM at this scale
+A10G  🚙  Powerful older SUV - capable, L4 usually better economics
+A100  🏎  High-performance vehicle for serious data-center workloads
+H100  🏎🏎 Formula 1 - you don't buy one to take 50 people to office</div>`},
+
+{sec:"gpus",c:"gold",eyebrow:"GPU Options · Recall",t:"r",h:"Quick recall: the five GPUs",qs:[
+{q:`Summary table from memory: VRAM, ₹/hr, and verdict for each of the five.`,a:`T4 16 GB ₹50 — doesn't fit comfortably ❌. L4 24 GB ₹93 — ⭐ best starting point. A10G 24 GB ₹115 — good candidate ✅. A100 node 320 GB ₹3,113 — ⚠️ overkill. H100 node 640 GB ₹9,340 — ❌ overkill.`},
+{q:`Why is "the model needs 18 GB so any 20 GB GPU is fine" wrong?`,a:`You need <b>model + KV cache + activations + framework/runtime overhead</b>. The KV cache stores information about tokens already processed, and it grows with context and batch size — so you keep VRAM headroom.`},
+{q:`What does continuous batching (vLLM) buy you?`,a:`It lets one GPU serve several overlapping requests efficiently instead of queuing them one-by-one — the throughput trick that stretches a single L4 across 50+ users.`}]},
+
+/* ---- SIZING + COST ---- */
+{sec:"load",c:"violet",eyebrow:"Sizing · 11–12",t:"q",q:`50 users &times; 200 calls/day. <b>Work out the average requests/second</b>, then estimate peak, then peak concurrency. Does that number justify an 8-GPU node?`},
+
+{sec:"load",c:"violet",eyebrow:"Sizing · 11–12",t:"a",h:"Sizing the actual 50-user load",body:`
+<div class="ascii">50 users × 200 calls/day = 10,000 calls/day
+86,400 seconds/day
+10,000 / 86,400            ~= 0.116 req/sec  (average)
+Peak estimate              ~= 0.37 req/sec
+Peak concurrency (rate × latency × burst) ~= 5-8 in-flight requests</div>
+<p>That's why an 8&times;A100 node is excessive at this scale — <strong>a single L4 handles single-digit concurrency comfortably.</strong></p>
+<div class="note"><b>Why concurrency, KV cache and batching matter:</b> a request stays "in flight" for the ~2.5 s it takes to generate; during that window several requests overlap — that's concurrency. The KV cache stores information about tokens already processed, so "model 18 GB" does <b>not</b> mean "any 20 GB GPU is fine". Continuous batching via vLLM is what lets one GPU serve overlapping requests instead of queuing them.</div>`},
+
+{sec:"load",c:"violet",eyebrow:"Cost · 13",t:"q",q:`Before the numbers: for a 6-month self-hosted pilot, <b>which line item is the biggest</b> — the GPU, storage, networking, or engineering? Commit to an answer.`},
+
+{sec:"load",c:"violet",eyebrow:"Cost · 13",t:"a",h:"The ₹ cost, worked through",body:`
+<div class="ascii">L4 COMPUTE COST
+L4 (g6.2xlarge): ₹93/hour
+6 months ~= 4,380 hours
+4,380 × ₹93 ~= ₹4,07,340   (~₹4.07 lakh)
+
+Storage (model weights + logs, EBS)      ~= ₹4,560    (~₹0.05 L)
+Networking / CloudWatch / misc overhead  ~= ₹28,500   (~₹0.29 L)
+-----------------------------------------------------
+INFRA SUBTOTAL                           ~= ₹4.40 lakh</div>
+<div class="note"><b>GPU infrastructure isn't the biggest line item here. Engineering is.</b></div>
+<div class="ascii">TOTAL 6-MONTH COST
+Engineering setup (one-time, ~100 hrs)      ₹9.50 lakh
+Ongoing ops (~4 hrs/wk × 26 weeks)          ₹9.88 lakh
+                                            -----------
+Engineering subtotal                       ₹19.38 lakh
+GPU + infra subtotal                        ₹4.40 lakh
+                                            -----------
+TOTAL SELF-HOSTED (6 months)           ~=  ₹23.78 lakh
+vs Third-party plan (50 × ₹1.14L × 6)  ~=  ₹57.00 lakh
+                                            -----------
+SAVINGS                                ~=  ₹33.22 lakh (58%)</div>
+<div class="ascii">BREAKEVEN, IN ₹
+Per-user 6-month subscription cost = ₹1,14,000 (₹1.14 lakh)
+Self-hosted fixed cost             = ₹23,78,040 (₹23.78 lakh)
+Breakeven users = ₹23.78 L ÷ ₹1.14 L ~= 20.9  -&gt; <span class="hl">~21 users</span>
+At 50 users you are already ~2.4× past breakeven.</div>`},
+
+{sec:"load",c:"violet",eyebrow:"Decision · 14–16",t:"a",h:"The decision tree &amp; three architectures",body:`
+<div class="ascii">Start
+  |
+What model are we running?
+  |
+How much VRAM does it need?
+  |
+  +---------+---------+
+  v                   v
+≤16 GB              &gt;16 GB
+  v                   v
+ T4              Need 24 GB+
+                      v
+                +-----+-----+
+                v           v
+            L4/A10G      &gt;24 GB
+                v           v
+            50 users    A100/H100
+                v
+            Benchmark
+                v
+        Add second GPU only if required</div>
+<div class="note"><b>Start from VRAM, not from the instance name</b> — you never need to open with "A100 or H100?". And don't finalize from VRAM alone: benchmark with real coding prompts, real repo-context sizes, expected output length, and 5/10/20 concurrent users before committing.</div>
+<div class="ascii">THREE ARCHITECTURES TO WEIGH
+A. SaaS
+   50 developers -&gt; third-party AI -&gt; ₹1.14L/user (6mo) -&gt; ₹57L total
+B. One L4 (this pilot)
+   50 developers -&gt; your AI Gateway -&gt; vLLM -&gt; 1× L4 -&gt; 33B INT4
+   -&gt; ₹23.78L (6mo)
+C. Enterprise GPU cluster (only at 10,000-dev scale)
+   Thousands of devs -&gt; AI Gateway -&gt; Load Balancer -&gt; L4/L4/L4 ...
+   -&gt; A100/H100 cluster when model size, throughput or concurrency
+      justifies it</div>
+<div class="ascii">APPENDIX - org-wide (10,000-dev) numbers in ₹ (same ₹95/$1)
+Third-party API, conservative        $5.4M/yr    ~= ₹51.3 crore/yr
+Third-party API, realistic (heavy)   $8-12M/yr   ~= ₹76-114 crore/yr
+Self-hosted (8-node A100 + team)     $3.4M/yr    ~= ₹32.3 crore/yr
+Annual savings                       $4.6-8.6M   ~= ₹43.7-81.7 Cr (54-72%)</div>`},
+
+{sec:"load",c:"violet",eyebrow:"Sizing &amp; Cost · Recall",t:"r",h:"Quick recall: sizing &amp; cost",qs:[
+{q:`Recite the 50-user sizing math and the resulting peak concurrency.`,a:`50 × 200 = 10,000 calls/day ÷ 86,400 s ≈ <b>0.116 req/s average</b>; peak ≈ 0.37 req/s; peak concurrency ≈ <b>5–8 in-flight requests</b>.`},
+{q:`Which is bigger — GPU infra or engineering? Give both numbers.`,a:`<b>Engineering: ₹19.38 lakh</b> (₹9.50 L setup + ₹9.88 L ops) vs <b>GPU + infra: ₹4.40 lakh</b>. Total ₹23.78 lakh over 6 months.`},
+{q:`What is the breakeven headcount, and how is it computed?`,a:`₹23.78 L fixed self-hosted cost ÷ ₹1.14 L per-user 6-month subscription ≈ <b>~21 users</b>. At 50 users you're 2.4× past it.`},
+{q:`Where does the decision tree start — and where does it NOT start?`,a:`It starts at <b>"what model, and how much VRAM does it need?"</b> — not at the instance name. "A100 or H100?" is never the opening question.`}]},
+
+/* ---- HOW TO BUY ---- */
+{sec:"buy",c:"rose",eyebrow:"Buying · 18",t:"q",q:`You've picked the L4. Now: <b>On-Demand (shared) or 1-Year Reserved (&quot;dedicated&quot;)?</b> The reserved rate is 35% cheaper per hour. For a 6-month pilot, which is actually cheaper in total ₹ — and why?`},
+
+{sec:"buy",c:"rose",eyebrow:"Buying · 18",t:"a",h:"Dedicated (1-yr) vs Shared (On-Demand)",body:`
+<p>This is a separate axis from "which GPU" — it's <em>how do we buy the GPU we've already picked</em>. Mixing them up is where budgets get burned.</p>
+<ul class="pts">
+<li><strong>On-Demand ("shared")</strong> — AWS's multi-tenant, no-commitment pool, billed by the second, no contract; start today, terminate tomorrow with zero penalty. Every ₹/hr figure used earlier refers to this.</li>
+<li><strong>Reserved Instances / Savings Plans</strong> — a <em>capacity + spend commitment</em> (1-yr or 3-yr) for a discounted hourly rate. You're still on shared hardware; you're reserving <em>pricing and guaranteed capacity</em>, not a physical machine. This is what "dedicated server, 1-year contract" usually means.</li>
+<li><strong>Dedicated Hosts / Dedicated Instances</strong> — actual hardware isolation (no other customer on the same physical server). Priced per host, usually a premium, chosen for licensing (BYOL) or strict compliance — it adds cost, doesn't reduce it.</li>
+</ul>
+<div class="ascii">REAL RATES (Aug 2026)
+Instance                          On-Demand  1-Yr Reserved  3-Yr Reserved
+g6.2xlarge (1× L4, 24GB)          ₹93/hr     ₹60/hr (-35%)  ₹43/hr (-56%)
+p4d.24xlarge (8× A100-40GB node)  ₹2,086/hr  ₹1,322/hr(-37%) ₹891/hr (-57%)
+
+Note: AWS cut P4d on-demand ~33% in June 2025. Current p4d.24xlarge
+on-demand is $21.958/hr (₹2,086/hr) - lower than the $32.77/hr used
+in the 10,000-dev appendix (which predates the cut).</div>
+<div class="ascii">THE CATCH - a 1-year contract doesn't shrink to fit a 6-month pilot
+SHARED (On-Demand), used for the 6 months the pilot runs:
+  ₹93/hr × 4,380 hrs   = ₹4.07 lakh
+  -&gt; walk away in month 6, owe nothing further
+DEDICATED (1-Yr Reserved), committed regardless of use:
+  ₹60/hr × 8,760 hrs   = ₹5.29 lakh
+  -&gt; owed IN FULL even if the pilot is shelved after month 6
+RESULT: for a 6-month pilot, dedicated costs <span class="rs">₹1.22 lakh MORE</span>
+
+BUT if it runs 24/7 for the FULL YEAR:
+  Shared, 12 months:    ₹93 × 8,760 = ₹8.14 lakh
+  Dedicated, 12 months: ₹60 × 8,760 = ₹5.29 lakh
+  -&gt; <span class="tl">dedicated saves ₹2.85 lakh (~35%) - now it's the right call</span></div>
+<div class="ascii">THE BREAKEVEN RULE (works at any scale)
+Breakeven hours = (1-Yr Reserved rate × 8,760) ÷ On-Demand rate
+
+L4 (g6.2xlarge):          (₹60 × 8,760) ÷ ₹93    ~= 5,700 hrs ~= 7.8 months
+A100 node (p4d.24xlarge): (₹1,322 × 8,760) ÷ ₹2,086 ~= 5,553 hrs ~= 7.6 months
+
+RULE OF THUMB: commit to a 1-year contract only if you're confident
+the machine runs ≥ ~65-70% of the year (~8 of 12 months) continuously.</div>
+<div class="note"><b>Decision for this case:</b> 50 users, 6-month pilot, uncertain whether it continues &rarr; <b>go Shared (On-Demand)</b>. Revisit the 1-Year Reserved option only once usage clears the ~7.8-month breakeven — i.e. after the pilot is confirmed to become a permanent platform.</div>`},
+
+{sec:"buy",c:"rose",eyebrow:"Buying · 19",t:"q",q:`You decide you want A100-class hardware on AWS. <b>How many A100s can you rent?</b> Check the instance family names before answering — there's a trap here that changes the whole decision.`},
+
+{sec:"buy",c:"rose",eyebrow:"Buying · 19",t:"a",h:"Why AWS GPUs arrive in sets of 8, not one at a time",body:`
+<div class="ascii">G5 / G6 family (A10G / L4) - scales in small steps:
+  g6.xlarge    -&gt; 1 GPU
+  g6.2xlarge   -&gt; 1 GPU  (more vCPU/RAM around it)
+  g6.12xlarge  -&gt; 4 GPUs
+  g6.48xlarge  -&gt; 8 GPUs
+  -&gt; you can grow GPU-by-GPU as load grows
+
+P4d family (A100) - exactly ONE size exists:
+  p4d.24xlarge -&gt; 8× A100-40GB, always, no smaller option
+P5 family (H100) - exactly ONE size exists:
+  p5.48xlarge  -&gt; 8× H100-80GB, always, no smaller option
+
+<span class="rs">There is no "p4d.3xlarge with 1 GPU." AWS does not sell it.</span></div>
+<p>Going "dedicated" on A100/H100 is never a decision to reserve 1, 2, or 4 GPUs — it's a decision to reserve <strong>all 8 at once</strong>, billed as a single node:</p>
+<div class="ascii">1-Yr Reserved, 8× A100 node, full 12-month commitment:
+  ₹1,322/hr × 8,760 hrs = ₹1.16 crore - obligated whether you use
+  1 GPU's worth of traffic or all 8.
+Compare: 1-Yr Reserved, single L4:
+  ₹60/hr × 8,760 hrs = ₹5.29 lakh
+-&gt; a <span class="hl">~22× jump</span> in ₹ commitment to move from "one small GPU"
+   to "the smallest unit AWS sells in the A100 class."</div>
+<p>For the 50-user pilot this reinforces the L4 choice <em>independent</em> of the VRAM/quantization argument: even if DeepSeek-33B on an A100 (more headroom, less aggressive INT4) were technically nicer, choosing A100 on AWS means committing to 8 GPUs' worth of hardware for a workload needing a small fraction of one GPU. There's no "buy 2 A100s to be safe" middle ground.</p>
+<div class="note"><b>Expert aside:</b> AWS is the outlier. Google Cloud (<code>a2-highgpu-1g</code>) and Azure (NC A100 v4) offer single-GPU A100 instances, and specialist clouds (Lambda Labs, RunPod, CoreWeave) rent individual A100s/H100s hourly. But for a regulated fintech standardized on an AWS VPC/SOC2 posture, adding a second cloud vendor for GPU alone usually isn't worth the compliance surface. Also: NVIDIA <b>MIG</b> can partition one physical A100/H100 into up to 7 isolated slices — useful for packing more small workloads onto the 8 GPUs you're already paying for, but it does not let AWS bill you for fewer than 8.</div>`},
+
+{sec:"buy",c:"rose",eyebrow:"Buying · Recall",t:"r",h:"Quick recall: how to buy",qs:[
+{q:`State the breakeven rule and both breakeven points.`,a:`Breakeven hours = (1-Yr Reserved rate × 8,760) ÷ On-Demand rate. <b>L4 ≈ 5,700 hrs ≈ 7.8 months</b>; <b>A100 node ≈ 5,553 hrs ≈ 7.6 months</b>. Commit only if the machine runs ≥65–70% of the year.`},
+{q:`Reserved Instances vs Dedicated Hosts — what's the difference?`,a:`<b>Reserved Instances</b> = a pricing/capacity commitment on shared multi-tenant hardware (cheaper per hour). <b>Dedicated Hosts/Instances</b> = real hardware isolation, priced at a premium, chosen for licensing or compliance — it adds cost.`},
+{q:`Why does the 8-GPU minimum matter for the pilot decision?`,a:`Because A100/H100 on AWS come in exactly one size (8 GPUs). Going dedicated there is a <b>~22× jump in commitment</b> (₹1.16 Cr vs ₹5.29 L for a reserved L4) for a workload needing a fraction of one GPU.`}]},
+
+/* ---- SCALING ---- */
+{sec:"scale",c:"amber",eyebrow:"Scaling · 20",t:"q",q:`The pilot works. Now 5,000 users. <b>Does the answer stay "add a bigger GPU"?</b> Predict what breaks first and what the architecture must become.`},
+
+{sec:"scale",c:"amber",eyebrow:"Scaling · 20",t:"a",h:"Scaling to 5,000 users — the step-function",body:`
+<div class="ascii">STEP 1 - Pilot (50 users)
+  1× L4 (g6.2xlarge), on-demand, single GPU
+  Ceiling: ~150-300 users before this card saturates (estimate)
+
+STEP 2 - Cross the single-GPU ceiling (~150-300 users)
+  A single card, however large, eventually queues requests once
+  concurrency exceeds its batching capacity. The fix isn't a bigger
+  GPU - it's <span class="hl">horizontal scaling</span>: multiple GPU nodes behind one
+  load balancer (the "enterprise GPU cluster" option C).
+
+STEP 3 - 5,000 users -&gt; multi-node cluster
+  Move from "1 GPU" to "N GPU nodes, autoscaled" - same
+  p4d.24xlarge (8× A100) building block, just fewer nodes than
+  full production. Also revisit quantization: at cluster scale some
+  teams relax from INT4 back toward INT8/FP16 for quality, since
+  batching economics improve at high 24/7 utilization - a real
+  trade-off to benchmark, not a given.</div>
+<div class="ascii">SIZING MATH AT 5,000 USERS
+Peak concurrency ~= 250  (org-wide ~500, halved)
+Capacity per p4d.24xlarge node (8×A100) ~= 8-16 concurrent
+Nodes needed at peak ~= 250 ÷ 12 ~= 21 -&gt; rounds to Max 8 nodes
+once batching + 1.5× avg-utilization headroom is applied
+(mirroring the org's Min 4 / Max 16 policy, scaled to Min 2 / Max 8)
+Average nodes for cost modeling: 5 (of the 2-8 autoscaled range)</div>
+<div class="ascii">INFRASTRUCTURE AT 5,000 USERS
+GPU compute    5 nodes avg (2-8) × p4d.24xlarge = 40 GPUs avg
+               (16-64 range) = 1,600 GB VRAM avg
+               3-Yr Reserved (₹891/hr/node)
+CPU (bundled)  5 × 96 vCPU = 480 vCPUs avg (not separately billed)
+Wrapper/API    ECS Fargate ~4 tasks × 2 vCPU / 4 GB = 8 vCPU / 16 GB
+               (auth, rate-limit, prompt engineering, cache lookups)
+Caching/state  ElastiCache Redis + DynamoDB, ~50% of full-org sizing
+               (40-55% cache hit-rate assumption applies at any scale)
+Engineering    ~2 FTE (down from 3 - ops complexity has a floor)</div>
+<div class="ascii">MONTHLY COST, CORRECTED PRICING (₹)
+GPU compute   5 nodes × ₹891/hr × 730 hrs   = ₹32.52 lakh/mo
+Wrapper/CPU   ECS Fargate 8 vCPU/16GB 24×7  = ₹ 0.27 lakh/mo
+Storage/caching/network (~half of org's)    = ₹23.75 lakh/mo
+Engineering   2 FTE                         = ₹31.67 lakh/mo
+                                              ----------------
+TOTAL SELF-HOSTED                          ~= ₹88.21 lakh/mo
+                                           ~= ₹10.59 crore/yr
+                                           ~= ₹ 5.29 crore/6mo</div>`},
+
+{sec:"scale",c:"amber",eyebrow:"Scaling · 20b",t:"a",h:"Cost vs benefit, and the three-tier view",body:`
+<div class="ascii">AT 5,000 USERS
+₹10.59 Cr  self-hosted cost / year
+₹114 Cr    $200/mo × 5,000 users / year
+₹103.4 Cr  annual savings
+~91%       cost reduction</div>
+<p>Savings climbed from <strong>58% at 50 users to ~91% at 5,000</strong> — the core thesis playing out numerically: subscription cost scales <strong>linearly</strong> with headcount (₹1.14 L/user/yr, always), while self-hosted cost scales in <strong>steps</strong> (GPU nodes, engineering headcount) that grow much slower than users. And the benefit isn't only the ₹103 crore — it's the sovereignty argument (code never leaves the VPC) now protecting 5,000 developers' proprietary code instead of 50.</p>
+<div class="ascii">THREE-TIER VIEW
+Metric              Pilot 50      Mid 5,000        Full 10,000
+GPU config          1× L4 (24GB)  2-8 × 8×A100     4-16 × 8×A100
+                                  (avg 5)          (avg 10)
+Total GPUs (avg)    1             40               80
+Total vCPUs (avg)   ~9            ~488             ~976
+Peak concurrency    5-8           ~250             ~500
+Commitment model    On-Demand     3-Yr Reserved    3-Yr Reserved
+Self-hosted / month ₹3.96 lakh*   ₹88.21 lakh      ₹1.61 crore
+SaaS ($200/mo)/mo   ₹9.50 lakh    ₹9.50 crore      ₹19.00 crore
+Savings             58%           ~91%             ~91.5%
+
+*Pilot figure blends the one-time ₹9.5L setup across 6 months;
+ steady-state run-rate from month 7 onward is lower.</div>
+<div class="note"><b>Honest caveat:</b> the 5,000 and 10,000-user figures use the <b>corrected</b> 3-Yr Reserved rate (₹891/hr, verified Aug 2026) rather than the ₹3,113/hr-equivalent in the original appendix — which is why self-hosted cost here is lower and savings % higher than the doc's stated 54–72%. Directionally this strengthens the conclusion; it doesn't change it. Peak concurrency, node counts and cache hit-rates remain <b>modeled estimates, not measured facts</b>.</div>`},
+
+{sec:"scale",c:"amber",eyebrow:"Final Recall",t:"r",h:"Final recall: the whole decision",qs:[
+{q:`Recite the GPU selection chain in order.`,a:`model size &rarr; quantization &rarr; VRAM requirement &rarr; expected concurrency &rarr; GPU performance &rarr; number of GPUs &rarr; ₹ cost &rarr; shared vs dedicated commitment.`},
+{q:`State the final verdict for the 50-user case in one sentence.`,a:`50 users + DeepSeek-Coder 33B + INT4 + ~5–8 peak concurrent &rarr; start with <b>1× L4 (24 GB, ₹93/hr, On-Demand/shared)</b>. Don't jump to 8×A100/H100 without benchmark evidence, and don't sign a 1-year reserved contract for a 6-month pilot (breakeven ~7.8 months).`},
+{q:`Why does savings % rise from 58% to ~91% as you scale?`,a:`Because SaaS cost is <b>linear per head</b> (₹1.14 L/user/yr forever) while self-hosted cost moves in <b>steps</b> — GPU nodes and engineering headcount grow far slower than user count.`},
+{q:`Which claim in this whole document should you always label as a hypothesis?`,a:`<b>"150–300 users per L4."</b> It depends on model, context length, output tokens, batching, req/sec, latency target, concurrency, KV cache and vLLM config — benchmark it, don't quote it as fact.`}]}
+];
+
+let i=0;
+const stage=document.getElementById('stage'),dots=document.getElementById('dots'),
+tabs=document.getElementById('tabs'),counter=document.getElementById('counter'),
+prevBtn=document.getElementById('prevBtn'),nextBtn=document.getElementById('nextBtn');
+SECTIONS.forEach(s=>{const b=document.createElement('button');b.className='tab';b.dataset.c=s.c;b.dataset.sec=s.id;b.textContent=s.label;b.onclick=()=>go(S.findIndex(x=>x.sec===s.id));tabs.appendChild(b);});
+S.forEach((sl,k)=>{const d=document.createElement('span');d.className='dot'+(sl.t==='q'?' q':'');d.tabIndex=0;d.setAttribute('role','button');d.setAttribute('aria-label','Slide '+(k+1));d.onclick=()=>go(k);d.onkeydown=e=>{if(e.key==='Enter')go(k)};dots.appendChild(d);});
+function lens(cto,dir){
+  return '<details class="lens"><summary>CTO LENS</summary><div class="body"><ul class="pts">'+cto.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>'
+       + '<details class="lens dir"><summary>DIRECTOR LENS</summary><div class="body"><ul class="pts">'+dir.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+}
+function go(k){
+  i=Math.max(0,Math.min(S.length-1,k));
+  const s=S[i];stage.innerHTML='';
+  const el=document.createElement('div');el.className='slide';
+  if(s.t==='q'){
+    el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div>'
+      +'<div class="qcard"><div class="qlabel">Think first &middot; predict before you peek</div>'
+      +'<div class="qtext">'+s.q+'</div>'
+      +'<div class="qsub">Form your answer in your head. Then press Next to compare.</div></div>';
+  } else if(s.t==='r'){
+    el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'
+      +'<p>Answer from memory first. Tap a question to reveal the answer.</p>'
+      +s.qs.map(x=>'<details class="recall-item"><summary>'+x.q+'</summary><div class="ans">'+x.a+'</div></details>').join('')
+      +'<div class="recall-hint">Struggled on any? Jump back with the tabs above, then return.</div>';
+  } else {
+    el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'+s.body+(s.cto?lens(s.cto,s.dir):'');
+  }
+  stage.appendChild(el);
+  counter.textContent=(i+1)+' / '+S.length;
+  document.querySelectorAll('.dot').forEach((d,k2)=>d.classList.toggle('on',k2===i));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.sec===s.sec));
+  prevBtn.disabled=(i===0);
+  nextBtn.textContent=(i===S.length-1)?'Done \u2713':'Next \u2192';
+  nextBtn.disabled=(i===S.length-1);
+  document.querySelector('main').scrollTop=0;window.scrollTo(0,0);
+}
+prevBtn.onclick=()=>go(i-1);nextBtn.onclick=()=>go(i+1);
+document.addEventListener('keydown',e=>{if(e.target.closest('details'))return;if(e.key==='ArrowRight')go(i+1);if(e.key==='ArrowLeft')go(i-1);});
+go(0);
+</script>
+</body>
+</html>

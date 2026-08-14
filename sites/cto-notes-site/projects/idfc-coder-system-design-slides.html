@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architects Lab · idfc-coder System Design</title>
+<style>
+  :root{
+    --bg:#0d0f14; --panel:#151823; --panel2:#1b1f2e;
+    --ink:#e8e6df; --dim:#8b8fa3;
+    --gold:#d4af5a; --gold-soft:#b8964a;
+    --teal:#5ad4c8; --rose:#d47a8a; --violet:#9a8ad4; --amber:#d4915a;
+    --line:#2a2f42;
+    --mono:'Courier New', ui-monospace, monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif;display:flex;flex-direction:column;min-height:100vh}
+  header{padding:16px 26px 12px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  header .k{font-family:var(--mono);font-size:.68rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase}
+  header h1{font-size:1rem;font-weight:normal}
+  header .count{margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--dim)}
+  .tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
+  .tab{flex:1;min-width:110px;padding:9px 10px;text-align:center;font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;color:var(--dim);border-right:1px solid var(--line);cursor:pointer;white-space:nowrap;transition:.2s;background:transparent;border-top:none;border-bottom:none;border-left:none}
+  .tab:last-child{border-right:none}
+  .tab.active{color:var(--bg);font-weight:bold}
+  .tab[data-c="gold"].active{background:var(--gold)}
+  .tab[data-c="teal"].active{background:var(--teal)}
+  .tab[data-c="rose"].active{background:var(--rose)}
+  .tab[data-c="violet"].active{background:var(--violet)}
+  .tab[data-c="amber"].active{background:var(--amber)}
+  .tab[data-c="ink"].active{background:var(--ink)}
+  main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px 96px;overflow-y:auto}
+  .slide{max-width:780px;width:100%;animation:fadeUp .4s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @media (prefers-reduced-motion: reduce){.slide{animation:none}}
+  .eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px}
+  .eyebrow.gold{color:var(--gold)} .eyebrow.teal{color:var(--teal)} .eyebrow.rose{color:var(--rose)}
+  .eyebrow.violet{color:var(--violet)} .eyebrow.amber{color:var(--amber)} .eyebrow.ink{color:var(--dim)}
+  .slide h2{font-size:1.55rem;font-weight:normal;line-height:1.3;margin-bottom:14px}
+  .slide h2 em{font-style:italic;color:var(--gold)}
+  .slide p{color:#c9c7bf;line-height:1.75;font-size:1rem;margin-bottom:13px}
+  .slide p strong, .slide li strong{color:var(--ink)}
+  .slide code{font-family:var(--mono);font-size:.85em;background:var(--panel2);padding:2px 6px;border-radius:3px;color:var(--gold)}
+  .ascii{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:6px;padding:14px 16px;margin:14px 0;font-family:var(--mono);font-size:.74rem;line-height:1.5;color:#b9c2d8;overflow-x:auto;white-space:pre}
+  .ascii .hl{color:var(--gold)} .ascii .tl{color:var(--teal)} .ascii .rs{color:var(--rose)}
+  .note{border:1px dashed var(--gold-soft);border-radius:6px;padding:11px 15px;margin:14px 0;font-size:.9rem;color:#cfc9ae;line-height:1.65}
+  .note b{color:var(--gold)}
+  ul.pts{margin:10px 0 13px 2px;list-style:none}
+  ul.pts li{padding:6px 0 6px 21px;position:relative;color:#c9c7bf;line-height:1.6;font-size:.95rem}
+  ul.pts li::before{content:"\203A";position:absolute;left:4px;color:var(--gold);font-family:var(--mono)}
+  /* ---- Think First (question) slides ---- */
+  .qcard{border:2px solid var(--gold);border-radius:10px;background:linear-gradient(160deg,#1a1608,#151823);padding:30px 28px;margin:6px 0 18px;position:relative}
+  .qcard::before{content:"?";position:absolute;top:-20px;left:22px;width:38px;height:38px;border-radius:50%;background:var(--gold);color:var(--bg);font-family:var(--mono);font-weight:bold;font-size:1.3rem;display:flex;align-items:center;justify-content:center}
+  .qcard .qlabel{font-family:var(--mono);font-size:.64rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;margin-bottom:12px}
+  .qcard .qtext{font-size:1.25rem;line-height:1.55;color:var(--ink);font-style:italic}
+  .qcard .qsub{margin-top:14px;font-size:.86rem;color:var(--dim);font-style:normal;font-family:var(--mono)}
+  /* ---- lenses (CTO / Director) ---- */
+  details.lens{margin:10px 0;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+  details.lens summary{cursor:pointer;padding:10px 14px;font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;color:var(--teal);list-style:none}
+  details.lens summary::before{content:"+ ";color:var(--gold)}
+  details.lens[open] summary::before{content:"\2212 "}
+  details.lens.dir summary{color:var(--rose)}
+  details.lens .body{padding:2px 16px 13px}
+  details.lens .body li{font-size:.9rem}
+  /* ---- recall quiz slides ---- */
+  .recall-item{border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:6px;background:var(--panel);margin:12px 0;overflow:hidden}
+  .recall-item summary{cursor:pointer;padding:13px 16px;font-size:.98rem;color:var(--ink);list-style:none;line-height:1.55}
+  .recall-item summary::before{content:"Q  ";font-family:var(--mono);color:var(--teal);font-weight:bold}
+  .recall-item .ans{padding:0 16px 13px;color:#b9c2b0;font-size:.92rem;line-height:1.65;border-top:1px dashed var(--line);padding-top:11px;margin:0 16px 13px;padding-left:0;padding-right:0}
+  .recall-item .ans b{color:var(--teal)}
+  .recall-hint{font-family:var(--mono);font-size:.7rem;color:var(--dim);margin-top:6px}
+  footer{position:fixed;left:0;right:0;bottom:0;background:rgba(13,15,20,.93);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:11px 20px;display:flex;align-items:center;gap:14px}
+  .dots{display:flex;gap:4px;flex:1;justify-content:center;flex-wrap:wrap}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--line);cursor:pointer;transition:.2s}
+  .dot.on{background:var(--gold);transform:scale(1.45)}
+  .dot.q{border:1px solid var(--gold);background:transparent}
+  .dot.q.on{background:var(--gold)}
+  button.nav{font-family:var(--mono);font-size:.78rem;letter-spacing:.1em;background:transparent;color:var(--ink);border:1px solid var(--line);padding:9px 18px;border-radius:5px;cursor:pointer;transition:.2s}
+  button.nav:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+  button.nav.primary{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:bold}
+  button.nav.primary:hover{background:#e2c070}
+  button.nav:disabled{opacity:.25;cursor:default}
+  button.nav:focus-visible,.tab:focus-visible,.dot:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .hint{position:fixed;bottom:62px;right:18px;font-family:var(--mono);font-size:.6rem;color:var(--dim);letter-spacing:.1em}
+  @media(max-width:600px){.slide h2{font-size:1.28rem}.ascii{font-size:.58rem;padding:11px}.hint{display:none}.qcard .qtext{font-size:1.08rem}}
+</style>
+</head>
+<body>
+<header>
+  <span class="k">Architects Lab</span>
+  <h1>Optimus · idfc-coder — Self-Hosted AI Platform Architecture</h1>
+  <span class="count" id="counter"></span>
+</header>
+<div class="tabs" id="tabs"></div>
+<main><div id="stage"></div></main>
+<div class="hint">&larr; &rarr; keys work too</div>
+<footer>
+  <button class="nav" id="prevBtn">&larr; Prev</button>
+  <div class="dots" id="dots"></div>
+  <button class="nav primary" id="nextBtn">Next &rarr;</button>
+</footer>
+<script>
+const SECTIONS=[
+ {id:"intro",label:"START",c:"ink"},
+ {id:"case",label:"BUSINESS CASE",c:"teal"},
+ {id:"llm",label:"LLM SELECTION",c:"gold"},
+ {id:"aws",label:"AWS INFRA",c:"violet"},
+ {id:"wrap",label:"WRAPPER+JIRA",c:"rose"},
+ {id:"prod",label:"PRODUCTION",c:"amber"},
+ {id:"war",label:"WAR STORIES",c:"rose"},
+ {id:"score",label:"SCORECARD+CTO",c:"ink"}
+];
+const S=[
+
+{sec:"intro",c:"ink",eyebrow:"Optimus · System Design",t:"a",h:"Self-Hosted AI Code Generation Platform <em>for a 10,000-Person Fintech</em>",body:`
+<p>Replacing expensive third-party AI coding assistants with self-hosted LLMs in a regulated fintech environment — built for <strong>data sovereignty, cost control, and production reliability</strong>, and wired directly into the Jira workflow via an autonomous agent.</p>
+<div class="ascii">Scale         : 10,000 devs
+Savings       : 54-72%
+Cloud         : AWS
+Primary model : DeepSeek Coder 33B
+Timeline      : 18 months</div>
+<div class="note"><b>What we learned (exec summary):</b> a regulated fintech can replace third-party AI coding tools with a self-hosted stack without giving up developer productivity — as long as sovereignty, cost and reliability are designed in from day one, not bolted on later.</div>`},
+
+/* ---- BUSINESS CASE ---- */
+{sec:"case",c:"teal",eyebrow:"Business Case · 01",t:"q",q:`10,000 developers, ~50 API calls/day each, $0.03/call. <b>Compute the annual bill.</b> Then adjust for heavy users, longer contexts and premium models — how far off was your first number?`},
+
+{sec:"case",c:"teal",eyebrow:"Business Case · 01",t:"a",h:"The cost reality check",body:`
+<div class="ascii">CURRENT STATE (third-party APIs)
+10,000 developers × ~50 API calls/day × $0.03/call
+= $15,000/day = $450,000/month = <span class="hl">$5.4M/year</span>
+
+But this is conservative. In reality:
+ • Heavy users make 200+ calls/day
+ • Code generation requires longer context windows
+ • Premium models cost $0.05-0.10 per call
+ • <span class="rs">Real cost: $8-12M/year</span></div>
+<div class="ascii">SELF-HOSTED ALTERNATIVE (Reserved, 3-year commitment)
+ • 8× p4d.24xlarge (A100-40GB): ~$32/hour each
+ • Total compute: ~$256/hour = $186,880/month
+ • Storage, networking, management: ~$50,000/month
+ • Engineering team (3 FTE): ~$50,000/month
+ Total: ~$286,880/month = $3.4M/year
+
+ <span class="tl">Annual savings: $4.6-8.6M (54-72% reduction)</span></div>
+<div class="note"><b>What we learned:</b> at 10,000-developer scale, per-call API pricing scales <b>linearly</b> with usage while self-hosted infrastructure scales in <b>steps</b> (GPU nodes) — so the larger and heavier the usage, the more self-hosting's economics win.</div>`},
+
+{sec:"case",c:"teal",eyebrow:"Business Case · 01b",t:"q",q:`Cost is the obvious driver. <b>Name the other one</b> — and answer this: if your competitor gets acquired by your AI provider, what happens to all the proprietary code patterns you've been sending to their API?`},
+
+{sec:"case",c:"teal",eyebrow:"Business Case · 01b",t:"a",h:"The control imperative: data sovereignty",body:`
+<div class="ascii">DATA SOVEREIGNTY MATRIX
+                      Third-Party API   Self-Hosted
+Code leaves VPC       YES ⚠            NO ✅
+Provider sees code    YES ⚠            NO ✅
+Audit trail           Limited          Complete
+Model customization   Impossible       Full control
+Latency SLA           Provider's       Your infrastructure
+Regulatory (SOC2)     Complex          Direct control</div>
+<div class="note"><b>What we learned:</b> cost savings alone don't justify the migration risk — the real unlock is that <b>code never leaves the VPC</b>, giving complete audit trails and regulatory control a third-party API can never offer.</div>`},
+
+{sec:"case",c:"teal",eyebrow:"Business Case · Recall",t:"r",h:"Quick recall: the business case",qs:[
+{q:`Conservative vs realistic third-party spend, and the self-hosted figure.`,a:`Conservative <b>$5.4M/yr</b>; realistic with heavy usage <b>$8–12M/yr</b>. Self-hosted ~$286,880/month = <b>$3.4M/yr</b> &rarr; savings $4.6–8.6M (54–72%).`},
+{q:`Name the six rows of the sovereignty matrix.`,a:`Code leaves VPC, provider sees code, audit trail, model customization, latency SLA, regulatory (SOC2) control.`}]},
+
+/* ---- LLM SELECTION ---- */
+{sec:"llm",c:"gold",eyebrow:"LLM Selection · 02",t:"q",q:`Eight models scored across six dimensions. Llama 2 70B scored <b>highest on code generation (8.8)</b>. Predict: was it chosen? If not, what beat it and why?`},
+
+{sec:"llm",c:"gold",eyebrow:"LLM Selection · 02",t:"a",h:"The candidate pool: 8 models, 6 dimensions",body:`
+<div class="ascii">EVALUATION MATRIX (1-10, higher = better)
+Model                 CodeGen  Latency  Memory  Fine-tune  License
+Code Llama 34B          8.2      7.5      8.0      9.0      Open
+DeepSeek Coder 33B      8.5      7.8      8.2      8.5      Open
+Mistral 7B              6.5      9.5      9.5      8.0      Apache
+StarCoder2 15B          7.8      8.0      8.5      7.5      Open
+Llama 2 70B             8.8      5.0      5.0      9.0      Custom
+GPT-NeoX 20B            6.0      7.0      7.0      7.0      Apache
+Phi-2 (fine-tuned)      7.2      9.0      9.8      6.0      MIT
+WizardCoder 34B         8.7      7.0      7.5      8.0      Open</div>
+<div class="note"><b>What we learned:</b> benchmark scores on paper rarely tell the full story — <b>no single model wins on every axis</b>, which is exactly why a multi-model strategy made more sense than picking one "best" model.</div>`},
+
+{sec:"llm",c:"gold",eyebrow:"LLM Selection · 02b",t:"a",h:"The final decision: a multi-model strategy",body:`
+<div class="ascii">PRIMARY WORKHORSE: DeepSeek Coder 33B
+ |- best code-generation quality-to-latency ratio
+ |- open license, no commercial restrictions
+ |- excellent at financial domain code patterns
+ +- runs on A100-40GB with comfortable headroom
+
+FALLBACK / FAST PATH: Mistral 7B (fine-tuned)
+ |- lightning fast for simple completions
+ |- runs on T4 GPUs at a fraction of the cost
+ |- perfect for IDE autocomplete
+ +- 95% of simple queries don't need 33B parameters
+
+SPECIALIZED PATH: WizardCoder 34B
+ |- complex refactoring tasks
+ |- better at test generation
+ +- only invoked by explicit user request</div>
+<div class="ascii">WHY OTHERS WERE REJECTED
+Llama 2 70B  - too large, too slow: 2.5s inference on A100
+               (unacceptable for IDE), needs 2× A100s, and Meta's
+               custom license created legal review delays
+GPT-NeoX     - outdated architecture: RoPE embeddings missing,
+               poor context handling, declining community support
+StarCoder2   - good not great: filled-attention bugs in initial
+               release, sparse finetuning documentation
+Phi-2        - too small: failed multi-file refactoring, cannot
+               handle the 16K context requirement</div>
+<div class="ascii">INTERNAL BENCHMARK - 500 real PRs from the last year (Pass@1)
+Task Category             DS-Coder  WizCoder  Mistral
+CRUD API Generation         92%       89%      78%
+SQL Query Building          88%       85%      82%
+Unit Test Writing           76%       82%      65%
+Refactoring (Multi-file)    71%       74%      42%
+Regex/Pattern Match         94%       91%      88%
+Security Review             68%       65%      55%</div>
+<div class="note"><b>What we learned:</b> the best model for a task isn't always the biggest — routing <b>95% of simple completions to a small fine-tuned model</b> while reserving the 33B for real generation is what made the economics and latency work.</div>`},
+
+{sec:"llm",c:"gold",eyebrow:"LLM Selection · Recall",t:"r",h:"Quick recall: model choice",qs:[
+{q:`Name the three-model strategy and each one's job.`,a:`<b>DeepSeek Coder 33B</b> = primary workhorse. <b>Mistral 7B fine-tuned</b> = fast path for simple completions/IDE autocomplete (95% of simple queries). <b>WizardCoder 34B</b> = specialized path for complex refactoring and test generation, on explicit request only.`},
+{q:`Why was Llama 2 70B rejected despite the best CodeGen score?`,a:`2.5 s inference on A100 (unacceptable for IDE use), needs 2× A100s for comfortable deployment, and Meta's custom license caused legal review delays.`},
+{q:`Which internal-benchmark categories were the model's weakest?`,a:`<b>Security review (68%)</b> and <b>multi-file refactoring (71%)</b> — WizardCoder edged it on unit tests (82%) and refactoring (74%).`}]},
+
+/* ---- AWS INFRA ---- */
+{sec:"aws",c:"violet",eyebrow:"AWS Infra · 03",t:"q",q:`Sketch the VPC before peeking: what sits in <b>public</b> subnets, what in <b>private app</b> subnets, what in <b>GPU compute</b> subnets, and what in <b>data/state</b>? Why separate them at all?`},
+
+{sec:"aws",c:"violet",eyebrow:"AWS Infra · 03",t:"a",h:"VPC topology",body:`
+<div class="ascii">INTERNET
+   |
+[AWS WAF + Shield]
+   |
+[Route 53 DNS] --- [CloudFront CDN]
+   |
++--------------------------------------------------+
+| VPC (10.0.0.0/16)                                |
+| +----------------------------------------------+ |
+| | Public Subnets (DMZ)                         | |
+| |   [Application Load Balancer] ALB-1a  ALB-1b | |
+| +----------------------+-----------------------+ |
+| +----------------------v-----------------------+ |
+| | Private App Subnets                          | |
+| |   IDFC-Coder Wrapper (ECS Fargate)           | |
+| |     Task-1   Task-2                          | |
+| +----------------------+-----------------------+ |
+| +----------------------v-----------------------+ |
+| | GPU Compute Subnets                          | |
+| |   SageMaker Endpoints                        | |
+| |     Endpoint-1 (DS-33B):  ml.p4d.24xl ×2     | |
+| |     Endpoint-2 (Mistral): ml.g5.12xl  ×2     | |
+| +----------------------------------------------+ |
+| +----------------------------------------------+ |
+| | Data/State Subnets                           | |
+| |   ElastiCache(Redis)  DynamoDB(Cache)        | |
+| |   SQS (Queues)        S3 Model Registry      | |
+| +----------------------------------------------+ |
++--------------------------------------------------+</div>
+<div class="note"><b>What we learned:</b> isolating wrapper service, GPU compute and data layers into separate subnets isn't just security hygiene — it's what lets each layer <b>scale, fail, and be audited independently</b>.</div>`},
+
+{sec:"aws",c:"violet",eyebrow:"AWS Infra · 03b",t:"q",q:`Constraints: 10,000 devs, peak concurrency ~500, p95 &lt; 800 ms, budget $250K/month, models must fit a single GPU. <b>A100-40GB or H100-80GB?</b> The H100 is 2–3× faster — does that win?`},
+
+{sec:"aws",c:"violet",eyebrow:"AWS Infra · 03b",t:"a",h:"The GPU math: A100 vs H100",body:`
+<div class="ascii">OUR CONSTRAINTS
+ |- 10,000 developers, peak concurrency ~500
+ |- Target latency: p95 &lt; 800ms
+ |- Budget: $250K/month for compute
+ +- Must fit models in a single GPU (no tensor parallelism)
+
+OPTION 1: A100-40GB (p4d.24xlarge)
+ |- 8× A100 GPUs, 40GB each
+ |- 1 instance of DeepSeek-33B per GPU; with quantization, 2 per GPU
+ |- Per-instance cost: $32.77/hr (1-year reserved)
+ |- Capacity per node: 8-16 concurrent requests
+ |- 8 nodes × 8 GPUs × 1.5 (avg utilization) = 96 concurrent
+ +- COST: 8 × $32.77 × 730 = $191,380/month
+
+OPTION 2: H100-80GB (p5.48xlarge)
+ |- 8× H100 GPUs, 80GB each; 2-3× faster inference than A100
+ |- Per-instance cost: $98.32/hr (1-year reserved)
+ |- Capacity per node: 24-32 concurrent requests
+ |- 3 nodes × 8 GPUs × 2 = 48 concurrent (but 2× faster)
+ +- COST: 3 × $98.32 × 730 = $215,200/month
+
+<span class="hl">WINNER: A100s</span> - better cost/capacity ratio, sufficient
+performance for our latency targets, more flexible for fine-tuning.</div>
+<div class="note"><b>What we learned:</b> the faster, more expensive H100 wasn't the right call — once you model real concurrency against latency targets, <b>the "better" chip can still be the worse business decision</b>. (The real question: what happens Monday morning when 40% of developers hit the system at once?)</div>`},
+
+{sec:"aws",c:"violet",eyebrow:"AWS Infra · 03c",t:"a",h:"Auto-scaling &amp; the batching queue",body:`
+<div class="ascii">SAGEMAKER AUTO-SCALING POLICY - DeepSeek endpoint (primary)
+Target Tracking:
+ |- Metric: SageMakerVariantInvocationsPerInstance
+ |- Target: 8 requests per instance
+ |- Scale-out: when &gt; 10 for 2 minutes
+ +- Scale-in:  when &lt; 3 for 10 minutes
+Min Instances: 4 (off-peak)   Max Instances: 16 (peak)
+Cool-down: 300 seconds
+Scheduled Scaling:
+ |- Mon-Fri 08:00-10:00 : Min 12 instances
+ |- Mon-Fri 10:00-17:00 : Min 8 instances
+ +- Weekends / 02:00-06:00 : Min 2 instances</div>
+<div class="ascii">BATCH OPTIMIZATION QUEUE
+Client sends: "Write a function to..."
+   |
+[SQS queue accumulates for a 50ms window]
+   |
+Batch of 4 requests formed: [req1, req2, req3, req4]
+   |
+[Single forward pass through model]
+   |
+[Responses split and returned individually]
+
+Result: <span class="hl">4× throughput, same GPU memory</span></div>
+<div class="note"><b>What we learned:</b> static capacity planning fails at this scale — <b>scheduled scaling</b> (matching known daily/weekly patterns) combined with reactive <b>target-tracking</b> is what kept cost and latency both in check.</div>`},
+
+{sec:"aws",c:"violet",eyebrow:"AWS Infra · Recall",t:"r",h:"Quick recall: infrastructure",qs:[
+{q:`Recite the four subnet tiers and what lives in each.`,a:`<b>Public/DMZ</b>: ALBs. <b>Private app</b>: idfc-coder wrapper on ECS Fargate. <b>GPU compute</b>: SageMaker endpoints (DeepSeek on ml.p4d.24xlarge, Mistral on ml.g5.12xlarge). <b>Data/state</b>: ElastiCache Redis, DynamoDB, SQS, S3 model registry.`},
+{q:`Min/max instances and the two scaling triggers?`,a:`Min 4 off-peak, max 16 at peak; scale-out when invocations/instance &gt; 10 for 2 min, scale-in when &lt; 3 for 10 min, 300 s cool-down. Plus scheduled minimums: 12 at 8–10 AM, 8 during the day, 2 on weekends/nights.`},
+{q:`How does batching improve throughput without extra GPU memory?`,a:`A 50 ms SQS accumulation window forms a batch of 4, which goes through a <b>single forward pass</b>, then responses are split — 4× throughput, same memory.`}]},
+
+/* ---- WRAPPER + JIRA ---- */
+{sec:"wrap",c:"rose",eyebrow:"Wrapper · 04",t:"q",q:`Before a prompt ever reaches the model, <b>what three stages should it pass through</b>, and why is the "intelligence layer" as much about governance as prompting?`},
+
+{sec:"wrap",c:"rose",eyebrow:"Wrapper · 04",t:"a",h:"The idfc-coder wrapper: the intelligence layer",body:`
+<div class="ascii">IDFC-CODER WRAPPER
++--------------------------------------------------------+
+| Request Orchestrator                                   |
+|   [Auth/RBAC] - [Rate Limiter] - [Team Quota Check]    |
++---------------------------+----------------------------+
+| Prompt Engineering Engine |                            |
+|   System: You are a fintech code assistant.            |
+|           You write secure, compliant Java/Python.     |
+|   Context from codebase:  {injected_relevant_files}    |
+|   Jira ticket context:    {ticket + acceptance criteria}|
+|   User request:           {user_prompt}                |
+|   Respond with code only, no explanations.             |
++---------------------------+----------------------------+
+| Caching Layer                                          |
+|   Cache Key: MD5(prompt_hash + context_hash)           |
+|   L1: ElastiCache Redis (in-memory, TTL 1 hour)        |
+|       -&gt; hit rate ~40% for repeated patterns           |
+|   L2: DynamoDB (persistent, TTL 24 hours)              |
+|       -&gt; +15% for cross-instance sharing               |
+|   Invalidation: on new model version deployment        |
++---------------------------+----------------------------+
+| Queue &amp; Token Management                               |
+|   Token Counter: Input 450 / Output 320 / Total 770    |
+|                  Est. cost $0.0008                      |
+|   Cost Tracker:  Team Alpha, Daily 2.3M, Limit 5M,     |
+|                  Remaining 2.7M tokens                  |
++--------------------------------------------------------+</div>
+<div class="note"><b>What we learned:</b> every request goes through auth, quota, prompt engineering and caching before it reaches the model — the "intelligence layer" is as much about <b>governance</b> as it is about prompting.</div>`},
+
+{sec:"wrap",c:"rose",eyebrow:"Wrapper · 04b",t:"q",q:`Raw cost per request is $0.088. A commercial API charges $0.03–0.10. <b>So is self-hosting even cheaper per request?</b> Work out what changes the answer.`},
+
+{sec:"wrap",c:"rose",eyebrow:"Wrapper · 04b",t:"a",h:"The token economy",body:`
+<div class="ascii">COST PER INFERENCE - DeepSeek 33B on A100 (with batching)
+Fixed costs (per hour):
+ |- GPU instance: $32.77
+ |- Overhead (network, storage): $2.50
+ +- Total: $35.27/hour
+Throughput at batch size 4:
+ |- 400 requests per GPU per hour
+ +- Cost per request: $0.088
+With caching (40% hit rate):
+ |- Effective cost: $0.053 per request
+ +- Compare to Claude API: $0.03-0.10
+BUT for our use case:
+ |- Average tokens: 800 per request
+ |- Cached requests: near-zero cost
+ +- <span class="hl">Blended cost: $0.025 per developer request</span></div>
+<div class="ascii">TOKEN BUDGETING SYSTEM (monthly team allocation)
+Team Alpha (Core Platform, 200 devs)
+ |- Budget: 50M tokens/month
+ |- Rate: 10K tokens/dev/day
+ +- Alerts at 80%, blocks at 100%
+Team Beta (Mobile, 150 devs)
+ |- Budget: 37.5M tokens/month
+ |- Rate: 10K tokens/dev/day
+ +- Can request increase via Jira ticket
+Enforcement via API Gateway + wrapper layer</div>
+<div class="note"><b>What we learned:</b> caching isn't optional at this scale — a <b>40–55% effective hit rate</b> turns a marginally-competitive per-request cost into a clearly winning one. And hard token budgets are what make saying "no" to unlimited access defensible with data.</div>`},
+
+{sec:"wrap",c:"rose",eyebrow:"Jira Agent · 05",t:"q",q:`An autonomous agent turns Jira tickets into code. <b>How often should it poll, what should it query, and what are the three possible outputs?</b> Also: why can't it trust Jira's search results?`},
+
+{sec:"wrap",c:"rose",eyebrow:"Jira Agent · 05",t:"a",h:"Jira integration: the autonomous agent",body:`
+<div class="ascii">JIRA AGENT CONTROLLER
+Scheduler (EventBridge) - every 30 minutes: cron(0/30 * * * ? *)
+ |- State Check (DynamoDB): last poll timestamp, cursor: ticket-45678
+Jira Connector (rate limited)
+ |- JQL: project = "IDFC" AND status in ("In Development","Ready")
+ |        AND updated &gt;= -30m ORDER BY updated DESC
+ |- Rate limits: Jira Cloud 10 req/s; our self-hosted 50 req/s
+ |- Token bucket: burst 30, sustained 10/sec
+ +- Exponential backoff: 1s, 2s, 4s, 8s
+Prompt Transformer - ticket -&gt; prompt
+ |  {"ticket_id":"IDFC-1234","title":"Add fraud detection rule",
+ |   "acceptance_criteria":["Must flag transactions &gt; $10K",
+ |                          "Must not exceed 100ms latency"]}
+ +- transforms to: "Write a Java method that implements..."
+Result Publisher - three output actions
+ |- Option A: comment on ticket ("🤖 AI Suggestion: &#96;&#96;&#96;java...")
+ |- Option B: create subtask ("Implement: ...")
+ +- Option C: create pull request (via Bitbucket/GitHub API)</div>
+<div class="note"><b>What we learned:</b> turning tickets into code isn't a single API call — it's a full pipeline of polling, rate-limited fetching, prompt transformation, and a <b>deliberate choice of how to publish</b> the result.</div>`},
+
+{sec:"wrap",c:"rose",eyebrow:"Jira Agent · 05b",t:"a",h:"Handling Jira's quirks: eventual consistency",body:`
+<div class="ascii">EVENTUAL CONSISTENCY PATTERN
+Problem: Jira's search index may be stale
+Solution: DUAL VERIFICATION
+ 1. Get tickets from search (fast, maybe stale)
+ 2. For each candidate, direct GET ticket (slow, always current)
+ 3. Compare versions:
+      if search.version &lt; direct.version: use direct version
+      if already processed (idempotency key): skip
+
+RATE LIMIT EXHAUSTION HANDLING
+ • Pre-emptive: track X-RateLimit-Remaining
+ • Reactive: queue overflow -&gt; DLQ
+ • Backpressure: skip poll if previous not complete
+ • Priority queue: urgent tickets first</div>
+<div class="note"><b>What we learned:</b> third-party SaaS APIs are <b>eventually consistent by default</b> — building dual verification (search + direct GET) was necessary just to avoid acting on stale data. Open question worth arguing: is auto-generating code from tickets helping developers, or just creating more review burden?</div>`},
+
+{sec:"wrap",c:"rose",eyebrow:"Wrapper &amp; Jira · Recall",t:"r",h:"Quick recall: wrapper &amp; agent",qs:[
+{q:`Two-tier cache: what are the tiers, TTLs and hit rates?`,a:`<b>L1 ElastiCache Redis</b>, TTL 1 hour, ~40% hit rate for repeated patterns. <b>L2 DynamoDB</b>, TTL 24 hours, +15% from cross-instance sharing. Key = MD5(prompt_hash + context_hash); invalidated on new model version.`},
+{q:`Raw, cached and blended cost per request?`,a:`Raw <b>$0.088</b>; with 40% cache hits <b>$0.053</b>; blended for our actual usage <b>$0.025</b> per developer request (vs Claude API $0.03–0.10).`},
+{q:`Describe the dual-verification pattern in two lines.`,a:`Fetch candidates from Jira <b>search</b> (fast, possibly stale), then <b>direct GET</b> each ticket (slow, current); if the search version is older, use the direct version, and skip anything already processed via idempotency key.`}]},
+
+/* ---- PRODUCTION ---- */
+{sec:"prod",c:"amber",eyebrow:"Production · 06",t:"q",q:`Your GPU endpoint slows down but doesn't error. <b>What trips the circuit breaker, what does it do while OPEN, and how does it recover?</b> Then: what's the retry sequence before a request is abandoned?`},
+
+{sec:"prod",c:"amber",eyebrow:"Production · 06",t:"a",h:"Resilience: circuit breaker &amp; retries",body:`
+<div class="ascii">CIRCUIT BREAKER STATE MACHINE
+   [CLOSED]  (normal operation)
+      |  failures &gt;= 5 in a 60s window
+      v
+   [OPEN]    (fail fast, return cache)
+      |  30 second timeout
+      v
+   [HALF-OPEN] (test with 1 request)
+      |  Success -&gt; CLOSED
+      +- Failure -&gt; OPEN (back to timeout)</div>
+<div class="ascii">RETRY STRATEGY WITH JITTER
+Attempt 1: immediate
+Attempt 2: 1s + random(0-200ms)
+Attempt 3: 2s + random(0-400ms)
+Attempt 4: 4s + random(0-800ms)
+Attempt 5: 8s + random(0-1600ms)  [MAX]
+Then: Dead Letter Queue -&gt; SQS -&gt; Lambda -&gt; Alert -&gt; Slack</div>
+<div class="note"><b>What we learned:</b> circuit breakers and jittered retries aren't boilerplate — they're what stands between a slow GPU endpoint and a full outage, by <b>failing fast and falling back to cache</b> instead of queuing forever.</div>`},
+
+{sec:"prod",c:"amber",eyebrow:"Production · 06b",t:"a",h:"Model deployment: canary with auto-rollback",body:`
+<div class="ascii">CANARY DEPLOYMENT FOR MODEL UPDATES
+Current: deepseek-v1.2 (tag: prod)   New: deepseek-v1.3 (tag: canary)
+Traffic splitting (SageMaker), endpoint idfc-coder-prod:
+ |- Variant-A (v1.2): 90% weight
+ +- Variant-B (v1.3): 10% weight
+Monitoring period: 4 hours
+
+AUTOMATIC ROLLBACK IF:
+ |- p95 latency &gt; 1200ms (baseline: 800ms)
+ |- Error rate &gt; 5% (baseline: 1%)
+ |- Token output length &lt; 50 (hallucination risk)
+ +- User rejection rate &gt; 20%
+
+GRADUAL PROMOTION:
+ Hour 4: 25%  |  Hour 8: 50%  |  Hour 12: 100%
+ After 24h stable: decommission v1.2</div>
+<div class="note"><b>What we learned:</b> model updates need the same production rigor as code deploys — canary splitting with automatic rollback thresholds (latency, error rate, even <b>output length as a hallucination signal</b>) catches regressions before they reach everyone.</div>`},
+
+{sec:"prod",c:"amber",eyebrow:"Production · 06c",t:"a",h:"Observability &amp; multi-tenancy",body:`
+<div class="ascii">CLOUDWATCH DASHBOARD
+Business Metrics          Technical Metrics
+ • Requests/team           • p50/p95/p99 latency
+ • Tokens consumed         • Queue depth
+ • Cache hit rate          • GPU utilization
+ • Cost per team           • Error rates
+ • Code accepted %         • Circuit breaks
+
+X-RAY TRACE: request-abc123
+ |- API Gateway:        12ms
+ |- Auth check:          8ms
+ |- Cache lookup:        3ms [MISS]
+ |- SQS queue time:     45ms
+ |- <span class="hl">LLM Inference:      340ms</span>  &lt;-- dominant stage
+ |- Response transform:  5ms
+ +- TOTAL:             413ms</div>
+<div class="ascii">TENANT ISOLATION MODEL
+Option A: SOFT MULTI-TENANCY  (WE CHOSE THIS)
+ • Shared inference endpoints
+ • Queue-level isolation (per-team SQS queues)
+ • Token quotas enforced at wrapper layer
+ • Separate DynamoDB tables per team for caching
+ • CloudWatch metrics tagged with TeamID
+ Pros: cost effective, simple operations
+ Cons: <span class="rs">noisy neighbour possible</span>
+
+Option B: HARD MULTI-TENANCY  (REJECTED)
+ • Separate SageMaker endpoints per team, full VPC isolation
+ Pros: true isolation
+ Cons: 50 teams × 2 GPUs = $1.6M/month minimum</div>
+<div class="note"><b>What we learned:</b> business metrics (cost, adoption, code-accepted%) and technical metrics (latency, GPU utilization) must sit on the <b>same dashboard</b> — otherwise engineering optimizes for speed while the business case quietly erodes. And soft multi-tenancy was the pragmatic choice, not the ideal one: the team consciously accepted noisy-neighbour risk to avoid a 10× cost blowout, leaving a path open to harden isolation if regulators demand it.</div>`},
+
+{sec:"prod",c:"amber",eyebrow:"Production · Recall",t:"r",h:"Quick recall: production concerns",qs:[
+{q:`Circuit breaker thresholds and states, from memory.`,a:`CLOSED &rarr; OPEN at <b>5 failures in 60 s</b>; OPEN fails fast and serves cache for <b>30 s</b>; then HALF-OPEN tests with 1 request — success returns to CLOSED, failure back to OPEN.`},
+{q:`Name the four automatic-rollback triggers for a canary model.`,a:`p95 latency &gt; 1200 ms, error rate &gt; 5%, token output length &lt; 50 (hallucination risk), user rejection rate &gt; 20%.`},
+{q:`In the X-Ray trace, which stage dominated and by how much?`,a:`<b>LLM inference at 340 ms</b> out of 413 ms total — everything else (gateway, auth, cache, queue, transform) sums to 73 ms.`},
+{q:`Why was hard multi-tenancy rejected?`,a:`Cost: 50 teams × 2 GPUs = <b>$1.6M/month minimum</b>. Soft multi-tenancy gives queue-level isolation and per-team quotas at a fraction of that, accepting noisy-neighbour risk.`}]},
+
+/* ---- WAR STORIES ---- */
+{sec:"war",c:"rose",eyebrow:"War Story 1 · 07",t:"q",q:`Week 1: p50 1200 ms, p95 3500 ms, and users say "slower than Copilot". <b>Before blaming the model — list the architectural causes</b> you'd check first.`},
+
+{sec:"war",c:"rose",eyebrow:"War Story 1 · 07",t:"a",h:"Challenge 1 — the latency nightmare",body:`
+<div class="ascii">PHASE 1 - Unoptimized (Week 1)
+Client -&gt; API Gateway -&gt; Lambda -&gt; SageMaker -&gt; Client
+ |- p50: 1200ms
+ |- p95: 3500ms
+ +- User feedback: "Slower than Copilot!"
+
+ROOT CAUSE ANALYSIS - why so slow?
+ |- No batching: one forward pass per request
+ |- Cold starts: Lambda initialization 200-400ms
+ |- No streaming: waiting for the full response
+ |- Model too big: 33B parameters, lots of compute
+ +- Network latency: cross-AZ calls</div>
+<div class="ascii">PHASE 2 - Optimized (Week 3)
+Client -&gt; ALB -&gt; ECS (warm) -&gt; Batched -&gt; Streaming
+Changes made:
+ |- Switched to ECS Fargate (no cold starts)
+ |- Dynamic batching (50ms accumulation window)
+ |- Token streaming via Server-Sent Events
+ |- Model quantization: FP32 -&gt; INT8 (2× speed)
+ |- KV-cache optimization for repeated prefixes
+ +- Cross-AZ placement groups for SageMaker
+Results:
+ |- p50: 340ms  (3.5× improvement)
+ |- p95: 720ms  (4.8× improvement)
+ +- Throughput: 800 req/sec (from 200)</div>
+<div class="note"><b>What we learned:</b> the 3.5 s p95 wasn't a model problem — it was an <b>architecture problem</b> (cold starts, no batching, no streaming). Fixing the plumbing delivered a bigger win than any model swap would have.</div>`},
+
+{sec:"war",c:"rose",eyebrow:"War Story 2 · 07",t:"q",q:`33B parameters at FP16 = 2 bytes each. <b>Compute the weights alone against a 40 GB A100.</b> Then add KV cache, activations and CUDA overhead — what has to change for this to fit?`},
+
+{sec:"war",c:"rose",eyebrow:"War Story 2 · 07",t:"a",h:"Challenge 2 — the OOM crisis",body:`
+<p><strong>What happened:</strong> Tuesday 14:00, production outage — SageMaker returning 500s. Root cause: DeepSeek-33B OOM on the 40 GB A100 because the context window grew to 16K tokens.</p>
+<div class="ascii">MEMORY ANALYSIS - GPU budget 40GB
+Model weights (FP16): 33B × 2 bytes = 66GB
+   <span class="rs">Wait, that doesn't fit!</span>
+Recalculate with quantization:
+Model weights (INT8): 33B × 1 byte = 33GB
+KV cache (batch 4, seq_len 4096):     8GB
+Activations:                          4GB
+CUDA overhead:                        2GB
+------------------------------------------
+Total: 47GB  <span class="rs">❌ STILL DOESN'T FIT!</span></div>
+<div class="ascii">THE FIX
+Solution 1: Flash Attention 2
+ |- reduces memory 5-10× for attention
+ +- KV cache: 8GB -&gt; 1.5GB
+Solution 2: Gradient checkpointing (even for inference)
+ +- Activations: 4GB -&gt; 1GB
+Solution 3: Batch size reduction
+ +- from 4 to 2 during peak
+
+NEW MEMORY PROFILE
+ Weights 33GB | KV cache 1.5GB | Activations 1GB | Overhead 2GB
+ Total: 37.5GB  <span class="tl">✅ FITS!</span>
+
+Also added automatic context window adjustment:
+ |- Monitor: GPU memory utilization
+ |- If &gt; 85%: reduce max_tokens by 25%
+ +- Alert: if sustained &gt; 90% for 5 min</div>
+<div class="note"><b>What we learned:</b> back-of-envelope memory math (FP16 weights alone) is <b>dangerously misleading</b> — real GPU budgets must account for KV cache, activations and CUDA overhead together.</div>`},
+
+{sec:"war",c:"rose",eyebrow:"War Story 3 · 07",t:"q",q:`The model invents an internal API that doesn't exist, suggests a $10,000 fraud threshold when policy says $5,000, and writes string-concatenated SQL. <b>Can better prompting alone fix all three?</b>`},
+
+{sec:"war",c:"rose",eyebrow:"War Story 3 · 07",t:"a",h:"Challenge 3 — hallucination mitigation",body:`
+<ul class="pts">
+<li><strong>Non-existent APIs</strong> — model invents calls like <code>BankAPI.getInstance().getV2Client()</code>, an internal API not present in training data.</li>
+<li><strong>Incorrect business logic</strong> — suggests a $10,000 fraud threshold when policy requires $5,000.</li>
+<li><strong>Security anti-patterns</strong> — string-concatenated SQL, a firing offence in fintech code.</li>
+</ul>
+<div class="ascii">SOLUTION 1 - GROUNDED SYSTEM PROMPT
+You are IDFC-First Bank's internal code assistant.
+CONSTRAINTS (enforced):
+1. Only use APIs from our SDK:
+   com.idfc.banking.v3.*  com.idfc.fraud.detection.*
+   com.idfc.compliance.*
+2. All database queries MUST use parameterized statements
+   (PreparedStatement only)
+3. All monetary values MUST use BigDecimal, never float/double
+4. All external calls MUST have: timeout (max 30s), circuit
+   breaker, retry with backoff
+5. If unsure about an API or policy, respond with:
+   "NEEDS_CLARIFICATION: [question]"  <span class="hl">Do not guess.</span>
+CONTEXT INJECTION:
+   {relevant_code_from_codebase} {relevant_confluence_docs}
+   {jira_acceptance_criteria}</div>
+<div class="ascii">SOLUTION 2 - POST-PROCESSING VALIDATION (before returning)
+1. Static analysis (SonarQube rules)
+   |- no SQL injection patterns
+   |- no hardcoded credentials
+   +- checked exceptions handled
+2. API validation
+   |- verify all method calls exist in the SDK
+   +- if not found: replace with a comment
+3. Policy check
+   |- fraud thresholds read from config service
+   +- inject correct values</div>
+<div class="note"><b>What we learned:</b> prompting alone can't be trusted to stop hallucinated APIs or wrong compliance thresholds — it took <b>explicit constraints, a "don't guess, ask" instruction, and a post-processing validation layer</b> to make outputs safe to ship.</div>`},
+
+{sec:"war",c:"rose",eyebrow:"War Story 4 · 07",t:"a",h:"Challenge 4 — the 10,000-user rollout",body:`
+<div class="ascii">PHASED ADOPTION STRATEGY
+Phase 1: Pioneers (Month 1, 100 users)
+ |- selected power users from Core Platform team
+ |- direct Slack channel with platform team, weekly feedback
+ +- Goal: iron out UX issues, gather testimonials
+Phase 2: Early Adopters (Month 2, 1,000 users)
+ |- add 2-3 more teams; IDE plugin (VS Code, IntelliJ)
+ |- gamification: leaderboard of tokens saved
+ +- Goal: prove productivity improvement
+Phase 3: Majority (Month 3-4, 5,000 users)
+ |- self-service onboarding portal; 30-min training video
+ |- auto-enrollment for new hires
+ +- Goal: make it default, not optional
+Phase 4: Laggards (Month 5-6, 10,000 users)
+ |- mandatory for certain ticket types
+ |- "AI-first" workflow: must review AI suggestion before
+ |   writing from scratch
+ +- Goal: complete transformation</div>
+<div class="ascii">ADOPTION FRICTION POINTS &amp; SOLUTIONS
+"It's slower than Copilot"
+ -&gt; show latency metrics; it's actually faster for our codebase
+    because of context injection
+"The code is wrong"
+ -&gt; add "Report bad suggestion" button; track rejection rate and
+    feed back to fine-tuning; public dashboard showing improvement
+"I don't trust AI"
+ -&gt; start with test generation (low risk); show bugs caught by AI
+    suggestions; peer pressure: "your team's top performer uses it"
+"It doesn't understand our codebase"
+ -&gt; RAG pipeline: index all repos, retrieve context;
+    fine-tune on our private code (with permissions)</div>
+<div class="note"><b>What we learned:</b> technology readiness and organizational readiness are two different problems — the phased pioneer &rarr; early adopter &rarr; majority &rarr; laggard rollout mattered as much as any latency or accuracy fix.</div>`},
+
+{sec:"war",c:"rose",eyebrow:"War Stories · Recall",t:"r",h:"Quick recall: the four war stories",qs:[
+{q:`Six changes that took p95 from 3500 ms to 720 ms?`,a:`ECS Fargate (no cold starts), dynamic batching (50 ms window), token streaming via SSE, quantization FP32&rarr;INT8 (2× speed), KV-cache optimization for repeated prefixes, cross-AZ placement groups. Throughput went 200 &rarr; 800 req/s.`},
+{q:`Three fixes that made 47 GB fit into 40 GB?`,a:`<b>Flash Attention 2</b> (KV cache 8 GB &rarr; 1.5 GB), <b>gradient checkpointing</b> (activations 4 GB &rarr; 1 GB), and <b>batch size 4 &rarr; 2</b> at peak. Final profile 37.5 GB — plus automatic context-window reduction above 85% utilization.`},
+{q:`What does the model do instead of guessing when unsure?`,a:`It must respond <b>"NEEDS_CLARIFICATION: [question]"</b> — an explicit rule in the grounded system prompt, backed by post-processing that verifies every method call exists in the SDK.`},
+{q:`Name the four adoption phases and their user counts.`,a:`Pioneers (100), Early Adopters (1,000), Majority (5,000), Laggards (10,000) — over six months.`}]},
+
+/* ---- SCORECARD ---- */
+{sec:"score",c:"ink",eyebrow:"Scorecard · 08",t:"q",q:`The business case projected 54–72% savings. <b>Predict what was actually realized</b> after six months — and what happened to acceptance rate and p95 latency.`},
+
+{sec:"score",c:"ink",eyebrow:"Scorecard · 08",t:"a",h:"Concrete metrics: the six-month scorecard",body:`
+<div class="ascii">HEADLINE RESULTS
+54.4%    year-1 cost reduction      $4.28M   year-1 savings
+720ms    p95 latency, simple gen    1,200rps peak throughput
+68%      acceptance rate, Month 6   +42 NPS  developer sentiment</div>
+<div class="ascii">COST ANALYSIS
+Previous year (Copilot Enterprise + Claude API):
+ |- GitHub Copilot: 10,000 seats × $39/month = $4,680,000/year
+ |- Anthropic API (heavy users): $3,200,000/year
+ +- TOTAL: $7,880,000/year
+Self-hosted solution (Year 1):
+ |- Compute (A100 reserved): $2,296,560
+ |- Storage &amp; networking:      $300,000
+ |- Engineering team (4 FTE):  $800,000
+ |- Training &amp; onboarding:     $200,000
+ +- TOTAL: $3,596,560
+SAVINGS: $4,283,440 (54.4% reduction)
+Year 2 projection (with optimization):
+ |- Better batching, higher utilization: -15% compute
+ |- More caching, smaller models: -10%
+ +- Projected: $2,900,000 (63.2% savings)</div>
+<div class="ascii">PERFORMANCE (DeepSeek Coder 33B, INT8)
+Simple completions (&lt;200 tokens): p50 280ms | p95 620ms | p99 980ms
+   SLA: p95 &lt; 800ms ✅
+Complex generations (200-1000 tokens): p50 450ms | p95 890ms
+   p99 1400ms | streaming: first token in &lt;100ms
+Throughput: peak 1,200 req/s | average 450 req/s
+   daily volume ~15M requests | GPU utilization 73% average</div>`},
+
+{sec:"score",c:"ink",eyebrow:"Scorecard · 08b",t:"a",h:"Quality, adoption &amp; business impact",body:`
+<div class="ascii">QUALITY vs HUMAN BASELINE (passes tests first try)
+Simple CRUD:            91%  (human: 95%)
+Complex business logic: 72%  (human: 88%)
+SQL queries:            88%  (human: 93%)
+Unit tests:             76%  (human: 90%)
+
+DEVELOPER ACCEPTANCE RATE
+Month 1: 34% (rejected or heavily modified)
+Month 3: 52%   Month 6: 68%   Target: 80% by Month 12
+
+TIME SAVINGS
+Boilerplate code: 85% faster | API integrations: 60% faster
+Bug fixes: 45% faster | Average across all tasks: 55% faster</div>
+<div class="ascii">ADOPTION CURVE - monthly active users
+Month 1:    87  (87% of Phase 1)
+Month 2:   845  (84.5% of Phase 2)
+Month 3: 3,200  (64% of Phase 3 target)
+Month 4: 4,890  (97.8% of Phase 3 target)
+Month 5: 7,200  (72% of total)
+Month 6: 8,900  (89% of total)
+Daily active users ~5,200 (52%)
+Avg sessions/user 3.4/day | Avg requests/user 47/day
+Net Promoter Score: +42 ("Great")</div>
+<div class="ascii">BUSINESS IMPACT
+Story points per sprint: 1,200 -&gt; 1,450 (+20.8% at 3mo)
+                              -&gt; 1,680 (+40% at 6mo)
+Feature delivery: 22 days -&gt; 15 days (-31.8%)
+Hot fixes: 4.2 hours -&gt; 2.1 hours (-50%)
+Bugs per release: 45 -&gt; 38 (-15.6%)
+Security vulnerabilities: 12/month -&gt; 8/month
+Code review comments: +23% (AI catches patterns)</div>
+<div class="note"><b>What we learned:</b> real savings rarely match the projection exactly — tracking actuals against the original business case keeps the initiative honest and fundable. And the ultimate test of any platform investment is whether it shows up in <b>delivery velocity</b>, not just usage dashboards.</div>`},
+
+{sec:"score",c:"ink",eyebrow:"CTO Retrospective · 09",t:"q",q:`If you were rolling this out again, <b>which team would you onboard first</b> — the friendliest or the most skeptical? Justify it. Then: name the biggest thing you'd do differently.`},
+
+{sec:"score",c:"ink",eyebrow:"CTO Retrospective · 09",t:"a",h:"What we got right, and what we'd change",body:`
+<div class="ascii">WHAT WE GOT RIGHT
+1. STARTED WITH THE HARDEST TEAM
+   +- Core Platform was most demanding, most skeptical
+   +- If we could satisfy them, others would follow
+2. BUILT FOR FAILURE
+   +- every component has a fallback; circuit breakers everywhere
+   +- "What happens when this breaks at 3 AM?"
+3. MEASURED OBSESSIVELY
+   +- you can't improve what you don't measure
+   +- every decision backed by data; killed features without impact
+4. TREATED IT AS PRODUCT, NOT TOOL
+   +- UX design, not just an API
+   +- developer advocacy team; regular town halls for feedback</div>
+<div class="ascii">WHAT WE'D DO DIFFERENTLY
+1. START SMALLER
+   +- begin with a 7B model for autocomplete only
+   +- add complexity gradually - <span class="rs">we overbuilt the initial system</span>
+2. INVEST IN FINE-TUNING EARLIER
+   +- generic models hallucinate on proprietary APIs
+   +- fine-tuning on our codebase would have saved months
+   +- now running weekly fine-tuning jobs
+3. PLAN FOR GPU SHORTAGES
+   +- A100 availability was constrained
+   +- should have reserved instances from day 1
+   +- consider multi-cloud (GCP TPUs as backup)
+4. OVER-COMMUNICATE COSTS
+   +- developers don't see GPU bills
+   +- should show "this request cost $0.003"
+   +- creates natural conservation behaviour</div>
+<div class="note"><b>The real question nobody asks:</b> "Are we actually making developers better, or just faster?" AI code generation can create <b>code debt at unprecedented speed</b>. Investments made in response: AI-generated code review tools (fighting fire with fire), mandatory test coverage thresholds for AI code, "explain the code" sessions in PR reviews, and tracking the long-term maintenance burden of AI-generated code. The goal isn't to replace developers — it's to remove the boring parts so they can focus on architecture, security and innovation, while staying vigilant that we're not creating a generation of developers who can't code without AI.</div>`},
+
+{sec:"score",c:"ink",eyebrow:"Appendix · 10",t:"a",h:"Appendix: the config files that encode every decision",body:`
+<div class="ascii">deepseek-coder-endpoint.yaml
+EndpointConfigName: idfc-coder-v1-3
+ProductionVariants:
+  - VariantName: primary
+    ModelName: deepseek-coder-33b-instruct-int8
+    InstanceType: ml.p4d.24xlarge
+    InitialInstanceCount: 4
+    InitialVariantWeight: 1.0
+    AutoScalingPolicy:
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 8.0          # requests per instance
+        ScaleInCooldown: 600
+        ScaleOutCooldown: 120
+        CustomizedMetricSpecification:
+          MetricName: ApproximateBacklogSizePerInstance
+          Namespace: AWS/SageMaker
+          Statistic: Average</div>
+<div class="ascii">idfc_coder_config.py
+class IDFCCoderConfig:
+    DEFAULT_MODEL = "deepseek-coder-33b"
+    FAST_MODEL    = "mistral-7b-finetuned"
+    MAX_BATCH_SIZE = 4
+    BATCHING_WINDOW_MS = 50
+    MAX_INPUT_TOKENS = 8000
+    MAX_OUTPUT_TOKENS = 2000
+    COST_PER_1K_TOKENS = 0.002   # USD
+    TEAM_QUOTAS = {
+        "core-platform": 50_000_000,
+        "mobile":        37_500_000,
+        "web":           30_000_000,
+        "data-engineering": 25_000_000,
+    }
+    REDIS_TTL_SECONDS = 3600     # 1 hour
+    DYNAMODB_TTL_HOURS = 24
+    CIRCUIT_BREAKER_THRESHOLD = 5   # failures
+    CIRCUIT_BREAKER_TIMEOUT = 30    # seconds
+    JIRA_POLL_INTERVAL_MINUTES = 30
+    JIRA_MAX_TICKETS_PER_POLL = 50</div>
+<div class="note"><b>What we learned:</b> team quotas, cache TTLs and circuit-breaker thresholds are just numbers in a config file — but they're the numbers that <b>encode every governance and cost decision</b> made earlier in this document. Auto-scaling policy lives in config, not documentation: the endpoint config is the actual source of truth for how the system behaves under load.</div>`},
+
+{sec:"score",c:"ink",eyebrow:"Final Recall",t:"r",h:"Final recall: the whole system design",qs:[
+{q:`Walk the request path from developer to response, naming every layer.`,a:`Developer &rarr; WAF/Shield &rarr; Route53/CloudFront &rarr; ALB (public subnet) &rarr; idfc-coder wrapper on ECS Fargate (auth/RBAC &rarr; rate limiter &rarr; team quota &rarr; prompt engineering &rarr; L1 Redis / L2 DynamoDB cache &rarr; token counting) &rarr; SQS batching (50 ms) &rarr; SageMaker endpoint (DeepSeek 33B INT8 on p4d.24xlarge) &rarr; post-processing validation &rarr; response.`},
+{q:`Give the year-1 scorecard in six numbers.`,a:`54.4% cost reduction, $4.28M saved, 720 ms p95 (simple gen), 1,200 rps peak, 68% acceptance rate at month 6, +42 NPS.`},
+{q:`What are the four "what we'd do differently" lessons?`,a:`Start smaller (7B autocomplete first — we overbuilt); invest in fine-tuning earlier; plan for GPU shortages (reserve from day 1, consider multi-cloud); over-communicate costs to developers.`},
+{q:`Close with the document's own one-line thesis.`,a:`<b>Self-hosting AI isn't just about cost — it's about sovereignty over your engineering future.</b> 18 months of evolution, countless production incidents, and a fundamental shift in how the organization writes software.`}]}
+];
+
+let i=0;
+const stage=document.getElementById('stage'),dots=document.getElementById('dots'),
+tabs=document.getElementById('tabs'),counter=document.getElementById('counter'),
+prevBtn=document.getElementById('prevBtn'),nextBtn=document.getElementById('nextBtn');
+SECTIONS.forEach(s=>{const b=document.createElement('button');b.className='tab';b.dataset.c=s.c;b.dataset.sec=s.id;b.textContent=s.label;b.onclick=()=>go(S.findIndex(x=>x.sec===s.id));tabs.appendChild(b);});
+S.forEach((sl,k)=>{const d=document.createElement('span');d.className='dot'+(sl.t==='q'?' q':'');d.tabIndex=0;d.setAttribute('role','button');d.setAttribute('aria-label','Slide '+(k+1));d.onclick=()=>go(k);d.onkeydown=e=>{if(e.key==='Enter')go(k)};dots.appendChild(d);});
+function lens(cto,dir){
+  return '<details class="lens"><summary>CTO LENS</summary><div class="body"><ul class="pts">'+cto.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>'
+       + '<details class="lens dir"><summary>DIRECTOR LENS</summary><div class="body"><ul class="pts">'+dir.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+}
+function go(k){
+  i=Math.max(0,Math.min(S.length-1,k));
+  const s=S[i];stage.innerHTML='';
+  const el=document.createElement('div');el.className='slide';
+  if(s.t==='q'){
+    el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div>'
+      +'<div class="qcard"><div class="qlabel">Think first &middot; predict before you peek</div>'
+      +'<div class="qtext">'+s.q+'</div>'
+      +'<div class="qsub">Form your answer in your head. Then press Next to compare.</div></div>';
+  } else if(s.t==='r'){
+    el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'
+      +'<p>Answer from memory first. Tap a question to reveal the answer.</p>'
+      +s.qs.map(x=>'<details class="recall-item"><summary>'+x.q+'</summary><div class="ans">'+x.a+'</div></details>').join('')
+      +'<div class="recall-hint">Struggled on any? Jump back with the tabs above, then return.</div>';
+  } else {
+    el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'+s.body+(s.cto?lens(s.cto,s.dir):'');
+  }
+  stage.appendChild(el);
+  counter.textContent=(i+1)+' / '+S.length;
+  document.querySelectorAll('.dot').forEach((d,k2)=>d.classList.toggle('on',k2===i));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.sec===s.sec));
+  prevBtn.disabled=(i===0);
+  nextBtn.textContent=(i===S.length-1)?'Done \u2713':'Next \u2192';
+  nextBtn.disabled=(i===S.length-1);
+  document.querySelector('main').scrollTop=0;window.scrollTo(0,0);
+}
+prevBtn.onclick=()=>go(i-1);nextBtn.onclick=()=>go(i+1);
+document.addEventListener('keydown',e=>{if(e.target.closest('details'))return;if(e.key==='ArrowRight')go(i+1);if(e.key==='ArrowLeft')go(i-1);});
+go(0);
+</script>
+</body>
+</html>

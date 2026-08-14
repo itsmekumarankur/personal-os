@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CTO Finance Notes · M2 — The CapEx vs. OpEx Playbook</title>
+<style>
+  :root{
+    --bg: #0a0e14; --bg-panel: #10151e; --bg-elevated: #161d29;
+    --ink: #e6edf5; --ink-soft: #8b98ab;
+    --cyan: #22d3ee; --cyan-deep: #0891b2; --cyan-pale: rgba(34,211,238,0.10);
+    --amber: #f5a623; --amber-deep: #c17d0a; --amber-pale: rgba(245,166,35,0.12);
+    --red: #f2545b; --red-pale: rgba(242,84,91,0.12);
+    --line: #212a39; --mono-bg: #05070b; --mono-ink: #bfeaf5; --nav-w: 270px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      linear-gradient(rgba(34,211,238,0.035) 1px, transparent 1px) 0 0/100% 28px,
+      linear-gradient(90deg, rgba(34,211,238,0.035) 1px, transparent 1px) 0 0/28px 100%,
+      var(--bg);
+    color:var(--ink); font-family:'Inter','Segoe UI',system-ui,sans-serif; line-height:1.65;
+  }
+  .mission-bar{ background:var(--mono-bg); border-bottom:1px solid var(--line); padding:0.6rem 1.5rem; font-family:'JetBrains Mono','Courier New',monospace; font-size:0.72rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--cyan); display:flex; justify-content:space-between; flex-wrap:wrap; gap:0.5rem; }
+  .mission-bar span.dim{ color:var(--ink-soft); } .mission-bar .dot{ color:var(--amber); }
+  header.hero{ padding:3rem 1.5rem 2.4rem; text-align:center; border-bottom:1px solid var(--line); background: radial-gradient(ellipse at top, rgba(34,211,238,0.08), transparent 60%); }
+  header.hero .eyebrow{ font-family:'JetBrains Mono',monospace; letter-spacing:0.3em; text-transform:uppercase; font-size:0.72rem; color:var(--amber); font-weight:700; }
+  header.hero h1{ font-size:2.3rem; margin:0.7rem 0 0.4rem; letter-spacing:-0.01em; }
+  header.hero .subtitle{ color:var(--ink-soft); font-size:1.02rem; max-width:680px; margin:0 auto; }
+  .layout{ display:flex; max-width:1220px; margin:0 auto; align-items:flex-start; }
+  nav.toc{ width:var(--nav-w); flex-shrink:0; position:sticky; top:0; max-height:100vh; overflow-y:auto; padding:2rem 1.2rem 2rem 1.5rem; border-right:1px solid var(--line); }
+  nav.toc .toc-title{ font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:0.14em; font-size:0.7rem; color:var(--cyan-deep); font-weight:700; margin-bottom:0.8rem; }
+  nav.toc ul{ list-style:none; padding:0; margin:0 0 1.3rem 0; } nav.toc li{ margin-bottom:0.3rem; }
+  nav.toc a{ display:block; color:var(--ink-soft); text-decoration:none; font-size:0.8rem; padding:0.36rem 0.6rem; border-radius:5px; border-left:3px solid transparent; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+  nav.toc a:hover, nav.toc a.active{ background:var(--cyan-pale); color:var(--cyan); border-left-color:var(--cyan); }
+  .toc-controls{ display:flex; flex-direction:column; gap:0.5rem; }
+  .toc-controls button{ font-family:'JetBrains Mono',monospace; font-size:0.75rem; letter-spacing:0.03em; background:var(--bg-panel); border:1px solid var(--line); color:var(--ink); padding:0.5rem 0.7rem; border-radius:6px; cursor:pointer; text-align:left; transition: background 0.15s, border-color 0.15s; }
+  .toc-controls button:hover{ background:var(--cyan-pale); border-color:var(--cyan); }
+  .nav-toggle{ display:none; position:fixed; bottom:1.4rem; right:1.4rem; z-index:50; background:var(--cyan); color:#04222b; border:none; width:52px; height:52px; border-radius:50%; font-size:1.3rem; box-shadow:0 3px 14px rgba(0,0,0,0.5); cursor:pointer; }
+  .nav-scrim{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:55; } .nav-scrim.show{ display:block; }
+  .wrap{ flex:1; min-width:0; max-width:940px; margin:0 auto; padding:2.6rem 1.6rem 6rem; }
+  section.topic{ margin-top:2.2rem; scroll-margin-top:1.5rem; }
+  button.topic-header{ all:unset; display:flex; align-items:center; justify-content:space-between; width:100%; cursor:pointer; padding-bottom:0.5rem; border-bottom:2px solid var(--cyan-deep); gap:0.8rem; }
+  button.topic-header h2{ margin:1.4rem 0 0; font-size:1.22rem; color:var(--ink); font-weight:700; }
+  .chevron{ flex-shrink:0; width:28px; height:28px; border-radius:6px; background:var(--bg-elevated); color:var(--cyan); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:1rem; font-weight:700; transition: transform 0.25s, background 0.2s; margin-top:1.2rem; }
+  section.topic.collapsed .chevron{ transform:rotate(-90deg); }
+  button.topic-header:hover .chevron{ background:var(--cyan); color:#04222b; }
+  .topic-body{ overflow:hidden; max-height:14000px; opacity:1; transition: max-height 0.35s, opacity 0.25s, margin 0.25s; }
+  section.topic.collapsed .topic-body{ max-height:0; opacity:0; margin:0; }
+  h3{ color:var(--cyan); font-size:1.03rem; margin-top:1.7rem; }
+  h4{ color:var(--amber); font-size:0.9rem; margin-top:1.15rem; text-transform:uppercase; letter-spacing:0.04em; }
+  p{ color:var(--ink); } strong{ color:#fff; } em{ color:var(--ink-soft); }
+  pre{ background:var(--mono-bg); color:var(--mono-ink); font-family:'JetBrains Mono','Courier New',monospace; font-size:0.72rem; padding:1.1rem 1.2rem; border-radius:8px; border:1px solid var(--line); border-left:3px solid var(--cyan); overflow-x:auto; line-height:1.5; white-space:pre; }
+  blockquote{ margin:1rem 0; padding:0.9rem 1.2rem; background:var(--bg-panel); border-left:4px solid var(--amber); font-style:italic; color:var(--ink-soft); border-radius:0 6px 6px 0; }
+  ul{ padding-left:1.4rem; } li{ margin-bottom:0.4rem; }
+  .panel{ background:var(--bg-panel); border:1px solid var(--line); border-radius:10px; padding:1.4rem 1.7rem; margin:1.2rem 0; }
+  .card{ border-radius:10px; padding:1.1rem 1.4rem; margin:1rem 0; border:1px solid var(--line); }
+  .card.insight{ background:var(--cyan-pale); border-left:4px solid var(--cyan); }
+  .card.question{ background:var(--amber-pale); border-left:4px solid var(--amber); }
+  .card.warning{ background:var(--red-pale); border-left:4px solid var(--red); }
+  .card .card-label{ font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:0.1em; font-size:0.68rem; font-weight:700; margin-bottom:0.4rem; display:block; }
+  .card.insight .card-label{ color:var(--cyan); } .card.question .card-label{ color:var(--amber); } .card.warning .card-label{ color:var(--red); }
+  .table-wrap{ overflow-x:auto; margin:1.2rem 0; border-radius:10px; border:1px solid var(--line); }
+  table{ width:100%; border-collapse:collapse; background:var(--bg-panel); font-size:0.82rem; }
+  thead th{ background:var(--bg-elevated); color:var(--cyan); text-align:left; padding:0.6rem 0.8rem; font-family:'JetBrains Mono',monospace; font-size:0.65rem; text-transform:uppercase; letter-spacing:0.05em; border-bottom:2px solid var(--cyan-deep); }
+  tbody td{ padding:0.6rem 0.8rem; border-top:1px solid var(--line); vertical-align:top; color:var(--ink); }
+  tbody tr:nth-child(even){ background: rgba(255,255,255,0.015); }
+  .case-card{ background:var(--bg-panel); border:1px solid var(--line); border-radius:10px; padding:1.3rem 1.6rem; margin:1.3rem 0; }
+  .case-card .case-num{ display:inline-block; font-family:'JetBrains Mono',monospace; font-size:0.7rem; color:#04222b; background:var(--amber); padding:0.15rem 0.55rem; border-radius:4px; font-weight:700; margin-bottom:0.6rem; }
+  footer.closing{ text-align:center; margin-top:2.5rem; font-style:italic; color:var(--ink-soft); }
+  @media (max-width:900px){ :root{ --nav-w:220px; } }
+  @media (max-width:720px){
+    .layout{ display:block; }
+    nav.toc{ position:fixed; top:0; left:0; width:min(280px,82vw); height:100vh; background:var(--bg-panel); z-index:60; transform:translateX(-105%); transition: transform 0.25s; box-shadow:3px 0 18px rgba(0,0,0,0.5); }
+    nav.toc.open{ transform:translateX(0); }
+    .nav-toggle{ display:flex; align-items:center; justify-content:center; }
+    header.hero h1{ font-size:1.55rem; } pre{ font-size:0.58rem; padding:0.85rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="mission-bar">
+  <span>CTO&nbsp;FINANCE&nbsp;NOTES <span class="dot">·</span> MODULE 02 / 06</span>
+  <span class="dim">THUMB RULES · GREY AREAS · 6 WORKED CASE STUDIES</span>
+</div>
+
+<header class="hero">
+  <div class="eyebrow">CTO Finance Track — The Big Debate</div>
+  <h1>⚖️ The CapEx vs. OpEx Playbook</h1>
+  <p class="subtitle">Cloud vs. data center, build vs. lease, buy vs. robot-as-a-service — the single decision that shapes every tech budget, worked through six real scenarios.</p>
+</header>
+
+<button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">☰</button>
+<div class="nav-scrim" id="navScrim"></div>
+
+<div class="layout">
+  <nav class="toc" id="tocNav">
+    <div class="toc-title">Jump to</div>
+    <ul id="tocList">
+      <li><a href="#sec-thumbrules">🔑 The Thumb Rules</a></li>
+      <li><a href="#sec-greyareas">🌫️ The Grey Areas</a></li>
+      <li><a href="#sec-profitimpact">📊 Impact on Profitability</a></li>
+      <li><a href="#sec-case1">☁️ Case 1 · Cloud Migration vs. Data Center</a></li>
+      <li><a href="#sec-case2">🏗️ Case 2 · Build vs. Lease a SaaS ML Platform</a></li>
+      <li><a href="#sec-case3">🤖 Case 3 · Buy Robots vs. Robot-as-a-Service</a></li>
+      <li><a href="#sec-case4">🏦 Case 4 · Insurance Core System &amp; IPO Optics</a></li>
+      <li><a href="#sec-case5">🚀 Case 5 · Startup Scaling on a Runway</a></li>
+      <li><a href="#sec-root">⭐ Root Understanding — The Summary</a></li>
+      <li><a href="#sec-softwarecosts">💻 Capitalizing Software Development Costs</a></li>
+    </ul>
+    <div class="toc-title">Sections</div>
+    <div class="toc-controls">
+      <button id="expandAll">＋ Expand all</button>
+      <button id="collapseAll">－ Collapse all</button>
+    </div>
+  </nav>
+
+  <div class="wrap">
+
+    <section class="topic" id="sec-thumbrules">
+      <button class="topic-header"><h2>🔑 The Thumb Rules</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│              THE SIMPLE RULE (Professor's Version)             │
+│                                                               │
+│  If the BENEFIT (useful life) is MORE than 1 year → CAPEX     │
+│  If it is RECURRING / short-term            → OPEX             │
+│                                                               │
+│  CAPEX (Capital Expenditure)         OPEX (Operating Expenditure)│
+│  ────────────────────────            ──────────────────────────│
+│  Benefit/useful life > 1 year        Recurring / BAU running   │
+│  Typically one-time / project-based  cost                       │
+│  Goes on BALANCE SHEET as an asset   Consumed within < 1 year   │
+│  Expensed over time via              Flows into P&L DIRECTLY   │
+│  depreciation / amortization         in that period             │
+│                                                               │
+│  💡  MEMORY HOOK:                                              │
+│      "New + Long-term  = CapEx"                                │
+│      "Run + Recurring  = OpEx"                                 │
+└───────────────────────────────────────────────────────────┘</pre>
+        <h3>Four CTO Thumb Rules</h3>
+        <pre>✅  RULE 1 — Useful life > 1 year        → CapEx
+✅  RULE 2 — Recurring cost              → OpEx
+✅  RULE 3 — Creating NEW value           → CapEx
+✅  RULE 4 — Running the business         → OpEx</pre>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-greyareas">
+      <button class="topic-header"><h2>🌫️ The Grey Areas — Reality Is Messy</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <p>Different firms interpret borderline cases differently. The same type of spend — customization, consultants, a mid-sized software project — may be CAPEX at one company and OPEX at another. You must align with <strong>your own finance/accounting team's policy</strong>, not just what a textbook says.</p>
+        <div class="card question">
+          <span class="card-label">Common Challenges</span>
+          Mixed contracts that bundle license + implementation + support in one invoice. Cloud spend that scales with usage but funds something genuinely long-lived (like a data platform). "Small" software builds under a capitalization threshold that finance treats as OPEX regardless of useful life.
+        </div>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-profitimpact">
+      <button class="topic-header"><h2>📊 Impact of CapEx &amp; OpEx on Profitability</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  WHY COMPANIES SOMETIMES PREFER CAPEX                          │
+│  ● Spreads cost over years → protects this year's EBITDA       │
+│  ● Shows an asset on the balance sheet → looks stronger to      │
+│    investors and lenders                                       │
+│  ● Better depreciation-driven tax planning over time            │
+│                                                               │
+│  WHY COMPANIES SOMETIMES PREFER OPEX                           │
+│  ● No large upfront cash outflow → protects runway              │
+│  ● More flexible — scale up or down instantly                  │
+│  ● Reduces this year's taxable profit immediately                │
+│  ● No risk of an asset becoming obsolete on the books           │
+└───────────────────────────────────────────────────────────┘</pre>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-case1">
+      <button class="topic-header"><h2>☁️ Case 1 — Cloud Migration vs. Data Center Expansion</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  SCENARIO: analytics workload will grow 5× in 3 years          │
+│                                                               │
+│  OPTION A — Expand on-prem data center                         │
+│    CAPEX ₹18 crore (servers + storage + network)               │
+│    Life: 5 years · Annual OPEX maintenance: ₹2.5 crore          │
+│    Utilization: 40% for 2 years, then 70%                      │
+│                                                               │
+│  OPTION B — Move to cloud                                      │
+│    Pure OPEX: ₹1.2 crore/month · scales instantly              │
+│    No CAPEX · 3-year lock-in risk                               │
+└───────────────────────────────────────────────────────────┘</pre>
+        <p><strong>Tough question:</strong> if growth slows and utilization stays at 40% for all 3 years, which option wins?</p>
+        <h3>The Deep Logic</h3>
+        <ul>
+          <li><strong>CAPEX becomes inefficient:</strong> ₹18 crore is locked upfront, but 60% of it sits idle at 40% utilization. Depreciation keeps running regardless of actual use, and you still pay ₹2.5 crore/year OPEX on under-used hardware.</li>
+          <li><strong>Cloud OPEX is financially safer:</strong> ₹1.2 crore/month = ₹14.4 crore/year, but it's consumption-linked — demand drops, cost drops instantly. Zero sunk cost, and you can exit after the contract.</li>
+          <li><strong>Strategic reasoning:</strong> under uncertainty, agility &gt; ownership. Cloud avoids obsolescence, over-provisioning, and slow scaling.</li>
+        </ul>
+        <div class="card insight">
+          <span class="card-label">Decision</span>
+          <strong>Cloud (OPEX) wins</strong> — no idle capital, no sunk cost, perfect elasticity, lower risk under unpredictable demand. CAPEX becomes wasteful exactly when demand is hard to forecast.
+        </div>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-case2">
+      <button class="topic-header"><h2>🏗️ Case 2 — Build vs. Lease a SaaS ML Platform</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  SCENARIO: a bank needs an ML scoring engine                   │
+│                                                               │
+│  OPTION A — Build in-house (CAPEX-heavy)                       │
+│    Initial CAPEX ₹12 crore · Depreciation: 4 years              │
+│    OPEX for ML engineers + infra: ₹4 crore/year                 │
+│                                                               │
+│  OPTION B — Subscribe to a SaaS scoring engine (OPEX)          │
+│    ₹1.5 crore/month · unlimited scale · zero CAPEX               │
+│    Vendor raises price 12% every year · shutdown risk           │
+└───────────────────────────────────────────────────────────┘</pre>
+        <p><strong>Tough question:</strong> scoring volume is expected to triple in 18 months — which model minimizes long-term risk <em>and</em> maximizes ROI?</p>
+        <h3>The Deep Logic</h3>
+        <pre>SaaS cost trajectory:
+  Year 1: ₹18 crore  →  Year 2 (+12%): ₹20.1 crore  →
+  Year 3 (+12%): ₹22.5 crore  →  3-YEAR TOTAL: ₹60+ crore
+
+In-house build:
+  CAPEX ₹12 crore (one-time) + OPEX ₹4 crore/year
+  3-YEAR TOTAL: ₹24 crore  →  2.5× CHEAPER than SaaS</pre>
+        <p>Because volume will triple, SaaS pricing (usually volume-linked) will explode, while in-house infrastructure can scale at a controlled cost. Building also gives full IP ownership, no vendor lock-in, and stronger in-house ML capability.</p>
+        <div class="card insight">
+          <span class="card-label">Decision</span>
+          <strong>Build in-house (CAPEX-heavy) wins</strong> — scale growth makes SaaS pricing explode, in-house gets <em>cheaper</em> as volume rises, and you avoid both inflation and lock-in while building real internal capability.
+        </div>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-case3">
+      <button class="topic-header"><h2>🤖 Case 3 — Buy Robots vs. Robot-as-a-Service</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  SCENARIO: a manufacturing plant wants to automate packaging   │
+│                                                               │
+│  OPTION A — Buy Robots (CAPEX)                                 │
+│    CAPEX ₹30 crore · Life 10 years                              │
+│    Maintenance OPEX: ₹1 crore/year                              │
+│    Saves ₹6 crore/yr in labor · efficiency drops 2%/year        │
+│                                                               │
+│  OPTION B — Robot-as-a-Service (OPEX)                           │
+│    ₹3 crore/month · 99.9% uptime guaranteed                     │
+│    Vendor handles repairs, upgrades, software                   │
+│    Cost escalates 5% every 2 years                              │
+└───────────────────────────────────────────────────────────┘</pre>
+        <p><strong>Tough question:</strong> facing huge industry uncertainty (labor cost swings + unpredictable demand), should the company lock ₹30 crore into a 10-year asset, or stay flexible?</p>
+        <h3>The Deep Logic</h3>
+        <p><strong>CAPEX pros:</strong> lower long-term cost, pays off around year 5. <strong>CAPEX cons:</strong> ₹30 crore locked for 10 years = huge opportunity cost, machines may sit idle under demand uncertainty, tech may become obsolete, efficiency drops 2%/year.</p>
+        <p><strong>OPEX pros:</strong> zero CAPEX preserves cash, flexible to scale up/down, no maintenance risk, perfect for uncertain demand. <strong>OPEX cons:</strong> more expensive over 10 years, vendor dependency.</p>
+        <blockquote>Under uncertainty, flexibility (OPEX) has a premium value that beats ownership (CAPEX). You avoid long-term commitment, depreciation risk, and technological obsolescence.</blockquote>
+        <div class="card insight">
+          <span class="card-label">Decision</span>
+          <strong>Robot-as-a-Service (OPEX) wins</strong> for lower risk and better agility under uncertainty. This is a case where <strong>CAPEX optimizes cost, but OPEX optimizes survival.</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-case4">
+      <button class="topic-header"><h2>🏦 Case 4 — Insurance Core System Modernization &amp; IPO Optics</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <p><strong>Question:</strong> with an IPO planned in 2 years, which option — an on-prem core system (CAPEX) or a cloud subscription (OPEX) — improves valuation and balance-sheet optics?</p>
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  CAPEX ₹50 crore                                                │
+│    Doesn't hit P&L immediately — depreciated over 7 years      │
+│    Annual impact ≈ ₹7.1 crore/year                              │
+│                                                               │
+│  CLOUD OPEX                                                    │
+│    ₹4.8 crore × 12 = ₹57.6 crore/year — hits EBITDA in full     │
+│    That significantly lowers valuation multiples                │
+└───────────────────────────────────────────────────────────┘</pre>
+        <p>IPO investors prefer strong, stable EBITDA and predictable long-term expenses. Heavy cloud OPEX burns EBITDA and drags down valuation optics; CAPEX depreciation spreads the hit and keeps the balance sheet looking asset-rich rather than expense-heavy.</p>
+        <div class="card insight">
+          <span class="card-label">Decision</span>
+          <strong>On-Prem Core (CAPEX) is better for IPO optics</strong> — for a pre-IPO company, <em>optics &gt; agility.</em> Depreciation spreads the cost, EBITDA looks healthier, and the balance sheet shows assets rather than a heavy recurring-expense line.
+        </div>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-case5">
+      <button class="topic-header"><h2>🚀 Case 5 — Startup Scaling: CAPEX vs. OPEX on a Tight Runway</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <p><strong>Question:</strong> a startup has ₹12 crore of runway. Should it choose OPEX or CAPEX?</p>
+        <pre>CAPEX PATH: ₹8 crore upfront → leaves only ₹4 crore to survive
+            14 months → can kill the startup before next funding
+
+OPEX PATH:  ₹1.5 crore/month → ~8 months of runway on ₹12 crore →
+            still short, but stays FLEXIBLE and scalable down anytime</pre>
+        <p><strong>Early-stage startups must protect cash.</strong> CAPEX is cheaper long-term, but it kills runway. OPEX is costlier per unit, but it keeps cash flexible — and investors generally prefer startups with a lighter balance sheet.</p>
+        <blockquote>Before Product-Market-Fit, survival &gt; optimization. Cost efficiency matters <em>after</em> PMF — before PMF, runway is everything. CAPEX = death risk. OPEX = flexibility + safe cash flow.</blockquote>
+        <div class="card insight">
+          <span class="card-label">Decision</span>
+          <strong>Choose OPEX</strong> — it conserves cash, avoids an irreversible large spend, keeps the balance sheet light for investors, and preserves the flexibility to pivot if needed.
+        </div>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-root">
+      <button class="topic-header"><h2>⭐ Root Understanding — Summary of All Five Cases</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  CAPEX MAKES SENSE WHEN:              OPEX MAKES SENSE WHEN:   │
+│  ─────────────────────                ──────────────────────  │
+│  Demand is predictable                Demand is uncertain      │
+│  Scale is stable                      Agility is required      │
+│  Long-term cost is the priority       Cash preservation matters│
+│  Depreciation benefits matter         Technology changes fast  │
+│                                        Locking capital is risky │
+└───────────────────────────────────────────────────────────┘</pre>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-softwarecosts">
+      <button class="topic-header"><h2>💻 Capitalizing Software Development Costs</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <p>In software product companies, "capitalizing" a cost means treating part of the development spend as CAPEX (an asset, amortized over years) rather than OPEX (an immediate expense). This ties directly into pricing — a capitalized product needs to earn back its amortized cost over its useful life, whether through license fees, per-seat pricing, or value-based pricing.</p>
+        <div class="table-wrap">
+          <table><thead><tr><th>Question</th><th>Where to Draw the Line</th></tr></thead>
+          <tbody>
+            <tr><td>New feature R&amp;D for a multi-year product</td><td>Often CAPEX — creates lasting, resellable value</td></tr>
+            <tr><td>Bug fixes, small maintenance patches</td><td>Usually OPEX — running the business, not creating new value</td></tr>
+            <tr><td>Major re-platforming with a new architecture</td><td>Often CAPEX — a genuinely new long-life asset</td></tr>
+            <tr><td>DevOps/cloud spend to keep the lights on</td><td>OPEX — recurring, BAU running cost</td></tr>
+          </tbody></table>
+        </div>
+        <blockquote>Whatever the textbook says, always confirm the actual capitalization threshold and policy with your own finance/accounting team — it varies company to company, and getting it wrong undermines your credibility in the room far more than a slightly conservative guess would.</blockquote>
+        <footer class="closing">Next: Module 3 turns to Working Capital and Opportunity Cost — how to compare tech projects the way a CFO actually compares them.</footer>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+  const topics = Array.from(document.querySelectorAll('section.topic'));
+  topics.forEach(sec => sec.querySelector('.topic-header').addEventListener('click', () => sec.classList.toggle('collapsed')));
+  document.getElementById('expandAll').addEventListener('click', () => topics.forEach(s => s.classList.remove('collapsed')));
+  document.getElementById('collapseAll').addEventListener('click', () => topics.forEach(s => s.classList.add('collapsed')));
+  const nav = document.getElementById('tocNav');
+  const navToggle = document.getElementById('navToggle');
+  const navScrim = document.getElementById('navScrim');
+  function closeNav(){ nav.classList.remove('open'); navScrim.classList.remove('show'); }
+  navToggle.addEventListener('click', () => { nav.classList.toggle('open'); navScrim.classList.toggle('show'); });
+  navScrim.addEventListener('click', closeNav);
+  document.querySelectorAll('#tocList a').forEach(link => {
+    link.addEventListener('click', () => {
+      const id = link.getAttribute('href').slice(1);
+      const target = document.getElementById(id);
+      if (target) target.classList.remove('collapsed');
+      closeNav();
+    });
+  });
+  const tocLinks = Array.from(document.querySelectorAll('#tocList a'));
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const id = entry.target.getAttribute('id');
+      const link = tocLinks.find(l => l.getAttribute('href') === '#' + id);
+      if (link && entry.isIntersecting){
+        tocLinks.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+  topics.forEach(sec => observer.observe(sec));
+</script>
+</body>
+</html>

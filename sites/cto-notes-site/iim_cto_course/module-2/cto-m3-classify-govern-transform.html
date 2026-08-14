@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CTO Notes · Module 3 — Classify, Govern &amp; Transform</title>
+<style>
+  :root{
+    --bg: #0a0e14; --bg-panel: #10151e; --bg-elevated: #161d29;
+    --ink: #e6edf5; --ink-soft: #8b98ab;
+    --cyan: #22d3ee; --cyan-deep: #0891b2; --cyan-pale: rgba(34,211,238,0.10);
+    --amber: #f5a623; --amber-deep: #c17d0a; --amber-pale: rgba(245,166,35,0.12);
+    --red: #f2545b; --red-pale: rgba(242,84,91,0.12);
+    --line: #212a39; --mono-bg: #05070b; --mono-ink: #bfeaf5; --nav-w: 270px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      linear-gradient(rgba(34,211,238,0.035) 1px, transparent 1px) 0 0/100% 28px,
+      linear-gradient(90deg, rgba(34,211,238,0.035) 1px, transparent 1px) 0 0/28px 100%,
+      var(--bg);
+    color:var(--ink); font-family:'Inter','Segoe UI',system-ui,sans-serif; line-height:1.65;
+  }
+  .mission-bar{ background:var(--mono-bg); border-bottom:1px solid var(--line); padding:0.6rem 1.5rem; font-family:'JetBrains Mono','Courier New',monospace; font-size:0.72rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--cyan); display:flex; justify-content:space-between; flex-wrap:wrap; gap:0.5rem; }
+  .mission-bar span.dim{ color:var(--ink-soft); } .mission-bar .dot{ color:var(--amber); }
+  header.hero{ padding:3rem 1.5rem 2.4rem; text-align:center; border-bottom:1px solid var(--line); background: radial-gradient(ellipse at top, rgba(34,211,238,0.08), transparent 60%); }
+  header.hero .eyebrow{ font-family:'JetBrains Mono',monospace; letter-spacing:0.3em; text-transform:uppercase; font-size:0.72rem; color:var(--amber); font-weight:700; }
+  header.hero h1{ font-size:2.4rem; margin:0.7rem 0 0.4rem; letter-spacing:-0.01em; }
+  header.hero .subtitle{ color:var(--ink-soft); font-size:1.02rem; max-width:680px; margin:0 auto; }
+  .layout{ display:flex; max-width:1220px; margin:0 auto; align-items:flex-start; }
+  nav.toc{ width:var(--nav-w); flex-shrink:0; position:sticky; top:0; max-height:100vh; overflow-y:auto; padding:2rem 1.2rem 2rem 1.5rem; border-right:1px solid var(--line); }
+  nav.toc .toc-title{ font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:0.14em; font-size:0.7rem; color:var(--cyan-deep); font-weight:700; margin-bottom:0.8rem; }
+  nav.toc ul{ list-style:none; padding:0; margin:0 0 1.3rem 0; } nav.toc li{ margin-bottom:0.3rem; }
+  nav.toc a{ display:block; color:var(--ink-soft); text-decoration:none; font-size:0.83rem; padding:0.4rem 0.6rem; border-radius:5px; border-left:3px solid transparent; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+  nav.toc a:hover, nav.toc a.active{ background:var(--cyan-pale); color:var(--cyan); border-left-color:var(--cyan); }
+  .toc-controls{ display:flex; flex-direction:column; gap:0.5rem; }
+  .toc-controls button{ font-family:'JetBrains Mono',monospace; font-size:0.75rem; letter-spacing:0.03em; background:var(--bg-panel); border:1px solid var(--line); color:var(--ink); padding:0.5rem 0.7rem; border-radius:6px; cursor:pointer; text-align:left; transition: background 0.15s, border-color 0.15s; }
+  .toc-controls button:hover{ background:var(--cyan-pale); border-color:var(--cyan); }
+  .nav-toggle{ display:none; position:fixed; bottom:1.4rem; right:1.4rem; z-index:50; background:var(--cyan); color:#04222b; border:none; width:52px; height:52px; border-radius:50%; font-size:1.3rem; box-shadow:0 3px 14px rgba(0,0,0,0.5); cursor:pointer; }
+  .nav-scrim{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:55; } .nav-scrim.show{ display:block; }
+  .wrap{ flex:1; min-width:0; max-width:940px; margin:0 auto; padding:2.6rem 1.6rem 6rem; }
+  section.topic{ margin-top:2.2rem; scroll-margin-top:1.5rem; }
+  button.topic-header{ all:unset; display:flex; align-items:center; justify-content:space-between; width:100%; cursor:pointer; padding-bottom:0.5rem; border-bottom:2px solid var(--cyan-deep); gap:0.8rem; }
+  button.topic-header h2{ margin:1.4rem 0 0; font-size:1.28rem; color:var(--ink); font-weight:700; }
+  .chevron{ flex-shrink:0; width:28px; height:28px; border-radius:6px; background:var(--bg-elevated); color:var(--cyan); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:1rem; font-weight:700; transition: transform 0.25s, background 0.2s; margin-top:1.2rem; }
+  section.topic.collapsed .chevron{ transform:rotate(-90deg); }
+  button.topic-header:hover .chevron{ background:var(--cyan); color:#04222b; }
+  .topic-body{ overflow:hidden; max-height:14000px; opacity:1; transition: max-height 0.35s, opacity 0.25s, margin 0.25s; }
+  section.topic.collapsed .topic-body{ max-height:0; opacity:0; margin:0; }
+  h3{ color:var(--cyan); font-size:1.05rem; margin-top:1.7rem; }
+  h4{ color:var(--amber); font-size:0.9rem; margin-top:1.15rem; text-transform:uppercase; letter-spacing:0.04em; }
+  p{ color:var(--ink); } strong{ color:#fff; } em{ color:var(--ink-soft); }
+  pre{ background:var(--mono-bg); color:var(--mono-ink); font-family:'JetBrains Mono','Courier New',monospace; font-size:0.72rem; padding:1.1rem 1.2rem; border-radius:8px; border:1px solid var(--line); border-left:3px solid var(--cyan); overflow-x:auto; line-height:1.5; white-space:pre; }
+  blockquote{ margin:1rem 0; padding:0.9rem 1.2rem; background:var(--bg-panel); border-left:4px solid var(--amber); font-style:italic; color:var(--ink-soft); border-radius:0 6px 6px 0; }
+  ul{ padding-left:1.4rem; } li{ margin-bottom:0.4rem; }
+  .panel{ background:var(--bg-panel); border:1px solid var(--line); border-radius:10px; padding:1.4rem 1.7rem; margin:1.2rem 0; }
+  .card{ border-radius:10px; padding:1.1rem 1.4rem; margin:1rem 0; border:1px solid var(--line); }
+  .card.insight{ background:var(--cyan-pale); border-left:4px solid var(--cyan); }
+  .card.question{ background:var(--amber-pale); border-left:4px solid var(--amber); }
+  .card.warning{ background:var(--red-pale); border-left:4px solid var(--red); }
+  .card .card-label{ font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:0.1em; font-size:0.68rem; font-weight:700; margin-bottom:0.4rem; display:block; }
+  .card.insight .card-label{ color:var(--cyan); } .card.question .card-label{ color:var(--amber); } .card.warning .card-label{ color:var(--red); }
+  .table-wrap{ overflow-x:auto; margin:1.2rem 0; border-radius:10px; border:1px solid var(--line); }
+  table{ width:100%; border-collapse:collapse; background:var(--bg-panel); font-size:0.83rem; }
+  thead th{ background:var(--bg-elevated); color:var(--cyan); text-align:left; padding:0.6rem 0.8rem; font-family:'JetBrains Mono',monospace; font-size:0.66rem; text-transform:uppercase; letter-spacing:0.05em; border-bottom:2px solid var(--cyan-deep); }
+  tbody td{ padding:0.6rem 0.8rem; border-top:1px solid var(--line); vertical-align:top; color:var(--ink); }
+  tbody tr:nth-child(even){ background: rgba(255,255,255,0.015); }
+  footer.closing{ text-align:center; margin-top:2.5rem; font-style:italic; color:var(--ink-soft); }
+  @media (max-width:900px){ :root{ --nav-w:220px; } }
+  @media (max-width:720px){
+    .layout{ display:block; }
+    nav.toc{ position:fixed; top:0; left:0; width:min(280px,82vw); height:100vh; background:var(--bg-panel); z-index:60; transform:translateX(-105%); transition: transform 0.25s; box-shadow:3px 0 18px rgba(0,0,0,0.5); }
+    nav.toc.open{ transform:translateX(0); }
+    .nav-toggle{ display:flex; align-items:center; justify-content:center; }
+    header.hero h1{ font-size:1.65rem; } pre{ font-size:0.58rem; padding:0.85rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="mission-bar">
+  <span>CTO&nbsp;STRATEGIC&nbsp;NOTES <span class="dot">·</span> MODULE 03 / 04</span>
+  <span class="dim">CLASSIFICATION · GOVERNANCE · VALUE CHAIN · HYPE CYCLE · DIGITAL TRANSFORMATION</span>
+</div>
+
+<header class="hero">
+  <div class="eyebrow">The Strategic View of Technology — Governing the Machine</div>
+  <h1>🧭 Classify, Govern &amp; Transform</h1>
+  <p class="subtitle">How to size up a technology before it reshapes the organization, decide build vs. buy, wire IT into the value chain, and read 50 years of hype cycles correctly — all in plain language, with a diagram for every idea.</p>
+</header>
+
+<button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">☰</button>
+<div class="nav-scrim" id="navScrim"></div>
+
+<div class="layout">
+  <nav class="toc" id="tocNav">
+    <div class="toc-title">Jump to</div>
+    <ul id="tocList">
+      <li><a href="#sec-itinvest">🎯 IT Investment Strategies</a></li>
+      <li><a href="#sec-earthquake">🌋 Classifying Tech — The Earthquake Scale</a></li>
+      <li><a href="#sec-lenses">🔭 Three Lenses of Classification</a></li>
+      <li><a href="#sec-confusions">❓ Common Confusions</a></li>
+      <li><a href="#sec-indepth">🔬 In-Depth Managerial Implications</a></li>
+      <li><a href="#sec-innovation">💡 Innovation vs. "Innovation Theater"</a></li>
+      <li><a href="#sec-buildbuy">🍔 Build vs. Buy</a></li>
+      <li><a href="#sec-frameworks">🏙️ ITIL &amp; TOGAF</a></li>
+      <li><a href="#sec-change">👥 Calculating Change Management Investment</a></li>
+      <li><a href="#sec-valuechain2">⚙️ Value Chain — Cost Leadership vs. Differentiation</a></li>
+      <li><a href="#sec-valueclarify">📌 More on the Value Chain — Services &amp; Multiple Chains</a></li>
+      <li><a href="#sec-intensity">🧭 Information Intensity Matrix &amp; Pricing</a></li>
+      <li><a href="#sec-waves">🌊 50 Years of IT — Three Waves</a></li>
+      <li><a href="#sec-hypecycle">🎢 The Gartner Hype Cycle</a></li>
+      <li><a href="#sec-invest">🕓 When Should Your Company Invest?</a></li>
+      <li><a href="#sec-3ds">🔺 Digitization → Digitalization → Digital Transformation</a></li>
+    </ul>
+    <div class="toc-title">Sections</div>
+    <div class="toc-controls">
+      <button id="expandAll">＋ Expand all</button>
+      <button id="collapseAll">－ Collapse all</button>
+    </div>
+  </nav>
+
+  <div class="wrap">
+
+    <section class="topic" id="sec-itinvest">
+      <button class="topic-header"><h2>🎯 IT Investment Strategies</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <h3>1. IT Must Match the Business Goal</h3>
+        <p>Technology should support what the business wants to achieve — not work in isolation. If your goal is faster delivery, invest in route optimization, not fancy chatbots. If you're a retailer like DMart, tech helps billing and inventory, but the stores remain the main event.</p>
+
+        <h3>2. Always Define How You'll Measure Success</h3>
+        <p>Before starting any IT project, decide how you'll know it worked. Launching a new CRM? Define success as "30% faster lead follow-up" or "higher retention" — not just "system implemented."</p>
+
+        <h3>3. Avoid the "Blame the Tech" Cycle</h3>
+        <p>When projects fail, companies often swap one tool for another — but the real problem is usually poor alignment or unclear goals, not the tool. If an ERP project fails, buying a new ERP won't help unless the business processes and team alignment get fixed first.</p>
+
+        <h3>4. Learn from Small Failures</h3>
+        <p>Even a small failed project is worth analyzing — it saves you from a much bigger mistake later. If a chatbot rollout flops because users don't like it, learn what they actually wanted before investing in a bigger AI solution.</p>
+
+        <h3>5. Technology's Role Depends on the Business Type</h3>
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  Netflix  →  Tech IS the business (no tech = no product)      │
+│  DMart    →  Tech SUPPORTS the business (helps stores run      │
+│              better, but the real value is low prices &amp;       │
+│              availability)                                    │
+└───────────────────────────────────────────────────────────┘</pre>
+        <blockquote>Don't invest in tech just because it's new — invest because it supports your business goal, you know how to measure success, and you're learning from every step along the way.</blockquote>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-earthquake">
+      <button class="topic-header"><h2>🌋 Classifying Technology — The "Organizational Earthquake" Scale</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <p><strong>Key question:</strong> "Is this technology a tremor — or a tectonic shift that will crack our foundations?"</p>
+        <p>Classifying technology is like rating an earthquake — not just what it is, but how deeply it will shake your organization's people, incentives, and daily rhythms.</p>
+        <pre>┌───────────────────────────────────────────────────────────┐
+│           TWO STRATEGIC MISTAKES CLASSIFICATION PREVENTS      │
+│                                                               │
+│  MISTAKE 1 — Diamond drill for a posthole                     │
+│  (Over-investing in a commodity)                               │
+│  Example: a $5M custom time-tracker when a $50 SaaS tool       │
+│  would do. Expensive code, zero strategic lift.                │
+│                                                               │
+│  MISTAKE 2 — Garden trowel for the Channel Tunnel               │
+│  (Under-investing in transformation)                           │
+│  Example: a global ERP rolled out with no process redesign,    │
+│  no training. Chaos ensues.                                    │
+└───────────────────────────────────────────────────────────┘</pre>
+        <blockquote>Classify before you commit. You don't send scouts to fight a world war — and you don't summon an army for a local skirmish.</blockquote>
+
+        <h3>The Pre-Flight Test — A Manager's Diagnostic Checklist</h3>
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  1. POWER &amp; STAKEHOLDERS                                      │
+│     "Whose empire shrinks, whose expands?"                    │
+│                                                               │
+│  2. PROCESS HARMONIZATION                                     │
+│     "Are we asking ten jazz bands to play one symphony?"      │
+│                                                               │
+│  3. HUMAN COST &amp; ADOPTION LOAD                                │
+│     "How much energy will people spend unlearning before      │
+│      they start learning?"                                    │
+│                                                               │
+│  4. GOVERNANCE STRUCTURE                                       │
+│     Functional tool  → functional head, local ownership       │
+│     Cross-functional → VP + steering committee                 │
+│     Enterprise       → C-suite sponsor + program director     │
+│                                                               │
+│  5. ROLLOUT PHILOSOPHY — Sprinkle or Flood?                    │
+│     Sprinkle: pilot &amp; scale, build believers slowly           │
+│     Flood: Big Bang go-live, rip off the Band-Aid              │
+└───────────────────────────────────────────────────────────┘</pre>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-lenses">
+      <button class="topic-header"><h2>🔭 Three Lenses for Classifying Any Technology</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <h3>Lens A — By Organizational Impact &amp; Breadth of Change</h3>
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  CATEGORY 1 — FUNCTIONAL / DEPARTMENTAL                         │
+│  "A new scalpel for the surgeons"                              │
+│  Example: Figma for designers                                  │
+│  Adoption depends on technical merit, not politics.             │
+│  Resistance is low — power and routines stay intact.            │
+│                                                               │
+│  CATEGORY 2 — CROSS-FUNCTIONAL / NETWORK                        │
+│  "Wiring organs that never spoke fluently before"               │
+│  Example: Salesforce CRM across Sales, Marketing, Support       │
+│  Success depends on incentive redesign, shared accountability.  │
+│                                                               │
+│  CATEGORY 3 — ENTERPRISE-WIDE                                   │
+│  "Open-heart surgery on the organization"                       │
+│  Example: Global ERP like SAP S/4HANA                           │
+│  It's a redistribution program — of visibility, control,        │
+│  and accountability. People notice.                            │
+└───────────────────────────────────────────────────────────┘</pre>
+
+        <h3>Lens B — By IT Role: Infrastructure vs. Applications</h3>
+        <pre>┌───────────────────────────────────────────────────────────┐
+│         PIZZA ANALOGY                                          │
+│  Infrastructure = the pizza base  (shared, foundational)       │
+│  Applications   = the toppings    (business-specific)          │
+│                                                               │
+│  INFRASTRUCTURE                    APPLICATIONS                │
+│  networks, servers, identity       CRM modules, recommenders,  │
+│  core cloud, backbone security     campaigns                   │
+│  Shared, commodity-like            Feature-differentiating     │
+│  Centralize, IT-led                Business owns requirements  │
+└───────────────────────────────────────────────────────────┘</pre>
+
+        <h3>Lens C — By Hierarchical Level: The Pyramid of Information Needs</h3>
+        <pre>            ▲   EXECUTIVE SUPPORT SYSTEMS (ESS)
+            │   strategic insight, high-level KPIs,
+            │   scenario simulation
+            │
+            │   MIDDLE MANAGEMENT — MIS &amp; DSS
+            │   aggregated metrics, exception reports,
+            │   daily/weekly dashboards
+            │
+            ▼   OPERATIONAL — TRANSACTION PROCESSING (TPS)
+                real-time, granular, high uptime, low latency</pre>
+        <p>Each level needs different data freshness, accuracy, and presentation. A one-size-fits-all system fails — too noisy for execs, too slow for operations.</p>
+
+        <h3>7 Immediate Manager Actions</h3>
+        <ul>
+          <li>Classify the technology along all three lenses.</li>
+          <li>Define ownership — CIO for infra, business owner for apps, steering committee for cross-functional.</li>
+          <li>Write a short business capability statement: what capability, which KPI, what timeline.</li>
+          <li>Run a VRIO sanity check.</li>
+          <li>Estimate non-technical costs — integration, training, incentives, governance.</li>
+          <li>Pilot with measurement: baseline, pilot small, measure, fix, scale.</li>
+          <li>Govern and iterate — embed a platform/ops team to prevent technical debt.</li>
+        </ul>
+        <blockquote>"You don't manage technology. You manage its consequences." The sharper your classification, the fewer aftershocks you'll face.</blockquote>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-confusions">
+      <button class="topic-header"><h2>❓ Common Confusions, Answered</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <h3>"Isn't 'spend less' the same as Carr's advice?"</h3>
+        <p>Reframe it: <strong>spend smart</strong>, not "spend less." Prioritize investments tied to business outcomes — underfunding essential infrastructure just because you're trying to save money is its own kind of mistake.</p>
+
+        <h3>"Where does RPA or an LLM fit in the classification lenses?"</h3>
+        <p>RPA (robotic process automation) often starts as <strong>functional</strong> (automating routine tasks) but can become <strong>network</strong> if scaled across departments. Infrastructure-wise it's an application layer, but it can create operational dependency that needs infra support. An LLM/AI tool can be <strong>application</strong> (augmenting a specific process) or <strong>platform</strong> if it becomes a core differentiator that produces proprietary outputs — classify it carefully: capability, or commodity?</p>
+
+        <h3>"Build vs. Buy — how do I actually decide?"</h3>
+        <p><strong>Buy</strong> if it's commodity, speed matters, or there's no sustainable advantage in owning it. <strong>Build</strong> if the software encodes unique processes or data and creates durable differentiation. Use VRIO and a capability-first lens to decide.</p>
+
+        <h3>"How much should I budget for change management?"</h3>
+        <p>There's no single fixed percentage. Budget depends on scope — Functional vs. Enterprise. Use a process-based approach (Kotter-style steps) and estimate the interventions actually required (training, incentives, process redesign). Invest more where organizational change is high.</p>
+
+        <h3>"Can one technology fall into multiple categories?"</h3>
+        <p>Yes — classification is a tool, not a box. Example: an enterprise data lake (infrastructure) that powers a unique recommendation engine (application) that crosses functions (network). Use the <em>dominant</em> impact to guide primary governance.</p>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-indepth">
+      <button class="topic-header"><h2>🔬 In-Depth Managerial Implications — Turning Classification into a Program</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <h3>A. Governance &amp; Decision Rights</h3>
+        <p>Infrastructure → CIO/IT + CFO for large capex. Applications → business owner (CMO/CHRO/COO) with IT integration constraints. Cross-functional → a steering committee with business + IT + security + finance. A typical committee: Sponsor (C-level), Program Manager, IT Architect, Business SME, HR (for change management), Legal/Security, Finance.</p>
+
+        <h3>B. Procurement &amp; Vendor Strategy</h3>
+        <p>Infrastructure purchases: negotiate enterprise discounts, SLAs, exit clauses, and data-ownership clauses. Application purchases: evaluate fit-for-purpose, roadmap alignment, API availability, integration cost. Hybrid: use a Proof-of-Concept → pilot → phased Business Acceptance Test.</p>
+
+        <h3>C. Data Governance, Privacy &amp; Security</h3>
+        <p>Classify data flowing from Transaction Processing Systems up to analytical layers (PII, sensitive, aggregated). Map compliance to regulatory rules (GDPR-like laws, industry-specific regulation). Build security by design — infrastructure must provide identity, encryption, audit trails.</p>
+
+        <h3>D. Organizational Readiness &amp; Culture</h3>
+        <p>People lose power when processes become transparent (enterprise systems especially) — anticipate that and design incentives for it. Identify early adopters, build a center-of-excellence, measure usage, and reward the right behaviors.</p>
+
+        <h3>E. Integration &amp; Technical Debt</h3>
+        <p>Hidden cost drivers — middleware, adapters, data transformation, troubleshooting — can eat <strong>20–40% of the budget</strong> on complex projects. Avoid technical debt with architectural guardrails, code reviews, API standards, and by preferring an internal platform team over ad-hoc integrations.</p>
+
+        <h3>F. Measurement &amp; KPIs</h3>
+        <div class="table-wrap">
+          <table><thead><tr><th>Project Type</th><th>What to Measure</th></tr></thead>
+          <tbody>
+            <tr><td>Functional</td><td>Adoption rate, error-rate reduction, time saved per task</td></tr>
+            <tr><td>Network</td><td>Cross-department usage, reduction in hand-offs, collaboration score</td></tr>
+            <tr><td>Enterprise</td><td>Process cycle times, cash-to-cash, program-level ROI, compliance metrics</td></tr>
+          </tbody></table>
+        </div>
+        <p>Always baseline before the project, then measure adoption + business benefit + sustainment after go-live.</p>
+
+        <h3>G. Phasing &amp; Rollout Pattern</h3>
+        <p>Pilot (functional) → expand to network → enterprise roll-up (if strategic). Use canary releases, a parallel run for ERP cutover, and a rollback plan for major implementations.</p>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-innovation">
+      <button class="topic-header"><h2>💡 Innovation vs. Technology Investment</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│                                                               │
+│  TECHNOLOGY INVESTMENT   =  Buying tools                       │
+│  INNOVATION              =  Using those tools (and new         │
+│                              thinking) in NEW, VALUABLE ways    │
+│                                                               │
+│  👉  Innovation uses technology, but also needs new            │
+│      thinking, processes, and culture.                         │
+└───────────────────────────────────────────────────────────┘</pre>
+        <div class="table-wrap">
+          <table><thead><tr><th>Example</th><th>Not Innovation</th><th>The Real Innovation</th></tr></thead>
+          <tbody>
+            <tr><td>Zomato</td><td>Buying AI software</td><td>Using AI to predict which restaurant delivers faster</td></tr>
+            <tr><td>Amazon</td><td>The recommendation tech itself</td><td>How Amazon personalizes each shopper's journey</td></tr>
+            <tr><td>Domino's</td><td>No new tech at all</td><td>The 30-minute delivery guarantee — a process commitment</td></tr>
+          </tbody></table>
+        </div>
+        <h3>Three Pillars of Real Innovation</h3>
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  ● TECHNOLOGY CAPABILITY — tools that make new things         │
+│    possible                                                   │
+│  ● ORGANIZATIONAL WILL — leadership courage to change old      │
+│    ways                                                        │
+│  ● CUSTOMER VALUE CREATION — a real problem solved, or         │
+│    experience improved                                         │
+│                                                               │
+│  If ONE of these is missing → innovation stays an idea         │
+│  on paper.                                                     │
+└───────────────────────────────────────────────────────────┘</pre>
+        <div class="card warning">
+          <span class="card-label">Common Mistake — "Innovation Theater"</span>
+          Buying an expensive AI tool, setting up a "digital lab," installing new dashboards — if no one uses them to create real value, it's just theater. A bank buys a chatbot but still forces branch visits for most tasks: tech spend, zero innovation.
+        </div>
+        <h3>Manager's Checklist for Real Innovation</h3>
+        <ul>
+          <li><strong>Define the core objective</strong> — what problem, what value?</li>
+          <li><strong>Assess solution fit</strong> — is tech even needed, or would a policy/workflow change do the job?</li>
+          <li><strong>Drive adoption, not just installation</strong> — will teams actually use it daily?</li>
+          <li><strong>Measure real outcomes</strong> — active usage and retention, not "we launched it."</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-buildbuy">
+      <button class="topic-header"><h2>🍔 The Build vs. Buy Decision</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <p>Cook at home, or order from a restaurant? Both fill your stomach — which is smarter depends on time, cost, skill, and purpose.</p>
+        <div class="table-wrap">
+          <table><thead><tr><th>Factor</th><th>Build</th><th>Buy</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Purpose</strong></td><td>Gives a unique edge</td><td>Common, standard need</td></tr>
+            <tr><td><strong>Speed</strong></td><td>Slower to build and test</td><td>Subscribe and start today</td></tr>
+            <tr><td><strong>Cost</strong></td><td>Expensive upfront</td><td>Cheaper start, ongoing fees</td></tr>
+            <tr><td><strong>Control</strong></td><td>Full control, free to innovate</td><td>Limited to vendor's roadmap</td></tr>
+            <tr><td><strong>Team Skills</strong></td><td>Needs skilled engineers</td><td>Vendor manages the burden</td></tr>
+          </tbody></table>
+        </div>
+        <h3>The Hybrid "Burger" Approach</h3>
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  🍔  MOST MODERN COMPANIES MIX BOTH                            │
+│                                                               │
+│  The patty (core)          → build in-house — your             │
+│                                signature flavor                │
+│  The bun &amp; sauce (support)  → buy ready-made — for            │
+│                                efficiency                      │
+│                                                               │
+│  Zomato: builds delivery &amp; restaurant systems, buys AWS       │
+│          and Google Maps APIs                                 │
+│  Netflix: builds the video engine &amp; algorithms, buys AWS      │
+│           for storage and delivery                            │
+└───────────────────────────────────────────────────────────┘</pre>
+        <blockquote>Build when it's your <em>secret sauce</em>. Buy when it's just <em>table stakes</em>. Mix both to get innovation and speed.</blockquote>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-frameworks">
+      <button class="topic-header"><h2>🏙️ Frameworks: ITIL &amp; TOGAF</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <p>Frameworks are blueprints — they don't tell you which technology to buy, they tell you how to use it wisely.</p>
+        <h3>ITIL — Managing Everyday IT Smoothly</h3>
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  Think of ITIL like a RESTAURANT MANAGER running a busy       │
+│  kitchen — everything must work perfectly, every day.         │
+│                                                               │
+│  Service Strategy    → deciding what's on the menu             │
+│  Service Design      → designing the kitchen layout            │
+│  Service Transition  → trialing a new dish before the menu     │
+│  Service Operation   → cooking &amp; serving consistently         │
+│  Continual Improvement → tweaking recipes from feedback        │
+└───────────────────────────────────────────────────────────┘</pre>
+
+        <h3>TOGAF — Building the Bigger Blueprint</h3>
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  Think of TOGAF like a CITY PLANNER designing an entire       │
+│  city, not just one building.                                  │
+│                                                               │
+│  Architecture Vision    → the city's master plan               │
+│  Business Architecture  → neighborhoods and main roads         │
+│  Data/App/Tech Arch.    → electricity, transport, water         │
+│  Implementation Gov.    → inspecting construction sites        │
+│  Change Management      → expanding the city as it grows       │
+└───────────────────────────────────────────────────────────┘</pre>
+        <blockquote><strong>ITIL</strong> keeps today stable — smooth daily operations. <strong>TOGAF</strong> builds tomorrow smart — future planning and long-term structure.</blockquote>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-change">
+      <button class="topic-header"><h2>👥 Calculating Change Management Investment</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <p>The biggest reason new tech fails isn't the technology — it's people not using it, or resisting it. Buying a fancy treadmill doesn't get anyone running.</p>
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  ⚠️  ~70% OF BIG DIGITAL PROJECTS FAIL BECAUSE:               │
+│      ● Employees resist the change                             │
+│      ● Communication is confusing                              │
+│      ● Leaders don't actively support it                       │
+└───────────────────────────────────────────────────────────┘</pre>
+        <div class="table-wrap">
+          <table><thead><tr><th>Area</th><th>Meaning</th><th>Examples</th></tr></thead>
+          <tbody>
+            <tr><td>Communication</td><td>Explaining what's changing and why</td><td>Leader videos, Q&amp;A, town halls</td></tr>
+            <tr><td>Training</td><td>Teaching people to use the tools</td><td>Hands-on sessions, sandbox practice</td></tr>
+            <tr><td>Org. Alignment</td><td>Adjusting roles, targets, rewards</td><td>New KPIs, bonuses tied to system use</td></tr>
+            <tr><td>Support System</td><td>Helping people when stuck</td><td>Helpdesks, "change buddies"</td></tr>
+            <tr><td>Feedback &amp; Tracking</td><td>Checking if the change is working</td><td>Adoption dashboards, surveys</td></tr>
+          </tbody></table>
+        </div>
+        <div class="card insight">
+          <span class="card-label">Rule of Thumb</span>
+          Spend <strong>10–15% of the total project budget</strong> on change management. On a ₹20 crore ERP project, that's ₹2–3 crore of "people-readiness cost."
+        </div>
+        <blockquote>A system that no one uses is just an expensive showpiece.</blockquote>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-valuechain2">
+      <button class="topic-header"><h2>⚙️ The Value Chain, Business Strategy &amp; IT's Strategic Role</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <p>Every company chases the <strong>profit gap</strong> — the difference between what customers will pay (P*) and what it costs to produce (X). The bigger the gap, the bigger the profit.</p>
+        <div class="table-wrap">
+          <table><thead><tr><th>Strategy</th><th>Goal</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Cost Leadership</strong></td><td>Reduce cost (X) at every stage</td><td>DMart / Walmart — bulk buying, tight supply chains</td></tr>
+            <tr><td><strong>Product Differentiation</strong></td><td>Increase willingness to pay (P*)</td><td>Apple — premium design, brand experience</td></tr>
+          </tbody></table>
+        </div>
+        <h3>Example: The Smart Washing Machine</h3>
+        <pre>Usage data (Service) shows most customers use only
+3 wash modes out of 10.
+   → Marketing:   sell a simpler, cheaper model
+   → Operations:  build fewer complex variants → save cost
+   → Distribution: stock the right model in the right stores
+
+Result: lower cost AND happier customers — from connecting
+information across the value chain.</pre>
+        <p><strong>Value Chain + IT Interaction Model:</strong> the Value Chain answers "where can tech help?" (it spots the opportunity). The IT Interaction Model answers "will this tech actually work for us?" (it tests the fit against people, culture, and existing systems) before you invest.</p>
+
+        <h3>Balancing Price and Volume — the Haldiram's Example</h3>
+        <p>A differentiated business still can't ignore efficiency — it just isn't focused on cost-cutting the way a cost leader is. And it must understand the relationship between price and sales volume: setting a price too high, even for a genuinely premium product, can badly hurt the number of units sold. The real goal is optimizing <em>total profit</em> — a function of both margin (P* − X) <em>and</em> volume.</p>
+        <blockquote><strong>Haldiram's</strong> uses high-quality inputs (like pure ghee) but runs highly efficient operations, so it can offer a premium product at a price point that keeps sales volume high — rather than chasing an ultra-exclusive, low-volume price.</blockquote>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-valueclarify">
+      <button class="topic-header"><h2>📌 More on the Value Chain — No Fixed Formula, Services, Multiple Chains</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <h3>1. There's No Fixed Formula</h3>
+        <p>The Value Chain isn't a rigid rulebook or a math formula — it's a <strong>thinking tool</strong> that helps you see where your company adds value and where it spends money. Each company designs its own version depending on what it does and how it creates value. A car manufacturer adds value by building and delivering cars; a tech company adds value by crafting great software experiences. Very different steps — same underlying idea.</p>
+
+        <h3>2. It Works for Services Too</h3>
+        <p>The Value Chain isn't just for factories — it fits service and project-based businesses just as well.</p>
+        <div class="table-wrap">
+          <table><thead><tr><th>Activity</th><th>IT Consulting (e.g. TCS, Infosys)</th><th>Construction (e.g. L&amp;T)</th></tr></thead>
+          <tbody>
+            <tr><td>Inbound Logistics</td><td>Minimal — mostly hiring skilled people</td><td>Huge — procuring &amp; managing vast raw materials</td></tr>
+            <tr><td>Operations</td><td>Extremely significant — software gets built, projects delivered</td><td>Huge — the physical build is the core activity</td></tr>
+            <tr><td>Outbound Logistics</td><td>Minimal — software is delivered digitally</td><td>Zero (for a fixed-location project like an apartment block)</td></tr>
+            <tr><td>Marketing &amp; Sales</td><td>Very significant — securing contracts and clients</td><td>Significant</td></tr>
+            <tr><td>Service</td><td>Very significant — maintenance, support, add-on services</td><td>Can be significant, depending on warranties offered</td></tr>
+          </tbody></table>
+        </div>
+
+        <h3>3. Multiple Value Chains in One Company</h3>
+        <p>If a company runs different businesses or products, each gets its own value chain — because the way value is created is different.</p>
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  TATA GROUP                                                    │
+│  Tata Motors (cars) · Tata Steel (materials) ·                │
+│  Tata Consultancy Services (IT) — each has its OWN             │
+│  value chain.                                                 │
+│                                                               │
+│  AMAZON                                                        │
+│  Amazon Retail  → logistics &amp; delivery                        │
+│  AWS            → data centers &amp; technology                   │
+│  Same company, two very different value chains.                │
+└───────────────────────────────────────────────────────────┘</pre>
+        <blockquote>There's no one-size-fits-all value chain — every business, and every offering within it, has its own version.</blockquote>
+
+        <h3>Applying the Value Chain to a Brand-New Product</h3>
+        <p><strong>Step 1 — Prove it works:</strong> make sure people actually want it. Focus on creating value and finding your first customers; don't worry about cost optimization yet. <strong>Step 2 — Make it better and cheaper:</strong> once there's a real market, use the value chain to find where time, money, or effort is being wasted, and improve or automate it.</p>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-intensity">
+      <button class="topic-header"><h2>🧭 The Information Intensity Matrix &amp; Pricing New Innovations</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <p>Not every part of a business needs the same level of technology. Ask two questions: can better information improve <em>how we do the work</em> (value chain), and can better information improve <em>the product itself</em>?</p>
+        <div class="table-wrap">
+          <table><thead><tr><th>Position on the Matrix</th><th>What It Means</th><th>Where to Invest</th></tr></thead>
+          <tbody>
+            <tr><td>High Product Intensity</td><td>The product itself gets smarter with information</td><td>IoT, AI features, real-time customer data (e.g. a smartwatch)</td></tr>
+            <tr><td>High Value-Chain Intensity</td><td>Operations improve a lot with information</td><td>ERP, analytics, predictive maintenance</td></tr>
+            <tr><td>Low in Both</td><td>Information barely moves the needle</td><td>Keep IT simple — no big spend needed</td></tr>
+          </tbody></table>
+        </div>
+        <h3>Pricing New Innovations</h3>
+        <p><strong>Step 1 — prove it works:</strong> find the value and the first customers before touching cost optimization. <strong>Step 2 — make it better and cheaper</strong> once the market is proven, using the value chain to find where time, money, or effort is wasted.</p>
+        <blockquote>When there's no market comparison, price based on the value it creates — not just the cost to make it.</blockquote>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-waves">
+      <button class="topic-header"><h2>🌊 The Changing Role of IT — A 50-Year Evolution</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  WAVE 1 (~1970s)                                               │
+│  Individual Productivity &amp; Process Standardization             │
+│  IT = support/secretarial tool. Excel, Word, paperless work.   │
+│  (Arrived later — ~1990s — in developing countries.)            │
+│                                                               │
+│  WAVE 2 (~1990s)                                               │
+│  Internet-Driven Globalization                                 │
+│  Internet enables global coordination — sourcing and           │
+│  operations optimized on quality and price, worldwide.         │
+│                                                               │
+│  WAVE 3 (~2000s–now)                                           │
+│  Combinatorial &amp; Integral Technologies                        │
+│  Value emerges from technologies COMBINING:                    │
+│  cloud + computational power = real-time analytics             │
+│  IoT turns hardware into smart connected products               │
+│  "Software eating the world" — IT shifts from SUPPORTING       │
+│  business to DRIVING business strategy                        │
+└───────────────────────────────────────────────────────────┘</pre>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-hypecycle">
+      <button class="topic-header"><h2>🎢 The Gartner Hype Cycle</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <p>A reality check for new technologies — how excitement grows, crashes, and slowly becomes practical. Gartner publishes roughly 95 versions of this chart every year.</p>
+        <pre>EXPECTATIONS
+     ▲
+     │    ╭───────────╮
+     │   ╱             ╲
+     │  ╱   PEAK OF     ╲    SLOPE OF          PLATEAU OF
+     │ ╱    INFLATED     ╲╱  ENLIGHTENMENT →   PRODUCTIVITY
+     │╱     EXPECTATIONS  ╱╲                    (mature tech)
+     │                    ╱  ╲
+     │                   ╱    ╲
+     │                  ╱      ╲
+     │                 ╱   TROUGH OF
+     │                ╱    DISILLUSIONMENT
+     │               ╱
+     └──────────────┴─────────────────────────────────────────►
+                    TIME
+
+  1️⃣ Innovation Trigger        "The Big Idea Arrives"
+  2️⃣ Peak of Inflated Expectations  "Too Much Hype"
+  3️⃣ Trough of Disillusionment  "The Crash"
+  4️⃣ Slope of Enlightenment     "Reality + Learning"
+  5️⃣ Plateau of Productivity    "Now It Just Works"</pre>
+
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  🚀 INNOVATION TRIGGER                                        │
+│     ChatGPT's first release, Tesla self-driving cars           │
+│     "Everyone talks potential... results still unproven"       │
+│                                                               │
+│  🔥 PEAK OF INFLATED EXPECTATIONS                              │
+│     Metaverse land rush, "Blockchain fixes everything"         │
+│     ⚠️ Most projects here don't actually work                  │
+│                                                               │
+│  💀 TROUGH OF DISILLUSIONMENT                                  │
+│     Early IoT lacked cheap sensors, strong batteries, fast     │
+│     internet everywhere. Meta had to cut Metaverse staff.      │
+│                                                               │
+│  💡 SLOPE OF ENLIGHTENMENT                                     │
+│     IoT thriving in factories, smart homes, logistics.         │
+│     AI finding real use cases — support, fraud detection.      │
+│                                                               │
+│  📈 PLATEAU OF PRODUCTIVITY                                    │
+│     Smartphones, cloud computing — proven, mainstream,         │
+│     unremarkable.                                              │
+└───────────────────────────────────────────────────────────┘</pre>
+        <p><strong>Timelines vary:</strong> social media exploded fast — no special hardware needed. 3D printing has taken decades, since every material needs its own maturing technology. <strong>Not every technology survives</strong> — some never escape the Trough, but sometimes return in a new form (Metaverse crashed commercially, lives on in Fortnite and Roblox). <strong>The cycle never truly ends</strong> — even at the Plateau, something newer can replace it (Nokia phones, DVDs).</p>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-invest">
+      <button class="topic-header"><h2>🕓 When Should Your Company Invest in New Technology?</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  🏢  ESTABLISHED / CONSERVATIVE — "The Wait and Watch Club"    │
+│                                                               │
+│  Strategy: WAIT AND WATCH                                     │
+│  ● Don't chase every new trend                                │
+│  ● Wait until tech reaches "Slope of Enlightenment" or        │
+│    "Plateau of Productivity"                                  │
+│  ● Save money, avoid risk, learn from others' mistakes        │
+│  Example: banks waited for cloud to become reliable           │
+│  Example: auto makers waited for AI automation                │
+│  Action Tip: keep "eyes and ears open"                        │
+│                                                               │
+│  🚀  INNOVATIVE / CASH-RICH — "The Experimenters"              │
+│                                                               │
+│  Strategy: EXPERIMENT EARLY AND OFTEN                         │
+│  ● Jump in at "Innovation Trigger" phase                      │
+│  ● Afford failures: 8/10 fail, 2/10 change industries         │
+│  ● Goal: leadership, not safety                                │
+│  Example: Google invested early in self-driving cars          │
+│  Example: Amazon invested early in cloud (AWS)                │
+│  Action Tip: take calculated risks                            │
+└───────────────────────────────────────────────────────────┘</pre>
+        <h3>Why Tech Investment Differs from Regular R&amp;D</h3>
+        <ul>
+          <li><strong>Unlimited scope, unlimited temptation</strong> — you can't chase every trend at a 200-dish buffet.</li>
+          <li><strong>Hype pressure is real</strong> — consultants and competitors push "You need blockchain!" without a use case.</li>
+          <li><strong>High risk of wasted money</strong> — IBM and Maersk spent billions on a blockchain supply-chain system and shut it down after five years when the ecosystem wasn't ready.</li>
+        </ul>
+        <div class="card insight">
+          <span class="card-label">Key Takeaways</span>
+          Know your company type — risk-taker or steady grower. Avoid FOMO. Wait for the ecosystem (tools, people, infrastructure) to mature. Always ask: "What problem are we solving?" — buy for value, not for buzz.
+        </div>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-3ds">
+      <button class="topic-header"><h2>🔺 Digitization → Digitalization → Digital Transformation</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  1️⃣  DIGITIZATION = Make it Digital                            │
+│      Convert paper/manual to digital form.                     │
+│      📄 Paper → PDF                                            │
+│      Example: HR collects online resumes instead of printed    │
+│      ✅ Process stays the same — only the format changes       │
+│                                                               │
+│  2️⃣  DIGITALIZATION = Make it Efficient                        │
+│      Use tech to speed up or automate existing steps.          │
+│      🔄 Manual → Automated                                     │
+│      Example: AI screens resumes, scheduling is automatic      │
+│      ⚠️ Faster, but NOT revolutionary                          │
+│                                                               │
+│  3️⃣  DIGITAL TRANSFORMATION = Make it New                      │
+│      Rethink the whole process, or the business itself.        │
+│      🔄 Old way → New way                                      │
+│      Example: predict good-fit candidates, gamified skill      │
+│      tests instead of interviews                               │
+│      ✅ Hiring time drops from 30 days to 5 days               │
+└───────────────────────────────────────────────────────────┘</pre>
+
+        <h3>The Three Core Impacts of Digital Transformation</h3>
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  1️⃣  BETTER CUSTOMER EXPERIENCE                                │
+│      Swiggy / Amazon — real-time tracking, one-click ordering  │
+│                                                               │
+│  2️⃣  BETTER OPERATIONAL EFFICIENCY                             │
+│      Automated invoice processing: 5 days → 1 day              │
+│                                                               │
+│  3️⃣  NEW BUSINESS MODELS                                       │
+│      GE — from selling turbines to sharing profits from        │
+│      the extra energy its IoT sensors help generate            │
+│      ✅ Products → Services                                    │
+└───────────────────────────────────────────────────────────┘</pre>
+
+        <h3>Technology Scouting — Staying Ahead</h3>
+        <ul>
+          <li><strong>Boundary Spanning:</strong> GE borrowed the "connected people" idea from Facebook to build its Industrial Internet for turbines.</li>
+          <li><strong>Placing "Antennas":</strong> offices or people embedded in tech hot spots — Bengaluru, Silicon Valley, Shanghai.</li>
+          <li><strong>Analyzing Experiments:</strong> a bank tracking how fintechs use AI for credit scoring — some might compete, some might offer tools worth adopting.</li>
+        </ul>
+
+        <div class="card question">
+          <span class="card-label">Why IT's ROI is Hard to Measure</span>
+          IT's value usually means "nothing went wrong" — invisible until something breaks. Better to measure <em>productivity gains</em> (hours saved × value per hour) and <em>preventive value</em> (a breach or data loss avoided) than to chase a single clean number.
+        </div>
+        <footer class="closing">Next: Module 4 leaves the boardroom for the factory floor and the smartwatch — the full strategic playbook for the Internet of Things.</footer>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+  const topics = Array.from(document.querySelectorAll('section.topic'));
+  topics.forEach(sec => sec.querySelector('.topic-header').addEventListener('click', () => sec.classList.toggle('collapsed')));
+  document.getElementById('expandAll').addEventListener('click', () => topics.forEach(s => s.classList.remove('collapsed')));
+  document.getElementById('collapseAll').addEventListener('click', () => topics.forEach(s => s.classList.add('collapsed')));
+  const nav = document.getElementById('tocNav');
+  const navToggle = document.getElementById('navToggle');
+  const navScrim = document.getElementById('navScrim');
+  function closeNav(){ nav.classList.remove('open'); navScrim.classList.remove('show'); }
+  navToggle.addEventListener('click', () => { nav.classList.toggle('open'); navScrim.classList.toggle('show'); });
+  navScrim.addEventListener('click', closeNav);
+  document.querySelectorAll('#tocList a').forEach(link => {
+    link.addEventListener('click', () => {
+      const id = link.getAttribute('href').slice(1);
+      const target = document.getElementById(id);
+      if (target) target.classList.remove('collapsed');
+      closeNav();
+    });
+  });
+  const tocLinks = Array.from(document.querySelectorAll('#tocList a'));
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const id = entry.target.getAttribute('id');
+      const link = tocLinks.find(l => l.getAttribute('href') === '#' + id);
+      if (link && entry.isIntersecting){
+        tocLinks.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+  topics.forEach(sec => observer.observe(sec));
+</script>
+</body>
+</html>

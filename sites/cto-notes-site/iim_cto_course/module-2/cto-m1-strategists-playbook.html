@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CTO Notes · Module 1 — The Strategist's Playbook</title>
+<style>
+  :root{
+    --bg: #0a0e14; --bg-panel: #10151e; --bg-elevated: #161d29;
+    --ink: #e6edf5; --ink-soft: #8b98ab;
+    --cyan: #22d3ee; --cyan-deep: #0891b2; --cyan-pale: rgba(34,211,238,0.10);
+    --amber: #f5a623; --amber-deep: #c17d0a; --amber-pale: rgba(245,166,35,0.12);
+    --red: #f2545b; --red-pale: rgba(242,84,91,0.12);
+    --line: #212a39; --mono-bg: #05070b; --mono-ink: #bfeaf5; --nav-w: 270px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      linear-gradient(rgba(34,211,238,0.035) 1px, transparent 1px) 0 0/100% 28px,
+      linear-gradient(90deg, rgba(34,211,238,0.035) 1px, transparent 1px) 0 0/28px 100%,
+      var(--bg);
+    color:var(--ink); font-family:'Inter','Segoe UI',system-ui,sans-serif; line-height:1.65;
+  }
+  .mission-bar{ background:var(--mono-bg); border-bottom:1px solid var(--line); padding:0.6rem 1.5rem; font-family:'JetBrains Mono','Courier New',monospace; font-size:0.72rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--cyan); display:flex; justify-content:space-between; flex-wrap:wrap; gap:0.5rem; }
+  .mission-bar span.dim{ color:var(--ink-soft); } .mission-bar .dot{ color:var(--amber); }
+  header.hero{ padding:3rem 1.5rem 2.4rem; text-align:center; border-bottom:1px solid var(--line); background: radial-gradient(ellipse at top, rgba(34,211,238,0.08), transparent 60%); }
+  header.hero .eyebrow{ font-family:'JetBrains Mono',monospace; letter-spacing:0.3em; text-transform:uppercase; font-size:0.72rem; color:var(--amber); font-weight:700; }
+  header.hero h1{ font-size:2.4rem; margin:0.7rem 0 0.4rem; letter-spacing:-0.01em; }
+  header.hero .subtitle{ color:var(--ink-soft); font-size:1.02rem; max-width:640px; margin:0 auto; }
+  .layout{ display:flex; max-width:1220px; margin:0 auto; align-items:flex-start; }
+  nav.toc{ width:var(--nav-w); flex-shrink:0; position:sticky; top:0; max-height:100vh; overflow-y:auto; padding:2rem 1.2rem 2rem 1.5rem; border-right:1px solid var(--line); }
+  nav.toc .toc-title{ font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:0.14em; font-size:0.7rem; color:var(--cyan-deep); font-weight:700; margin-bottom:0.8rem; }
+  nav.toc ul{ list-style:none; padding:0; margin:0 0 1.3rem 0; } nav.toc li{ margin-bottom:0.3rem; }
+  nav.toc a{ display:block; color:var(--ink-soft); text-decoration:none; font-size:0.85rem; padding:0.4rem 0.6rem; border-radius:5px; border-left:3px solid transparent; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+  nav.toc a:hover, nav.toc a.active{ background:var(--cyan-pale); color:var(--cyan); border-left-color:var(--cyan); }
+  .toc-controls{ display:flex; flex-direction:column; gap:0.5rem; }
+  .toc-controls button{ font-family:'JetBrains Mono',monospace; font-size:0.75rem; letter-spacing:0.03em; background:var(--bg-panel); border:1px solid var(--line); color:var(--ink); padding:0.5rem 0.7rem; border-radius:6px; cursor:pointer; text-align:left; transition: background 0.15s, border-color 0.15s; }
+  .toc-controls button:hover{ background:var(--cyan-pale); border-color:var(--cyan); }
+  .nav-toggle{ display:none; position:fixed; bottom:1.4rem; right:1.4rem; z-index:50; background:var(--cyan); color:#04222b; border:none; width:52px; height:52px; border-radius:50%; font-size:1.3rem; box-shadow:0 3px 14px rgba(0,0,0,0.5); cursor:pointer; }
+  .nav-scrim{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:55; } .nav-scrim.show{ display:block; }
+  .wrap{ flex:1; min-width:0; max-width:940px; margin:0 auto; padding:2.6rem 1.6rem 6rem; }
+  section.topic{ margin-top:2.2rem; scroll-margin-top:1.5rem; }
+  button.topic-header{ all:unset; display:flex; align-items:center; justify-content:space-between; width:100%; cursor:pointer; padding-bottom:0.5rem; border-bottom:2px solid var(--cyan-deep); gap:0.8rem; }
+  button.topic-header h2{ margin:1.4rem 0 0; font-size:1.35rem; color:var(--ink); font-weight:700; }
+  .chevron{ flex-shrink:0; width:28px; height:28px; border-radius:6px; background:var(--bg-elevated); color:var(--cyan); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:1rem; font-weight:700; transition: transform 0.25s, background 0.2s; margin-top:1.2rem; }
+  section.topic.collapsed .chevron{ transform:rotate(-90deg); }
+  button.topic-header:hover .chevron{ background:var(--cyan); color:#04222b; }
+  .topic-body{ overflow:hidden; max-height:12000px; opacity:1; transition: max-height 0.35s, opacity 0.25s, margin 0.25s; }
+  section.topic.collapsed .topic-body{ max-height:0; opacity:0; margin:0; }
+  h3{ color:var(--cyan); font-size:1.08rem; margin-top:1.7rem; }
+  h4{ color:var(--amber); font-size:0.92rem; margin-top:1.2rem; text-transform:uppercase; letter-spacing:0.04em; }
+  p{ color:var(--ink); } strong{ color:#fff; } em{ color:var(--ink-soft); }
+  pre{
+    background:var(--mono-bg); color:var(--mono-ink);
+    font-family:'JetBrains Mono','Courier New',monospace; font-size:0.74rem;
+    padding:1.1rem 1.2rem; border-radius:8px; border:1px solid var(--line);
+    border-left:3px solid var(--cyan); overflow-x:auto; line-height:1.5; white-space:pre;
+  }
+  blockquote{ margin:1rem 0; padding:0.9rem 1.2rem; background:var(--bg-panel); border-left:4px solid var(--amber); font-style:italic; color:var(--ink-soft); border-radius:0 6px 6px 0; }
+  ul{ padding-left:1.4rem; } li{ margin-bottom:0.42rem; }
+  .panel{ background:var(--bg-panel); border:1px solid var(--line); border-radius:10px; padding:1.4rem 1.7rem; margin:1.2rem 0; }
+  .card{ border-radius:10px; padding:1.1rem 1.4rem; margin:1rem 0; border:1px solid var(--line); }
+  .card.insight{ background:var(--cyan-pale); border-left:4px solid var(--cyan); }
+  .card.question{ background:var(--amber-pale); border-left:4px solid var(--amber); }
+  .card.warning{ background:var(--red-pale); border-left:4px solid var(--red); }
+  .card .card-label{ font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:0.1em; font-size:0.68rem; font-weight:700; margin-bottom:0.4rem; display:block; }
+  .card.insight .card-label{ color:var(--cyan); } .card.question .card-label{ color:var(--amber); } .card.warning .card-label{ color:var(--red); }
+  .table-wrap{ overflow-x:auto; margin:1.2rem 0; border-radius:10px; border:1px solid var(--line); }
+  table{ width:100%; border-collapse:collapse; background:var(--bg-panel); font-size:0.85rem; }
+  thead th{ background:var(--bg-elevated); color:var(--cyan); text-align:left; padding:0.65rem 0.85rem; font-family:'JetBrains Mono',monospace; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.05em; border-bottom:2px solid var(--cyan-deep); }
+  tbody td{ padding:0.65rem 0.85rem; border-top:1px solid var(--line); vertical-align:top; color:var(--ink); }
+  tbody tr:nth-child(even){ background: rgba(255,255,255,0.015); }
+  .case-card{ background:var(--bg-panel); border:1px solid var(--line); border-radius:10px; padding:1.1rem 1.4rem; margin:1.1rem 0; }
+  .case-card .case-num{ display:inline-block; font-family:'JetBrains Mono',monospace; font-size:0.7rem; color:#04222b; background:var(--cyan); padding:0.15rem 0.55rem; border-radius:4px; font-weight:700; margin-bottom:0.5rem; }
+  .glossary-term{ display:grid; grid-template-columns: 170px 1fr; gap:1rem; padding:0.55rem 0; border-bottom:1px solid var(--line); }
+  .glossary-term dt{ color:var(--amber); font-weight:700; font-family:'JetBrains Mono',monospace; font-size:0.82rem; }
+  .glossary-term dd{ margin:0; color:var(--ink-soft); }
+  footer.closing{ text-align:center; margin-top:2.5rem; font-style:italic; color:var(--ink-soft); }
+  @media (max-width:900px){ :root{ --nav-w:220px; } }
+  @media (max-width:720px){
+    .layout{ display:block; }
+    nav.toc{ position:fixed; top:0; left:0; width:min(280px,82vw); height:100vh; background:var(--bg-panel); z-index:60; transform:translateX(-105%); transition: transform 0.25s; box-shadow:3px 0 18px rgba(0,0,0,0.5); }
+    nav.toc.open{ transform:translateX(0); }
+    .nav-toggle{ display:flex; align-items:center; justify-content:center; }
+    header.hero h1{ font-size:1.7rem; } pre{ font-size:0.62rem; padding:0.9rem; }
+    .glossary-term{ grid-template-columns:1fr; gap:0.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="mission-bar">
+  <span>CTO&nbsp;STRATEGIC&nbsp;NOTES <span class="dot">·</span> MODULE 01 / 04</span>
+  <span class="dim">CASE ANALYSIS · CAMPUSUTRA · MEDICLOUD · 10 CASE STUDIES · ROADMAP</span>
+</div>
+
+<header class="hero">
+  <div class="eyebrow">The Strategic View of Technology — Foundations</div>
+  <h1>🧭 The Strategist's Playbook</h1>
+  <p class="subtitle">How to read a business case like a consultant — explained in plain words, with a diagram for almost everything.</p>
+</header>
+
+<button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">☰</button>
+<div class="nav-scrim" id="navScrim"></div>
+
+<div class="layout">
+  <nav class="toc" id="tocNav">
+    <div class="toc-title">Jump to</div>
+    <ul id="tocList">
+      <li><a href="#sec-mindset">🧭 The Consultant's Mindset</a></li>
+      <li><a href="#sec-4ps">🧩 The 4 P's Framework</a></li>
+      <li><a href="#sec-engine">⚙️ Control Boundary &amp; Strategic Engine</a></li>
+      <li><a href="#sec-pestle">📊 PESTLE &amp; Porter's Five Forces</a></li>
+      <li><a href="#sec-internal">🏢 Vision, Mission &amp; The Competency Pyramid</a></li>
+      <li><a href="#sec-swot">📊 SWOT &amp; The Strategic Journey</a></li>
+      <li><a href="#sec-bmc">🎨 The Business Model Canvas</a></li>
+      <li><a href="#sec-campusutra">🎓 Case: Campusutra's Dilemma</a></li>
+      <li><a href="#sec-medicloud">🏥 Case: Medicloud's Pivot</a></li>
+      <li><a href="#sec-deepscenarios">🎯 Deeper Campusutra Scenarios</a></li>
+      <li><a href="#sec-glossary">📖 Business Terms Glossary</a></li>
+      <li><a href="#sec-casestudies">🧠 10 Case Studies</a></li>
+      <li><a href="#sec-roadmap">🗺️ Roadmap &amp; Checklist</a></li>
+    </ul>
+    <div class="toc-title">Sections</div>
+    <div class="toc-controls">
+      <button id="expandAll">＋ Expand all</button>
+      <button id="collapseAll">－ Collapse all</button>
+    </div>
+  </nav>
+
+  <div class="wrap">
+
+    <section class="topic" id="sec-mindset">
+      <button class="topic-header"><h2>🧭 The Consultant's Mindset</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <p>A business case is a written record of a real management situation. It puts you in the shoes of a manager, consultant, or founder, and forces you to diagnose problems and recommend a path forward — even when you don't have all the answers.</p>
+        <pre>┌───────────────────────────────────────────────────────────┐
+│                 THE CONSULTANT'S MINDSET                    │
+│                                                               │
+│   "You are NOT the decision-maker.                          │
+│    You are the trusted advisor who gives                    │
+│    actionable, evidence-based advice."                      │
+│                                                               │
+│   ⚠️  "Shut it down" is a LAST RESORT                       │
+│   ✅  Explore ALL viable paths first                         │
+└───────────────────────────────────────────────────────────┘</pre>
+        <p><strong>Simple way to think about it:</strong> any real problem you face at work is a "mini-case." The same structured approach you'd use for a classroom case study works just as well in a boardroom, a stand-up meeting, or a tricky email you have to send tomorrow.</p>
+        <div class="card question">
+          <span class="card-label">Ask Yourself</span>
+          If you were advising a struggling startup, would your first instinct be to cut costs — or to find new value? Why?
+        </div>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-4ps">
+      <button class="topic-header"><h2>🧩 The 4 P's Framework — Your Case Analysis Compass</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│                  THE 4 P's OF CASE ANALYSIS                 │
+│                                                               │
+│   1️⃣ PROFILING  ──────►  Who are the players?               │
+│         │                                                     │
+│         ▼                                                     │
+│   2️⃣ PREMISE    ──────►  What's the context?                │
+│         │                                                     │
+│         ▼                                                     │
+│   3️⃣ PROBLEM    ──────►  What's the REAL dilemma?           │
+│         │                                                     │
+│         ▼                                                     │
+│   4️⃣ PROPOSALS  ──────►  What are the paths forward?        │
+└───────────────────────────────────────────────────────────┘</pre>
+
+        <h3>1️⃣ Profiling — Know Your Characters</h3>
+        <p>Think of it like casting a movie. You can't judge the plot until you know who's in it.</p>
+        <div class="table-wrap">
+          <table><thead><tr><th>Element</th><th>What to Analyze</th><th>Why It Matters</th></tr></thead>
+          <tbody>
+            <tr><td>Company Profile</td><td>History, industry, size, growth stage</td><td>Context shapes decisions</td></tr>
+            <tr><td>Founders / Leaders</td><td>Background, education, experience</td><td>Their worldview drives strategy</td></tr>
+            <tr><td>Network</td><td>Partners, customers, investors</td><td>Who can open doors?</td></tr>
+            <tr><td>Personality</td><td>Risk appetite, culture</td><td>Determines what's possible</td></tr>
+          </tbody></table>
+        </div>
+        <blockquote>Great strategists don't just analyze spreadsheets — they analyze people. A founder's background tells you their biases, their blind spots, and their superpowers.</blockquote>
+
+        <h3>2️⃣ Premise — Understand the Story Before Solving It</h3>
+        <pre>┌───────────────────────────────────────────────────────────┐
+│              QUESTIONS TO MAP THE PREMISE                   │
+│                                                               │
+│   🔍  What is the core business?                             │
+│       (What value do they promise customers?)                │
+│                                                               │
+│   🌍  What's happening in the market?                        │
+│       (Trends, regulations, technology shifts)                │
+│                                                               │
+│   📜  What events led to THIS moment?                        │
+│       (The backstory behind the crisis or opportunity)       │
+└───────────────────────────────────────────────────────────┘</pre>
+        <blockquote>Before you can solve anything, you must correctly identify WHAT you are solving. Most failures come from solving the wrong problem.</blockquote>
+
+        <h3>3️⃣ Problem — Find the Root Cause</h3>
+        <pre>   Symptoms (What you SEE)         Root Cause (What's REALLY happening)
+   ────────────────────────        ──────────────────────────────────
+   ● Software bugs                 ● Weak development processes
+   ● Marketing missteps            ● Misaligned value proposition
+   ● Employee turnover             ● Poor leadership / culture
+   ● Cash flow issues              ● Unsustainable business model
+
+   ⚠️  DON'T TREAT SYMPTOMS!        ✅  DIAGNOSE THE DISEASE!</pre>
+        <blockquote>Sift through all the minor issues to find the ONE fundamental question the decision-maker must answer.</blockquote>
+
+        <h3>4️⃣ Proposals — Map the Paths Forward</h3>
+        <pre>┌───────────────────────────────────────────────────────────┐
+│                  THREE PATHS FORWARD                         │
+│                                                               │
+│   📈  GROW / SCALE  ──►  Double down on what works           │
+│       Example: add features, expand marketing                │
+│                                                               │
+│   🔄  PIVOT        ──►  Fundamentally change something      │
+│       Example: new customers, new product, new revenue model │
+│                                                               │
+│   🚪  EXIT          ──►  Last resort, if nothing else works  │
+│       Example: sell the company, shut down operations        │
+└───────────────────────────────────────────────────────────┘</pre>
+        <p>Every proposal gets weighed against four things: <strong>ROI &amp; monetization potential</strong>, <strong>value for customers &amp; partners</strong>, <strong>alignment with internal capabilities</strong>, and <strong>long-term sustainability &amp; scalability</strong>.</p>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-engine">
+      <button class="topic-header"><h2>⚙️ The Strategic Analysis Engine — The Control Boundary</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <p>The 4 P's give you the structure. This is the substance that goes underneath your final recommendation.</p>
+        <pre>┌───────────────────────────────────────────────────────────┐
+│                     CONTROL BOUNDARY                         │
+│                                                               │
+│   🌍  EXTERNAL ENVIRONMENT (Cannot Control)                  │
+│       ● PESTLE factors (Political, Economic, Social...)      │
+│       ● Competition                                          │
+│       ● Market trends                                        │
+│       ● Regulations                                          │
+│                                                               │
+│   ─────────────── CONTROL BOUNDARY ───────────────────       │
+│                                                               │
+│   🏢  INTERNAL ENVIRONMENT (CAN Control)                     │
+│       ● Strategy                                             │
+│       ● Resources &amp; Capabilities                            │
+│       ● People &amp; Culture                                     │
+│       ● Execution                                            │
+└───────────────────────────────────────────────────────────┘</pre>
+        <blockquote>The manager's whole job: adapt the internal environment to grab opportunities and defend against threats coming from the external environment you cannot change.</blockquote>
+        <div class="table-wrap">
+          <table><thead><tr><th>Framework</th><th>Key Idea</th><th>Manager's Guiding Question</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Value Chain</strong></td><td>Improve each step of the process.</td><td>"Which step does this tech make better, faster, or cheaper?"</td></tr>
+            <tr><td><strong>Resource-Based View (RBV)</strong></td><td>Build on what makes us unique.</td><td>"Does this strengthen our secret sauce — or copy someone else's recipe?"</td></tr>
+            <tr><td><strong>VRIO</strong></td><td>Test advantage rigorously.</td><td>"Is it Valuable, Rare, Hard to Copy, and Organizationally embedded?"</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-pestle">
+      <button class="topic-header"><h2>📊 Step 1 — PESTLE &amp; Porter's Five Forces</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <h3>PESTLE — The Macro View</h3>
+        <pre>┌───────────────────────────────────────────────────────────┐
+│                     PESTLE FRAMEWORK                         │
+│                                                               │
+│   P — Political       ──►  Government stability, tax policy │
+│   E — Economic         ──►  GDP growth, inflation, rates     │
+│   S — Social           ──►  Demographics, culture, lifestyle │
+│   T — Technological    ──►  Innovation, automation, R&D      │
+│   L — Legal            ──►  Labour laws, consumer protection │
+│   E — Environmental    ──►  Climate, sustainability          │
+│                                                               │
+│   🎯  PURPOSE: assess how favorable a country or region     │
+│       is for your specific business                         │
+└───────────────────────────────────────────────────────────┘</pre>
+
+        <h3>Porter's Five Forces — Industry Profitability</h3>
+        <pre>                     ┌─────────────────────────┐
+                     │  THREAT OF NEW ENTRANTS │
+                     │   (How easy to enter?)  │
+                     └────────────┬────────────┘
+                                  │
+          ┌───────────────────────┼───────────────────────┐
+          │                       │                       │
+          ▼                       ▼                       ▼
+┌──────────────────┐   ┌──────────────────┐   ┌──────────────────┐
+│  BARGAINING       │   │     INDUSTRY     │   │  BARGAINING       │
+│  POWER OF         │◄──┤     RIVALRY      │──►│  POWER OF         │
+│  SUPPLIERS        │   │  (Competition)   │   │  BUYERS           │
+└──────────────────┘   └──────────────────┘   └──────────────────┘
+          │                       │                       │
+          └───────────────────────┼───────────────────────┘
+                                  │
+                                  ▼
+                     ┌─────────────────────────┐
+                     │  THREAT OF SUBSTITUTES  │
+                     │  (Alternative products) │
+                     └─────────────────────────┘</pre>
+        <div class="card question">
+          <span class="card-label">Strategic Question</span>
+          Why is the airline industry so unprofitable despite massive demand? Run Porter's Five Forces on it and you'll find the answer: brutal rivalry, powerful suppliers (Boeing/Airbus, fuel), and price-sensitive buyers with easy substitutes.
+        </div>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-internal">
+      <button class="topic-header"><h2>🏢 Step 2 — Vision, Mission, Values &amp; The Competency Pyramid</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│                    STRATEGIC COMPASS                          │
+│                                                               │
+│   👁️  VISION:  Where are we going? (5–10+ years)             │
+│       "To be the world's most customer-centric company"      │
+│                                                               │
+│   🎯  MISSION:  What do we do NOW to get there? (1–2 years)  │
+│       "To offer Earth's biggest selection at lowest prices"  │
+│                                                               │
+│   ⚖️  VALUES:  How do we behave?                              │
+│       "Customer obsession, long-term thinking, innovation"   │
+│                                                               │
+│   ⚠️  CRITICAL: every decision must align with ALL THREE!    │
+└───────────────────────────────────────────────────────────┘</pre>
+
+        <h3>The Competency Pyramid — From Resources to Core Competencies</h3>
+        <pre>                ┌───────────────────────────────────┐
+                │        CORE COMPETENCIES           │
+                │  What we do BEST, hard to copy:    │
+                │  Amazon's logistics, Apple's       │
+                │  design, Google's search           │
+                └────────────────┬────────────────────┘
+                                 │
+                ┌────────────────▼────────────────────┐
+                │           COMPETENCIES              │
+                │  Strengths built over time: strong  │
+                │  supply chain, brand reputation     │
+                └────────────────┬────────────────────┘
+                                 │
+                ┌────────────────▼────────────────────┐
+                │          CAPABILITIES               │
+                │  How well we use what we have:      │
+                │  effective distribution, efficient  │
+                │  operations                         │
+                └────────────────┬────────────────────┘
+                                 │
+                ┌────────────────▼────────────────────┐
+                │           RESOURCES                 │
+                │  What we HAVE: servers, cash,       │
+                │  brand, data, employee skills        │
+                │  ● Tangible: physical assets         │
+                │  ● Intangible: IP, brand, data       │
+                └───────────────────────────────────────┘</pre>
+        <blockquote>Resources alone don't create advantage. It's how you COMBINE them into capabilities that builds real competencies.</blockquote>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-swot">
+      <button class="topic-header"><h2>📊 Step 3 — SWOT &amp; The Strategic Journey</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│                       SWOT ANALYSIS                          │
+│                                                               │
+│           INTERNAL (from the Competency Pyramid)             │
+│  ┌────────────────────────┐   ┌────────────────────────┐    │
+│  │      STRENGTHS         │   │      WEAKNESSES        │    │
+│  │  ● Unique technology   │   │  ● Limited funding      │    │
+│  │  ● Strong brand        │   │  ● Weak distribution    │    │
+│  │  ● Loyal customers     │   │  ● Skill gaps           │    │
+│  └────────────────────────┘   └────────────────────────┘    │
+│                                                               │
+│         EXTERNAL (from PESTLE + Porter's Five Forces)        │
+│  ┌────────────────────────┐   ┌────────────────────────┐    │
+│  │    OPPORTUNITIES       │   │       THREATS          │    │
+│  │  ● Growing market      │   │  ● New competitors      │    │
+│  │  ● New technology      │   │  ● Changing regulations │    │
+│  │  ● Untapped segments   │   │  ● Substitute products  │    │
+│  └────────────────────────┘   └────────────────────────┘    │
+│                                                               │
+│   🎯  THE STRATEGIST'S ROLE:                                  │
+│      Use STRENGTHS to grab OPPORTUNITIES                     │
+│      Use STRENGTHS to block THREATS                          │
+│      Fix WEAKNESSES to reduce vulnerability                  │
+└───────────────────────────────────────────────────────────┘</pre>
+
+        <h3>The Strategic Journey — From Analysis to Execution</h3>
+        <pre>PHASE 1 — ANALYSIS
+┌───────────────────────────────────────────────────────────┐
+│  PESTLE ──► Porter's Five Forces ──► Internal Analysis     │
+│                        │                                    │
+│                        ▼                                    │
+│         COMPETITIVE POSITIONING (CP)                        │
+│         "Where do we stand vs. rivals?"                     │
+└───────────────────────────────────────────────────────────┘
+                         │
+                         ▼
+PHASE 2 — PLANNING &amp; FORMULATION
+┌───────────────────────────────────────────────────────────┐
+│  GROWTH STRATEGIES:                                         │
+│  ● Organic — internal resources (bootstrapping)             │
+│  ● Inorganic — M&amp;A, partnerships                            │
+│  ● Hybrid — corporate entrepreneurship                       │
+│                        │                                    │
+│                        ▼                                    │
+│         COMPETITIVE ADVANTAGE (CA)                          │
+│         "How will we WIN?"                                  │
+└───────────────────────────────────────────────────────────┘
+                         │
+                         ▼
+PHASE 3 — EXECUTION
+┌───────────────────────────────────────────────────────────┐
+│  IMPLEMENT the chosen strategy                              │
+│  Use tools like the Business Model Canvas                   │
+│                        │                                    │
+│                        ▼                                    │
+│   SUSTAINABLE COMPETITIVE ADVANTAGE (SCA)                   │
+│   "Can we last 5–10 years without being copied?"            │
+└───────────────────────────────────────────────────────────┘</pre>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-bmc">
+      <button class="topic-header"><h2>🎨 The Business Model Canvas — Your Execution Tool</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌────────────────────────────┬──────────────────────────────────┐
+│   KEY PARTNERS              │   KEY ACTIVITIES                 │
+│  ● Suppliers                │  ● Production                    │
+│  ● Distributors             │  ● Marketing                     │
+│  ● Strategic alliances      │  ● R&D                           │
+│                              │                                   │
+│                              │   KEY RESOURCES                  │
+│                              │  ● People                        │
+│                              │  ● Technology                    │
+│                              │  ● Capital                       │
+├──────────────────────────────┼──────────────────────────────────┤
+│   COST STRUCTURE             │                                   │
+│  ● Fixed costs               │    VALUE PROPOSITION              │
+│  ● Variable costs            │    What problem do we solve       │
+│  ● Economies of scale        │    for customers?                 │
+│                              │                                   │
+│                              │   CUSTOMER RELATIONSHIPS          │
+│                              │  ● Self-service                   │
+│                              │  ● Personal assistance            │
+│                              │  ● Community                      │
+│                              │                                   │
+│                              │   CHANNELS                        │
+│                              │  ● Website / mobile app / stores  │
+│                              │                                   │
+│                              │   CUSTOMER SEGMENTS               │
+│                              │  ● Mass / niche / segmented       │
+├──────────────────────────────┼──────────────────────────────────┤
+│   REVENUE STREAMS            │                                   │
+│  ● Sales ● Subscriptions ● Advertising ● Licensing              │
+└──────────────────────────────┴──────────────────────────────────┘
+
+   🎯  GOAL: Right side (Revenue) > Left side (Cost)
+   💡  Asset-light models (Airbnb, Uber) are great at this</pre>
+        <div class="card question">
+          <span class="card-label">Leadership Question</span>
+          If your company's Business Model Canvas had to be redrawn today, which box would change first? Why?
+        </div>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-campusutra">
+      <button class="topic-header"><h2>🎓 Case Study: Campusutra &amp; The Founder's Dilemma</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <p>Nirmalya Pal, a management graduate who cut his teeth at The Times of India and a Fortune 200 US knowledge-management firm, founded <strong>DebriN Synergy (DNS)</strong> in 2009 — a digital marketing and analytics company. He noticed a gap: no single, reliable platform for higher-education information.</p>
+
+        <pre>┌───────────────────────────────────────────────────────────┐
+│                 CAMPUSUTRA — THE JOURNEY                     │
+│                                                               │
+│  2009  DNS founded — digital marketing &amp; analytics          │
+│    │                                                         │
+│  2011  Campusutra born as a blog for MBA applicants          │
+│        + automated placement assessment tests                │
+│    │                                                         │
+│  SETBACK  Naukri.com launches FirstNaukri                    │
+│           → placement-services model dies                    │
+│    │                                                         │
+│  PIVOT  Free blog + free mock tests → word-of-mouth growth   │
+│    │                                                         │
+│  EVOLVED MODEL  Match student profiles to education          │
+│         opportunities — free for students, cost-vs-outcome   │
+│         comparisons, ~45 staff + freelancers                 │
+│    │                                                         │
+│  FIRST REVENUE  Airtel banner ad + UTM tracking proves        │
+│         Campusutra drives real applications                  │
+└───────────────────────────────────────────────────────────┘</pre>
+
+        <h3>The Market: EdTech in India</h3>
+        <pre>2020 market size:  $2.8 Billion
+2025 projected:    $10.4 Billion   (30% CAGR)
+
+  K-12                    Test Prep                Skill / Certification
+  School students          Competitive exam         Working professionals
+  26% under 14             aspirants                upskilling
+  Examples: Byjus,         Examples: IMS, Toppr      Examples: Coursera,
+  Physicswala              (38% CAGR)                Upgrad</pre>
+
+        <h3>The Conflict</h3>
+        <p>George Mitra — Pal's friend and investment advisor — pushes him to <strong>monetize</strong>, warning that an un-evolved Campusutra risks becoming irrelevant. He proposes either an <strong>exit</strong> (sell the company) or a <strong>strategic alliance</strong> with an EdTech partner, funded by investors. Pal's founding mission was social — free access for students — and he's afraid monetizing will betray it.</p>
+
+        <div class="table-wrap">
+          <table><thead><tr><th></th><th>George Mitra's View</th><th>Nirmalya Pal's View</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Strengths</strong></td><td>Brand recognition, student loyalty</td><td>Believes multiple portals can coexist</td></tr>
+            <tr><td><strong>Opportunities</strong></td><td>Lead generation, marketing automation, premium services</td><td>Authentic short-form video, podcasts, storytelling</td></tr>
+            <tr><td><strong>Threats</strong></td><td>Shiksha.com, Career360.com and others</td><td>Needs funds + leadership while still running DNS</td></tr>
+          </tbody></table>
+        </div>
+
+        <p><strong>Valuation:</strong> $6.16M (DCF method) to $12.10M (EBITDA method), EV/EBITDA of 12 vs. an industry median of 17.3 — and zero debt.</p>
+
+        <div class="card warning">
+          <span class="card-label">The Core Dilemma</span>
+          <strong>Option 1 — Strategic Alliance / Exit:</strong> unlocks funding and expertise, but risks the free/social mission.<br>
+          <strong>Option 2 — Status Quo:</strong> protects the mission, but risks obsolescence — and Mitra's patience isn't infinite.
+        </div>
+
+        <h4>A Few Sharper Scenarios to Wrestle With</h4>
+        <ul>
+          <li><strong>The Data-for-Investment Trade:</strong> an investor demands 100% email registration before funding — directly against Pal's "free flow of information" principle. How do you weigh quantifiable data value against the intangible value of an open, trusted platform?</li>
+          <li><strong>The Freemium Pivot:</strong> keep the basics free, charge for premium reports like an AI-reviewed Statement of Purpose. What's the reputational risk to the brand's impartiality?</li>
+          <li><strong>The Valuation Gap:</strong> one investor says $7M (DCF, emphasizing risk), another says $14M (EV/EBITDA, emphasizing market potential). Which do you argue for, and why?</li>
+          <li><strong>The Government Intervention Scenario:</strong> India launches a free official "Vidya Portal" with the same features. What's Campusutra's value proposition against a free, authoritative alternative?</li>
+          <li><strong>The Tier 2/3 City Mission:</strong> an investor wants 80% of the marketing budget in Tier 1 cities (cheaper user acquisition, higher conversion) — directly against Pal's goal of reaching Tier 2/3 students. How do you build the business case for staying true to the mission?</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-medicloud">
+      <button class="topic-header"><h2>🏥 Case Study: Medicloud Singapore's Pivot</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>📌 FLOW — INITIAL MODEL
+Patients ──►  Medicloud App  ──►  Clinics
+ (find & book)                  (manage schedules)</pre>
+
+        <p>Founded in Singapore in 2014 by Chris Teo and Hadiyanto Wibawa, Medicloud began as a medical appointment-booking app — a Zomato-for-clinics. Hundreds of users, 50 clinics on board... and zero revenue.</p>
+
+        <h3>The Problem</h3>
+        <ul>
+          <li>Doctors didn't want patients seeing queue lengths — it scared off walk-ins.</li>
+          <li>Neither patients nor doctors were willing to pay for the app.</li>
+          <li>$300,000+ spent outsourcing development.</li>
+          <li>The core realization: appointment booking wasn't a big pain point — it was just a small scratch.</li>
+        </ul>
+        <pre>📌 FLOW — THE PROBLEM
+Idea (Booking App) → Users try it → Doctors resist → No revenue</pre>
+
+        <h3>The Opportunity</h3>
+        <p>Teo's insurance background surfaced a gap: Singapore's government insurance (MediShield Life) covers hospitalization only — not outpatient or primary care. MNC employees get strong benefits; <strong>SMEs — 99% of companies, 65% of the workforce</strong> — are largely ignored, leaving their employees under-covered and dissatisfied.</p>
+        <pre>📌 FLOW — MARKET GAP
+MNC Employees  ──►  Insurance + Flexible Benefits
+SME Employees  ──►  Limited / No Coverage ──► High turnover, low satisfaction</pre>
+
+        <h3>Two Pivot Paths</h3>
+        <pre>📌 FLOW — PIVOT OPTIONS
+                        Medicloud
+                    /                \
+        Insurance Broker          Flexible Benefits ✅
+        (regulated, tough)        (SME-friendly, disruptive)</pre>
+        <div class="table-wrap">
+          <table><thead><tr><th>Option</th><th>Model</th><th>Risk / Upside</th></tr></thead>
+          <tbody>
+            <tr><td><strong>1 · Insurance Broker</strong></td><td>Connect SMEs to cheaper policies, earn commission (like Zenefits in the US)</td><td>Singapore's insurance industry is heavily regulated and dominated by incumbents — a hard climb</td></tr>
+            <tr><td><strong>2 · Flexible Benefits Provider ✅</strong></td><td>Help SMEs offer employees benefit packages (medical, dental, wellness) via partner clinics, undercutting traditional TPAs</td><td>Cheaper, simpler, more disruptive — and less regulated</td></tr>
+          </tbody></table>
+        </div>
+
+        <div class="card question">
+          <span class="card-label">The Key Question</span>
+          Which model brings real customer value <em>and</em> monetization — and who is the actual customer here: the employer, the employee, or the clinic?
+        </div>
+
+        <p><strong>Essence:</strong> a classic start-up pivot story — from a booking app that couldn't monetize, to a real gap in SME healthcare, with the flexible-benefits model looking like the winning path.</p>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-deepscenarios">
+      <button class="topic-header"><h2>🎯 Deeper Campusutra Scenarios — Practice Your Judgment</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <p>The Campusutra case isn't just one decision — it's a whole tree of smaller dilemmas hiding behind the big one. Here are the sharpest ones, grouped by theme, exactly the kind a case interviewer would throw at you next.</p>
+
+        <h3>💰 Business Model &amp; Monetization</h3>
+        <ul>
+          <li><strong>The "Freemium" Pivot:</strong> keep basic information free but charge micro-transactions for services like "Compare My Top 5 Colleges" reports or an AI-powered Statement of Purpose review. What's the immediate risk to the brand's reputation for impartiality?</li>
+          <li><strong>The Data Monetization Ethics Question:</strong> Campusutra has rich data on student browsing patterns. A bank offering education loans offers a high price for targeted access to students searching high-fee colleges. Should Pal accept? Where's the line between helpful service and exploitative data selling?</li>
+          <li><strong>The Institutional Partner Conflict:</strong> a top-tier B-school offers an exclusive, high-value contract to be the sole featured partner for two years. Guaranteed revenue — but it compromises the platform's objectivity. How does Pal balance financial stability with editorial integrity?</li>
+          <li><strong>The "Lead Gen Engine" Scenario:</strong> an EdTech partner wants to fully integrate its test-prep courses — so a student looking at IIM Ahmedabad immediately sees an ad for the partner's IIM-prep course. Does this enhance the experience, or corrupt it?</li>
+        </ul>
+
+        <h3>⚙️ Operations, Technology &amp; Scaling</h3>
+        <ul>
+          <li><strong>The Scalability Challenge:</strong> traffic triples overnight after a viral video, the lean tech infrastructure crashes. Mitra says it's the perfect moment to raise funding; Pal fears a fire sale. What's the right way to handle the crisis <em>and</em> use it as negotiating leverage?</li>
+          <li><strong>The AI Content Conundrum:</strong> to meet video demand, the team proposes using AI to generate 80% of short-form videos — cost-effective, but risks losing the authentic human voice that built the brand. How do you let AI augment content without diluting trust?</li>
+          <li><strong>The Talent Retention Problem:</strong> after a strategic alliance is announced, two long-time content creators threaten to quit, fearing a "corporate marketing machine." What's the true cost of losing that institutional knowledge?</li>
+        </ul>
+
+        <h3>🏁 Competition &amp; Market Dynamics</h3>
+        <ul>
+          <li><strong>The Copycat Competitor:</strong> a well-funded startup, "UniTraverse," launches an identical model but is free for institutions, monetizing only through premium student services. How does Campusutra respond without abandoning its core principles?</li>
+          <li><strong>The Vertical Integration Threat:</strong> a major test-prep player (like Times or IMS) launches its own free "Institute Discovery" portal, cross-subsidized by its profitable coaching business. What's Campusutra's sustainable advantage against a rival that doesn't need this line of business to be profitable on its own?</li>
+          <li><strong>The "Super-App" Opportunity:</strong> a large consumer-tech company (like Flipkart) wants to acquire Campusutra to be the "education vertical" inside its super-app. Massive reach — but Campusutra becomes a small feature in someone else's ecosystem. Fulfillment of the mission, or its demise?</li>
+        </ul>
+
+        <h3>📊 Financials &amp; Valuation</h3>
+        <ul>
+          <li><strong>The Valuation Gap:</strong> one investor values Campusutra at $7M using DCF (emphasizing future risk); another at $14M using the industry EV/EBITDA multiple (emphasizing market potential). Which do you argue is more accurate, and how do you bridge the gap in negotiation?</li>
+          <li><strong>The Bootstrap vs. Fundraise Calculus:</strong> a 20% efficiency gain from DNS could self-fund the video expansion in 18 months. An investor offers to do it in 3 months — for a board seat and a say in strategy. Which path carries the greater long-term risk?</li>
+          <li><strong>The Revenue Mix Forecast:</strong> Mitra's model assumes a 1% conversion rate on finder's fees. What if the real number is 0.25%? What levers can Pal pull to compensate?</li>
+          <li><strong>The Phantom EBITDA:</strong> an investor points out Pal's own salary is below market rate, making EBITDA look artificially healthy. A fair CEO salary would make the company look less profitable. Does this reveal a flaw in the valuation?</li>
+        </ul>
+
+        <h3>🤝 Partnerships &amp; Alliances</h3>
+        <ul>
+          <li><strong>The "Worse" but Committed Partner:</strong> a top-tier EdTech firm has a strong brand but a reputation for aggressive monetization; a smaller firm fully aligns with the social vision but has limited reach. Which is more likely to preserve the <em>soul</em> of Campusutra?</li>
+          <li><strong>The Non-EdTech Partner:</strong> a media conglomerate (like The Times Group, Pal's former employer) argues it can scale Campusutra faster through its massive audience. Does this horizontal media play beat a vertical EdTech one?</li>
+          <li><strong>The "Tier 2–3 City" Mission vs. Profitability:</strong> an investor wants 80% of the budget on Tier 1 cities — cheaper acquisition, higher conversion — directly against Pal's mission of reaching Tier 2/3 students. How do you build the business case for staying true to the mission?</li>
+          <li><strong>The Alumni Network Leverage:</strong> Campusutra's most loyal users are now well-placed alumni. A partner suggests a paid "Alumni Network" for mentorship and job referrals. Is monetizing the loyalty of users who benefited from a free service ethically consistent with the platform's founding principles?</li>
+          <li><strong>The "Negative Review" Crisis:</strong> a student posts a negative, detailed review of a major advertiser's placement statistics; the advertiser threatens to pull its campaign unless it's removed. What's the protocol, and how do you institutionalize editorial integrity?</li>
+        </ul>
+
+        <div class="card question">
+          <span class="card-label">The Meta-Lesson</span>
+          Notice the pattern across every scenario: the tension is almost always <strong>mission vs. money, and control vs. scale.</strong> Once you can name which tension is really in play, the right framework — Control Boundary, Business Model Canvas, VRIO — usually follows on its own.
+        </div>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-glossary">
+      <button class="topic-header"><h2>📖 Key Business Terms Glossary</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <dl>
+          <div class="glossary-term"><dt>Monetize</dt><dd>Earn revenue from a service or asset.</dd></div>
+          <div class="glossary-term"><dt>Exit</dt><dd>Selling the founder's ownership stake.</dd></div>
+          <div class="glossary-term"><dt>Strategic Alliance</dt><dd>Partnership for shared goals.</dd></div>
+          <div class="glossary-term"><dt>EdTech</dt><dd>Education delivered via digital platforms.</dd></div>
+          <div class="glossary-term"><dt>VAS</dt><dd>Value-Added Services — extras beyond the core offering.</dd></div>
+          <div class="glossary-term"><dt>UTM</dt><dd>URL code used to track where web traffic came from.</dd></div>
+          <div class="glossary-term"><dt>Intangible Asset</dt><dd>Non-physical but valuable — e.g. loyalty, trust.</dd></div>
+          <div class="glossary-term"><dt>CAGR</dt><dd>Compound Annual Growth Rate — the average yearly growth over several years.</dd></div>
+          <div class="glossary-term"><dt>Tier 1/2/3 Cities</dt><dd>Classification of Indian cities by population &amp; development level.</dd></div>
+          <div class="glossary-term"><dt>DCF</dt><dd>Discounted Cash Flow — valuing a company from its projected future cash flows.</dd></div>
+          <div class="glossary-term"><dt>EBITDA</dt><dd>Earnings before interest, tax, depreciation &amp; amortization — a profitability measure.</dd></div>
+          <div class="glossary-term"><dt>EV/EBITDA Ratio</dt><dd>Compares a company's enterprise value against its earnings.</dd></div>
+          <div class="glossary-term"><dt>Finder's Fee</dt><dd>Commission earned for a successful referral.</dd></div>
+          <div class="glossary-term"><dt>Lead Generation</dt><dd>Cultivating potential customers.</dd></div>
+          <div class="glossary-term"><dt>VC Funding</dt><dd>Investor capital given to startups with growth potential.</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-casestudies">
+      <button class="topic-header"><h2>🧠 10 Case Studies: The Frameworks in Action</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <p>Ten sharpened scenarios, each pairing a core dilemma with the tool that cuts through it.</p>
+
+        <div class="case-card"><span class="case-num">01</span>
+          <h4>The Visionary Founder vs. Market Reality (TechVantage)</h4>
+          <pre>FOUNDER'S VISION              MARKET REALITY
+┌─────────────────────┐      ┌─────────────────────────┐
+│ "AI-driven future"  │      │ "Simple, reliable human │
+│ "Fully automated"   │  VS  │  chat"                   │
+│ "Cutting edge"      │      │ "Works NOW"              │
+└─────────────────────┘      └─────────────────────────┘
+COMPANY REALITY: weak tech team, buggy product</pre>
+          <p><strong>Tool:</strong> Business Model Canvas. <strong>Insight:</strong> you can't build a skyscraper on a weak foundation — visualize the misalignment between the "right side" (value promised) and "left side" (resources actually available).</p>
+        </div>
+
+        <div class="case-card"><span class="case-num">02</span>
+          <h4>The Commodity Trap (FreshBox)</h4>
+          <pre>"A fleet of delivery vans"
+        │
+        ▼
+   RESOURCE (Tangible asset)
+        │
+        ▼
+   CAPABILITY (Delivering produce)
+        │
+        ▼
+   NOT A CORE COMPETENCY!  ── Why? Anyone can buy vans!</pre>
+          <p>Escape the trap via brand &amp; trust, data-driven personalization, exclusive partnerships, and unique value-adds like recipe cards and meal kits.</p>
+        </div>
+
+        <div class="case-card"><span class="case-num">03</span>
+          <h4>The Regulatory Pivot (EduStream)</h4>
+          <p>New law caps tutoring fees. <strong>External / uncontrollable:</strong> the regulation itself. <strong>Internal / controllable:</strong> business model, cost structure, target segment. Pivot via a subscription value-add, or shift from B2C to B2B (schools).</p>
+        </div>
+        <div class="case-card"><span class="case-num">04</span>
+          <h4>The Illusion of Strength (Medicloud)</h4>
+          <p>"A digital platform" and "3 years of insurance experience" aren't real strengths in a high-rivalry industry — they're easily replicable resources, not defensible core competencies.</p>
+        </div>
+        <div class="case-card"><span class="case-num">05</span>
+          <h4>The Sustainable Advantage (Netflix)</h4>
+          <p>First-mover advantage isn't sustainable on its own. Netflix built a virtuous cycle: data → smarter recommendations &amp; original content → more subscribers → more data.</p>
+        </div>
+        <div class="case-card"><span class="case-num">06</span>
+          <h4>The B2B vs. B2C Conundrum (ArtFlow)</h4>
+          <p>One app serving both fun-and-social B2C users and secure-enterprise B2B clients creates constant compromise. <strong>Central dilemma:</strong> split the product, or double down on one segment?</p>
+        </div>
+        <div class="case-card"><span class="case-num">07</span>
+          <h4>The Inorganic Growth Dilemma (StableCore)</h4>
+          <p>Acquisition (fast, risky, cash-hungry) vs. organic R&amp;D (slow, safe, capability-building) ahead of a downturn — the choice depends on risk appetite and core competencies.</p>
+        </div>
+        <div class="case-card"><span class="case-num">08</span>
+          <h4>Diagnosing the True Problem (The Restaurant Owner)</h4>
+          <p>Slow chefs, high costs, rude staff are symptoms — the underlying factor is almost always a management failure in training, systems, and leadership.</p>
+        </div>
+        <div class="case-card"><span class="case-num">09</span>
+          <h4>The Ethics of Strategy (The Manufacturing Company)</h4>
+          <p>Cheap production in a country with lax environmental law: profit-maximization vs. values-driven sustainability. The right path depends on what Vision, Mission, and Values actually say — not what's convenient.</p>
+        </div>
+        <div class="case-card"><span class="case-num">10</span>
+          <h4>The Role of a CTO in Strategy (Global Retail Inc.)</h4>
+          <p>CEO and CFO plan a costly expansion without technical input. A CTO must weigh PESTLE factors (data sovereignty, cybersecurity, internet penetration) against internal readiness (platform scalability, DevOps). Ignoring this risks operational failure, legal violations, and brand damage.</p>
+        </div>
+
+        <h3>Quick-Reference Table — All 10 at a Glance</h3>
+        <div class="table-wrap">
+          <table><thead><tr><th>#</th><th>Case</th><th>Core Dilemma</th><th>Strategic Tools</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>TechVantage</td><td>Founder's AI vision vs. weak team &amp; market need for reliability</td><td>Strategic Fit, Business Model Canvas</td></tr>
+            <tr><td>2</td><td>FreshBox</td><td>A tangible resource (vans) isn't a defensible advantage</td><td>Competency Pyramid, SWOT</td></tr>
+            <tr><td>3</td><td>EduStream</td><td>External regulation caps revenue; needs internal adaptation</td><td>Control Boundary, Pivot Proposals</td></tr>
+            <tr><td>4</td><td>Medicloud</td><td>Apparent strengths aren't true core competencies</td><td>Core Competency Analysis, Porter's Five Forces</td></tr>
+            <tr><td>5</td><td>Netflix</td><td>First-mover advantage is temporary without sustainable capability</td><td>Competency Pyramid</td></tr>
+            <tr><td>6</td><td>ArtFlow</td><td>Conflicting B2C/B2B value propositions strain limited resources</td><td>Strategic Fit, Business Model Canvas</td></tr>
+            <tr><td>7</td><td>StableCore</td><td>Acquisition vs. R&amp;D during a downturn</td><td>PESTLE Analysis, Competency Fit</td></tr>
+            <tr><td>8</td><td>The Restaurant Owner</td><td>Operational symptoms hide an underlying management failure</td><td>Symptoms-to-Core Analysis</td></tr>
+            <tr><td>9</td><td>The Manufacturing Co.</td><td>Profit vs. ethics under lax environmental law</td><td>Vision/Mission/Values Alignment</td></tr>
+            <tr><td>10</td><td>Global Retail Inc.</td><td>Expansion planned without technical input — risk of failure</td><td>PESTLE, Internal Capability Assessment</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-roadmap">
+      <button class="topic-header"><h2>🗺️ The Roadmap &amp; Manager's Checklist</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <p>How managers should think about technology strategically — choosing, funding, governing, and extracting value from tech investments.</p>
+        <ul>
+          <li><strong>Phase 1 (Foundations):</strong> understand what "technology" actually means from a managerial viewpoint.</li>
+          <li><strong>Phase 2 (Transformation &amp; Disruption):</strong> disruption, digital transformation strategy, platform economics, and the leadership capability to drive change.</li>
+        </ul>
+        <div class="panel">
+          <h4>Manager's Practical Checklist</h4>
+          <ul>
+            <li>Understand fundamental strategy frameworks — Porter, Value Chain, RBV.</li>
+            <li>For each technology, ask "What capability does this enable?" — never "Is it trendy?"</li>
+            <li>Map learning to three time horizons: <strong>short</strong> (efficiency), <strong>medium</strong> (differentiation), <strong>long</strong> (business-model change).</li>
+          </ul>
+        </div>
+        <blockquote>We no longer live in an age of <em>sustained</em> competitive advantage. We live in an age of <strong>transient</strong> competitive advantage.</blockquote>
+        <footer class="closing">Next: Module 2 turns from strategy-on-paper to the technology itself — IT, IS, MIS, and whether IT can ever give you a durable edge.</footer>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+  const topics = Array.from(document.querySelectorAll('section.topic'));
+  topics.forEach(sec => sec.querySelector('.topic-header').addEventListener('click', () => sec.classList.toggle('collapsed')));
+  document.getElementById('expandAll').addEventListener('click', () => topics.forEach(s => s.classList.remove('collapsed')));
+  document.getElementById('collapseAll').addEventListener('click', () => topics.forEach(s => s.classList.add('collapsed')));
+  const nav = document.getElementById('tocNav');
+  const navToggle = document.getElementById('navToggle');
+  const navScrim = document.getElementById('navScrim');
+  function closeNav(){ nav.classList.remove('open'); navScrim.classList.remove('show'); }
+  navToggle.addEventListener('click', () => { nav.classList.toggle('open'); navScrim.classList.toggle('show'); });
+  navScrim.addEventListener('click', closeNav);
+  document.querySelectorAll('#tocList a').forEach(link => {
+    link.addEventListener('click', () => {
+      const id = link.getAttribute('href').slice(1);
+      const target = document.getElementById(id);
+      if (target) target.classList.remove('collapsed');
+      closeNav();
+    });
+  });
+  const tocLinks = Array.from(document.querySelectorAll('#tocList a'));
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const id = entry.target.getAttribute('id');
+      const link = tocLinks.find(l => l.getAttribute('href') === '#' + id);
+      if (link && entry.isIntersecting){
+        tocLinks.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+  topics.forEach(sec => observer.observe(sec));
+</script>
+</body>
+</html>

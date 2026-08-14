@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CTO Finance Notes · M4 — The Capital Budgeting Toolkit</title>
+<style>
+  :root{
+    --bg: #0a0e14; --bg-panel: #10151e; --bg-elevated: #161d29;
+    --ink: #e6edf5; --ink-soft: #8b98ab;
+    --cyan: #22d3ee; --cyan-deep: #0891b2; --cyan-pale: rgba(34,211,238,0.10);
+    --amber: #f5a623; --amber-deep: #c17d0a; --amber-pale: rgba(245,166,35,0.12);
+    --red: #f2545b; --red-pale: rgba(242,84,91,0.12);
+    --line: #212a39; --mono-bg: #05070b; --mono-ink: #bfeaf5; --nav-w: 270px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      linear-gradient(rgba(34,211,238,0.035) 1px, transparent 1px) 0 0/100% 28px,
+      linear-gradient(90deg, rgba(34,211,238,0.035) 1px, transparent 1px) 0 0/28px 100%,
+      var(--bg);
+    color:var(--ink); font-family:'Inter','Segoe UI',system-ui,sans-serif; line-height:1.65;
+  }
+  .mission-bar{ background:var(--mono-bg); border-bottom:1px solid var(--line); padding:0.6rem 1.5rem; font-family:'JetBrains Mono','Courier New',monospace; font-size:0.72rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--cyan); display:flex; justify-content:space-between; flex-wrap:wrap; gap:0.5rem; }
+  .mission-bar span.dim{ color:var(--ink-soft); } .mission-bar .dot{ color:var(--amber); }
+  header.hero{ padding:3rem 1.5rem 2.4rem; text-align:center; border-bottom:1px solid var(--line); background: radial-gradient(ellipse at top, rgba(34,211,238,0.08), transparent 60%); }
+  header.hero .eyebrow{ font-family:'JetBrains Mono',monospace; letter-spacing:0.3em; text-transform:uppercase; font-size:0.72rem; color:var(--amber); font-weight:700; }
+  header.hero h1{ font-size:2.2rem; margin:0.7rem 0 0.4rem; letter-spacing:-0.01em; }
+  header.hero .subtitle{ color:var(--ink-soft); font-size:1.02rem; max-width:700px; margin:0 auto; }
+  .layout{ display:flex; max-width:1220px; margin:0 auto; align-items:flex-start; }
+  nav.toc{ width:var(--nav-w); flex-shrink:0; position:sticky; top:0; max-height:100vh; overflow-y:auto; padding:2rem 1.2rem 2rem 1.5rem; border-right:1px solid var(--line); }
+  nav.toc .toc-title{ font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:0.14em; font-size:0.7rem; color:var(--cyan-deep); font-weight:700; margin-bottom:0.8rem; }
+  nav.toc ul{ list-style:none; padding:0; margin:0 0 1.3rem 0; } nav.toc li{ margin-bottom:0.3rem; }
+  nav.toc a{ display:block; color:var(--ink-soft); text-decoration:none; font-size:0.78rem; padding:0.34rem 0.6rem; border-radius:5px; border-left:3px solid transparent; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+  nav.toc a:hover, nav.toc a.active{ background:var(--cyan-pale); color:var(--cyan); border-left-color:var(--cyan); }
+  .toc-controls{ display:flex; flex-direction:column; gap:0.5rem; }
+  .toc-controls button{ font-family:'JetBrains Mono',monospace; font-size:0.75rem; letter-spacing:0.03em; background:var(--bg-panel); border:1px solid var(--line); color:var(--ink); padding:0.5rem 0.7rem; border-radius:6px; cursor:pointer; text-align:left; transition: background 0.15s, border-color 0.15s; }
+  .toc-controls button:hover{ background:var(--cyan-pale); border-color:var(--cyan); }
+  .nav-toggle{ display:none; position:fixed; bottom:1.4rem; right:1.4rem; z-index:50; background:var(--cyan); color:#04222b; border:none; width:52px; height:52px; border-radius:50%; font-size:1.3rem; box-shadow:0 3px 14px rgba(0,0,0,0.5); cursor:pointer; }
+  .nav-scrim{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:55; } .nav-scrim.show{ display:block; }
+  .wrap{ flex:1; min-width:0; max-width:940px; margin:0 auto; padding:2.6rem 1.6rem 6rem; }
+  section.topic{ margin-top:2.2rem; scroll-margin-top:1.5rem; }
+  button.topic-header{ all:unset; display:flex; align-items:center; justify-content:space-between; width:100%; cursor:pointer; padding-bottom:0.5rem; border-bottom:2px solid var(--cyan-deep); gap:0.8rem; }
+  button.topic-header h2{ margin:1.4rem 0 0; font-size:1.2rem; color:var(--ink); font-weight:700; }
+  .chevron{ flex-shrink:0; width:28px; height:28px; border-radius:6px; background:var(--bg-elevated); color:var(--cyan); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:1rem; font-weight:700; transition: transform 0.25s, background 0.2s; margin-top:1.2rem; }
+  section.topic.collapsed .chevron{ transform:rotate(-90deg); }
+  button.topic-header:hover .chevron{ background:var(--cyan); color:#04222b; }
+  .topic-body{ overflow:hidden; max-height:16000px; opacity:1; transition: max-height 0.35s, opacity 0.25s, margin 0.25s; }
+  section.topic.collapsed .topic-body{ max-height:0; opacity:0; margin:0; }
+  h3{ color:var(--cyan); font-size:1.02rem; margin-top:1.7rem; }
+  h4{ color:var(--amber); font-size:0.88rem; margin-top:1.15rem; text-transform:uppercase; letter-spacing:0.04em; }
+  p{ color:var(--ink); } strong{ color:#fff; } em{ color:var(--ink-soft); }
+  pre{ background:var(--mono-bg); color:var(--mono-ink); font-family:'JetBrains Mono','Courier New',monospace; font-size:0.71rem; padding:1.1rem 1.2rem; border-radius:8px; border:1px solid var(--line); border-left:3px solid var(--cyan); overflow-x:auto; line-height:1.5; white-space:pre; }
+  blockquote{ margin:1rem 0; padding:0.9rem 1.2rem; background:var(--bg-panel); border-left:4px solid var(--amber); font-style:italic; color:var(--ink-soft); border-radius:0 6px 6px 0; }
+  ul{ padding-left:1.4rem; } li{ margin-bottom:0.4rem; }
+  .panel{ background:var(--bg-panel); border:1px solid var(--line); border-radius:10px; padding:1.4rem 1.7rem; margin:1.2rem 0; }
+  .card{ border-radius:10px; padding:1.1rem 1.4rem; margin:1rem 0; border:1px solid var(--line); }
+  .card.insight{ background:var(--cyan-pale); border-left:4px solid var(--cyan); }
+  .card.question{ background:var(--amber-pale); border-left:4px solid var(--amber); }
+  .card.warning{ background:var(--red-pale); border-left:4px solid var(--red); }
+  .card .card-label{ font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:0.1em; font-size:0.68rem; font-weight:700; margin-bottom:0.4rem; display:block; }
+  .card.insight .card-label{ color:var(--cyan); } .card.question .card-label{ color:var(--amber); } .card.warning .card-label{ color:var(--red); }
+  .table-wrap{ overflow-x:auto; margin:1.2rem 0; border-radius:10px; border:1px solid var(--line); }
+  table{ width:100%; border-collapse:collapse; background:var(--bg-panel); font-size:0.81rem; }
+  thead th{ background:var(--bg-elevated); color:var(--cyan); text-align:left; padding:0.6rem 0.8rem; font-family:'JetBrains Mono',monospace; font-size:0.64rem; text-transform:uppercase; letter-spacing:0.05em; border-bottom:2px solid var(--cyan-deep); }
+  tbody td{ padding:0.6rem 0.8rem; border-top:1px solid var(--line); vertical-align:top; color:var(--ink); }
+  tbody tr:nth-child(even){ background: rgba(255,255,255,0.015); }
+  .case-card{ background:var(--bg-panel); border:1px solid var(--line); border-radius:10px; padding:1rem 1.3rem; margin:0.9rem 0; }
+  .case-card .case-num{ display:inline-block; font-family:'JetBrains Mono',monospace; font-size:0.66rem; color:#04222b; background:var(--amber); padding:0.1rem 0.5rem; border-radius:4px; font-weight:700; margin-bottom:0.45rem; }
+  footer.closing{ text-align:center; margin-top:2.5rem; font-style:italic; color:var(--ink-soft); }
+  @media (max-width:900px){ :root{ --nav-w:220px; } }
+  @media (max-width:720px){
+    .layout{ display:block; }
+    nav.toc{ position:fixed; top:0; left:0; width:min(280px,82vw); height:100vh; background:var(--bg-panel); z-index:60; transform:translateX(-105%); transition: transform 0.25s; box-shadow:3px 0 18px rgba(0,0,0,0.5); }
+    nav.toc.open{ transform:translateX(0); }
+    .nav-toggle{ display:flex; align-items:center; justify-content:center; }
+    header.hero h1{ font-size:1.5rem; } pre{ font-size:0.56rem; padding:0.85rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="mission-bar">
+  <span>CTO&nbsp;FINANCE&nbsp;NOTES <span class="dot">·</span> MODULE 04 / 06</span>
+  <span class="dim">NPV · IRR · WACC · GOVERNANCE · AGENCY THEORY</span>
+</div>
+
+<header class="hero">
+  <div class="eyebrow">CTO Finance Track — The Numbers That Decide Everything</div>
+  <h1>📐 The Capital Budgeting Toolkit</h1>
+  <p class="subtitle">Shareholder wealth, agency theory, and the six tools — NPV, IRR, XIRR, PI, Payback, Discounted Payback — that decide whether your project lives or dies, worked through a real example.</p>
+</header>
+
+<button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">☰</button>
+<div class="nav-scrim" id="navScrim"></div>
+
+<div class="layout">
+  <nav class="toc" id="tocNav">
+    <div class="toc-title">Jump to</div>
+    <ul id="tocList">
+      <li><a href="#sec-goal">🎯 The Ultimate Financial Goal</a></li>
+      <li><a href="#sec-agency">🕵️ Agency Theory — The Core Problem</a></li>
+      <li><a href="#sec-controls">🛡️ How Agency Problems Are Controlled</a></li>
+      <li><a href="#sec-ownership">🏛️ Family-Owned vs. Diversified Ownership</a></li>
+      <li><a href="#sec-capbudget">📊 Capital Budgeting — Why It's Different for IT</a></li>
+      <li><a href="#sec-toolkit">🧰 The Six Evaluation Tools</a></li>
+      <li><a href="#sec-costofcapital">💵 Cost of Capital, WACC &amp; Combining Projects</a></li>
+      <li><a href="#sec-worked">🧮 Worked Example — From Investment to NPV</a></li>
+      <li><a href="#sec-pvgo">🚀 PVGO — Why Tesla &gt; Toyota</a></li>
+      <li><a href="#sec-cases">🔥 Governance &amp; Agency Case Studies</a></li>
+    </ul>
+    <div class="toc-title">Sections</div>
+    <div class="toc-controls">
+      <button id="expandAll">＋ Expand all</button>
+      <button id="collapseAll">－ Collapse all</button>
+    </div>
+  </nav>
+
+  <div class="wrap">
+
+    <section class="topic" id="sec-goal">
+      <button class="topic-header"><h2>🎯 The Ultimate Financial Goal of a Corporation</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  TRADITIONAL VIEW                                               │
+│  👉 SHAREHOLDER WEALTH MAXIMIZATION (SWM)                       │
+│     Financial decisions should increase shareholder value.      │
+│     Owning even 1 share technically makes you an owner.         │
+│                                                               │
+│  MODERN VIEW                                                    │
+│  👉 STAKEHOLDER WEALTH MAXIMIZATION (broader)                   │
+│     Includes customers, employees, society, regulators too.     │
+└───────────────────────────────────────────────────────────┘</pre>
+        <p><strong>Why this matters to a CTO:</strong> when you pitch an IT/digital project, you must show how it increases value for shareholders — directly or indirectly — and how it enhances competitive advantage, efficiency, or revenue. Every IT project must connect to this ultimate financial goal.</p>
+        <p>Very few small shareholders actually vote in AGMs, which creates a power gap where large shareholders and insiders dominate decisions — a fact worth remembering the next time "the shareholders" are cited as a reason to reject or approve your project.</p>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-agency">
+      <button class="topic-header"><h2>🕵️ Agency Theory — The Core Problem in Corporate Finance</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  THE PRINCIPAL-AGENT PROBLEM                                    │
+│                                                               │
+│  PRINCIPAL = owners / shareholders                              │
+│  AGENT     = managers / top leadership                          │
+│                                                               │
+│  THE ASSUMPTION: managers might pursue their OWN interests,     │
+│  not the shareholders'.                                        │
+│                                                               │
+│  Managers may:                                                  │
+│    ● Spend on unnecessary luxury                                │
+│    ● Invest in projects that boost personal status, not return  │
+│    ● Hide losses · Inflate performance                          │
+└───────────────────────────────────────────────────────────┘</pre>
+        <div class="card question">
+          <span class="card-label">Why CTOs Should Care</span>
+          A CTO's project can get rejected not because it's bad, but because management has misaligned incentives, cash decisions favor accounting optics, or board politics and personal agendas intervene. Knowing this reality helps a CTO navigate approval processes strategically instead of naively.
+        </div>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-controls">
+      <button class="topic-header"><h2>🛡️ How Agency Problems Are Controlled</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  1. REGULATIONS                                                 │
+│     Independent directors · separation of Chairman/CEO ·        │
+│     disclosures & compliance · restrictions on related-party    │
+│     transactions                                                │
+│                                                               │
+│  2. EXTERNAL AUDITS                                             │
+│     Accounts audited to prevent manipulation (though auditors   │
+│     can collude — regulatory checks try to reduce this risk)    │
+│                                                               │
+│  3. CORPORATE GOVERNANCE PRACTICES                              │
+│     Board oversight · independent audit/compensation/risk/      │
+│     nomination committees · periodic senior-management rotation │
+│                                                               │
+│  4. EXECUTIVE COMPENSATION LINKAGE                              │
+│     Link CEO/manager pay to stock price or performance —        │
+│     makes managers care about share price, long-term            │
+│     performance, and value creation.                            │
+│     (Example: Elon Musk's Tesla-linked pay — legal because      │
+│     shareholders approved it, though controversial.)            │
+│                                                               │
+│  5. CULTURAL POLICIES                                           │
+│     e.g. rotating managers every 3 years to prevent             │
+│     entrenchment                                                │
+└───────────────────────────────────────────────────────────┘</pre>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-ownership">
+      <button class="topic-header"><h2>🏛️ Family-Owned Firms vs. Diversified Ownership</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <div class="table-wrap">
+          <table><thead><tr><th></th><th>India (Promoter-Driven)</th><th>Global / US (Diversified)</th></tr></thead>
+          <tbody>
+            <tr><td>Ownership pattern</td><td>More family-owned companies</td><td>More diversified, institutional ownership</td></tr>
+            <tr><td>Promoter-company alignment</td><td>Higher — less agency conflict in theory</td><td>Management holds a smaller stake</td></tr>
+            <tr><td>Risk</td><td>Greater risk of minority shareholder exploitation</td><td>Higher agency conflict overall</td></tr>
+          </tbody></table>
+        </div>
+        <p>Real-world governance conflicts (Tata–Shapoorji Pallonji, Tesla's board, independent-director influence, cartel-like board behavior) show corporate governance is complex, political, and deeply tied to incentives — not a clean textbook exercise.</p>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-capbudget">
+      <button class="topic-header"><h2>📊 Capital Budgeting — Why IT Projects Are Harder Than Physical Assets</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <p>Capital budgeting answers: "Should we invest in this project?" If nothing is worth investing in, a company pays dividends, buys back shares, or holds cash reserves. <strong>Every rupee must either be invested or returned</strong> — and a CTO must justify why money should stay in tech rather than go back to shareholders.</p>
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  WHY CAPITAL BUDGETING MATTERS                                  │
+│  ● Investment decisions are long-term AND irreversible          │
+│  ● Large capital outlay, high risk, major strategic impact      │
+│  ● Abandoning midway is extremely costly — contracts,           │
+│    penalties, sunk costs                                       │
+│                                                               │
+│  WHY IT PROJECTS ARE HARDER THAN PHYSICAL ASSETS                │
+│  Core banking transformation, cloud migration, ERP overhaul,    │
+│  digital platform rewrites — these can't be abandoned easily,   │
+│  unlike short-lived operational initiatives.                    │
+└───────────────────────────────────────────────────────────┘</pre>
+        <p><strong>Capital Budgeting vs. Company Valuation</strong> — these are different disciplines. Capital budgeting evaluates a <em>single project</em>; company valuation values an <em>entire company</em> (and needs terminal value, perpetual growth, enterprise value). <strong>Financing vs. Investment</strong> is another key distinction: capital budgeting asks "should we invest?", financing asks "where does the money come from?" (IPO, bonds, loans, retained earnings) — an IPO itself is <em>not</em> a capital budgeting question.</p>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-toolkit">
+      <button class="topic-header"><h2>🧰 The Six Evaluation Tools</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <h3>1. Net Present Value (NPV)</h3>
+        <pre>NPV = Present value of all future cash inflows − Initial investment
+
+DECISION RULE:  NPV > 0 → project is financially viable.
+                Limited capital? Choose the HIGHER NPV project.
+
+Why preferred: considers ALL cash flows AND the time value
+of money — works well in almost every scenario.</pre>
+
+        <h3>2. Internal Rate of Return (IRR)</h3>
+        <pre>IRR = the discount rate at which NPV = 0
+    = the rate of return the project is expected to generate
+
+DECISION RULE:  IRR > Cost of Capital → accept
+                (comparing projects: higher IRR wins ONLY if
+                 similar risk & scale)
+
+Example: Cost of capital = 10%, IRR = 14.49%
+  → the project yields 4.49% MORE than the minimum required.</pre>
+
+        <h3>3. XIRR (Extended IRR)</h3>
+        <pre>Used when cash flows land at IRREGULAR intervals (SIPs, mutual
+funds, unevenly-paid projects). IRR assumes evenly-spaced cash
+flows; XIRR uses exact DATES for each cash flow.
+Conceptually IRR = XIRR — only the date handling differs.</pre>
+
+        <h3>4. Profitability Index (PI)</h3>
+        <pre>PI = NPV / Initial Investment
+
+DECISION RULE: PI > 1 → good project. Higher PI → better
+return per unit invested.
+
+USEFUL WHEN: comparing projects with similar NPV but different
+investment sizes, or when picking COMBINATIONS of projects
+under limited capital (a "B + C" combo can beat "A" alone).</pre>
+
+        <h3>5. Payback Period</h3>
+        <pre>Number of years to recover the initial investment
+(cash inflows only, no discounting).
+
+Example: Project S — 500 (Y1), 400 (Y2), need 100 more in Y3,
+Y3 inflow is 300 → Payback = 2 + (100/300) = 2.33 years
+
+LIMITATIONS: ❌ ignores time value of money
+             ❌ ignores cash flows AFTER payback
+             ❌ measures liquidity, not profitability</pre>
+
+        <h3>6. Discounted Payback Period</h3>
+        <pre>Same idea as Payback, but each year's cash inflow is FIRST
+discounted using the cost of capital, THEN summed.
+  500 / 1.1  = 455
+  400 / 1.1² = 331   ...and so on
+
+Always HIGHER than simple payback — future cash is worth
+less today.</pre>
+
+        <div class="table-wrap">
+          <table><thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>NPV</td><td>Value created today by the project</td></tr>
+            <tr><td>IRR</td><td>Rate of return the project earns</td></tr>
+            <tr><td>XIRR</td><td>IRR with irregular dates</td></tr>
+            <tr><td>PI</td><td>NPV per unit of investment</td></tr>
+            <tr><td>Payback</td><td>Time to recover investment (non-discounted)</td></tr>
+            <tr><td>Discounted Payback</td><td>Payback, accounting for time value</td></tr>
+            <tr><td>Cost of Capital</td><td>Minimum return required by investors</td></tr>
+            <tr><td>Discount Factor</td><td>1 / (1 + r)ⁿ</td></tr>
+          </tbody></table>
+        </div>
+        <blockquote>India: 85% of firms use IRR heavily. Globally, NPV is considered theoretically superior. Payback is used mainly as a quick liquidity check.</blockquote>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-costofcapital">
+      <button class="topic-header"><h2>💵 Cost of Capital, WACC &amp; Combining Projects</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <p>Cost of Capital is also called the Required Rate of Return, the Hurdle Rate, or the Discount Rate — all mean the same thing: the <strong>minimum acceptable return</strong> a project must earn. If IRR &lt; Cost of Capital, the project <em>destroys</em> value.</p>
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  COST OF DEBT                                                   │
+│    Bank loan → the interest rate IS the cost of debt            │
+│    Bonds     → Yield to Maturity (YTM) of the bond               │
+│                                                               │
+│  COST OF EQUITY (harder — no fixed interest rate)                │
+│                                                               │
+│  CAPM:  Cost of Equity = Rf + β × (Rm − Rf)                     │
+│    Rf = risk-free rate · β = stock's volatility vs. market ·    │
+│    (Rm − Rf) = market risk premium                              │
+│                                                               │
+│  Dividend Discount Model (DDM):                                 │
+│    Cost of Equity = D₁ / P₀ + g                                 │
+│    D₁ = next year's expected dividend · P₀ = current price ·    │
+│    g = dividend growth rate                                     │
+│                                                               │
+│  WACC (Weighted Average Cost of Capital):                       │
+│    WACC = w_d · k_d (1 − T) + w_e · k_e                          │
+│    w = capital weights · k = cost of debt/equity ·               │
+│    T = tax rate (debt is tax-shielded)                          │
+└───────────────────────────────────────────────────────────┘</pre>
+        <h3>Combining Projects (Capital Rationing)</h3>
+        <p>When capital is limited, you might fund a <em>combination</em> of projects rather than just the single highest-NPV one. NPV is additive — Combined NPV = NPV(A) + NPV(B) — and PI helps rank which combination fits the budget while maximizing total value.</p>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-worked">
+      <button class="topic-header"><h2>🧮 Worked Example — From Investment to NPV, Step by Step</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>GIVEN:
+  Investment       = ₹5 crore
+  Project life     = 5 years
+  Depreciation     = straight line → ₹5 cr / 5 = ₹1 cr/year
+  Benefits (revenue ↑ or cost savings) = ₹2.5 crore/year
+  Operating cost   = ₹0.5 crore/year
+  Tax rate         = 30%
+  Discount rate (WACC) = 12%
+
+STEP-BY-STEP:
+  EBITDA  = 2.5 − 0.5              = 2.0 crore
+  EBIT    = 2.0 − 1.0 (deprec.)    = 1.0 crore
+  Tax     = 30% × 1.0              = 0.3 crore
+  NOPAT   = 1.0 − 0.3              = 0.7 crore
+  + Add back depreciation (non-cash) = +1.0 crore
+  ─────────────────────────────────────────────
+  CASH FLOW PER YEAR                = 1.7 crore
+
+Then: discount each year's 1.7 crore at 12% to get NPV,
+and solve for the rate at which NPV = 0 to get IRR.</pre>
+        <h3>Common Clarifications</h3>
+        <ul>
+          <li><strong>Why add back depreciation?</strong> It reduces net income (and tax), but it's a non-cash expense — so it's added back when computing actual cash flow. It provides a "tax shield" that increases real cash flow.</li>
+          <li><strong>Validate the proposer's numbers.</strong> Project owners often show optimistic NPVs — finance must validate assumptions and stress-test with sensitivity analysis and worst-case scenarios.</li>
+          <li><strong>Negative NPV projects</strong> are normally rejected early and rarely even get presented — except in rare strategic or regulatory cases.</li>
+        </ul>
+        <blockquote>Every cash flow in capital budgeting is after-tax, because tax is a real cash outflow. And remember: NPV is just a shortcut for discounted cash flow — Excel's NPV() function does the same math, so use the tool, understand the logic, and don't manually overcomplicate it.</blockquote>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-pvgo">
+      <button class="topic-header"><h2>🚀 PVGO — Why Tesla Is "Overvalued" Compared to Toyota</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  PVGO = PRESENT VALUE OF GROWTH OPPORTUNITIES                   │
+│                                                               │
+│  TESLA'S price includes:                                        │
+│    Expected future innovation · high assumed future growth ·    │
+│    battery / autonomous driving / AI / robotics / energy        │
+│    storage potential                                            │
+│                                                               │
+│  TOYOTA:                                                        │
+│    Mature industry, stable dividends, LOW PVGO,                 │
+│    lower valuation multiple                                     │
+└───────────────────────────────────────────────────────────┘</pre>
+        <p>This ties back to market expectations, innovation potential, risk, and the hype cycle. It's also why LensKart-style IPO controversies happen: IPO pricing is set by investment bankers, companies disclose losses honestly, and if investors still subscribe, that's market behavior betting on future PVGO — not a disclosure failure.</p>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-cases">
+      <button class="topic-header"><h2>🔥 Governance &amp; Agency Case Studies</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <p>Ten scenarios where corporate governance and agency theory collide directly with a CTO's capital budgeting math.</p>
+        <div class="case-card"><span class="case-num">01</span><h4>CTO vs. CEO vs. Shareholders</h4><p>A ₹600 crore AI-cloud modernization has strong long-term payoff. The CEO wants it for personal image; shareholders want dividends in a bearish market; the CFO is neutral; the board is confused. <strong>Concepts:</strong> agency problem, shareholder wealth maximization, executive incentives, capital rationing.</p></div>
+        <div class="case-card"><span class="case-num">02</span><h4>Manipulated IRR to Push a Bad Project</h4><p>A senior VP inflates revenue and hides downside risk to skew a ₹400 crore data center's IRR from a real ~8% up to a reported 18%. You discover it. <strong>Concepts:</strong> agency problem, role of auditors, misaligned incentives, ethical standards.</p></div>
+        <div class="case-card"><span class="case-num">03</span><h4>Family-Owned Mindset Blocking Innovation</h4><p>A promoter controlling 63% refuses to fund a needed IT transformation — "shareholders only want stable dividends" — while the company loses market share to legacy systems. <strong>Concepts:</strong> family-owned governance, long- vs. short-term shareholder value, IT's role in value creation.</p></div>
+        <div class="case-card"><span class="case-num">04</span><h4>Budget Freeze Despite Growing Competition</h4><p>A flat tech budget (economic uncertainty, high receivables, precautionary cash) collides with a competitor launching a disruptive AI platform. <strong>Concepts:</strong> capital budgeting constraints, soft vs. hard capital rationing, NPV-driven prioritization.</p></div>
+        <div class="case-card"><span class="case-num">05</span><h4>Stock-Option Compensation Backfires</h4><p>Stock-linked bonuses make the CTO delay investments (protecting short-term EPS), the CFO cut R&amp;D, and the CEO postpone cyber upgrades — trading long-term value for a quarterly stock bump. <strong>Concepts:</strong> executive compensation design, agency conflict, short- vs. long-term value.</p></div>
+        <div class="case-card"><span class="case-num">06</span><h4>The Tesla Problem — Tech Hype vs. Fundamentals</h4><p>A hyped startup with poor cash flow and 5 years of no profit still needs a ₹300 crore internal project evaluated with real NPV/IRR. Should the growth-opportunity premium be considered, or should the numbers ignore the narrative? <strong>Concepts:</strong> PVGO, NPV vs. narrative, high-growth bias.</p></div>
+        <div class="case-card"><span class="case-num">07</span><h4>Diversified Ownership Creates Project Chaos</h4><p>28% promoter, 40% institutional, 32% retail — each group wants something different (stability, aggressive growth, dividends) from the same multi-year cloud + AI modernization proposal. <strong>Concepts:</strong> shareholder heterogeneity, multi-stakeholder financial alignment.</p></div>
+        <div class="case-card"><span class="case-num">08</span><h4>Board Collusion Blocks a High-Value Project</h4><p>A project with NPV = +₹240 crore and 16% IRR gets blocked by a CEO favoring his own lower-NPV, higher-prestige pick — with a board of old friends unwilling to intervene. <strong>Concepts:</strong> board independence, governance failure, fiduciary duty.</p></div>
+        <div class="case-card"><span class="case-num">09</span><h4>High NPV, High Cash Flow Risk</h4><p>NPV = ₹180 crore, IRR = 22% — but cash flows depend heavily on one financially unstable client. The CFO says the risk threatens shareholder value despite the strong headline numbers. <strong>Concepts:</strong> risk-adjusted cash flows, scenario analysis, CFO-vs-CTO agency tension.</p></div>
+        <div class="case-card"><span class="case-num">10</span><h4>Stock Price Pressure Forces a Bad Decision</h4><p>Share price is down 12% ahead of quarterly results; the board wants an "exciting tech announcement." The CTO has a media-friendly but non-viable AI prototype, or a boring-but-real enterprise upgrade. <strong>Concepts:</strong> short-term hype vs. long-term value, ethics in financial signaling.</p></div>
+        <footer class="closing">Next: Module 5 goes deep on Sensitivity and Scenario Analysis — how to stress-test the numbers this module just taught you to build.</footer>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+  const topics = Array.from(document.querySelectorAll('section.topic'));
+  topics.forEach(sec => sec.querySelector('.topic-header').addEventListener('click', () => sec.classList.toggle('collapsed')));
+  document.getElementById('expandAll').addEventListener('click', () => topics.forEach(s => s.classList.remove('collapsed')));
+  document.getElementById('collapseAll').addEventListener('click', () => topics.forEach(s => s.classList.add('collapsed')));
+  const nav = document.getElementById('tocNav');
+  const navToggle = document.getElementById('navToggle');
+  const navScrim = document.getElementById('navScrim');
+  function closeNav(){ nav.classList.remove('open'); navScrim.classList.remove('show'); }
+  navToggle.addEventListener('click', () => { nav.classList.toggle('open'); navScrim.classList.toggle('show'); });
+  navScrim.addEventListener('click', closeNav);
+  document.querySelectorAll('#tocList a').forEach(link => {
+    link.addEventListener('click', () => {
+      const id = link.getAttribute('href').slice(1);
+      const target = document.getElementById(id);
+      if (target) target.classList.remove('collapsed');
+      closeNav();
+    });
+  });
+  const tocLinks = Array.from(document.querySelectorAll('#tocList a'));
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const id = entry.target.getAttribute('id');
+      const link = tocLinks.find(l => l.getAttribute('href') === '#' + id);
+      if (link && entry.isIntersecting){
+        tocLinks.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+  topics.forEach(sec => observer.observe(sec));
+</script>
+</body>
+</html>

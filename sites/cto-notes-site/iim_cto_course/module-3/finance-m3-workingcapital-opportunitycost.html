@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CTO Finance Notes · M3 — Working Capital &amp; Opportunity Cost</title>
+<style>
+  :root{
+    --bg: #0a0e14; --bg-panel: #10151e; --bg-elevated: #161d29;
+    --ink: #e6edf5; --ink-soft: #8b98ab;
+    --cyan: #22d3ee; --cyan-deep: #0891b2; --cyan-pale: rgba(34,211,238,0.10);
+    --amber: #f5a623; --amber-deep: #c17d0a; --amber-pale: rgba(245,166,35,0.12);
+    --red: #f2545b; --red-pale: rgba(242,84,91,0.12);
+    --line: #212a39; --mono-bg: #05070b; --mono-ink: #bfeaf5; --nav-w: 270px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      linear-gradient(rgba(34,211,238,0.035) 1px, transparent 1px) 0 0/100% 28px,
+      linear-gradient(90deg, rgba(34,211,238,0.035) 1px, transparent 1px) 0 0/28px 100%,
+      var(--bg);
+    color:var(--ink); font-family:'Inter','Segoe UI',system-ui,sans-serif; line-height:1.65;
+  }
+  .mission-bar{ background:var(--mono-bg); border-bottom:1px solid var(--line); padding:0.6rem 1.5rem; font-family:'JetBrains Mono','Courier New',monospace; font-size:0.72rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--cyan); display:flex; justify-content:space-between; flex-wrap:wrap; gap:0.5rem; }
+  .mission-bar span.dim{ color:var(--ink-soft); } .mission-bar .dot{ color:var(--amber); }
+  header.hero{ padding:3rem 1.5rem 2.4rem; text-align:center; border-bottom:1px solid var(--line); background: radial-gradient(ellipse at top, rgba(34,211,238,0.08), transparent 60%); }
+  header.hero .eyebrow{ font-family:'JetBrains Mono',monospace; letter-spacing:0.3em; text-transform:uppercase; font-size:0.72rem; color:var(--amber); font-weight:700; }
+  header.hero h1{ font-size:2.3rem; margin:0.7rem 0 0.4rem; letter-spacing:-0.01em; }
+  header.hero .subtitle{ color:var(--ink-soft); font-size:1.02rem; max-width:680px; margin:0 auto; }
+  .layout{ display:flex; max-width:1220px; margin:0 auto; align-items:flex-start; }
+  nav.toc{ width:var(--nav-w); flex-shrink:0; position:sticky; top:0; max-height:100vh; overflow-y:auto; padding:2rem 1.2rem 2rem 1.5rem; border-right:1px solid var(--line); }
+  nav.toc .toc-title{ font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:0.14em; font-size:0.7rem; color:var(--cyan-deep); font-weight:700; margin-bottom:0.8rem; }
+  nav.toc ul{ list-style:none; padding:0; margin:0 0 1.3rem 0; } nav.toc li{ margin-bottom:0.3rem; }
+  nav.toc a{ display:block; color:var(--ink-soft); text-decoration:none; font-size:0.78rem; padding:0.34rem 0.6rem; border-radius:5px; border-left:3px solid transparent; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+  nav.toc a:hover, nav.toc a.active{ background:var(--cyan-pale); color:var(--cyan); border-left-color:var(--cyan); }
+  .toc-controls{ display:flex; flex-direction:column; gap:0.5rem; }
+  .toc-controls button{ font-family:'JetBrains Mono',monospace; font-size:0.75rem; letter-spacing:0.03em; background:var(--bg-panel); border:1px solid var(--line); color:var(--ink); padding:0.5rem 0.7rem; border-radius:6px; cursor:pointer; text-align:left; transition: background 0.15s, border-color 0.15s; }
+  .toc-controls button:hover{ background:var(--cyan-pale); border-color:var(--cyan); }
+  .nav-toggle{ display:none; position:fixed; bottom:1.4rem; right:1.4rem; z-index:50; background:var(--cyan); color:#04222b; border:none; width:52px; height:52px; border-radius:50%; font-size:1.3rem; box-shadow:0 3px 14px rgba(0,0,0,0.5); cursor:pointer; }
+  .nav-scrim{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:55; } .nav-scrim.show{ display:block; }
+  .wrap{ flex:1; min-width:0; max-width:940px; margin:0 auto; padding:2.6rem 1.6rem 6rem; }
+  section.topic{ margin-top:2.2rem; scroll-margin-top:1.5rem; }
+  button.topic-header{ all:unset; display:flex; align-items:center; justify-content:space-between; width:100%; cursor:pointer; padding-bottom:0.5rem; border-bottom:2px solid var(--cyan-deep); gap:0.8rem; }
+  button.topic-header h2{ margin:1.4rem 0 0; font-size:1.22rem; color:var(--ink); font-weight:700; }
+  .chevron{ flex-shrink:0; width:28px; height:28px; border-radius:6px; background:var(--bg-elevated); color:var(--cyan); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:1rem; font-weight:700; transition: transform 0.25s, background 0.2s; margin-top:1.2rem; }
+  section.topic.collapsed .chevron{ transform:rotate(-90deg); }
+  button.topic-header:hover .chevron{ background:var(--cyan); color:#04222b; }
+  .topic-body{ overflow:hidden; max-height:16000px; opacity:1; transition: max-height 0.35s, opacity 0.25s, margin 0.25s; }
+  section.topic.collapsed .topic-body{ max-height:0; opacity:0; margin:0; }
+  h3{ color:var(--cyan); font-size:1.03rem; margin-top:1.7rem; }
+  h4{ color:var(--amber); font-size:0.9rem; margin-top:1.15rem; text-transform:uppercase; letter-spacing:0.04em; }
+  p{ color:var(--ink); } strong{ color:#fff; } em{ color:var(--ink-soft); }
+  pre{ background:var(--mono-bg); color:var(--mono-ink); font-family:'JetBrains Mono','Courier New',monospace; font-size:0.72rem; padding:1.1rem 1.2rem; border-radius:8px; border:1px solid var(--line); border-left:3px solid var(--cyan); overflow-x:auto; line-height:1.5; white-space:pre; }
+  blockquote{ margin:1rem 0; padding:0.9rem 1.2rem; background:var(--bg-panel); border-left:4px solid var(--amber); font-style:italic; color:var(--ink-soft); border-radius:0 6px 6px 0; }
+  ul{ padding-left:1.4rem; } li{ margin-bottom:0.4rem; }
+  .panel{ background:var(--bg-panel); border:1px solid var(--line); border-radius:10px; padding:1.4rem 1.7rem; margin:1.2rem 0; }
+  .card{ border-radius:10px; padding:1.1rem 1.4rem; margin:1rem 0; border:1px solid var(--line); }
+  .card.insight{ background:var(--cyan-pale); border-left:4px solid var(--cyan); }
+  .card.question{ background:var(--amber-pale); border-left:4px solid var(--amber); }
+  .card.warning{ background:var(--red-pale); border-left:4px solid var(--red); }
+  .card .card-label{ font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:0.1em; font-size:0.68rem; font-weight:700; margin-bottom:0.4rem; display:block; }
+  .card.insight .card-label{ color:var(--cyan); } .card.question .card-label{ color:var(--amber); } .card.warning .card-label{ color:var(--red); }
+  .table-wrap{ overflow-x:auto; margin:1.2rem 0; border-radius:10px; border:1px solid var(--line); }
+  table{ width:100%; border-collapse:collapse; background:var(--bg-panel); font-size:0.82rem; }
+  thead th{ background:var(--bg-elevated); color:var(--cyan); text-align:left; padding:0.6rem 0.8rem; font-family:'JetBrains Mono',monospace; font-size:0.65rem; text-transform:uppercase; letter-spacing:0.05em; border-bottom:2px solid var(--cyan-deep); }
+  tbody td{ padding:0.6rem 0.8rem; border-top:1px solid var(--line); vertical-align:top; color:var(--ink); }
+  tbody tr:nth-child(even){ background: rgba(255,255,255,0.015); }
+  .case-card{ background:var(--bg-panel); border:1px solid var(--line); border-radius:10px; padding:1.1rem 1.4rem; margin:1rem 0; }
+  .case-card .case-num{ display:inline-block; font-family:'JetBrains Mono',monospace; font-size:0.68rem; color:#04222b; background:var(--amber); padding:0.12rem 0.5rem; border-radius:4px; font-weight:700; margin-bottom:0.5rem; }
+  footer.closing{ text-align:center; margin-top:2.5rem; font-style:italic; color:var(--ink-soft); }
+  @media (max-width:900px){ :root{ --nav-w:220px; } }
+  @media (max-width:720px){
+    .layout{ display:block; }
+    nav.toc{ position:fixed; top:0; left:0; width:min(280px,82vw); height:100vh; background:var(--bg-panel); z-index:60; transform:translateX(-105%); transition: transform 0.25s; box-shadow:3px 0 18px rgba(0,0,0,0.5); }
+    nav.toc.open{ transform:translateX(0); }
+    .nav-toggle{ display:flex; align-items:center; justify-content:center; }
+    header.hero h1{ font-size:1.55rem; } pre{ font-size:0.58rem; padding:0.85rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="mission-bar">
+  <span>CTO&nbsp;FINANCE&nbsp;NOTES <span class="dot">·</span> MODULE 03 / 06</span>
+  <span class="dim">CASH IS KING · OPPORTUNITY COST · 10 CASE STUDIES</span>
+</div>
+
+<header class="hero">
+  <div class="eyebrow">CTO Finance Track — Cash &amp; Comparison</div>
+  <h1>🔄 Working Capital &amp; Opportunity Cost</h1>
+  <p class="subtitle">Why "cash is king" beats profit every time, how CFOs really compare competing projects, and ten scenarios where a CTO's best idea loses to the CFO's empty cash drawer.</p>
+</header>
+
+<button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">☰</button>
+<div class="nav-scrim" id="navScrim"></div>
+
+<div class="layout">
+  <nav class="toc" id="tocNav">
+    <div class="toc-title">Jump to</div>
+    <ul id="tocList">
+      <li><a href="#sec-context">🌐 Digital Transformation &amp; Working Capital</a></li>
+      <li><a href="#sec-components">🧩 Working Capital Components &amp; Ratios</a></li>
+      <li><a href="#sec-payterms">💳 Payment Term Rationalization</a></li>
+      <li><a href="#sec-apple">🍎 The Financial Manager's Broad Role</a></li>
+      <li><a href="#sec-oppcost">🎯 Opportunity Cost</a></li>
+      <li><a href="#sec-compare">📊 Comparing Projects in a CTO Context</a></li>
+      <li><a href="#sec-cases">🔥 10 Case Studies</a></li>
+    </ul>
+    <div class="toc-title">Sections</div>
+    <div class="toc-controls">
+      <button id="expandAll">＋ Expand all</button>
+      <button id="collapseAll">－ Collapse all</button>
+    </div>
+  </nav>
+
+  <div class="wrap">
+
+    <section class="topic" id="sec-context">
+      <button class="topic-header"><h2>🌐 Digital Transformation Projects &amp; Working Capital</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <blockquote>"A company can be investing ₹500 crore in digital projects, but if it cannot pay salaries this month, the projects don't matter."</blockquote>
+        <p>Every project — even a small departmental one — affects cash availability, working capital, liquidity, and the ability to pay salaries, vendors, and infra bills. If all cash is locked in long-term projects, the company can face a crisis even while "investing" heavily.</p>
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  WHAT CTOs SOMETIMES MISS                                       │
+│                                                               │
+│  CTO thinks:  "My project costs ₹10 cr — why is the CFO        │
+│               delaying approval?"                              │
+│                                                               │
+│  CFO thinks:  "We have 20 active projects. Cash must be         │
+│               allocated wisely — across ALL of them."          │
+│                                                               │
+│  👉 Investment decisions are never evaluated in isolation —    │
+│     they're evaluated at the PORTFOLIO level.                  │
+└───────────────────────────────────────────────────────────┘</pre>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-components">
+      <button class="topic-header"><h2>🧩 Working Capital Components &amp; Healthy Ratios</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <p>Working capital management is primarily a <strong>finance function</strong>, not the CTO's — but every CTO needs to understand what finance is tracking.</p>
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  KEY COMPONENTS                                                 │
+│  ● Receivables         (customers owe you money)                │
+│  ● Payables            (you owe vendors money)                  │
+│  ● Inventory           (unsold or unused items)                 │
+│  ● Cash & cash equivalents                                      │
+│  ● Prepaid expenses    (minor, but included)                    │
+│                                                               │
+│  GOAL: all current assets should convert to cash QUICKLY.       │
+│  "Cash is king. Not profit. Not revenue. CASH."                 │
+└───────────────────────────────────────────────────────────┘</pre>
+        <p>No fixed industry-wide rule exists, but Current Ratio (Current Assets / Current Liabilities) above 1.0 is generally safe, and 1.5–2.0 is considered healthy — bankers look at this before issuing loans. When a CTO pitches a new idea, the CFO is weighing it against <em>20 other projects</em> simultaneously — only 2–3 may get funded due to cash constraints. So the CTO must justify the project in financial terms.</p>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-payterms">
+      <button class="topic-header"><h2>💳 Real-World Example: Payment Term Rationalization</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <p>A company was paying suppliers in 30 days, but the suppliers had grown big enough that 60-day terms made sense. Shifting from 30 → 60 days retained more cash for longer — effectively an <strong>extension of trade credit</strong>, or an implicit loan from the supplier.</p>
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  WHAT'S CRITICAL: OPPORTUNITY COST                              │
+│                                                               │
+│  Many suppliers offer early-payment discounts:                  │
+│    Pay in 10 days → 2% discount                                │
+│                                                               │
+│  If that 2% discount is worth MORE than holding the cash        │
+│  for 20 extra days, EARLY payment is financially superior.      │
+│                                                               │
+│  💡 Research shows: a bank's short-term loan is often          │
+│  CHEAPER than extending trade credit — because lost supplier    │
+│  discounts are a hidden cost, and bank interest < lost          │
+│  discount cost.                                                 │
+└───────────────────────────────────────────────────────────┘</pre>
+        <p>The same logic applies on the <em>customer</em> side: which customers get 30 days, which get 60, which must pay 100% advance — decided by creditworthiness, payment history, relationship strength, margin, and supply-chain risk.</p>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-apple">
+      <button class="topic-header"><h2>🍎 The Financial Manager's Broad Role — The Apple Example</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  MONEY FLOW                                                     │
+│                                                               │
+│  Company RAISES money  → Equity or Debt                         │
+│           │                                                    │
+│           ▼                                                    │
+│  Company INVESTS it    → Projects, digital initiatives,          │
+│                          capacity expansion                     │
+│           │                                                    │
+│           ▼                                                    │
+│  Generates CASH FLOW                                            │
+│           │                                                    │
+│           ▼                                                    │
+│  Company DECIDES         → Pay dividends? Reinvest? Buy back    │
+│                             shares?                             │
+└───────────────────────────────────────────────────────────┘</pre>
+        <p><strong>Apple example:</strong> for many years, Apple did not pay dividends at all — because it reinvested all profits into R&amp;D and product development. High-value projects required all the cash they could get.</p>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-oppcost">
+      <button class="topic-header"><h2>🎯 Opportunity Cost — Comparing Apples to Apples</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <blockquote>Opportunity cost = "the foregone return from the best available alternative." If you choose Option A, whatever you lose from not choosing Option B is your opportunity cost.</blockquote>
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  TWO CRUCIAL CONSTRAINTS ON A VALID COMPARISON                  │
+│                                                               │
+│  1. ALTERNATIVES MUST HAVE SIMILAR RISK                         │
+│     Can't compare a fixed deposit (risk-free) to an equity      │
+│     mutual fund (market risk). Compare two mutual funds, two    │
+│     SaaS platforms, two 3-year projects of similar domain.       │
+│                                                               │
+│  2. SAME TIME HORIZON                                          │
+│     Can't compare a 3-year project vs. a 10-year project, or    │
+│     a 6-month FD vs. a 5-year real estate investment.           │
+│                                                               │
+│  👉 TIMELINE + RISK LEVEL MUST MATCH.                            │
+└───────────────────────────────────────────────────────────┘</pre>
+        <h3>Everyday Examples</h3>
+        <ul>
+          <li><strong>Gold vs. Mutual Funds:</strong> both carry market risk — compare only similar-risk assets.</li>
+          <li><strong>Buying vs. Renting a House:</strong> if you spend ₹50 lakh cash on a house, the opportunity cost is what that ₹50 lakh could have earned in an FD or mutual fund instead.</li>
+          <li><strong>Leaving a Job to Study an MBA:</strong> the salary you give up, the experience you lose, the investments you stop making — all opportunity cost of the MBA.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-compare">
+      <button class="topic-header"><h2>📊 How to Compare Projects in a CTO Context</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <p>When a CTO pitches 5 projects, the CFO compares expected return, opportunity cost, risk, and timeline — then funds only the 1–2 that maximize value. The CTO's job:</p>
+        <pre>Use NPV  ·  Use IRR  ·  Understand opportunity cost  ·
+Speak in CFO language  ·  Compare projects financially,
+not just technically</pre>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-cases">
+      <button class="topic-header"><h2>🔥 10 Case Studies — Cash, Timing &amp; Trade-offs</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <div class="case-card"><span class="case-num">01</span>
+          <h4>The Perfect Project vs. the Empty Cash Drawer</h4>
+          <p>A ₹100 crore modernization saves ₹30 crore/year, starting in 18 months — great ROI. But the CFO refuses: cash on hand is only ₹35 crore, ₹150 crore of receivables are unpaid, and ₹60 crore of vendor payments are due in 45 days.</p>
+          <p><strong>Lens:</strong> liquidity beats profitability in the short term. The CTO must restructure the project into phases or propose financing options — working capital health dictates investment ability, no matter how good the ROI looks on paper.</p>
+        </div>
+        <div class="case-card"><span class="case-num">02</span>
+          <h4>The Startup That Died With ₹200 Crore "Stuck" in Digital Projects</h4>
+          <p>A startup invested ₹200 crore in an AI platform, a data center, and an analytics stack — but 120+ day credit cycles left it unable to pay salaries, its AWS bill, or compliance penalties. It collapsed despite ₹200 crore of "assets."</p>
+          <p><strong>Lens:</strong> this is a cash conversion cycle failure — over-investment in long-term projects with no precautionary cash buffer. Working capital is oxygen; being asset-rich doesn't keep the lights on.</p>
+        </div>
+        <div class="case-card"><span class="case-num">03</span>
+          <h4>Payable Term Optimization Gone Wrong</h4>
+          <p>Extending supplier payment terms from 30 to 90 days improves short-term cash — but suppliers respond by raising prices 4%, and one critical vendor threatens to stop supply.</p>
+          <p><strong>Lens:</strong> lost supplier goodwill is an implicit cost that can exceed the explicit cash benefit. Compare the discount lost against the short-term liquidity gained, and compute the equivalent interest-rate impact before congratulating yourself on "better" working capital.</p>
+        </div>
+        <div class="case-card"><span class="case-num">04</span>
+          <h4>Two Projects, Same ROI, Different Cash Timing</h4>
+          <p>Project A: 18% ROI, cash starts immediately, lower long-term benefit. Project B: also 18% ROI, cash starts after 2 years, but higher strategic advantage. The CFO can only fund one due to working-capital pressure.</p>
+          <p><strong>Lens:</strong> evaluate the <em>timing</em> of cash flows, not just the headline ROI. Opportunity cost of delaying benefit, strategic value vs. liquidity pressure, and a working-capital sensitivity check all belong in this decision.</p>
+        </div>
+        <div class="case-card"><span class="case-num">05</span>
+          <h4>The Hidden Cost of Early-Payment Discounts</h4>
+          <p>A vendor offers 2% off for payment in 10 days, or no discount at 60 days. The CFO prefers 60 days — "longer payable = more cash for investments."</p>
+          <p><strong>Lens:</strong> is that actually sound? Calculate the discount's implied annual interest rate and compare it to the cost of borrowing. A 2% discount for paying 50 days early often annualizes to <strong>36–48%</strong> — an extremely valuable rate that's usually worth taking. Working capital decisions must be quantified, not assumed.</p>
+        </div>
+        <div class="case-card"><span class="case-num">06</span>
+          <h4>The Customer Credit Policy That Destroys Cash Flow</h4>
+          <p>Standard terms are 90 days; a new customer wants 120-day credit in exchange for a lucrative 5-year contract. Sales wants to approve it; the CFO wants to reject it.</p>
+          <p><strong>Lens:</strong> longer credit cycles hurt the Cash Conversion Cycle. Compute the opportunity cost of cash stuck for 120 days and the cost of financing that credit — then weigh growth against liquidity, deliberately, not on gut feel.</p>
+        </div>
+        <div class="case-card"><span class="case-num">07</span>
+          <h4>The Imbalanced Portfolio of Tech Projects</h4>
+          <p>₹300 crore available, but ₹800 crore of proposals on the table — 5 digital transformation initiatives, 3 platform rewrites, 4 automation streams.</p>
+          <p><strong>Lens:</strong> rank using IRR vs. cost of capital, check that risk levels are comparable across proposals, and use portfolio optimization. The opportunity cost here is the forgone NPV of whatever gets rejected.</p>
+        </div>
+        <div class="case-card"><span class="case-num">08</span>
+          <h4>A Highly Profitable Company Struggling With Vendor Payments</h4>
+          <p>₹700 crore of P&amp;L profit — but a 180-day cash conversion cycle, ₹1200 crore of receivables, only ₹25 crore of cash on hand, and cloud providers threatening to suspend service.</p>
+          <p><strong>Lens:</strong> profit ≠ cash. A CTO needs to track CCC, DSO (Days Sales Outstanding), DPO (Days Payable Outstanding), and inventory turnover, and must predict how digital projects will affect liquidity before they get approved.</p>
+        </div>
+        <div class="case-card"><span class="case-num">09</span>
+          <h4>When Opportunity Cost Makes a CTO Reject the "Better" Project</h4>
+          <p>Project X: 25% IRR, needs cash now, pays off in 3 years. Project Y: 23% IRR (slightly lower), needs no immediate cash (deferred payment contract), pays off in 4 years. The company is facing severe liquidity issues.</p>
+          <p><strong>Lens:</strong> cash timing can matter more than IRR. Factor in the opportunity cost — and liquidity premium — of using scarce cash right now. Project Y, with the lower IRR, may genuinely be the smarter choice.</p>
+        </div>
+        <div class="case-card"><span class="case-num">10</span>
+          <h4>The Paradox of Digital Transformation During a Cash Crisis</h4>
+          <p>The CEO wants to pause all digital initiatives until cash stabilizes. The CTO warns that stopping mid-way wastes sunk cost and raises long-term risk. The CFO wants working capital protected above all else.</p>
+          <p><strong>Lens:</strong> run a working-capital stress test and cash-flow forecast, reprioritize projects using opportunity cost, apply scenario and sensitivity analysis, and phase projects to reduce upfront cash needs rather than treating it as an all-or-nothing choice.</p>
+        </div>
+        <footer class="closing">Next: Module 4 builds the full capital budgeting toolkit — NPV, IRR, WACC, and the corporate governance backdrop that decides which projects even make it to the table.</footer>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+  const topics = Array.from(document.querySelectorAll('section.topic'));
+  topics.forEach(sec => sec.querySelector('.topic-header').addEventListener('click', () => sec.classList.toggle('collapsed')));
+  document.getElementById('expandAll').addEventListener('click', () => topics.forEach(s => s.classList.remove('collapsed')));
+  document.getElementById('collapseAll').addEventListener('click', () => topics.forEach(s => s.classList.add('collapsed')));
+  const nav = document.getElementById('tocNav');
+  const navToggle = document.getElementById('navToggle');
+  const navScrim = document.getElementById('navScrim');
+  function closeNav(){ nav.classList.remove('open'); navScrim.classList.remove('show'); }
+  navToggle.addEventListener('click', () => { nav.classList.toggle('open'); navScrim.classList.toggle('show'); });
+  navScrim.addEventListener('click', closeNav);
+  document.querySelectorAll('#tocList a').forEach(link => {
+    link.addEventListener('click', () => {
+      const id = link.getAttribute('href').slice(1);
+      const target = document.getElementById(id);
+      if (target) target.classList.remove('collapsed');
+      closeNav();
+    });
+  });
+  const tocLinks = Array.from(document.querySelectorAll('#tocList a'));
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const id = entry.target.getAttribute('id');
+      const link = tocLinks.find(l => l.getAttribute('href') === '#' + id);
+      if (link && entry.isIntersecting){
+        tocLinks.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+  topics.forEach(sec => observer.observe(sec));
+</script>
+</body>
+</html>

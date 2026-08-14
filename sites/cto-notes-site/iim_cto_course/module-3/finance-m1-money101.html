@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CTO Finance Notes · M1 — Money 101 &amp; The Balance Sheet</title>
+<style>
+  :root{
+    --bg: #0a0e14; --bg-panel: #10151e; --bg-elevated: #161d29;
+    --ink: #e6edf5; --ink-soft: #8b98ab;
+    --cyan: #22d3ee; --cyan-deep: #0891b2; --cyan-pale: rgba(34,211,238,0.10);
+    --amber: #f5a623; --amber-deep: #c17d0a; --amber-pale: rgba(245,166,35,0.12);
+    --red: #f2545b; --red-pale: rgba(242,84,91,0.12);
+    --line: #212a39; --mono-bg: #05070b; --mono-ink: #bfeaf5; --nav-w: 270px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      linear-gradient(rgba(34,211,238,0.035) 1px, transparent 1px) 0 0/100% 28px,
+      linear-gradient(90deg, rgba(34,211,238,0.035) 1px, transparent 1px) 0 0/28px 100%,
+      var(--bg);
+    color:var(--ink); font-family:'Inter','Segoe UI',system-ui,sans-serif; line-height:1.65;
+  }
+  .mission-bar{ background:var(--mono-bg); border-bottom:1px solid var(--line); padding:0.6rem 1.5rem; font-family:'JetBrains Mono','Courier New',monospace; font-size:0.72rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--cyan); display:flex; justify-content:space-between; flex-wrap:wrap; gap:0.5rem; }
+  .mission-bar span.dim{ color:var(--ink-soft); } .mission-bar .dot{ color:var(--amber); }
+  header.hero{ padding:3rem 1.5rem 2.4rem; text-align:center; border-bottom:1px solid var(--line); background: radial-gradient(ellipse at top, rgba(34,211,238,0.08), transparent 60%); }
+  header.hero .eyebrow{ font-family:'JetBrains Mono',monospace; letter-spacing:0.3em; text-transform:uppercase; font-size:0.72rem; color:var(--amber); font-weight:700; }
+  header.hero h1{ font-size:2.3rem; margin:0.7rem 0 0.4rem; letter-spacing:-0.01em; }
+  header.hero .subtitle{ color:var(--ink-soft); font-size:1.02rem; max-width:680px; margin:0 auto; }
+  .layout{ display:flex; max-width:1220px; margin:0 auto; align-items:flex-start; }
+  nav.toc{ width:var(--nav-w); flex-shrink:0; position:sticky; top:0; max-height:100vh; overflow-y:auto; padding:2rem 1.2rem 2rem 1.5rem; border-right:1px solid var(--line); }
+  nav.toc .toc-title{ font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:0.14em; font-size:0.7rem; color:var(--cyan-deep); font-weight:700; margin-bottom:0.8rem; }
+  nav.toc ul{ list-style:none; padding:0; margin:0 0 1.3rem 0; } nav.toc li{ margin-bottom:0.3rem; }
+  nav.toc a{ display:block; color:var(--ink-soft); text-decoration:none; font-size:0.82rem; padding:0.38rem 0.6rem; border-radius:5px; border-left:3px solid transparent; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+  nav.toc a:hover, nav.toc a.active{ background:var(--cyan-pale); color:var(--cyan); border-left-color:var(--cyan); }
+  .toc-controls{ display:flex; flex-direction:column; gap:0.5rem; }
+  .toc-controls button{ font-family:'JetBrains Mono',monospace; font-size:0.75rem; letter-spacing:0.03em; background:var(--bg-panel); border:1px solid var(--line); color:var(--ink); padding:0.5rem 0.7rem; border-radius:6px; cursor:pointer; text-align:left; transition: background 0.15s, border-color 0.15s; }
+  .toc-controls button:hover{ background:var(--cyan-pale); border-color:var(--cyan); }
+  .nav-toggle{ display:none; position:fixed; bottom:1.4rem; right:1.4rem; z-index:50; background:var(--cyan); color:#04222b; border:none; width:52px; height:52px; border-radius:50%; font-size:1.3rem; box-shadow:0 3px 14px rgba(0,0,0,0.5); cursor:pointer; }
+  .nav-scrim{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:55; } .nav-scrim.show{ display:block; }
+  .wrap{ flex:1; min-width:0; max-width:940px; margin:0 auto; padding:2.6rem 1.6rem 6rem; }
+  section.topic{ margin-top:2.2rem; scroll-margin-top:1.5rem; }
+  button.topic-header{ all:unset; display:flex; align-items:center; justify-content:space-between; width:100%; cursor:pointer; padding-bottom:0.5rem; border-bottom:2px solid var(--cyan-deep); gap:0.8rem; }
+  button.topic-header h2{ margin:1.4rem 0 0; font-size:1.26rem; color:var(--ink); font-weight:700; }
+  .chevron{ flex-shrink:0; width:28px; height:28px; border-radius:6px; background:var(--bg-elevated); color:var(--cyan); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:1rem; font-weight:700; transition: transform 0.25s, background 0.2s; margin-top:1.2rem; }
+  section.topic.collapsed .chevron{ transform:rotate(-90deg); }
+  button.topic-header:hover .chevron{ background:var(--cyan); color:#04222b; }
+  .topic-body{ overflow:hidden; max-height:14000px; opacity:1; transition: max-height 0.35s, opacity 0.25s, margin 0.25s; }
+  section.topic.collapsed .topic-body{ max-height:0; opacity:0; margin:0; }
+  h3{ color:var(--cyan); font-size:1.05rem; margin-top:1.7rem; }
+  h4{ color:var(--amber); font-size:0.9rem; margin-top:1.15rem; text-transform:uppercase; letter-spacing:0.04em; }
+  p{ color:var(--ink); } strong{ color:#fff; } em{ color:var(--ink-soft); }
+  pre{ background:var(--mono-bg); color:var(--mono-ink); font-family:'JetBrains Mono','Courier New',monospace; font-size:0.73rem; padding:1.1rem 1.2rem; border-radius:8px; border:1px solid var(--line); border-left:3px solid var(--cyan); overflow-x:auto; line-height:1.5; white-space:pre; }
+  blockquote{ margin:1rem 0; padding:0.9rem 1.2rem; background:var(--bg-panel); border-left:4px solid var(--amber); font-style:italic; color:var(--ink-soft); border-radius:0 6px 6px 0; }
+  ul{ padding-left:1.4rem; } li{ margin-bottom:0.4rem; }
+  .panel{ background:var(--bg-panel); border:1px solid var(--line); border-radius:10px; padding:1.4rem 1.7rem; margin:1.2rem 0; }
+  .card{ border-radius:10px; padding:1.1rem 1.4rem; margin:1rem 0; border:1px solid var(--line); }
+  .card.insight{ background:var(--cyan-pale); border-left:4px solid var(--cyan); }
+  .card.question{ background:var(--amber-pale); border-left:4px solid var(--amber); }
+  .card.warning{ background:var(--red-pale); border-left:4px solid var(--red); }
+  .card .card-label{ font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:0.1em; font-size:0.68rem; font-weight:700; margin-bottom:0.4rem; display:block; }
+  .card.insight .card-label{ color:var(--cyan); } .card.question .card-label{ color:var(--amber); } .card.warning .card-label{ color:var(--red); }
+  .table-wrap{ overflow-x:auto; margin:1.2rem 0; border-radius:10px; border:1px solid var(--line); }
+  table{ width:100%; border-collapse:collapse; background:var(--bg-panel); font-size:0.83rem; }
+  thead th{ background:var(--bg-elevated); color:var(--cyan); text-align:left; padding:0.6rem 0.8rem; font-family:'JetBrains Mono',monospace; font-size:0.66rem; text-transform:uppercase; letter-spacing:0.05em; border-bottom:2px solid var(--cyan-deep); }
+  tbody td{ padding:0.6rem 0.8rem; border-top:1px solid var(--line); vertical-align:top; color:var(--ink); }
+  tbody tr:nth-child(even){ background: rgba(255,255,255,0.015); }
+  .case-card{ background:var(--bg-panel); border:1px solid var(--line); border-radius:10px; padding:1.3rem 1.6rem; margin:1.3rem 0; }
+  .case-card .case-num{ display:inline-block; font-family:'JetBrains Mono',monospace; font-size:0.7rem; color:#04222b; background:var(--amber); padding:0.15rem 0.55rem; border-radius:4px; font-weight:700; margin-bottom:0.6rem; }
+  footer.closing{ text-align:center; margin-top:2.5rem; font-style:italic; color:var(--ink-soft); }
+  @media (max-width:900px){ :root{ --nav-w:220px; } }
+  @media (max-width:720px){
+    .layout{ display:block; }
+    nav.toc{ position:fixed; top:0; left:0; width:min(280px,82vw); height:100vh; background:var(--bg-panel); z-index:60; transform:translateX(-105%); transition: transform 0.25s; box-shadow:3px 0 18px rgba(0,0,0,0.5); }
+    nav.toc.open{ transform:translateX(0); }
+    .nav-toggle{ display:flex; align-items:center; justify-content:center; }
+    header.hero h1{ font-size:1.6rem; } pre{ font-size:0.6rem; padding:0.85rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="mission-bar">
+  <span>CTO&nbsp;FINANCE&nbsp;NOTES <span class="dot">·</span> MODULE 01 / 06</span>
+  <span class="dim">ASSETS · THE 3 CORE DECISIONS · BALANCE SHEET · WORKING CAPITAL</span>
+</div>
+
+<header class="hero">
+  <div class="eyebrow">CTO Finance Track — Foundations</div>
+  <h1>💰 Money 101 &amp; The Balance Sheet</h1>
+  <p class="subtitle">Real vs. financial assets, the three decisions every CFO makes, and how to read a balance sheet — plain language, a diagram for every idea.</p>
+</header>
+
+<button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">☰</button>
+<div class="nav-scrim" id="navScrim"></div>
+
+<div class="layout">
+  <nav class="toc" id="tocNav">
+    <div class="toc-title">Jump to</div>
+    <ul id="tocList">
+      <li><a href="#sec-accfin">🧮 Accounting vs. Finance</a></li>
+      <li><a href="#sec-realfin">🪙 Real Assets vs. Financial Assets</a></li>
+      <li><a href="#sec-3decisions">🎯 The Three Core Financial Decisions</a></li>
+      <li><a href="#sec-balancesheet">📋 The Miniature Balance Sheet</a></li>
+      <li><a href="#sec-assets">📦 Deep Dive: Assets</a></li>
+      <li><a href="#sec-liabilities">📉 Deep Dive: Liabilities</a></li>
+      <li><a href="#sec-capitalasset">🏗️ Capital vs. Asset</a></li>
+      <li><a href="#sec-workingcap">🔄 Working Capital &amp; Cash</a></li>
+      <li><a href="#sec-cases1">🔥 5 Case Studies — Assets, Decisions &amp; CFO Dynamics</a></li>
+      <li><a href="#sec-cases2">🔥 5 More Case Studies — Accounting vs. Finance</a></li>
+    </ul>
+    <div class="toc-title">Sections</div>
+    <div class="toc-controls">
+      <button id="expandAll">＋ Expand all</button>
+      <button id="collapseAll">－ Collapse all</button>
+    </div>
+  </nav>
+
+  <div class="wrap">
+
+    <section class="topic" id="sec-accfin">
+      <button class="topic-header"><h2>🧮 Accounting vs. Finance — Not the Same Thing</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│                ACCOUNTING vs FINANCE                          │
+│                                                               │
+│  ACCOUNTING                        FINANCE                     │
+│  ───────────                       ───────                     │
+│  Records PAST events                Forward-looking             │
+│  Ledger / record-keeping            Planning, forecasting,       │
+│  Follows strict rules/standards     budgeting, decision-making   │
+│  Produces: P&L, Balance Sheet,      Uses accounting DATA to      │
+│  Cash Flow Statement                make strategic CHOICES       │
+│                                                               │
+│  "ACCOUNTING is PAST.  FINANCE is FUTURE."                     │
+└───────────────────────────────────────────────────────────┘</pre>
+        <p>Accounting records what already happened — a salary got credited, an invoice got raised, a bill got paid. Finance looks forward: what should we do <em>today</em> based on where we expect things to go in 6 months, 1 year, 2 years?</p>
+
+        <h3>Understanding Financial Statements</h3>
+        <div class="table-wrap">
+          <table><thead><tr><th>Statement</th><th>What It Shows</th></tr></thead>
+          <tbody>
+            <tr><td><strong>P&amp;L (Profit &amp; Loss)</strong></td><td>Revenue, expenses, and profit or loss — performance over a period of time</td></tr>
+            <tr><td><strong>Balance Sheet</strong></td><td>A snapshot of assets and liabilities on one specific date</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-realfin">
+      <button class="topic-header"><h2>🪙 Real Assets vs. Financial Assets</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  REAL ASSETS                       FINANCIAL ASSETS            │
+│  ────────────                      ─────────────────           │
+│  Physical / productive assets       Instruments — stocks, bonds  │
+│  Factories, machines, buildings,    Represent a CLAIM on income  │
+│  products being developed           or value                    │
+│                                                               │
+│  ⚠️  PERSPECTIVE SHIFT: from the COMPANY's point of view,      │
+│      a stock or bond it ISSUED is a LIABILITY, not an asset.   │
+└───────────────────────────────────────────────────────────┘</pre>
+        <h3>Special Case: Gold</h3>
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  Gold as jewelry / watches         → REAL ASSET                │
+│  Raw physical gold (bars)          → REAL ASSET                │
+│  Gold bullion held by IMF/banks    → treated as FINANCIAL ASSET │
+│  Gold bond                         → FINANCIAL ASSET            │
+└───────────────────────────────────────────────────────────┘</pre>
+        <blockquote>The same "gold investment" can be an asset for one party and a liability for another — classification depends on the <em>role</em> of the entity: holder vs. issuer.</blockquote>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-3decisions">
+      <button class="topic-header"><h2>🎯 The Three Core Financial Decisions</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│         EVERY FINANCIAL LEADER MAKES 3 DECISIONS               │
+│                                                               │
+│  1️⃣  INVESTMENT DECISION  — "Where do we PUT the money?"       │
+│  2️⃣  FINANCING DECISION   — "Where does the money COME from?" │
+│  3️⃣  PAYOUT DECISION      — "What do we do with SURPLUS?"      │
+└───────────────────────────────────────────────────────────┘</pre>
+
+        <h3>1️⃣ Investment Decision (Capital Budgeting) — Where CTOs Live</h3>
+        <p>Capital expenditure, new product development, market expansion, innovation projects, long-term infrastructure. This is where CTOs participate heavily: which product to build, how much it costs, what revenue it generates, whether it cuts costs or opens new revenue channels.</p>
+        <pre>Tools used: NPV · IRR · Payback Period · Profitability Index ·
+            Cash Flow Estimation
+
+Why it matters: budgets are always limited. The CTO must
+justify WHICH project deserves the money — priority goes to
+the highest-return projects.</pre>
+
+        <h3>2️⃣ Financing Decision (CFO-Led)</h3>
+        <p>How does the company raise money for its investments? Internal funds, equity (IPO, private equity), or debt (loans, bonds).</p>
+        <pre>CTO's role: INDIRECT.
+You suggest WHY funding is needed.
+The CFO decides HOW it gets raised.
+
+Terms every CTO should know:
+  ● Cost of capital
+  ● Debt vs. equity trade-offs
+  ● Optimal capital structure (e.g. 40% debt, 60% equity)
+  ● Financial flexibility — if only 20% debt is used today,
+    the firm may have room to take on more later</pre>
+
+        <h3>3️⃣ Payout Decision</h3>
+        <p>What should the company do with surplus profit? Reinvest in new projects, pay dividends, or buy back shares.</p>
+        <div class="card insight">
+          <span class="card-label">The CTO's Role</span>
+          If proposing a new initiative, the CTO must convince the CFO to <strong>retain</strong> cash for investment instead of paying it out — by showing IRR &gt; Cost of Capital, high profitability, and long-term value creation. Hence: the CTO must speak the language of finance.
+        </div>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-balancesheet">
+      <button class="topic-header"><h2>📋 The Miniature Balance Sheet</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  ASSETS                                                        │
+│  ─────────────────────────────────                             │
+│  Current Assets: Cash · Inventory · Receivables ·               │
+│                   Short-term investments                        │
+│  Fixed Assets:    Tangible (property, machinery) ·               │
+│                   Intangible (software, IP)                     │
+│                                                               │
+│  LIABILITIES                                                   │
+│  ─────────────────────────────────                             │
+│  Current Liabilities:  Payables · Short-term loans              │
+│  Long-term Debt:       Term loans · Corporate bonds              │
+│                                                               │
+│  EQUITY                                                        │
+│  ─────────────────────────────────                             │
+│  Promoter capital · Retained earnings · Shareholder equity      │
+└───────────────────────────────────────────────────────────┘</pre>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-assets">
+      <button class="topic-header"><h2>📦 Deep Dive: Assets</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <p>An asset is anything that has value and benefits the organization now or in the future — land, buildings, shares, patents, bank balance, even a mutual fund.</p>
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  A. FIXED ASSETS (Long-Term)                                   │
+│     Useful life > 1 year. Subject to depreciation/            │
+│     amortization. Buildings, machinery, land, some software.   │
+│                                                               │
+│  B. CURRENT ASSETS (Short-Term)                                │
+│     Convert to cash within 1 year. Inventory, accounts         │
+│     receivable, bank balance, short-term investments.          │
+│                                                               │
+│  C. TANGIBLE vs INTANGIBLE                                     │
+│     Tangible: physical (machinery, real estate)                │
+│     Intangible: non-physical (patents, goodwill, trademarks,   │
+│     brand value)                                               │
+└───────────────────────────────────────────────────────────┘</pre>
+
+        <h3>Asset/Liability Depends on Perspective</h3>
+        <pre>FOR A BANK:                          FOR A CUSTOMER:
+  Loan       = ASSET                    Loan     = LIABILITY
+  Deposits   = LIABILITY                Savings  = ASSET</pre>
+        <p><strong>Human capital as an asset:</strong> employees are considered an asset because they generate future revenue for the company — even though you'll never see "employees" as a line item on the balance sheet.</p>
+
+        <h3>Assets in Software / Product Companies</h3>
+        <p>A software product a company builds <em>is</em> an asset — it generates future revenue and gets maintained and serviced over years. Unlike manufacturing, software companies have no raw-material inventory; their main costs are employee salaries, development cost, and maintenance cost.</p>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-liabilities">
+      <button class="topic-header"><h2>📉 Deep Dive: Liabilities</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  A. CURRENT LIABILITIES                                        │
+│     Payable within 1 year — trade creditors, unpaid supplier   │
+│     bills, monthly expenses due                                │
+│                                                               │
+│  B. LONG-TERM LIABILITIES                                      │
+│     Beyond 1 year — long-term loans, corporate bonds            │
+│                                                               │
+│  C. CONTINGENT LIABILITIES                                     │
+│     Possible obligations depending on future events —           │
+│     e.g. a potential legal case payout                          │
+└───────────────────────────────────────────────────────────┘</pre>
+        <h3>The Home Loan Example</h3>
+        <p>If you take a loan and build a house, is the loan still a liability? Yes — a loan is <em>always</em> a liability for the individual who took it. But the house it created becomes an asset.</p>
+        <pre>Liability side:  Loan       ₹50 lakh
+Asset side:      Property   ₹50 lakh
+
+You USE a liability to CREATE an asset — but the
+classification of each side never changes.</pre>
+        <p><strong>Receivables:</strong> if you raise an invoice for a quarterly service, that's an <strong>asset</strong> — accounts receivable, a current asset. When payment arrives: receivables go down, cash goes up.</p>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-capitalasset">
+      <button class="topic-header"><h2>🏗️ Capital vs. Asset</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  CAPITAL                              ASSET                    │
+│  ─────────────────────                ─────────────────────    │
+│  The SOURCE of funds used to          What is CREATED using    │
+│  create assets                        that capital              │
+│                                                               │
+│  Sources: founder money, grants,      Examples: plant,          │
+│  bank loans, bonds, equity (IPO)      machines, software,       │
+│                                        buildings, IP             │
+│                                                               │
+│  Example: Promoters invest            Company uses it to build  │
+│  ₹100 crore → CAPITAL                 a plant → ASSET           │
+│                                                               │
+│  "CAPITAL = Input (Funding)"                                   │
+│  "ASSET   = Output (Value created with that funding)"          │
+│                                                               │
+│  👉 RETURN ON CAPITAL becomes the key metric investors watch.  │
+└───────────────────────────────────────────────────────────┘</pre>
+        <p>In software product companies, this ties directly into <strong>CAPEX vs. OPEX</strong> — how do you capitalize software development costs, amortize them over multiple years, and price the resulting product? That's the entire subject of Module 2 in this series.</p>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-workingcap">
+      <button class="topic-header"><h2>🔄 Working Capital &amp; Cash</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  WORKING CAPITAL = CURRENT ASSETS − CURRENT LIABILITIES        │
+│                                                               │
+│  PURPOSE: keep operations smooth, never run out of cash —      │
+│  critical for salaries, vendor payments, cloud bills.           │
+│                                                               │
+│  Even digital transformation projects need:                    │
+│    ● Upfront cash                                              │
+│    ● Phased funding                                            │
+│    ● Robust cash management                                    │
+└───────────────────────────────────────────────────────────┘</pre>
+        <h3>Is There a Standard Ratio?</h3>
+        <pre>Current Ratio = Current Assets : Current Liabilities
+Healthy range = 1.5 : 1 to 2 : 1   (rule of thumb, not a global law)
+
+Cash Conversion Cycle (CCC):
+  Measures how quickly cash RETURNS to the company.
+  Lower CCC → healthier operations
+  Higher CCC → riskier cash management</pre>
+
+        <h3>What Counts as Cash?</h3>
+        <pre>COUNTS AS CASH:                     DOES NOT COUNT AS CASH:
+  ● Actual cash                        ● Bonds
+  ● Bank balance                       ● Long-term deposits
+  ● Treasury bills                     ● Stocks
+  ● Overnight deposits                   (not liquid enough)</pre>
+        <p><strong>Applies at every level:</strong> not just company-wide — also for smaller decisions like a tech upgrade or a migration project. Digital transformation is an investment decision: it requires CAPEX, it creates assets, and it influences the company's overall cash flow.</p>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-cases1">
+      <button class="topic-header"><h2>🔥 5 Case Studies — Assets, Decisions &amp; CFO Dynamics</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <div class="case-card"><span class="case-num">01</span>
+          <h4>The Gold That Confuses the Balance Sheet</h4>
+          <p>Your company buys ₹10 crore of physical gold bars <em>and</em> ₹10 crore of sovereign gold bonds. The CFO puts the physical gold under real assets, but the gold bonds under financial liabilities. How can "the same gold investment" be treated so differently?</p>
+          <p><strong>Insight:</strong> physical gold is a real asset. A gold bond is a financial instrument — a liability for the <em>issuer</em>, but a financial asset for the <em>buyer</em>. Classification depends on the role of the entity, holder vs. issuer — the essence of real vs. financial assets.</p>
+        </div>
+        <div class="case-card"><span class="case-num">02</span>
+          <h4>Two Projects, Same Cost, Opposite Decisions</h4>
+          <p>Project A (new enterprise product): ₹40 crore CAPEX, revenue starts in 2 years, IRR 22%. Project B (cloud cost optimization): ₹40 crore OPEX over 2 years, saves ₹30 crore every year immediately, no asset created. The CFO prefers Project A "because it creates an asset."</p>
+          <p><strong>Insight:</strong> Project B returns money immediately — its NPV is likely higher. Asset creation is <em>not</em> the goal; value creation is. CAPEX doesn't automatically mean a better investment — finance ≠ accounting, and value comes from cash flows, not asset labels.</p>
+        </div>
+        <div class="case-card"><span class="case-num">03</span>
+          <h4>Profitable but Running Out of Cash</h4>
+          <p>P&amp;L shows high profits, but the CFO says there's no cash to pay vendors or salaries this month. Current Assets = ₹120 crore, Current Liabilities = ₹100 crore, Working Capital Ratio = 1.2 (looks fine) — but cash on hand is only ₹2 crore, receivables are tied up in 8-month credit cycles, and inventory is moving slowly.</p>
+          <p><strong>Insight:</strong> profitability ≠ liquidity. Receivables and inventory are "current assets" but not cash. A long cash conversion cycle can cause a cash-flow crisis even in a profitable company — <strong>cash flow is the real oxygen of a business, not profit.</strong></p>
+        </div>
+        <div class="case-card"><span class="case-num">04</span>
+          <h4>Dividends vs. an AI Platform</h4>
+          <p>The company has ₹200 crore free cash. The CFO wants to pay ₹150 crore as dividends; the CTO wants all ₹200 crore for an AI platform. The CFO asks: "Give me one financial reason not to pay dividends."</p>
+          <p><strong>Insight:</strong> the CTO must use investment-decision logic — AI platform IRR = 28%, company cost of capital = 12%, so the AI platform's NPV beats any other use of the cash. Dividends create no future cash flow; reinvestment does. To win this argument, a CTO must speak "IRR &gt; Cost of Capital."</p>
+        </div>
+        <div class="case-card"><span class="case-num">05</span>
+          <h4>The Perfect Product, Wrong Financing Decision</h4>
+          <p>A startup needs ₹50 crore to scale. Option 1 — raise equity: no repayment, 20% dilution, no interest cost. Option 2 — take debt: 12% annual interest, repay in 5 years, no dilution, but real financial risk. The co-founder insists on debt because "equity is too expensive."</p>
+          <p><strong>Insight:</strong> debt increases financial risk, and startups have volatile cash flows — debt can kill them. Cost of equity looks more expensive on paper, but it's safer. The financing decision isn't about ego or ownership — it's about surviving long enough to create value.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-cases2">
+      <button class="topic-header"><h2>🔥 5 More Case Studies — Accounting vs. Finance</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <div class="case-card"><span class="case-num">01</span>
+          <h4>The Loss-Making Company Worth ₹300 Crore</h4>
+          <p>A startup spent ₹30 crore building an AI platform over 3 years. It shows a ₹5 crore loss this year — yet investors are valuing it at ₹300 crore and rushing to buy equity. How can accounting say "loss-making" while finance says "valuable"?</p>
+          <p><strong>Insight:</strong> accounting records past events — expenses and losses already incurred. Finance looks forward — it sees the AI platform as a future revenue-generating asset. Investors are paying for future cash flows, not past losses. Accounting = Past, Finance = Future.</p>
+        </div>
+        <div class="case-card"><span class="case-num">02</span>
+          <h4>Is Your House an Asset or a Liability? Depends on Whose Book</h4>
+          <p>You take a ₹50 lakh home loan to build a house. What's the asset, what's the liability — for you, vs. for the bank?</p>
+          <pre>FOR YOU (borrower):        FOR THE BANK:
+  Asset = House               Asset = The loan (you owe them)
+  Liability = Loan             Liability = Your deposits (if any)</pre>
+          <p><strong>Insight:</strong> the exact same transaction shows up as an asset on one balance sheet and a liability on another. Assets and liabilities are perspective-dependent.</p>
+        </div>
+        <div class="case-card"><span class="case-num">03</span>
+          <h4>The Product That Looks Like Thin Air</h4>
+          <p>Your company builds an ERP system — no physical materials, no inventory, no warehouse. If nothing physical exists, how can it be an "asset" on the balance sheet?</p>
+          <p><strong>Insight:</strong> it's an asset because it has future economic benefit (licensing revenue for 5–10 years), it's intangible but valuable, and it has capitalizable development cost. Accounting captures the <em>cost</em> of building it; finance estimates the <em>future value</em> it will generate. Not all assets are visible — some are intellectual, and still extremely valuable.</p>
+        </div>
+        <div class="case-card"><span class="case-num">04</span>
+          <h4>The Invoice That Becomes Money Without Being Money</h4>
+          <p>You deliver a service in April worth ₹10 lakh; the client pays only in June. But the CFO adds ₹10 lakh to "current assets" in April, not June. How can money you haven't received yet be an asset?</p>
+          <p><strong>Insight:</strong> you have a <em>legal right</em> to receive that money, and it will convert to cash within the year — economically equivalent to money already on the way. It's recorded as Accounts Receivable. <strong>Assets are not money. Assets are things that bring money.</strong></p>
+        </div>
+        <div class="case-card"><span class="case-num">05</span>
+          <h4>The CEO's Dilemma — CAPEX vs. OPEX</h4>
+          <p>An internal platform costs ₹8 crore, taking 18 months to build. Option A (CAPEX): create an asset, amortize over 5 years. Option B (OPEX): count the full ₹8 crore as expense this year. Which would you choose as CEO, and how does it change profit, asset value, and future planning?</p>
+          <pre>CAPEX (Asset)                       OPEX (Expense)
+  Short-term profit looks higher      Profit drops sharply this year
+  Asset appears on balance sheet      No asset created
+  Expense spread across years         Cleaner future years
+  Shows confidence in future revenue  Useful to reduce tax this year</pre>
+          <p><strong>Insight:</strong> this is the core difference between accounting classification and financial strategy — and it's exactly where Module 2 of this series picks up.</p>
+        </div>
+        <footer class="closing">Next: Module 2 goes all-in on the single most-debated decision a CTO makes — CAPEX or OPEX — with a full playbook and a dozen worked case studies.</footer>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+  const topics = Array.from(document.querySelectorAll('section.topic'));
+  topics.forEach(sec => sec.querySelector('.topic-header').addEventListener('click', () => sec.classList.toggle('collapsed')));
+  document.getElementById('expandAll').addEventListener('click', () => topics.forEach(s => s.classList.remove('collapsed')));
+  document.getElementById('collapseAll').addEventListener('click', () => topics.forEach(s => s.classList.add('collapsed')));
+  const nav = document.getElementById('tocNav');
+  const navToggle = document.getElementById('navToggle');
+  const navScrim = document.getElementById('navScrim');
+  function closeNav(){ nav.classList.remove('open'); navScrim.classList.remove('show'); }
+  navToggle.addEventListener('click', () => { nav.classList.toggle('open'); navScrim.classList.toggle('show'); });
+  navScrim.addEventListener('click', closeNav);
+  document.querySelectorAll('#tocList a').forEach(link => {
+    link.addEventListener('click', () => {
+      const id = link.getAttribute('href').slice(1);
+      const target = document.getElementById(id);
+      if (target) target.classList.remove('collapsed');
+      closeNav();
+    });
+  });
+  const tocLinks = Array.from(document.querySelectorAll('#tocList a'));
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const id = entry.target.getAttribute('id');
+      const link = tocLinks.find(l => l.getAttribute('href') === '#' + id);
+      if (link && entry.isIntersecting){
+        tocLinks.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+  topics.forEach(sec => observer.observe(sec));
+</script>
+</body>
+</html>

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CTO Finance Notes · M5 — Sensitivity, Scenario &amp; Risk Analysis</title>
+<style>
+  :root{
+    --bg: #0a0e14; --bg-panel: #10151e; --bg-elevated: #161d29;
+    --ink: #e6edf5; --ink-soft: #8b98ab;
+    --cyan: #22d3ee; --cyan-deep: #0891b2; --cyan-pale: rgba(34,211,238,0.10);
+    --amber: #f5a623; --amber-deep: #c17d0a; --amber-pale: rgba(245,166,35,0.12);
+    --red: #f2545b; --red-pale: rgba(242,84,91,0.12);
+    --line: #212a39; --mono-bg: #05070b; --mono-ink: #bfeaf5; --nav-w: 270px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      linear-gradient(rgba(34,211,238,0.035) 1px, transparent 1px) 0 0/100% 28px,
+      linear-gradient(90deg, rgba(34,211,238,0.035) 1px, transparent 1px) 0 0/28px 100%,
+      var(--bg);
+    color:var(--ink); font-family:'Inter','Segoe UI',system-ui,sans-serif; line-height:1.65;
+  }
+  .mission-bar{ background:var(--mono-bg); border-bottom:1px solid var(--line); padding:0.6rem 1.5rem; font-family:'JetBrains Mono','Courier New',monospace; font-size:0.72rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--cyan); display:flex; justify-content:space-between; flex-wrap:wrap; gap:0.5rem; }
+  .mission-bar span.dim{ color:var(--ink-soft); } .mission-bar .dot{ color:var(--amber); }
+  header.hero{ padding:3rem 1.5rem 2.4rem; text-align:center; border-bottom:1px solid var(--line); background: radial-gradient(ellipse at top, rgba(34,211,238,0.08), transparent 60%); }
+  header.hero .eyebrow{ font-family:'JetBrains Mono',monospace; letter-spacing:0.3em; text-transform:uppercase; font-size:0.72rem; color:var(--amber); font-weight:700; }
+  header.hero h1{ font-size:2.25rem; margin:0.7rem 0 0.4rem; letter-spacing:-0.01em; }
+  header.hero .subtitle{ color:var(--ink-soft); font-size:1.02rem; max-width:700px; margin:0 auto; }
+  .layout{ display:flex; max-width:1220px; margin:0 auto; align-items:flex-start; }
+  nav.toc{ width:var(--nav-w); flex-shrink:0; position:sticky; top:0; max-height:100vh; overflow-y:auto; padding:2rem 1.2rem 2rem 1.5rem; border-right:1px solid var(--line); }
+  nav.toc .toc-title{ font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:0.14em; font-size:0.7rem; color:var(--cyan-deep); font-weight:700; margin-bottom:0.8rem; }
+  nav.toc ul{ list-style:none; padding:0; margin:0 0 1.3rem 0; } nav.toc li{ margin-bottom:0.3rem; }
+  nav.toc a{ display:block; color:var(--ink-soft); text-decoration:none; font-size:0.8rem; padding:0.36rem 0.6rem; border-radius:5px; border-left:3px solid transparent; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+  nav.toc a:hover, nav.toc a.active{ background:var(--cyan-pale); color:var(--cyan); border-left-color:var(--cyan); }
+  .toc-controls{ display:flex; flex-direction:column; gap:0.5rem; }
+  .toc-controls button{ font-family:'JetBrains Mono',monospace; font-size:0.75rem; letter-spacing:0.03em; background:var(--bg-panel); border:1px solid var(--line); color:var(--ink); padding:0.5rem 0.7rem; border-radius:6px; cursor:pointer; text-align:left; transition: background 0.15s, border-color 0.15s; }
+  .toc-controls button:hover{ background:var(--cyan-pale); border-color:var(--cyan); }
+  .nav-toggle{ display:none; position:fixed; bottom:1.4rem; right:1.4rem; z-index:50; background:var(--cyan); color:#04222b; border:none; width:52px; height:52px; border-radius:50%; font-size:1.3rem; box-shadow:0 3px 14px rgba(0,0,0,0.5); cursor:pointer; }
+  .nav-scrim{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:55; } .nav-scrim.show{ display:block; }
+  .wrap{ flex:1; min-width:0; max-width:940px; margin:0 auto; padding:2.6rem 1.6rem 6rem; }
+  section.topic{ margin-top:2.2rem; scroll-margin-top:1.5rem; }
+  button.topic-header{ all:unset; display:flex; align-items:center; justify-content:space-between; width:100%; cursor:pointer; padding-bottom:0.5rem; border-bottom:2px solid var(--cyan-deep); gap:0.8rem; }
+  button.topic-header h2{ margin:1.4rem 0 0; font-size:1.22rem; color:var(--ink); font-weight:700; }
+  .chevron{ flex-shrink:0; width:28px; height:28px; border-radius:6px; background:var(--bg-elevated); color:var(--cyan); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:1rem; font-weight:700; transition: transform 0.25s, background 0.2s; margin-top:1.2rem; }
+  section.topic.collapsed .chevron{ transform:rotate(-90deg); }
+  button.topic-header:hover .chevron{ background:var(--cyan); color:#04222b; }
+  .topic-body{ overflow:hidden; max-height:16000px; opacity:1; transition: max-height 0.35s, opacity 0.25s, margin 0.25s; }
+  section.topic.collapsed .topic-body{ max-height:0; opacity:0; margin:0; }
+  h3{ color:var(--cyan); font-size:1.03rem; margin-top:1.7rem; }
+  h4{ color:var(--amber); font-size:0.88rem; margin-top:1.15rem; text-transform:uppercase; letter-spacing:0.04em; }
+  p{ color:var(--ink); } strong{ color:#fff; } em{ color:var(--ink-soft); }
+  pre{ background:var(--mono-bg); color:var(--mono-ink); font-family:'JetBrains Mono','Courier New',monospace; font-size:0.72rem; padding:1.1rem 1.2rem; border-radius:8px; border:1px solid var(--line); border-left:3px solid var(--cyan); overflow-x:auto; line-height:1.5; white-space:pre; }
+  blockquote{ margin:1rem 0; padding:0.9rem 1.2rem; background:var(--bg-panel); border-left:4px solid var(--amber); font-style:italic; color:var(--ink-soft); border-radius:0 6px 6px 0; }
+  ul{ padding-left:1.4rem; } li{ margin-bottom:0.4rem; }
+  .panel{ background:var(--bg-panel); border:1px solid var(--line); border-radius:10px; padding:1.4rem 1.7rem; margin:1.2rem 0; }
+  .card{ border-radius:10px; padding:1.1rem 1.4rem; margin:1rem 0; border:1px solid var(--line); }
+  .card.insight{ background:var(--cyan-pale); border-left:4px solid var(--cyan); }
+  .card.question{ background:var(--amber-pale); border-left:4px solid var(--amber); }
+  .card.warning{ background:var(--red-pale); border-left:4px solid var(--red); }
+  .card .card-label{ font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:0.1em; font-size:0.68rem; font-weight:700; margin-bottom:0.4rem; display:block; }
+  .card.insight .card-label{ color:var(--cyan); } .card.question .card-label{ color:var(--amber); } .card.warning .card-label{ color:var(--red); }
+  .table-wrap{ overflow-x:auto; margin:1.2rem 0; border-radius:10px; border:1px solid var(--line); }
+  table{ width:100%; border-collapse:collapse; background:var(--bg-panel); font-size:0.82rem; }
+  thead th{ background:var(--bg-elevated); color:var(--cyan); text-align:left; padding:0.6rem 0.8rem; font-family:'JetBrains Mono',monospace; font-size:0.65rem; text-transform:uppercase; letter-spacing:0.05em; border-bottom:2px solid var(--cyan-deep); }
+  tbody td{ padding:0.6rem 0.8rem; border-top:1px solid var(--line); vertical-align:top; color:var(--ink); }
+  tbody tr:nth-child(even){ background: rgba(255,255,255,0.015); }
+  footer.closing{ text-align:center; margin-top:2.5rem; font-style:italic; color:var(--ink-soft); }
+  @media (max-width:900px){ :root{ --nav-w:220px; } }
+  @media (max-width:720px){
+    .layout{ display:block; }
+    nav.toc{ position:fixed; top:0; left:0; width:min(280px,82vw); height:100vh; background:var(--bg-panel); z-index:60; transform:translateX(-105%); transition: transform 0.25s; box-shadow:3px 0 18px rgba(0,0,0,0.5); }
+    nav.toc.open{ transform:translateX(0); }
+    .nav-toggle{ display:flex; align-items:center; justify-content:center; }
+    header.hero h1{ font-size:1.5rem; } pre{ font-size:0.58rem; padding:0.85rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="mission-bar">
+  <span>CTO&nbsp;FINANCE&nbsp;NOTES <span class="dot">·</span> MODULE 05 / 06</span>
+  <span class="dim">SENSITIVITY · SCENARIO · RISK · EXCEL TOOLBOX</span>
+</div>
+
+<header class="hero">
+  <div class="eyebrow">CTO Finance Track — Stress-Testing the Numbers</div>
+  <h1>🎛️ Sensitivity, Scenario &amp; Risk Analysis</h1>
+  <p class="subtitle">Which assumption breaks your project first? How to build best/base/worst case worlds, measure risk with real numbers, and know exactly how deep a CTO needs to go — no deeper.</p>
+</header>
+
+<button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">☰</button>
+<div class="nav-scrim" id="navScrim"></div>
+
+<div class="layout">
+  <nav class="toc" id="tocNav">
+    <div class="toc-title">Jump to</div>
+    <ul id="tocList">
+      <li><a href="#sec-forecast">🔮 Forecasting &amp; Uncertainty</a></li>
+      <li><a href="#sec-sensitivity">🎯 Sensitivity Analysis — Deep Dive</a></li>
+      <li><a href="#sec-scenario">🌦️ Scenario Analysis — Multi-Variable View</a></li>
+      <li><a href="#sec-risk">📉 Measuring Risk — σ &amp; Coefficient of Variation</a></li>
+      <li><a href="#sec-when">🧭 When to Use Sensitivity vs. Scenario</a></li>
+      <li><a href="#sec-goalseek">🎯 Goal Seek — Finding Break-Even Revenue</a></li>
+      <li><a href="#sec-planning">📅 Forecasting &amp; Long-Term Planning</a></li>
+      <li><a href="#sec-toolbox">🧰 The Excel Toolbox</a></li>
+      <li><a href="#sec-expected">✅ What's Expected From a CTO (Not a CFO)</a></li>
+    </ul>
+    <div class="toc-title">Sections</div>
+    <div class="toc-controls">
+      <button id="expandAll">＋ Expand all</button>
+      <button id="collapseAll">－ Collapse all</button>
+    </div>
+  </nav>
+
+  <div class="wrap">
+
+    <section class="topic" id="sec-forecast">
+      <button class="topic-header"><h2>🔮 Forecasting &amp; Uncertainty</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <p>Every financial projection rests on <strong>assumptions</strong> — never a guarantee. Forecasting quality depends on the analyst's experience, market understanding, domain knowledge, operational insight, and vendor/industry estimates. Two analysts can produce two different estimates for the exact same project, simply because their assumptions differ.</p>
+        <blockquote>Sensitivity and scenario analysis exist precisely because inputs are uncertain, actual outcomes may differ, and management needs to understand the risk before it becomes a surprise.</blockquote>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-sensitivity">
+      <button class="topic-header"><h2>🎯 Sensitivity Analysis — Deep Dive</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  PURPOSE: see how sensitive NPV is to ONE input at a time      │
+│  Question: "Which variable, if wrong, hurts my project most?"  │
+│                                                               │
+│  TYPICAL INPUT VARIABLES:                                       │
+│    Revenue benefits · Operating costs ·                         │
+│    Initial investment (CAPEX) · Discount rate                   │
+│                                                               │
+│  METHOD:                                                        │
+│    1. Start with BASE CASE                                      │
+│       (e.g. Revenue = 2.5 Cr → NPV = 1.13 Cr, rate = 12%)        │
+│    2. Pick ONE input (say revenue), change it ±10%               │
+│       Revenue −10% → 2.25 Cr   |   Revenue +10% → 2.75 Cr        │
+│    3. Recalculate NPV. Note how much it moves.                  │
+│    4. Repeat for discount rate, cost, CAPEX, etc.                │
+└───────────────────────────────────────────────────────────┘</pre>
+        <h3>Interpretation From a Real Class Example</h3>
+        <pre>Revenue 2.5 Cr → 2.25 Cr    → NPV dropped SIGNIFICANTLY
+Discount rate 10% → 14%     → NPV moved, but LESS
+
+CONCLUSION: this project is more sensitive to REVENUE
+assumptions than to the DISCOUNT RATE.</pre>
+        <div class="card insight">
+          <span class="card-label">Managerial Takeaway for a CTO</span>
+          If <strong>revenue</strong> sensitivity is high, be paranoid about adoption, usage, and churn — market-side execution risk is critical. If <strong>cost</strong> sensitivity is high, tightly manage overruns, infra cost, and vendor pricing instead.
+        </div>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-scenario">
+      <button class="topic-header"><h2>🌦️ Scenario Analysis — The Multi-Variable View</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  SENSITIVITY                        SCENARIO                    │
+│  ─────────────────                  ─────────────────           │
+│  ONE variable changes at a time     MULTIPLE variables change    │
+│                                      TOGETHER                    │
+│  Objective: find which variable     Objective: see what happens  │
+│  matters most                       in overall "worlds"          │
+│                                      (good / bad / normal)        │
+└───────────────────────────────────────────────────────────┘</pre>
+        <h3>Typical Scenarios</h3>
+        <pre>BASE CASE        — the most likely view
+OPTIMISTIC (Best) — high revenue, lower cost
+PESSIMISTIC (Worst) — low revenue, higher cost, delays
+
+(You can add more: Good, Average, Poor, Extreme Worst, etc.)</pre>
+        <h3>Expected NPV — Weighting Each Scenario by Probability</h3>
+        <pre>Expected NPV = Σ (NPV of scenario × Probability of scenario)
+
+Example from class:
+  Base:        1.13 × 0.50
+  Optimistic:  3.04 × 0.25
+  Pessimistic: −0.15 × 0.25
+  ────────────────────────────
+  = POSITIVE overall → project remains viable ON AVERAGE</pre>
+        <p><strong>Stress Testing</strong> is the extreme worst-case version — everything goes bad at once. Common in banking (per RBI guidelines), asking simply: "can we survive this?"</p>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-risk">
+      <button class="topic-header"><h2>📉 Measuring Risk: Standard Deviation &amp; Coefficient of Variation</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <h3>Standard Deviation (σ)</h3>
+        <pre>Measures how much NPV varies around its EXPECTED value.
+Higher σ → outcomes more spread out → MORE RISK.
+
+Concept (not formula-heavy):
+  1. Compute expected NPV
+  2. For each scenario: deviation = (Scenario NPV − Expected NPV)
+  3. Square it, multiply by that scenario's probability
+  4. Sum these = VARIANCE
+  5. Square root of variance = STANDARD DEVIATION
+
+Excel: STDEV() works for equal-probability data; probability-
+weighted scenarios need a manual/custom setup.</pre>
+        <h3>Coefficient of Variation (CV)</h3>
+        <pre>CV = Standard Deviation / Expected NPV
+
+Used to COMPARE riskiness across different projects.
+Lower CV = less risk per unit of return.
+
+Example:
+  Project A: CV = 0.5
+  Project B: CV = 1.2
+  👉 Project A is less risky relative to its return.</pre>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-when">
+      <button class="topic-header"><h2>🧭 When to Use Sensitivity vs. Scenario (and Whether to Do Both)</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <p>Do <strong>both</strong> when the project is big, strategic, or high-risk — you want both "what matters most" and "what happens if worlds go bad or great."</p>
+        <pre>PRACTICAL GUIDELINE:
+
+1. START WITH SENSITIVITY
+   Identify key drivers: revenue? cost? FX? discount rate?
+   → Decide what to monitor closely.
+
+2. THEN SCENARIO
+   Combine BAD values of key drivers into a pessimistic scenario.
+   Combine FAVORABLE values into an optimistic scenario.
+   Compute expected NPV + risk metrics.
+
+3. ADVANCED (optional, usually finance team's job)
+   Monte Carlo simulations — generate random scenarios at scale
+   using Excel plugins or dedicated tools.</pre>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-goalseek">
+      <button class="topic-header"><h2>🎯 Goal Seek — Finding Break-Even Revenue</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <p>Goal Seek answers: <em>"What's the minimum revenue needed so NPV = 0?"</em></p>
+        <pre>EXCEL STEPS:
+  1. Build your normal NPV model
+  2. Data → What-If Analysis → Goal Seek
+  3. Set cell = NPV cell
+  4. To value = 0
+  5. By changing cell = Revenue (or whichever input)
+
+CLASS EXAMPLE:
+  Break-even revenue benefit ≈ ₹2.05 Cr
+  Revenue ≥ 2.05 Cr → project stays viable
+  Revenue <  2.05 Cr → NPV goes negative</pre>
+        <div class="card insight">
+          <span class="card-label">CTO Takeaway</span>
+          This is a great discussion number for the finance conversation: "We've modeled multiple scenarios; as long as we achieve at least ₹2.05 crore/year, the project remains viable." Concrete, defensible, and easy for a CFO to check.
+        </div>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-planning">
+      <button class="topic-header"><h2>📅 Forecasting &amp; Long-Term Planning</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>TYPICAL FORECAST HORIZONS
+  1–2 quarters  → high-detail budgets
+  3–5 years     → valuation, credit ratings, long-term planning
+                  (LTP), capital structure and debt planning</pre>
+        <p>A CTO's project projections should <strong>fit into</strong> this overall firm-level planning horizon — a 6-month tech proposal evaluated against a 5-year firm plan needs to explicitly show where it lands in that longer arc.</p>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-toolbox">
+      <button class="topic-header"><h2>🧰 The Excel Toolbox for CTO-Level Financial Discussions</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <div class="table-wrap">
+          <table><thead><tr><th>Tool</th><th>What It Does</th></tr></thead>
+          <tbody>
+            <tr><td>NPV(), IRR()</td><td>Cash flow evaluation</td></tr>
+            <tr><td>SUMPRODUCT()</td><td>Expected NPV from scenario probabilities</td></tr>
+            <tr><td>STDEV()</td><td>Volatility, for equal-probability data</td></tr>
+            <tr><td>Data → What-If Analysis → Goal Seek</td><td>Find break-even revenue or cost</td></tr>
+            <tr><td>Data Tables / Scenario Manager</td><td>Quick "what-if" tables</td></tr>
+          </tbody></table>
+        </div>
+        <p>You won't be asked to build valuation models from scratch — but comfort with these tools lets you sanity-check finance's output and run a quick what-if yourself before approving a tech roadmap.</p>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-expected">
+      <button class="topic-header"><h2>✅ What Is Expected From a CTO (Not a CFO)</h2><span class="chevron">▾</span></button>
+      <div class="topic-body">
+        <pre>┌───────────────────────────────────────────────────────────┐
+│  YOU ARE NOT EXPECTED TO:                                       │
+│    ● Build full NPV/IRR/Monte Carlo models for every project    │
+│    ● Run daily risk analytics                                   │
+│    ● Manage FX, hedging, capital structure — that's CFO turf    │
+│                                                               │
+│  YOU ARE EXPECTED TO:                                           │
+│    ● Understand what NPV, IRR, sensitivity, and scenario        │
+│      analysis MEAN                                              │
+│    ● Understand why finance might say "this isn't financially   │
+│      viable"                                                    │
+│    ● Read and interpret project business cases                 │
+│    ● Challenge assumptions (revenue too optimistic? costs too   │
+│      low?)                                                      │
+│    ● Communicate in the SAME language as the CFO and the board  │
+└───────────────────────────────────────────────────────────┘</pre>
+        <blockquote>The intent was never to turn a CTO into a finance manager — it was to build enough financial acumen to make better investment decisions, understand risk, and defend tech projects in financial terms.</blockquote>
+        <footer class="closing">Next: Module 6 closes the series — the STEM model for CTO excellence, the real cost-of-capital playbook, and ten boardroom-grade finance battles to finish on.</footer>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+  const topics = Array.from(document.querySelectorAll('section.topic'));
+  topics.forEach(sec => sec.querySelector('.topic-header').addEventListener('click', () => sec.classList.toggle('collapsed')));
+  document.getElementById('expandAll').addEventListener('click', () => topics.forEach(s => s.classList.remove('collapsed')));
+  document.getElementById('collapseAll').addEventListener('click', () => topics.forEach(s => s.classList.add('collapsed')));
+  const nav = document.getElementById('tocNav');
+  const navToggle = document.getElementById('navToggle');
+  const navScrim = document.getElementById('navScrim');
+  function closeNav(){ nav.classList.remove('open'); navScrim.classList.remove('show'); }
+  navToggle.addEventListener('click', () => { nav.classList.toggle('open'); navScrim.classList.toggle('show'); });
+  navScrim.addEventListener('click', closeNav);
+  document.querySelectorAll('#tocList a').forEach(link => {
+    link.addEventListener('click', () => {
+      const id = link.getAttribute('href').slice(1);
+      const target = document.getElementById(id);
+      if (target) target.classList.remove('collapsed');
+      closeNav();
+    });
+  });
+  const tocLinks = Array.from(document.querySelectorAll('#tocList a'));
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const id = entry.target.getAttribute('id');
+      const link = tocLinks.find(l => l.getAttribute('href') === '#' + id);
+      if (link && entry.isIntersecting){
+        tocLinks.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+  topics.forEach(sec => observer.observe(sec));
+</script>
+</body>
+</html>
