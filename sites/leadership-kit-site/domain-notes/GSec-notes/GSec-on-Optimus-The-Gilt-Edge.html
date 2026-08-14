@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>G-Sec on Optimus — The Gilt Edge</title>
+<style>
+:root{
+  --paper:#ffffff;
+  --ink:#16213d;
+  --body:#2b3245;
+  --sub:#6b7280;
+  --line:#e3e6ec;
+  --line-soft:#eef0f4;
+  --gilt:#a8782a;
+  --gilt-dark:#8a6321;
+  --gilt-soft:#f8efdc;
+  --gilt-soft2:#fbf6ea;
+  --serif:'Iowan Old Style','Palatino Linotype',Georgia,'Times New Roman',serif;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --mono:'SF Mono','Cascadia Code',Consolas,'Courier New',monospace;
+  --maxw:760px;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0; background:var(--paper); color:var(--body);
+  font-family:var(--sans); font-size:16px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--gilt-dark); text-decoration:none;}
+a:hover{text-decoration:underline;}
+:focus-visible{outline:2px solid var(--gilt); outline-offset:2px;}
+
+/* ---------- TOP BAR ---------- */
+.topbar{
+  position:fixed; top:0; left:0; right:0; height:64px; z-index:50;
+  background:rgba(255,255,255,0.92); backdrop-filter:blur(6px);
+  border-bottom:1px solid var(--line);
+  display:flex; align-items:center; gap:16px; padding:0 20px;
+}
+.topbar .brand{
+  font-family:var(--serif); font-weight:700; font-size:19px; color:var(--ink);
+  display:flex; align-items:center; gap:8px; white-space:nowrap;
+}
+.topbar .brand .seal{
+  width:26px;height:26px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #d9b35c, var(--gilt) 60%, var(--gilt-dark));
+  display:inline-block; box-shadow:inset 0 0 0 1px rgba(0,0,0,0.15);
+}
+.searchwrap{flex:1; max-width:420px; position:relative;}
+#search{
+  width:100%; padding:9px 14px 9px 36px; border:1px solid var(--line); border-radius:8px;
+  font-family:var(--sans); font-size:14px; background:#fafafa;
+}
+#search:focus{background:#fff;}
+.searchwrap::before{
+  content:"⌕"; position:absolute; left:12px; top:50%; transform:translateY(-50%);
+  color:var(--sub); font-size:16px;
+}
+.progress-pill{
+  font-family:var(--mono); font-size:12px; color:var(--sub);
+  border:1px solid var(--line); border-radius:20px; padding:6px 12px; white-space:nowrap;
+}
+.progress-pill b{color:var(--gilt-dark);}
+.menu-btn{display:none; background:none; border:1px solid var(--line); border-radius:8px; padding:8px 10px; cursor:pointer;}
+
+/* ---------- LAYOUT ---------- */
+.layout{display:flex; max-width:1240px; margin:0 auto; padding-top:64px;}
+.sidebar{
+  width:248px; flex-shrink:0; position:sticky; top:64px; align-self:flex-start;
+  height:calc(100vh - 64px); overflow-y:auto; padding:24px 12px 40px 20px;
+  border-right:1px solid var(--line-soft);
+}
+.sidebar nav a{
+  display:flex; align-items:center; gap:9px;
+  font-size:13.5px; color:var(--sub); padding:7px 10px; border-radius:7px;
+  margin-bottom:2px; font-weight:500; line-height:1.3;
+}
+.sidebar nav a .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--line);}
+.sidebar nav a:hover{background:var(--gilt-soft2); text-decoration:none; color:var(--ink);}
+.sidebar nav a.active{background:var(--gilt-soft); color:var(--ink); font-weight:700;}
+.sidebar nav a.active .dot{background:var(--gilt);}
+.sidebar nav a.read::after{content:"✓"; margin-left:auto; color:#2f9e54; font-size:12px;}
+.sidebar .navlabel{
+  font-family:var(--mono); font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase;
+  color:var(--sub); margin:18px 0 6px 10px;
+}
+.sidebar .navlabel:first-child{margin-top:0;}
+
+main{flex:1; min-width:0; padding:40px 48px 120px; max-width:calc(760px + 96px);}
+
+/* ---------- TYPOGRAPHY ---------- */
+.eyebrow{
+  font-family:var(--mono); font-size:11.5px; letter-spacing:0.1em; text-transform:uppercase;
+  color:var(--accent,var(--gilt-dark)); font-weight:600; margin-bottom:10px; display:block;
+}
+h1{font-family:var(--serif); font-size:38px; line-height:1.15; color:var(--ink); margin:0 0 14px;}
+h2{font-family:var(--serif); font-size:28px; line-height:1.2; color:var(--ink); margin:0 0 6px;}
+h3{font-family:var(--serif); font-size:19px; color:var(--ink); margin:28px 0 10px;}
+p{margin:0 0 14px; max-width:var(--maxw);}
+.lede{font-size:18px; color:var(--body); max-width:var(--maxw);}
+ul,ol{margin:0 0 14px; padding-left:22px; max-width:var(--maxw);}
+li{margin-bottom:7px;}
+strong{color:var(--ink); font-weight:650;}
+code{font-family:var(--mono); font-size:0.88em; background:#f4f5f7; padding:1px 5px; border-radius:4px;}
+
+/* ---------- SECTION CARD (the gilt edge) ---------- */
+.section{
+  max-width:856px; margin:0 0 88px; padding-left:24px;
+  border-left:3px solid var(--gilt);
+  position:relative;
+}
+.section::before{
+  content:""; position:absolute; left:-3px; top:0; bottom:0; width:3px;
+  background:linear-gradient(180deg, var(--gilt) 0%, var(--gilt) 60px, var(--line) 60px);
+}
+.section:first-of-type{margin-top:8px;}
+.section-head{display:flex; align-items:baseline; gap:14px; margin-bottom:18px;}
+.section-num{
+  font-family:var(--mono); font-size:13px; color:var(--sub); flex-shrink:0; padding-top:4px;
+}
+
+/* ---------- CALLOUTS ---------- */
+.callout{
+  border-radius:10px; padding:16px 18px; margin:18px 0 26px; max-width:var(--maxw);
+  border:1px solid var(--line);
+}
+.callout .ctitle{
+  font-family:var(--mono); font-size:11px; letter-spacing:0.08em; text-transform:uppercase;
+  font-weight:700; margin-bottom:8px; display:block;
+}
+.callout-before{background:var(--gilt-soft2); border-color:#ecdfc0;}
+.callout-before .ctitle{color:var(--gilt-dark);}
+.callout-before p{margin:0; font-style:italic; color:var(--ink); font-size:16px;}
+
+.callout-key{background:#f7f9fb; border-color:var(--line);}
+.callout-key .ctitle{color:var(--accent,#3D7BD9);}
+.callout-key ul{margin:0; padding-left:20px;}
+.callout-key li{margin-bottom:9px; font-size:15px;}
+.callout-key li::marker{color:var(--accent,#3D7BD9);}
+
+.callout-mastery{background:#fbf6ea; border-color:#ecdfc0; border-style:solid;}
+.callout-mastery .ctitle{color:var(--gilt-dark);}
+.callout-mastery p{margin:0; font-weight:600; color:var(--ink); font-size:16px;}
+.callout-mastery .hint-toggle{
+  margin-top:14px; font-family:var(--sans); font-size:13.5px; font-weight:700;
+  color:#ffffff; background:var(--gilt-dark); border:none; border-radius:8px;
+  padding:10px 16px; cursor:pointer; display:inline-flex; align-items:center; gap:8px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.18);
+}
+.callout-mastery .hint-toggle:hover{background:var(--gilt);}
+.callout-mastery .hint-toggle .icon{font-weight:900; font-size:15px; line-height:1;}
+.callout-mastery .hint{display:none; margin-top:14px; padding-top:14px; border-top:1px dashed #ecdfc0; font-weight:400; font-size:14.5px; color:var(--body); font-style:normal;}
+.callout-mastery .hint.show{display:block;}
+
+.expandall-btn{
+  font-family:var(--sans); font-size:13px; font-weight:700; color:var(--gilt-dark);
+  background:#fff; border:1.5px solid var(--gilt-dark); border-radius:20px; padding:8px 15px;
+  cursor:pointer; white-space:nowrap; flex-shrink:0;
+}
+.expandall-btn:hover{background:var(--gilt-soft2);}
+.expandall-btn.active{background:var(--gilt-dark); color:#fff;}
+
+.fun-fact{
+  background:#fff; border:1px dashed var(--line); border-radius:10px; padding:12px 16px;
+  margin:18px 0; max-width:var(--maxw); font-size:14.5px; color:var(--body);
+}
+.fun-fact b{color:var(--gilt-dark);}
+
+/* ---------- DIAGRAM FRAME ---------- */
+.diagram-frame{
+  margin:22px 0 26px; border:1px solid var(--line); border-radius:12px; padding:14px;
+  background:#fcfcfd; max-width:856px; overflow-x:auto;
+}
+.diagram-frame .dlabel{
+  font-family:var(--mono); font-size:11px; color:var(--sub); margin-bottom:6px; padding-left:4px;
+}
+.diagram-frame svg{display:block; width:100%; height:auto;}
+
+/* diagram element styling (shared design system for all reused SVGs) */
+svg.diagram .th{font:600 13px/1.3 var(--sans); fill:var(--ink);}
+svg.diagram .ts{font:400 11.5px/1.3 var(--sans); fill:var(--sub);}
+svg.diagram .t{font:400 12px/1.3 var(--sans); fill:var(--ink);}
+svg.diagram line.arr, svg.diagram path.arr{stroke:#9aa3af; stroke-width:1.5; fill:none;}
+svg.diagram .leader{stroke:#9aa3af; stroke-width:1; stroke-dasharray:4 3; fill:none;}
+svg.diagram .c-gray rect, svg.diagram .c-gray circle{fill:#F1F2F4; stroke:#8A8F98;}
+svg.diagram .c-blue rect, svg.diagram .c-blue circle{fill:#E3EEFD; stroke:#3D7BD9;}
+svg.diagram .c-coral rect, svg.diagram .c-coral circle{fill:#FCE7E2; stroke:#D9663F;}
+svg.diagram .c-amber rect, svg.diagram .c-amber circle{fill:#FCEFD2; stroke:#C8881C;}
+svg.diagram .c-green rect, svg.diagram .c-green circle{fill:#DFF3E3; stroke:#2F9E54;}
+svg.diagram .c-purple rect, svg.diagram .c-purple circle{fill:#EAE3F8; stroke:#7C53C9;}
+svg.diagram rect{rx:10px;}
+
+/* ---------- COLLAPSIBLE ---------- */
+details.card{
+  border:1px solid var(--line); border-radius:10px; margin:0 0 12px; max-width:var(--maxw);
+  background:#fff; overflow:hidden;
+}
+details.card summary{
+  list-style:none; cursor:pointer; padding:13px 16px; font-weight:650; color:var(--ink);
+  display:flex; align-items:center; gap:10px; font-size:15px;
+}
+details.card summary::-webkit-details-marker{display:none;}
+details.card summary::before{
+  content:"▸"; color:var(--accent,var(--gilt)); font-size:12px; transition:transform .15s;
+}
+details.card[open] summary::before{transform:rotate(90deg);}
+details.card .body{padding:0 16px 16px 40px; font-size:14.8px; color:var(--body);}
+details.card .body p:last-child{margin-bottom:0;}
+
+/* ---------- TABLES ---------- */
+table.ref{width:100%; max-width:856px; border-collapse:collapse; margin:14px 0 26px; font-size:14.5px;}
+table.ref th{
+  text-align:left; font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:0.04em;
+  color:var(--sub); border-bottom:2px solid var(--line); padding:8px 12px;
+}
+table.ref td{padding:10px 12px; border-bottom:1px solid var(--line-soft); vertical-align:top;}
+table.ref tr:last-child td{border-bottom:none;}
+table.ref td.term{font-family:var(--mono); font-weight:700; color:var(--ink); white-space:nowrap;}
+
+/* ---------- TAXONOMY CARDS ---------- */
+.taxo-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:12px; max-width:var(--maxw); margin:18px 0 26px;}
+.taxo-card{border:1px solid var(--line); border-radius:10px; padding:14px 16px; background:#fff;}
+.taxo-card .cat{font-family:var(--mono); font-size:11px; color:var(--gilt-dark); font-weight:700; letter-spacing:0.04em;}
+.taxo-card .rule{font-size:14px; color:var(--body); margin-top:4px;}
+.taxo-card .eg{font-size:13px; color:var(--sub); margin-top:6px; font-style:italic;}
+@media (max-width:560px){.taxo-grid{grid-template-columns:1fr;}}
+
+/* ---------- RISK LIST ---------- */
+.risk-item{
+  display:flex; gap:14px; padding:14px 0; border-bottom:1px solid var(--line-soft); max-width:856px;
+}
+.risk-item:last-child{border-bottom:none;}
+.risk-sev{
+  flex-shrink:0; width:64px; height:24px; border-radius:20px; font-family:var(--mono);
+  font-size:10.5px; font-weight:700; display:flex; align-items:center; justify-content:center;
+  letter-spacing:0.03em; margin-top:2px;
+}
+.sev-high{background:#fbe3e0; color:#a23b2b;}
+.sev-med{background:#fdf0d6; color:#9b6c10;}
+.sev-low{background:#e9edf1; color:#5b6472;}
+.risk-body .rtitle{font-weight:650; color:var(--ink); font-size:15px; margin-bottom:3px;}
+.risk-body .rdetail{font-size:14px; color:var(--body);}
+
+/* ---------- STEP BADGE (genuine sequences only) ---------- */
+.step{display:flex; gap:14px; align-items:flex-start; margin-bottom:4px;}
+.step-n{
+  flex-shrink:0; width:26px; height:26px; border-radius:50%; background:var(--accent,#D9663F);
+  color:#fff; font-family:var(--mono); font-size:12px; font-weight:700;
+  display:flex; align-items:center; justify-content:center; margin-top:2px;
+}
+
+hr.rule{border:none; border-top:1px solid var(--line); margin:28px 0; max-width:var(--maxw);}
+
+/* ---------- FOOTER ---------- */
+footer{
+  max-width:856px; padding:28px 0 80px; color:var(--sub); font-size:13px;
+  border-top:1px solid var(--line); margin-top:40px;
+}
+
+/* ---------- RESPONSIVE ---------- */
+@media (max-width:760px){
+  .topbar{flex-wrap:wrap; height:auto; padding:10px 16px; row-gap:8px;}
+  .searchwrap{order:3; max-width:100%; flex:1 1 100%;}
+}
+@media (max-width:920px){
+  .sidebar{display:none;}
+  .menu-btn{display:inline-flex;}
+  main{padding:32px 24px 100px;}
+  .sidebar.open{display:block; position:fixed; left:0; top:64px; bottom:0; width:80%; max-width:300px;
+    background:#fff; z-index:60; box-shadow:4px 0 24px rgba(0,0,0,0.1);}
+}
+.hidden{display:none !important;}
+mark{background:var(--gilt-soft); color:inherit; border-radius:3px;}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="#9aa3af" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+</defs></svg>
+
+<div class="topbar">
+  <button class="menu-btn" id="menuBtn" aria-label="Toggle navigation">☰</button>
+  <div class="brand"><span class="seal"></span> The Gilt Edge</div>
+  <div class="searchwrap">
+    <input id="search" type="text" placeholder="Search this document — try 'LIP', 'CCIL', 'Kafka'…" autocomplete="off">
+  </div>
+  <div class="progress-pill">Read <b id="readCount">0</b>/<span id="readTotal">0</span> sections</div>
+  <button class="expandall-btn" id="expandAllBtn">+ Expand all explanations</button>
+</div>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <nav id="sideNav"></nav>
+  </aside>
+
+  <main id="main">
+    <section class="section" id="welcome" data-accent="#a8782a">
+      <span class="eyebrow">G-Sec on Optimus · Field Notes</span>
+      <h1>The Gilt Edge</h1>
+      <p class="lede">Government securities are called <strong>gilt-edged instruments</strong> — practically default-free, backed by the sovereign. This document is the gilt edge running down everything we know about bringing G-Sec to retail customers on Optimus: the bond mechanics, the systems, the buy journey, the interest math, and every open question still sitting on the table.</p>
+      <p>It exists so that six months from now — when someone asks "wait, why does the holdings page show that number?" — the answer is in here, not in someone's memory of a meeting.</p>
+
+      <h3>How this is built</h3>
+      <ul>
+        <li><strong>Search the top bar</strong> for any term — <code>LIP</code>, <code>CCIL</code>, <code>Kafka</code>, <code>STRIPS</code> — and it'll jump you straight to the mention.</li>
+        <li><strong>Every section</strong> opens with a question worth holding in your head before you read, closes with bullet takeaways, and ends with a harder question worth sitting with.</li>
+        <li><strong>Diagrams are for revision</strong>, not decoration — if you only have two minutes before a meeting, scan the diagrams in a section and you'll have 80% of it back.</li>
+        <li><strong>Open questions live in one place</strong> (§10) instead of scattered through every section, so nothing quietly gets forgotten.</li>
+      </ul>
+      <div class="fun-fact"><b>Why "gilt edge"?</b> Old British government bond certificates literally had gilt (gold-leafed) edges — a physical signal that this paper was as safe as paper gets. The accent colour running down this whole document is a small nod to that.</div>
+    </section>
+
+    <section class="section" id="fundamentals" data-accent="#1B2A4A" style="--accent:#1B2A4A">
+      <span class="eyebrow">Section 01 · Foundations</span>
+      <h2>Bond Fundamentals</h2>
+
+      <div class="callout callout-before">
+        <span class="ctitle">Before you dive in</span>
+        <p>If a bond's quoted price and the amount that actually leaves a customer's account can differ — what's hiding inside that gap, and who decided it should be there?</p>
+      </div>
+
+      <p>A bond is just a loan running in reverse: the investor lends, the issuer borrows, and a coupon is the interest on that loan. A <strong>Government Security (G-Sec)</strong> is the same thing issued by the Centre or a State — and because a sovereign borrower essentially cannot default on its own currency debt, G-Secs are called <strong>gilt-edged</strong>: risk-free in practice, even though nothing is risk-free in theory.</p>
+
+      <details class="card">
+        <summary>The instrument family — T-bills, GSecs, SDLs, STRIPS</summary>
+        <div class="body">
+          <p>The Centre issues two shapes of debt; States issue only one:</p>
+          <div class="taxo-grid">
+            <div class="taxo-card"><div class="cat">T-BILL</div><div class="rule">Money-market, ≤1 year, zero-coupon — sold at a discount, redeemed at face value. No periodic interest at all.</div><div class="eg">91 / 182 / 364-day tenors</div></div>
+            <div class="taxo-card"><div class="cat">GSEC / DATED SECURITY</div><div class="rule">Centre-issued, &gt;1 year, coupon-bearing, paid semi-annually.</div><div class="eg">e.g. 6.79% GS 2034</div></div>
+            <div class="taxo-card"><div class="cat">SGS / SDL</div><div class="rule">State Development Loan — a State government's version of a dated security. Same pricing mechanics as a GSec.</div><div class="eg">Govt of Karnataka, Govt of Maharashtra…</div></div>
+            <div class="taxo-card"><div class="cat">C-STRIPS / P-STRIPS</div><div class="rule">A coupon bond's cashflows separated into individually tradeable zero-coupon pieces — one STRIP per coupon, one for the final principal.</div><div class="eg">Up to 50-year maturities</div></div>
+          </div>
+          <p>On the Optimus front end, the display name is <em>derived</em> from Category + Issuer, not stored verbatim — and it's worth knowing the rule, because it explains why two very different instruments can look almost identical in a list:</p>
+          <table class="ref">
+            <tr><th>Category</th><th>Issuer</th><th>Shown on Optimus as</th></tr>
+            <tr><td class="term">TBILL</td><td>Govt of India</td><td>T-Bill-Govt. of India</td></tr>
+            <tr><td class="term">GSEC</td><td>Govt of India</td><td>Govt. of India</td></tr>
+            <tr><td class="term">SGS</td><td>Govt of Karnataka</td><td>Govt of Karnataka</td></tr>
+            <tr><td class="term">C-STRIPS / P-STRIPS</td><td>Govt of India</td><td>STRIPS - Govt of India <em>(no C vs P distinction shown)</em></td></tr>
+          </table>
+        </div>
+      </details>
+
+      <details class="card">
+        <summary>Yield, price, and the number that actually gets debited</summary>
+        <div class="body">
+          <p><strong>Yield to Maturity (YTM)</strong> is the single discount rate that makes the present value of every future cashflow equal today's market price — found by trial and error, or instantly via Excel's <code>YIELD()</code> function. Flip the question around and Excel's <code>PRICE()</code> function gives you price from a known yield.</p>
+          <p>Day-count convention decides how "holding period" gets measured, and India runs <em>two different ones</em> depending on the instrument:</p>
+          <ul>
+            <li><strong>Bond market — 30/360:</strong> every month is treated as exactly 30 days, every year as 360. Used for GSecs, SDLs, and STRIPS.</li>
+            <li><strong>Money market — actual/365:</strong> real calendar days over 365. Used for T-bills.</li>
+          </ul>
+          <p>Mixing these up anywhere in a pricing or accrual calculation produces a wrong-but-plausible-looking number — exactly the kind of bug that survives QA and shows up as a customer complaint instead.</p>
+          <p>And the quoted "clean price" is never what's actually paid. The buyer also pays <strong>accrued interest</strong> — the coupon the seller has earned but not yet received for the days they held the bond since the last coupon date. <code>Clean price + accrued interest = dirty price = total consideration</code> — and the dirty price, not the clean price, is the number that should hit the debit.</p>
+        </div>
+      </details>
+
+      <div class="callout callout-key">
+        <span class="ctitle">What this tells you</span>
+        <ul>
+          <li>Centre issues T-bills (zero-coupon, discount-priced) <em>and</em> dated securities (coupon-bearing); States issue only dated securities, called SDLs/SGS.</li>
+          <li>STRIPS split a coupon bond's cashflows into individually tradeable zero-coupon pieces — but Optimus's FE name doesn't distinguish Coupon-STRIPS from Principal-STRIPS.</li>
+          <li>Two day-count conventions coexist in this one product: 30/360 for bonds, actual/365 for T-bills. Every pricing or accrual function needs to know which instrument it's looking at.</li>
+          <li>What gets debited is the <em>dirty price</em> (clean price + accrued interest), not the quoted clean price.</li>
+        </ul>
+      </div>
+
+      <div class="callout callout-mastery">
+        <span class="ctitle">Sit with this</span>
+        <p>If a dated G-Sec's accrued-interest calculation was accidentally implemented with actual/365 instead of 30/360, would the number come out too high or too low — and on which calendar dates would the error be largest?</p>
+        <button class="hint-toggle" onclick="toggleExplain(this)"><span class="icon">+</span> Show explanation</button>
+        <div class="hint">February is the giveaway month: 30/360 always counts it as 30 days, actual/365 counts it as 28 (or 29). The error direction flips depending on which side of February the holding period falls — which is exactly the kind of bug that only shows up a few times a year and is hard to catch in testing.</div>
+      </div>
+    </section>
+
+    <section class="section" id="architecture" data-accent="#3D7BD9" style="--accent:#3D7BD9">
+      <span class="eyebrow">Section 02 · The Map</span>
+      <h2>System Architecture</h2>
+
+      <div class="callout callout-before">
+        <span class="ctitle">Before you dive in</span>
+        <p>When a customer never even opens the G-Sec tab, how many backend systems should that customer be silently costing you?</p>
+      </div>
+
+      <p>Optimus and Salesforce form the core of everything: Optimus is the customer-facing app, Salesforce orchestrates SRs (Service Requests) for onboarding, inventory, and buy flows. Everything else hangs off that core.</p>
+
+      <div class="diagram-frame">
+        <div class="dlabel">FIG 2.1 — Bank platform and market infrastructure</div>
+        <svg class="diagram" viewBox="0 0 680 770" role="img">
+        <title>G-Sec system architecture overview</title>
+        <desc>Customer connects to Optimus, which sits on a Salesforce-orchestrated bank platform alongside CDP, eDMS, FM Converge and Winsoft. That platform connects via Kong to third-party market infrastructure: CCIL, NSDL and Speed-e. Business/Ops manually feeds CCIL and Speed-e.</desc>
+        <g class="node c-gray"><rect x="260" y="20" width="160" height="44" rx="8" stroke-width="0.5"/><text class="th" x="340" y="42" text-anchor="middle" dominant-baseline="central">Customer</text></g>
+        <line x1="340" y1="64" x2="340" y2="160" class="arr" marker-end="url(#arrow)"/>
+        <rect class="c-gray" x="40" y="90" width="600" height="370" rx="20" stroke-width="0.5" fill="none"/>
+        <text class="th" x="60" y="118" text-anchor="start">Bank platform</text>
+        <text class="ts" x="60" y="136" text-anchor="start">Optimus app + Salesforce core</text>
+        <g class="node c-blue"><rect x="240" y="160" width="200" height="56" rx="12" stroke-width="0.5"/><text class="th" x="340" y="178" text-anchor="middle">Optimus</text><text class="ts" x="340" y="196" text-anchor="middle">Customer investing app</text></g>
+        <line x1="340" y1="216" x2="340" y2="276" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-blue"><rect x="240" y="276" width="200" height="56" rx="12" stroke-width="1"/><text class="th" x="340" y="294" text-anchor="middle">Salesforce (SFDC)</text><text class="ts" x="340" y="312" text-anchor="middle">Orchestration &amp; SR hub</text></g>
+        <line x1="340" y1="332" x2="340" y2="352" class="arr"/>
+        <line x1="122.5" y1="352" x2="557.5" y2="352" class="arr"/>
+        <line x1="122.5" y1="352" x2="122.5" y2="382" class="arr" marker-end="url(#arrow)"/>
+        <line x1="267.5" y1="352" x2="267.5" y2="382" class="arr" marker-end="url(#arrow)"/>
+        <line x1="412.5" y1="352" x2="412.5" y2="382" class="arr" marker-end="url(#arrow)"/>
+        <line x1="557.5" y1="352" x2="557.5" y2="382" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-blue"><rect x="60" y="382" width="125" height="56" rx="12" stroke-width="0.5"/><text class="th" x="122.5" y="400" text-anchor="middle">CDP</text><text class="ts" x="122.5" y="418" text-anchor="middle">CCID at UCIC</text></g>
+        <g class="node c-blue"><rect x="205" y="382" width="125" height="56" rx="12" stroke-width="0.5"/><text class="th" x="267.5" y="400" text-anchor="middle">eDMS</text><text class="ts" x="267.5" y="418" text-anchor="middle">AOF uploads</text></g>
+        <g class="node c-blue"><rect x="350" y="382" width="125" height="56" rx="12" stroke-width="0.5"/><text class="th" x="412.5" y="400" text-anchor="middle">FM Converge</text><text class="ts" x="412.5" y="418" text-anchor="middle">Deal booking</text></g>
+        <g class="node c-blue"><rect x="495" y="382" width="125" height="56" rx="12" stroke-width="0.5"/><text class="th" x="557.5" y="400" text-anchor="middle">Winsoft</text><text class="ts" x="557.5" y="418" text-anchor="middle">G-Sec listing</text></g>
+        <line x1="340" y1="460" x2="340" y2="500" class="arr" marker-end="url(#arrow)"/>
+        <rect class="c-gray" x="40" y="500" width="600" height="150" rx="20" stroke-width="0.5" fill="none"/>
+        <text class="th" x="60" y="528" text-anchor="start">Market infrastructure (third-party)</text>
+        <text class="ts" x="60" y="546" text-anchor="start">Reached via Kong API gateway</text>
+        <g class="node c-coral"><rect x="80" y="565" width="160" height="56" rx="12" stroke-width="0.5"/><text class="th" x="160" y="583" text-anchor="middle">CCIL</text><text class="ts" x="160" y="601" text-anchor="middle">NDS-OM clearing</text></g>
+        <g class="node c-coral"><rect x="260" y="565" width="160" height="56" rx="12" stroke-width="0.5"/><text class="th" x="340" y="583" text-anchor="middle">NSDL</text><text class="ts" x="340" y="601" text-anchor="middle">Sends obligations</text></g>
+        <g class="node c-coral"><rect x="440" y="565" width="160" height="56" rx="12" stroke-width="0.5"/><text class="th" x="520" y="583" text-anchor="middle">Speed-e</text><text class="ts" x="520" y="601" text-anchor="middle">DP transfer init</text></g>
+        <line x1="240" y1="593" x2="260" y2="593" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-gray"><rect x="240" y="685" width="200" height="44" rx="8" stroke-width="0.5"/><text class="th" x="340" y="707" text-anchor="middle" dominant-baseline="central">Business / Ops</text></g>
+        <path d="M260,685 L260,655 L160,655 L160,621" fill="none" class="arr" marker-end="url(#arrow)"/>
+        <path d="M420,685 L420,655 L520,655 L520,621" fill="none" class="arr" marker-end="url(#arrow)"/>
+        </svg>
+      </div>
+
+      <details class="card">
+        <summary>What each system actually does</summary>
+        <div class="body">
+          <p><strong>CDP</strong> holds CCID identity linked to UCIC — the "is this person already known to us" lookup. <strong>eDMS</strong> stores AOF forms and deal PDFs. <strong>FM Converge</strong> books deals and is the system of record for invested amount and units held. <strong>Winsoft</strong> feeds G-Sec into the broader stock listing. <strong>CCIL</strong> runs NDS-OM, the actual clearing market. <strong>NSDL</strong> records settlement obligations; <strong>Speed-e</strong> is NSDL's tool that executes the depository transfer.</p>
+        </div>
+      </details>
+
+      <div class="callout callout-key">
+        <span class="ctitle">What this tells you</span>
+        <ul>
+          <li>SFDC↔Optimus talks P2P; everything reaching third parties or FM Converge goes through Kong.</li>
+          <li>FM Converge — not SFDC — is the source of truth for the actual debited amount and units held.</li>
+          <li>Business/Ops still does literal manual file uploads into CCIL and Speed-e. Not everything here is automated yet.</li>
+        </ul>
+      </div>
+
+      <div class="callout callout-mastery">
+        <span class="ctitle">Sit with this</span>
+        <p>If FM Converge went down for an hour in the middle of trading, which Optimus screens would start showing stale or wrong numbers — and why specifically those, and not the others?</p>
+        <button class="hint-toggle" onclick="toggleExplain(this)"><span class="icon">+</span> Show explanation</button>
+        <div class="hint">Bond Details' invested amount, units held, and avg price all source directly from FM Converge, so a fresh buy wouldn't have a real number to show — likely blank or stuck on a stale value. Holdings would lag the same way for anything bought during the outage. SFDC-sourced fields (upcoming interest date, SR status, the bond catalog itself) would carry on fine, since they don't depend on FM Converge at all. The buy journey breaks harder than the display layer does: deal booking explicitly routes through FM Converge with its own 3-retry budget, so new buys during the outage burn through retries and fall to manual ops handling, while existing holdings just look mildly stale rather than actually broken.</div>
+      </div>
+    </section>
+
+    <section class="section" id="onboarding" data-accent="#1E9E8B" style="--accent:#1E9E8B">
+      <span class="eyebrow">Section 03 · Getting In</span>
+      <h2>Onboarding Journey</h2>
+
+      <div class="callout callout-before">
+        <span class="ctitle">Before you dive in</span>
+        <p>Should "not yet onboarded" and "permanently rejected" really be the same branch in this flow?</p>
+      </div>
+
+      <p>Before a customer can buy a single G-Sec unit, the system has to answer one question: <em>is this person already registered with CCIL?</em> Three quick checks decide that, and any one of them being "yes" short-circuits straight to "already linked."</p>
+
+      <div class="diagram-frame">
+        <div class="dlabel">FIG 3.1 — CCIL registration gate</div>
+        <svg class="diagram" viewBox="0 0 680 800" role="img">
+        <title>G-Sec onboarding journey</title>
+        <desc>Customer opens the G-Bond tab. Identity checks run: CCIL ID in CDP, SR status, cross-partner CCIL ID. Any pass shortcuts to already-linked. If all fail, demat and savings account are validated, the user is registered, an SR is raised, backoffice uploads to CCIL, and the SR is updated with CCIL details.</desc>
+        <g class="node c-gray"><rect x="220" y="20" width="240" height="44" rx="8" stroke-width="0.5"/><text class="th" x="340" y="42" text-anchor="middle" dominant-baseline="central">Opens G-Bond tab</text></g>
+        <line x1="340" y1="64" x2="340" y2="136" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-blue"><rect x="220" y="136" width="240" height="56" rx="12" stroke-width="0.5"/><text class="th" x="340" y="154" text-anchor="middle">Identity checks</text><text class="ts" x="340" y="172" text-anchor="middle">3 quick lookups</text></g>
+        <line x1="460" y1="164" x2="470" y2="164" class="arr"/>
+        <line x1="470" y1="164" x2="470" y2="280" class="arr"/>
+        <line x1="470" y1="280" x2="480" y2="280" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-gray"><rect x="480" y="252" width="160" height="56" rx="12" stroke-width="0.5"/><text class="th" x="560" y="270" text-anchor="middle">Already linked</text><text class="ts" x="560" y="288" text-anchor="middle">Goes to invest flow</text></g>
+        <path d="M560,308 L600,308 L600,738 L460,738" fill="none" class="arr" marker-end="url(#arrow)"/>
+        <line x1="340" y1="192" x2="340" y2="252" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-blue"><rect x="220" y="252" width="240" height="56" rx="12" stroke-width="0.5"/><text class="th" x="340" y="270" text-anchor="middle">Validate demat + S/A</text><text class="ts" x="340" y="288" text-anchor="middle">Backoffice verification</text></g>
+        <line x1="340" y1="308" x2="340" y2="368" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-blue"><rect x="220" y="368" width="240" height="56" rx="12" stroke-width="0.5"/><text class="th" x="340" y="386" text-anchor="middle">Register &amp; raise SR</text><text class="ts" x="340" y="404" text-anchor="middle">AOF upload to eDMS</text></g>
+        <line x1="340" y1="424" x2="340" y2="484" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-coral"><rect x="220" y="484" width="240" height="56" rx="12" stroke-width="0.5"/><text class="th" x="340" y="502" text-anchor="middle">Upload new user to CCIL</text><text class="ts" x="340" y="520" text-anchor="middle">Backoffice + CCIL API</text></g>
+        <line x1="340" y1="540" x2="340" y2="600" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-blue"><rect x="220" y="600" width="240" height="56" rx="12" stroke-width="0.5"/><text class="th" x="340" y="618" text-anchor="middle">Update SR: CCIL details</text><text class="ts" x="340" y="636" text-anchor="middle">SFDC records CCIL ID</text></g>
+        <line x1="340" y1="656" x2="340" y2="716" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-gray"><rect x="220" y="716" width="240" height="44" rx="8" stroke-width="0.5"/><text class="th" x="340" y="738" text-anchor="middle" dominant-baseline="central">Onboarding complete</text></g>
+        </svg>
+      </div>
+
+      <details class="card">
+        <summary>Why these three checks, in this order</summary>
+        <div class="body">
+          <p>CDP comes first because it's the cheapest lookup — an already-known customer skips everything else immediately. SR status comes next because it catches anyone mid-flow without having to re-ask CCIL anything. The cross-partner check runs last, which makes sense given it's the most expensive call (a real round trip via Kong) — and is probably no coincidence that it's also the one still flagged unconfirmed in the original sketch.</p>
+        </div>
+      </details>
+
+      <div class="callout callout-key">
+        <span class="ctitle">What this tells you</span>
+        <ul>
+          <li>The three checks: CCIL ID already in CDP, SR status, and cross-partner CCIL existence (checked via Kong). Any "yes" shortcuts to "already linked."</li>
+          <li>The "CCIL exists with another partner" check was flagged red in the original sketch — treat it as unconfirmed, not settled logic.</li>
+          <li>Final registration needs <em>both</em> a valid demat account and a valid savings account before SFDC raises the SR.</li>
+          <li>The branch is labelled <strong>WIP</strong>, not a clean Yes/No — worth confirming there isn't a missing hard-rejection state.</li>
+        </ul>
+      </div>
+
+      <div class="callout callout-mastery">
+        <span class="ctitle">Sit with this</span>
+        <p>A customer who's mid-registration — SR raised, not yet uploaded to CCIL — opens the app again. Which of the three early checks catches them, and what should they actually see on screen?</p>
+        <button class="hint-toggle" onclick="toggleExplain(this)"><span class="icon">+</span> Show explanation</button>
+        <div class="hint">The "CCIL ID in CDP" check would say no — nothing's been uploaded to CCIL yet, so that one doesn't catch them. The "SR status" check is the one that should: there's an open, non-terminal SR sitting there, which is exactly what this check exists to catch. The cross-partner check is irrelevant here, since it's about CCIL IDs registered elsewhere, not this customer's own pending one. They should probably see the same "application in progress" message used for the WIP branch — though it's worth confirming the SR-status check actually distinguishes "SR raised, nothing's happened yet" from "uploaded to CCIL, awaiting confirmation," since those are different failure points that probably deserve different messaging.</div>
+      </div>
+    </section>
+
+    <section class="section" id="permissions" data-accent="#7C53C9" style="--accent:#7C53C9">
+      <span class="eyebrow">Section 04 · No Spinners</span>
+      <h2>Loader-Free Permissions</h2>
+
+      <div class="callout callout-before">
+        <span class="ctitle">Before you dive in</span>
+        <p>Is it cheaper to ask four questions for every single user on every app launch, or to ask zero questions and risk being wrong once in a while?</p>
+      </div>
+
+      <p>The goal: a customer should never see a loading spinner when they tap into G-Sec. That means deciding <em>in advance</em> whether they can buy, view, or need onboarding — and the only way to do that is to resolve four checks before the customer even asks.</p>
+
+      <div class="diagram-frame">
+        <div class="dlabel">FIG 4.1 — Permission fan-out on app launch</div>
+        <svg class="diagram" viewBox="0 0 680 480" role="img">
+        <title>GSec permission resolution on app launch</title>
+        <desc>On app launch, all GSec permissions load in one step: the GSec toggle feature flag, whether the user profile shows CCIL onboarding, whether SFDC shows an active case pending, and the page visit count from the Grade service.</desc>
+        <g class="node c-gray"><rect x="40" y="160" width="180" height="44" rx="8" stroke-width="0.5"/><text class="th" x="130" y="182" text-anchor="middle" dominant-baseline="central">App launch event</text></g>
+        <line x1="220" y1="182" x2="240" y2="182" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-blue"><rect x="240" y="154" width="220" height="56" rx="12" stroke-width="1"/><text class="th" x="350" y="172" text-anchor="middle">Load GSec permissions</text><text class="ts" x="350" y="190" text-anchor="middle">Buy + view + onboarding</text></g>
+        <line x1="460" y1="182" x2="480" y2="48" class="arr" marker-end="url(#arrow)"/>
+        <line x1="460" y1="182" x2="480" y2="168" class="arr" marker-end="url(#arrow)"/>
+        <line x1="460" y1="182" x2="480" y2="288" class="arr" marker-end="url(#arrow)"/>
+        <line x1="460" y1="182" x2="480" y2="408" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-blue"><rect x="480" y="20" width="160" height="56" rx="12" stroke-width="0.5"/><text class="th" x="560" y="38" text-anchor="middle">GSec toggle</text><text class="ts" x="560" y="56" text-anchor="middle">Feature flag</text></g>
+        <g class="node c-blue"><rect x="480" y="140" width="160" height="56" rx="12" stroke-width="0.5"/><text class="th" x="560" y="158" text-anchor="middle">User profile</text><text class="ts" x="560" y="176" text-anchor="middle">CCIL onboarded?</text></g>
+        <g class="node c-blue"><rect x="480" y="260" width="160" height="56" rx="12" stroke-width="0.5"/><text class="th" x="560" y="278" text-anchor="middle">SFDC cases</text><text class="ts" x="560" y="296" text-anchor="middle">Active SR pending?</text></g>
+        <g class="node c-purple"><rect x="480" y="380" width="160" height="56" rx="12" stroke-width="0.5"/><text class="th" x="560" y="398" text-anchor="middle">Grade service</text><text class="ts" x="560" y="416" text-anchor="middle">Page visit count</text></g>
+        </svg>
+      </div>
+
+      <h3>Three ways to pay for this</h3>
+      <details class="card">
+        <summary>Approach 1 — fetch everything live, on every app launch</summary>
+        <div class="body"><p>Permissions are always ready, regardless of entry point. The cost: every single launch fires calls to Grade service and the SFDC case-inquiry API, even for the vast majority of users who never go near G-Sec.</p></div>
+      </details>
+      <details class="card">
+        <summary>Approach 2 — same idea, but cache SFDC case status client-side on Optimus</summary>
+        <div class="body"><p>Removes the per-launch SFDC call entirely. The cost: correctness now depends on SFDC reliably emitting case-status-change events. A missed event leaves the cache wrong, with no built-in way to notice.</p></div>
+      </details>
+      <details class="card">
+        <summary>Alternate — bulk SR-status pull, cached for ~1 day</summary>
+        <div class="body"><p>Sidesteps the "missed event" fragility entirely by pulling on a schedule instead of waiting for a push. The cost shifts from reliability to staleness — a status could be up to a day old.</p></div>
+      </details>
+
+      <div class="callout callout-key">
+        <span class="ctitle">What this tells you</span>
+        <ul>
+          <li>Four checks decide buy/view vs. onboarding-redirect: the feature toggle, CCIL-onboarded flag, active-SR-in-SFDC, and a visit-count nudge from Grade/Mongo.</li>
+          <li>Every option here trades the same two things against each other: <strong>freshness</strong> and <strong>reliability</strong>. Push gives freshness but is fragile to missed events; pull gives reliability but bounds freshness to the polling interval.</li>
+          <li>This is the exact same tension as the Kafka delta-sync design in §5 — worth deciding the push-vs-pull philosophy once, deliberately, rather than re-litigating it per feature.</li>
+        </ul>
+      </div>
+
+      <div class="callout callout-mastery">
+        <span class="ctitle">Sit with this</span>
+        <p>If you went with Approach 2 and SFDC silently failed to emit one case-closed event, how would you even detect that the cache had drifted — before a customer complained about it?</p>
+        <button class="hint-toggle" onclick="toggleExplain(this)"><span class="icon">+</span> Show explanation</button>
+        <div class="hint">There's no built-in detector in the design as described — that's the risk being flagged. Honest options: (a) a periodic reconciliation job that spot-checks a sample of cached statuses against SFDC directly, cheap enough not to defeat the point of caching; (b) a TTL on the cache regardless of events, so a missed event self-corrects within a bounded window — this quietly turns Approach 2 into a hybrid with the pull-based Alternate; or (c) no detector at all, and customer complaints become the detection mechanism by default. Worth deciding which of these on purpose, rather than discovering the answer is "(c)" by accident.</div>
+      </div>
+    </section>
+
+    <section class="section" id="inventory" data-accent="#5B5FC7" style="--accent:#5B5FC7">
+      <span class="eyebrow">Section 05 · Keeping The List Honest</span>
+      <h2>Inventory Management</h2>
+
+      <div class="callout callout-before">
+        <span class="ctitle">Before you dive in</span>
+        <p>If only the <em>difference</em> gets sent each time, what happens the one time the difference itself goes missing?</p>
+      </div>
+
+      <p>Two views of the same pipeline: the business flow (who updates what, how often) and the technical sync underneath it (what actually moves the bytes).</p>
+
+      <div class="diagram-frame">
+        <div class="dlabel">FIG 5.1 — Business flow</div>
+        <svg class="diagram" viewBox="0 0 680 464" role="img">
+        <title>G-Sec inventory management</title>
+        <desc>Backoffice downloads the inventory file every two hours, alongside a parallel feed from FM Converge. Salesforce updates inventory and pushes the change over Kafka. Optimus refreshes the list shown on the invest screen.</desc>
+        <g class="node c-gray"><rect x="220" y="20" width="240" height="56" rx="12" stroke-width="0.5"/><text class="th" x="340" y="38" text-anchor="middle">Download inventory file</text><text class="ts" x="340" y="56" text-anchor="middle">Every 2 hours</text></g>
+        <line x1="340" y1="76" x2="340" y2="136" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-blue"><rect x="220" y="136" width="240" height="56" rx="12" stroke-width="0.5"/><text class="th" x="340" y="154" text-anchor="middle">FM Converge feed</text><text class="ts" x="340" y="172" text-anchor="middle">Parallel data source</text></g>
+        <line x1="340" y1="192" x2="340" y2="252" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-blue"><rect x="220" y="252" width="240" height="56" rx="12" stroke-width="0.5"/><text class="th" x="340" y="270" text-anchor="middle">SFDC updates inventory</text><text class="ts" x="340" y="288" text-anchor="middle">Pushes change feed via Kafka</text></g>
+        <line x1="340" y1="308" x2="340" y2="368" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-blue"><rect x="220" y="368" width="240" height="56" rx="12" stroke-width="0.5"/><text class="th" x="340" y="386" text-anchor="middle">Optimus refreshes list</text><text class="ts" x="340" y="404" text-anchor="middle">Shown on invest screen</text></g>
+        </svg>
+      </div>
+
+      <div class="diagram-frame">
+        <div class="dlabel">FIG 5.2 — Technical sync underneath it</div>
+        <svg class="diagram" viewBox="0 0 680 476" role="img">
+        <title>SFDC to Optimus inventory sync, technical view</title>
+        <desc>Ops user updates inventory in SFDC CRM, which pushes through Mule/Kong into a Kafka topic. Optimus consumes from Kafka and persists into its own MongoDB store.</desc>
+        <g class="node c-gray"><rect x="40" y="100" width="180" height="56" rx="12" stroke-width="0.5"/><text class="th" x="130" y="118" text-anchor="middle">Ops user</text><text class="ts" x="130" y="136" text-anchor="middle">Triggers update</text></g>
+        <line x1="220" y1="128" x2="240" y2="128" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-blue"><rect x="240" y="100" width="180" height="56" rx="12" stroke-width="0.5"/><text class="th" x="330" y="118" text-anchor="middle">SFDC: CRM</text><text class="ts" x="330" y="136" text-anchor="middle">Bond inventory master</text></g>
+        <line x1="420" y1="128" x2="440" y2="128" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-blue"><rect x="440" y="100" width="180" height="56" rx="12" stroke-width="0.5"/><text class="th" x="530" y="118" text-anchor="middle">Mule / Kong</text><text class="ts" x="530" y="136" text-anchor="middle">API integration layer</text></g>
+        <line x1="530" y1="156" x2="530" y2="260" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-purple"><rect x="440" y="260" width="180" height="56" rx="12" stroke-width="0.5"/><text class="th" x="530" y="278" text-anchor="middle">Kafka</text><text class="ts" x="530" y="296" text-anchor="middle">Delta updates ~2 hrs</text></g>
+        <g class="node c-blue"><rect x="240" y="260" width="180" height="56" rx="12" stroke-width="0.5"/><text class="th" x="330" y="278" text-anchor="middle">Optimus</text><text class="ts" x="330" y="296" text-anchor="middle">Renders qty + toggle</text></g>
+        <line x1="420" y1="288" x2="440" y2="288" class="arr" marker-end="url(#arrow)"/>
+        <line x1="330" y1="316" x2="330" y2="380" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-purple"><rect x="240" y="380" width="180" height="56" rx="12" stroke-width="0.5"/><text class="th" x="330" y="398" text-anchor="middle">MongoDB</text><text class="ts" x="330" y="416" text-anchor="middle">Optimus-side store</text></g>
+        </svg>
+      </div>
+
+      <details class="card">
+        <summary>The five events that can change bond data, one at a time</summary>
+        <div class="body">
+          <p>The 2-hour tick (or faster in volatile markets); a toggle disable/enable event; a delta-only payload describing just the change, never the whole record; deletion of a bond record entirely; and a change to the bond's field-level structure itself. Five genuinely different triggers — worth treating as five distinct cases on the Optimus side rather than one undifferentiated "inventory changed" event.</p>
+        </div>
+      </details>
+
+      <div class="callout callout-key">
+        <span class="ctitle">What this tells you</span>
+        <ul>
+          <li>~150–250 bonds total, ~100 quantity-changing cases a day — small absolute numbers, but every one of them has to survive a delta-only pipe correctly.</li>
+          <li>Quantity below a set threshold is hidden on the FE regardless of the manual toggle — two independent ways for a bond to disappear from view.</li>
+          <li>Ownership: Kafka/pub-sub connectivity — Ashish / Roshani. Optimus-side display + the toggle — Sreejanya.</li>
+        </ul>
+      </div>
+
+      <div class="callout callout-mastery">
+        <span class="ctitle">Sit with this</span>
+        <p>A bond's quantity drops below the display threshold mid-day, outside the normal 2-hour cycle. Does the delta-only design actually guarantee Optimus finds out in time — or only that it'll find out <em>eventually</em>?</p>
+        <button class="hint-toggle" onclick="toggleExplain(this)"><span class="icon">+</span> Show explanation</button>
+        <div class="hint">Only eventually, on the evidence we have. The 2-hour cadence is the normal tick, with "if market is volatile" as the only stated reason it runs faster — nothing says crossing the display threshold itself forces an earlier sync. So if a bond sells out at 10:05am right after a 10:00am sync, Optimus's displayed inventory could be wrong for nearly two hours, during which a customer could place an order against quantity that no longer exists — which loops straight back into the "order quantity exceeds actual available quantity" open question in the buy journey.</div>
+      </div>
+    </section>
+
+    <section class="section" id="buyjourney" data-accent="#D9663F" style="--accent:#D9663F">
+      <span class="eyebrow">Section 06 · The Main Event</span>
+      <h2>Buy Journey</h2>
+
+      <div class="callout callout-before">
+        <span class="ctitle">Before you dive in</span>
+        <p>A customer's money has already left their account, but the deal hasn't booked yet. What should they be told — and who's actually responsible for finishing the job?</p>
+      </div>
+
+      <p>This is the longest, most detailed flow in the whole project — broken into three acts: getting to the buy page, paying for the bond, and getting it reported and settled.</p>
+
+      <h3>Act 1 — Entry &amp; validation</h3>
+      <div class="diagram-frame">
+        <div class="dlabel">FIG 6.1 — From explore page to a blocked SR</div>
+        <svg class="diagram" viewBox="0 0 680 684" role="img">
+        <title>Buy journey, part 1: entry and validation</title>
+        <desc>Customer fetches the bond list from SFDC, browses the explore page, and clicks the buy CTA. The system checks CCIL registration. If not yet registered, the customer stays on the explore page. If registered, the customer reaches the buy page to select quantity, and an SR is raised with quantity blocking.</desc>
+        <g class="node c-blue"><rect x="220" y="20" width="240" height="56" rx="12" stroke-width="0.5"/><text class="th" x="340" y="38" text-anchor="middle">Fetch bond list</text><text class="ts" x="340" y="56" text-anchor="middle">From SFDC</text></g>
+        <line x1="340" y1="76" x2="340" y2="136" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-blue"><rect x="220" y="136" width="240" height="56" rx="12" stroke-width="0.5"/><text class="th" x="340" y="154" text-anchor="middle">Explore page</text><text class="ts" x="340" y="172" text-anchor="middle">Customer browses bonds</text></g>
+        <line x1="340" y1="192" x2="340" y2="252" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-gray"><rect x="220" y="252" width="240" height="44" rx="8" stroke-width="0.5"/><text class="th" x="340" y="274" text-anchor="middle" dominant-baseline="central">Clicks buy CTA</text></g>
+        <line x1="340" y1="296" x2="340" y2="356" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-amber"><rect x="220" y="356" width="240" height="56" rx="12" stroke-width="0.5"/><text class="th" x="340" y="374" text-anchor="middle">Registered with CCIL?</text><text class="ts" x="340" y="392" text-anchor="middle">Gate before buy page</text></g>
+        <line x1="460" y1="384" x2="470" y2="384" class="arr" marker-end="url(#arrow)"/>
+        <line x1="340" y1="412" x2="340" y2="472" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-coral"><rect x="470" y="356" width="160" height="56" rx="12" stroke-width="0.5"/><text class="th" x="550" y="374" text-anchor="middle">Pending CCIL</text><text class="ts" x="550" y="392" text-anchor="middle">Stays on explore</text></g>
+        <g class="node c-blue"><rect x="220" y="472" width="240" height="56" rx="12" stroke-width="0.5"/><text class="th" x="340" y="490" text-anchor="middle">Buy page: select qty</text><text class="ts" x="340" y="508" text-anchor="middle">Balance + inventory checks</text></g>
+        <line x1="340" y1="528" x2="340" y2="588" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-blue"><rect x="220" y="588" width="240" height="56" rx="12" stroke-width="0.5"/><text class="th" x="340" y="606" text-anchor="middle">SR raised, qty blocked</text><text class="ts" x="340" y="624" text-anchor="middle">Mule layer, dummy queue</text></g>
+        </svg>
+      </div>
+      <details class="card">
+        <summary>All the buy-page validations, stacked</summary>
+        <div class="body"><p>Account/debit-freeze check, account balance, minimum and maximum quantity (capped at 2 lakh units), and a hard cutoff — buying isn't allowed past <strong>4:30pm</strong>.</p></div>
+      </details>
+
+      <h3>Act 2 — OTP, debit, and deal booking</h3>
+      <div class="diagram-frame">
+        <div class="dlabel">FIG 6.2 — Two retry budgets, one customer-facing screen</div>
+        <svg class="diagram" viewBox="0 0 680 520" role="img">
+        <title>Buy journey, part 2: OTP, debit and deal booking</title>
+        <desc>After OTP, the system debits the savings account with up to three retries. On success, deal booking runs in the backend via FM Converge with its own retry logic, while the customer immediately sees a success screen with tracking. SR is updated and reporting proceeds to NDS-OM.</desc>
+        <g class="node c-blue"><rect x="220" y="20" width="240" height="56" rx="12" stroke-width="0.5"/><text class="th" x="340" y="38" text-anchor="middle">OTP generation</text><text class="ts" x="340" y="56" text-anchor="middle">Generate + verify</text></g>
+        <line x1="340" y1="76" x2="340" y2="136" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-blue"><rect x="220" y="136" width="240" height="56" rx="12" stroke-width="0.5"/><text class="th" x="340" y="154" text-anchor="middle">Debit from SA</text><text class="ts" x="340" y="172" text-anchor="middle">Auto-retry &#215;3</text></g>
+        <line x1="460" y1="164" x2="480" y2="164" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-coral"><rect x="480" y="136" width="160" height="56" rx="12" stroke-width="0.5"/><text class="th" x="560" y="154" text-anchor="middle">Debit failed</text><text class="ts" x="560" y="172" text-anchor="middle">Shows retry option</text></g>
+        <line x1="340" y1="192" x2="340" y2="212" class="arr"/>
+        <line x1="220" y1="212" x2="500" y2="212" class="arr"/>
+        <line x1="220" y1="212" x2="220" y2="232" class="arr" marker-end="url(#arrow)"/>
+        <line x1="500" y1="212" x2="500" y2="232" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-blue"><rect x="100" y="232" width="240" height="56" rx="12" stroke-width="0.5"/><text class="th" x="220" y="250" text-anchor="middle">Deal booking</text><text class="ts" x="220" y="268" text-anchor="middle">Via FM Converge, &#215;3 retry</text></g>
+        <g class="node c-green"><rect x="380" y="232" width="240" height="56" rx="12" stroke-width="0.5"/><text class="th" x="500" y="250" text-anchor="middle">Success screen</text><text class="ts" x="500" y="268" text-anchor="middle">Booking in progress</text></g>
+        <path d="M220,288 L220,308 L340,308" fill="none" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-blue"><rect x="220" y="308" width="240" height="56" rx="12" stroke-width="0.5"/><text class="th" x="340" y="326" text-anchor="middle">SR updated</text><text class="ts" x="340" y="344" text-anchor="middle">Qty reduced</text></g>
+        <line x1="340" y1="364" x2="340" y2="424" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-blue"><rect x="220" y="424" width="240" height="56" rx="12" stroke-width="0.5"/><text class="th" x="340" y="442" text-anchor="middle">NDS-OM reporting</text><text class="ts" x="340" y="460" text-anchor="middle">Via FI sales team</text></g>
+        </svg>
+      </div>
+      <details class="card">
+        <summary>The moment that matters most in Act 2</summary>
+        <div class="body"><p>The customer's <strong>success screen fires the instant the debit succeeds</strong> — deal booking is still running its own retry budget in the backend at that point. If it exhausts all 3 retries, ops picks it up manually; the customer's screen doesn't change.</p></div>
+      </details>
+
+      <h3>Act 3 — Reporting &amp; settlement</h3>
+      <div class="diagram-frame">
+        <div class="dlabel">FIG 6.3 — Two independent cutoffs, two independent reversal paths</div>
+        <svg class="diagram" viewBox="0 0 680 568" role="img">
+        <title>Buy journey, part 3: reporting and settlement</title>
+        <desc>If deal reporting misses the 5pm cutoff, the transaction errors and reverses. Otherwise, deal advice is sent and units allocate on T+1 via manual NSDL Speed-e upload. If that allocation fails, the transaction errors and reverses; otherwise the SR is marked complete.</desc>
+        <g class="node c-amber"><rect x="220" y="20" width="240" height="56" rx="12" stroke-width="0.5"/><text class="th" x="340" y="38" text-anchor="middle">On-time deal reporting?</text><text class="ts" x="340" y="56" text-anchor="middle">5pm cutoff</text></g>
+        <line x1="460" y1="48" x2="480" y2="48" class="arr" marker-end="url(#arrow)"/>
+        <line x1="340" y1="76" x2="340" y2="136" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-coral"><rect x="480" y="20" width="150" height="56" rx="12" stroke-width="0.5"/><text class="th" x="555" y="38" text-anchor="middle">Late reporting</text><text class="ts" x="555" y="56" text-anchor="middle">Error + reversal</text></g>
+        <g class="node c-blue"><rect x="220" y="136" width="240" height="56" rx="12" stroke-width="0.5"/><text class="th" x="340" y="154" text-anchor="middle">Deal advice ready</text><text class="ts" x="340" y="172" text-anchor="middle">Email + NDS file sent</text></g>
+        <line x1="340" y1="192" x2="340" y2="252" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-blue"><rect x="220" y="252" width="240" height="56" rx="12" stroke-width="0.5"/><text class="th" x="340" y="270" text-anchor="middle">Units allocation T+1</text><text class="ts" x="340" y="288" text-anchor="middle">Manual NSDL Speed-e upload</text></g>
+        <line x1="340" y1="308" x2="340" y2="368" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-amber"><rect x="220" y="368" width="240" height="56" rx="12" stroke-width="0.5"/><text class="th" x="340" y="386" text-anchor="middle">Successful allocation?</text><text class="ts" x="340" y="404" text-anchor="middle">Per-unit confirmation</text></g>
+        <line x1="460" y1="396" x2="480" y2="396" class="arr" marker-end="url(#arrow)"/>
+        <line x1="340" y1="424" x2="340" y2="484" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-coral"><rect x="480" y="368" width="150" height="56" rx="12" stroke-width="0.5"/><text class="th" x="555" y="386" text-anchor="middle">Alloc failed</text><text class="ts" x="555" y="404" text-anchor="middle">Error + reversal</text></g>
+        <g class="node c-gray"><rect x="220" y="484" width="240" height="44" rx="8" stroke-width="0.5"/><text class="th" x="340" y="506" text-anchor="middle" dominant-baseline="central">SR updated, buy complete</text></g>
+        </svg>
+      </div>
+      <p><span style="color:#3D7BD9">●</span> blue = process step &nbsp; <span style="color:#C8881C">●</span> amber = decision gate &nbsp; <span style="color:#D9663F">●</span> coral = blocked/failed terminal &nbsp; <span style="color:#2F9E54">●</span> green = success state shown to the customer.</p>
+
+      <div class="callout callout-key">
+        <span class="ctitle">What this tells you</span>
+        <ul>
+          <li>Debit and deal booking are <em>two separate operations with two separate 3-retry budgets</em> — not one combined "submit deal" step.</li>
+          <li>NDS-OM reporting is a manual upload by the FI (fixed income) sales team, with a hard 5pm cutoff and its own error+reversal path.</li>
+          <li>Allocation at T+1 has an entirely independent success/failure check, with its own reversal path.</li>
+          <li>Known unresolved bug: units allocate at T+1, but Optimus holdings only display at T+2.</li>
+        </ul>
+      </div>
+
+      <div class="callout callout-mastery">
+        <span class="ctitle">Sit with this</span>
+        <p>Debit succeeds, deal booking exhausts all three retries, and ops manually finishes the booking forty minutes later. Does the customer's screen ever change in between — or do they just have to trust the tracking status the whole time?</p>
+        <button class="hint-toggle" onclick="toggleExplain(this)"><span class="icon">+</span> Show explanation</button>
+        <div class="hint">Based on what's documented: no, it doesn't change. The success screen is shown once, right after debit, with a tracking option reading "deal booking in progress" — nothing in the flow describes that status being actively refreshed again until the SR itself updates, which only happens once booking actually completes. So for that forty minutes, "tracking" is really a static label, not a live indicator. Whether that's good enough depends on how often deal booking actually needs all 3 retries plus manual cleanup — rare, and a static screen is fine; common enough that customers refresh and see nothing new, and it's worth a real status update.</div>
+      </div>
+    </section>
+
+    <section class="section" id="cashflow" data-accent="#2F9E54" style="--accent:#2F9E54">
+      <span class="eyebrow">Section 07 · Doing The Math</span>
+      <h2>Pricing, Naming &amp; Cashflow Logic</h2>
+
+      <div class="callout callout-before">
+        <span class="ctitle">Before you dive in</span>
+        <p>If no system anywhere stores an actual interest payment, what exactly is the "interest earned" number on your screen computed <em>from</em>?</p>
+      </div>
+
+      <details class="card">
+        <summary>Pricing sheet quirks: tenure, total interest, and the 29th/30th/31st problem</summary>
+        <div class="body">
+          <p>Tenure buckets (ultra-short / short / medium / long) are driven off <strong>residual maturity</strong> — confirmed inclusive of both today's date and the maturity date. The pricing sheet's "total interest per unit" feeds the buy-details page: <code>total interest payout = total interest per unit &times; units entered</code>.</p>
+          <p>A real edge case, confirmed to actually happen: coupon dates can fall on the <strong>29th, 30th, or 31st</strong> of a month — a day the 30/360 convention was never built to represent cleanly. The cashflow logic has to special-case it, and it needs two specific parameters from SFDC to do so (not yet specified).</p>
+        </div>
+      </details>
+
+      <h3>The proposed payout-schedule algorithm</h3>
+      <p>Roll the bond's <strong>LIP</strong> (last interest payment date) and <strong>NIP</strong> (next interest payment date) forward by exactly one year at a time, repeatedly, until you reach maturity. That generates the full coupon schedule from two stored dates.</p>
+      <div class="diagram-frame">
+        <div class="dlabel">FIG 7.1 — Rolling LIP/NIP forward, and where it breaks</div>
+        <svg class="diagram" viewBox="0 0 680 210" role="img">
+        <title>Proposed G-Sec payout schedule generation logic</title>
+        <desc>Starting from LIP and NIP, the proposed logic adds one year repeatedly to both dates until maturity. If LIP is blank for a G-Sec or SDL, this chain has no anchor and the computation breaks.</desc>
+        <g class="node c-gray"><rect x="40" y="80" width="60" height="44" rx="8" stroke-width="0.5"/><text class="ts" x="70" y="102" text-anchor="middle" dominant-baseline="central">LIP</text></g>
+        <line x1="100" y1="102" x2="120" y2="102" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-blue"><rect x="120" y="80" width="60" height="44" rx="8" stroke-width="0.5"/><text class="ts" x="150" y="102" text-anchor="middle" dominant-baseline="central">NIP</text></g>
+        <line x1="180" y1="102" x2="200" y2="102" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-blue"><rect x="200" y="80" width="60" height="44" rx="8" stroke-width="0.5"/><text class="ts" x="230" y="102" text-anchor="middle" dominant-baseline="central">+1y</text></g>
+        <line x1="260" y1="102" x2="280" y2="102" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-blue"><rect x="280" y="80" width="60" height="44" rx="8" stroke-width="0.5"/><text class="ts" x="310" y="102" text-anchor="middle" dominant-baseline="central">+1y</text></g>
+        <line x1="340" y1="102" x2="360" y2="102" class="arr" marker-end="url(#arrow)"/>
+        <g class="c-gray"><rect x="360" y="80" width="40" height="44" rx="8" stroke-width="0.5"/><text class="ts" x="380" y="102" text-anchor="middle" dominant-baseline="central">&#8943;</text></g>
+        <line x1="400" y1="102" x2="420" y2="102" class="arr" marker-end="url(#arrow)"/>
+        <g class="node c-gray"><rect x="420" y="80" width="100" height="44" rx="8" stroke-width="0.5"/><text class="ts" x="470" y="102" text-anchor="middle" dominant-baseline="central">Maturity</text></g>
+        <line class="leader" x1="70" y1="124" x2="70" y2="150"/>
+        <circle cx="70" cy="124" r="2" fill="#9aa3af"/>
+        <text class="ts" x="80" y="160" text-anchor="start">Blank LIP on a G-Sec/SDL leaves no anchor —</text>
+        <text class="ts" x="80" y="178" text-anchor="start">Optimus cashflow calc breaks here</text>
+        </svg>
+      </div>
+
+      <details class="card">
+        <summary>Catalog naming, recapped — and why it matters at scale</summary>
+        <div class="body"><p>Display name on Optimus is <em>derived</em> from Category + Issuer (see §1 for the full table). The thing worth remembering: <strong>C-STRIPS and P-STRIPS show identically</strong> — "STRIPS - {Issuer}" — even though their cashflow profiles are completely different (one is a coupon piece, one is the principal). If that distinction ever needs to surface anywhere on the buy or details flow, it isn't coming from the catalog name.</p></div>
+      </details>
+
+      <div class="callout callout-key">
+        <span class="ctitle">What this tells you</span>
+        <ul>
+          <li>There is <strong>no system of record for actual interest or redemption payments</strong> anywhere in this stack. Every interest figure shown anywhere in the product is computed live from bond master fields — there's no ledger to check it against.</li>
+          <li>The LIP/NIP rolling-forward logic is therefore not a convenience calculation — it <em>is</em> the system of record, by default, whether or not that was the intention.</li>
+          <li>A blank LIP on any G-Sec/SDL breaks the chain completely, with no fallback.</li>
+          <li>Two unspecified SFDC parameters are needed just to handle the 29th/30th/31st coupon-date edge case.</li>
+        </ul>
+      </div>
+
+      <div class="callout callout-mastery">
+        <span class="ctitle">Sit with this</span>
+        <p>Given there's no payments ledger to reconcile against, how would you even notice if the LIP/NIP rolling logic silently drifted wrong for one bond, over several coupon cycles, with nobody watching?</p>
+        <button class="hint-toggle" onclick="toggleExplain(this)"><span class="icon">+</span> Show explanation</button>
+        <div class="hint">Same shape of answer as the permissions question above: without a ledger, detection has to be built on purpose. Candidates: cross-check the LIP/NIP-derived schedule against the pricing sheet's flat "total interest per unit" for the same bond (the redundancy flagged in §10 is actually useful here, not just a risk); periodically spot-audit a sample of bonds' computed coupon dates against the SFDC bond master; or add a sanity bound — a computed coupon period of 0 days or more than ~190 days is almost certainly LIP or NIP rolling wrong. None of these are a stated plan yet, just cheap relative to being silently wrong.</div>
+      </div>
+    </section>
+
+    <section class="section" id="accrual" data-accent="#C0507A" style="--accent:#C0507A">
+      <span class="eyebrow">Section 08 · The Subtle Part</span>
+      <h2>Interest Accrual: Paid vs. Earned</h2>
+
+      <div class="callout callout-before">
+        <span class="ctitle">Before you dive in</span>
+        <p>When you buy a bond mid-period, are you being charged interest you don't deserve — or pre-paying for interest you're about to earn back?</p>
+      </div>
+
+      <p>It's the second one. Walk through it with a real example: Customer B buys a bond mid-period from Customer A, holds it across one full coupon period, then sells it mid-period to someone else.</p>
+
+      <div class="diagram-frame">
+        <div class="dlabel">FIG 8.1 — How one bond's coupons split across two ownership changes</div>
+        <svg class="diagram" viewBox="0 0 680 350" role="img">
+        <title>Accrued interest timeline for a mid-period bond resale</title>
+        <desc>A bond pays interest of 4 rupees per unit every six months. Customer B buys mid-way through the first period and sells mid-way through the third. Each coupon period's interest splits between buyer and seller based on how much of the period each held the bond.</desc>
+        <line x1="80" y1="200" x2="600" y2="200" class="arr"/>
+        <line x1="80" y1="192" x2="80" y2="208" class="arr"/>
+        <line x1="253" y1="192" x2="253" y2="208" class="arr"/>
+        <line x1="426" y1="192" x2="426" y2="208" class="arr"/>
+        <line x1="600" y1="192" x2="600" y2="208" class="arr"/>
+        <g class="node c-blue"><rect x="218" y="96" width="70" height="32" rx="16" stroke-width="0.5"/><text class="ts" x="253" y="112" text-anchor="middle" dominant-baseline="central">IP1 &#8377;4</text></g>
+        <line x1="253" y1="128" x2="253" y2="192" class="arr"/>
+        <g class="node c-blue"><rect x="391" y="96" width="70" height="32" rx="16" stroke-width="0.5"/><text class="ts" x="426" y="112" text-anchor="middle" dominant-baseline="central">IP2 &#8377;4</text></g>
+        <line x1="426" y1="128" x2="426" y2="192" class="arr"/>
+        <g class="node c-blue"><rect x="565" y="96" width="70" height="32" rx="16" stroke-width="0.5"/><text class="ts" x="600" y="112" text-anchor="middle" dominant-baseline="central">IP3 &#8377;4</text></g>
+        <line x1="600" y1="128" x2="600" y2="192" class="arr"/>
+        <text class="ts" x="101.5" y="215" text-anchor="middle">&#8377;1</text>
+        <text class="ts" x="188" y="215" text-anchor="middle">&#8377;3</text>
+        <text class="ts" x="339.5" y="215" text-anchor="middle">&#8377;4</text>
+        <text class="ts" x="469.5" y="215" text-anchor="middle">&#8377;2</text>
+        <text class="ts" x="556.5" y="215" text-anchor="middle">&#8377;2</text>
+        <text class="ts" x="80" y="250" text-anchor="middle">Jan 2024</text>
+        <text class="ts" x="253" y="250" text-anchor="middle">Jul 2024</text>
+        <text class="ts" x="426" y="250" text-anchor="middle">Jan 2025</text>
+        <text class="ts" x="600" y="250" text-anchor="middle">Jul 2025</text>
+        <g class="node"><circle cx="123" cy="200" r="4" fill="#C0507A"/><line x1="123" y1="200" x2="123" y2="282" fill="none" stroke="#C0507A" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arrow)"/></g>
+        <text class="ts" x="123" y="302" text-anchor="middle">B buys bond</text>
+        <g class="node"><circle cx="513" cy="200" r="4" fill="#C0507A"/><line x1="513" y1="200" x2="513" y2="282" fill="none" stroke="#C0507A" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arrow)"/></g>
+        <text class="ts" x="513" y="302" text-anchor="middle">B sells bond</text>
+        </svg>
+      </div>
+      <details class="card">
+        <summary>Walking through the numbers</summary>
+        <div class="body">
+          <p>Reading left to right: ₹1 and ₹3 split IP1 between Customer A (held Jan–buy date) and Customer B (buy date–Jul 2024). IP2's full ₹4 belongs entirely to B since no resale happened that period. ₹2 and ₹2 split IP3 between B and the next buyer.</p>
+          <p><strong>B's true economic interest</strong> = AI(2)+AI(3)+AI(4) = 3+4+2 = <strong>₹9</strong>. But B also paid AI(1)=₹1 to Customer A at purchase — and that gets folded into both her investment amount and her <em>displayed</em> interest earned, making displayed earned = AI(1)+AI(2)+AI(3)+AI(4) = 1+3+4+2 = <strong>₹10</strong>. <em>(Worth a quick sanity check against the original notes, which wrote this total as ₹9 — likely a typo, but worth confirming since an off-by-one-coupon error at scale matters.)</em></p>
+        </div>
+      </details>
+
+      <details class="card">
+        <summary>Why Holdings and Bond Details show different numbers — on purpose</summary>
+        <div class="body">
+          <table class="ref">
+            <tr><th>Field</th><th>Lives on</th><th>Behaviour</th></tr>
+            <tr><td class="term">Interest earned</td><td>Holdings page</td><td>Cumulative since purchase, includes the AI(1) paid-to-seller pass-through, grows daily, never resets.</td></tr>
+            <tr><td class="term">Interest accumulated</td><td>Bond Details page</td><td>Before first coupon: paid-to-seller + earned-till-today. After: earned-till-today only — resets to ~0 right after every payout.</td></tr>
+            <tr><td class="term">Interest received</td><td>Bond Details page</td><td>Cumulative sum of every coupon actually paid out so far (IP1+IP2+...).</td></tr>
+          </table>
+          <p>Bond Details' (accumulated + received) should always equal Holdings' single "interest earned" figure at any given moment — they're two different slices of the same economic total, not two competing answers.</p>
+        </div>
+      </details>
+
+      <div class="fun-fact"><b>Constraint worth remembering:</b> upcoming interest dates come from SFDC as-is. SFDC confirmed it <em>cannot</em> compute the holiday-adjusted actual payment date — so Optimus just shows the nominal date with a disclaimer icon, and only surfaces it 1–2 months before payment.</div>
+
+      <div class="callout callout-key">
+        <span class="ctitle">What this tells you</span>
+        <ul>
+          <li>Buying mid-period means pre-paying the seller's accrued interest — and getting that exact amount back at the next coupon.</li>
+          <li>"Interest earned" (Holdings) and "interest accumulated" (Bond Details) are deliberately different numbers serving different screens, not a bug.</li>
+          <li>"Interest received" is a running lifetime total across every coupon paid so far — never resets.</li>
+        </ul>
+      </div>
+
+      <div class="callout callout-mastery">
+        <span class="ctitle">Sit with this</span>
+        <p>At the exact moment a coupon is paid, do Holdings' "interest earned" and Bond Details' ("interest accumulated" + "interest received") actually show the same total — and what would it mean for the product if they ever didn't?</p>
+        <button class="hint-toggle" onclick="toggleExplain(this)"><span class="icon">+</span> Show explanation</button>
+        <div class="hint">They should, by construction — Holdings' cumulative "interest earned" is meant to equal what Bond Details splits into "accumulated" (current period) and "received" (all prior periods). A divergence would mean either: the two figures are computed from different source events and have drifted apart, or the "interest accumulated" reset is firing at a slightly different moment than the "interest received" bump — e.g. a timezone or end-of-day cutoff mismatch between the two calculations. Either way, this is one of the easier internal-consistency checks to build into a test suite, since the two numbers are supposed to be mathematically related, not independently observed facts.</div>
+      </div>
+    </section>
+
+    <section class="section" id="screens" data-accent="#1697A6" style="--accent:#1697A6">
+      <span class="eyebrow">Section 09 · What The Customer Actually Sees</span>
+      <h2>Holdings, Bond Details &amp; Transactions</h2>
+
+      <div class="callout callout-before">
+        <span class="ctitle">Before you dive in</span>
+        <p>If a bond matures and disappears from Holdings, where does its history go?</p>
+      </div>
+
+      <details class="card">
+        <summary>Screen-by-screen decisions: Holdings, Transactions, Bond Details</summary>
+        <div class="body">
+          <table class="ref">
+            <tr><th>Screen</th><th>Decision</th></tr>
+            <tr><td class="term">Holdings</td><td>Signed off — no further changes.</td></tr>
+            <tr><td class="term">Transactions</td><td>Keeps the short label <strong>"Deal reported"</strong> rather than the more accurate but too-long "Deal matched on NDS OM" — the longer phrase becomes a per-state description instead, with short descriptions for every state still pending from Abhilash. Filters and other page details: finalised.</td></tr>
+            <tr><td class="term">Bond Details</td><td>Drops "Returns rate." Keeps investment amount + interest details (Holdings only shows a rounded figure, e.g. "10.2k" vs the exact ₹10,223) and the transactions list (no other screen shows bond-specific transaction history).</td></tr>
+          </table>
+        </div>
+      </details>
+
+      <details class="card">
+        <summary>Where Bond Details' numbers actually come from</summary>
+        <div class="body">
+          <table class="ref">
+            <tr><th>Field</th><th>Source</th></tr>
+            <tr><td class="term">Invested amount</td><td>Amount debited from customer account — <strong>FM Converge</strong>, not SFDC</td></tr>
+            <tr><td class="term">Units held</td><td><strong>FM Converge</strong></td></tr>
+            <tr><td class="term">Avg price</td><td>Invested amount &divide; units held (derived)</td></tr>
+            <tr><td class="term">Upcoming / last interest date</td><td><strong>SFDC</strong> file (nominal date, holiday-adjustment not computable)</td></tr>
+            <tr><td class="term">Transactions list</td><td>Buy, Sell, Interest payments — click any row to land on the order-tracking page with full order details</td></tr>
+          </table>
+        </div>
+      </details>
+
+      <p>Aligned minimum field set for a bond card, post-discussion: <strong>ISIN · Quantity (units held) · Current value · Upcoming interest date · Interest paid · Maturity date/tenure.</strong></p>
+
+      <details class="card">
+        <summary>What happens at maturity</summary>
+        <div class="body"><p>Confirmed: once a bond matures, its Bond Details entry is removed from Holdings entirely. Its <strong>transaction history stays on the Transactions page permanently</strong> — that page is the only place left to find anything about a matured bond.</p></div>
+      </details>
+
+      <div class="fun-fact"><b>Dependency to close out:</b> Abhilash has already shared the full buy-error-scenario list with the SFDC team — Optimus needs to mirror the same list for consistent error messaging, but the actual contents haven't made it into this document yet.</div>
+
+      <div class="callout callout-key">
+        <span class="ctitle">What this tells you</span>
+        <ul>
+          <li>Two different systems own the "truth" for Bond Details: FM Converge for money/units, SFDC for dates.</li>
+          <li>The Transactions page is doing double duty — it's the only historical record once a bond leaves Holdings at maturity.</li>
+          <li>Optimus's error messaging is meant to mirror SFDC's, not invent its own — a dependency worth tracking down.</li>
+        </ul>
+      </div>
+
+      <div class="callout callout-mastery">
+        <span class="ctitle">Sit with this</span>
+        <p>A bond matures and drops off Holdings. Six months later, a customer taps into an old transaction for it on the Transactions page. What should that page be able to show them, given the bond's own details record no longer exists anywhere?</p>
+        <button class="hint-toggle" onclick="toggleExplain(this)"><span class="icon">+</span> Show explanation</button>
+        <div class="hint">At minimum, the transaction record needs to be self-contained — ISIN, bond name, quantity, price, and date can't depend on a live lookup to a Bond Details record that's already gone. That likely means Transactions needs to snapshot the relevant bond details at the time of each transaction, rather than joining live against current bond master data. The harder question hiding in here: does the customer expect to see the bond's final outcome — last interest payment, maturity payout — on this page too, since Bond Details won't show it anymore? If yes, Transactions is being asked to do more than list historical buys and sells; it becomes the only place the maturity outcome is visible at all.</div>
+      </div>
+    </section>
+
+    <section class="section" id="risks" data-accent="#C1392B" style="--accent:#C1392B">
+      <span class="eyebrow">Section 10 · Don't Let These Go Quiet</span>
+      <h2>Open Questions &amp; Risks</h2>
+      <p>Every open item from every conversation so far, in one place, so nothing gets lost in the gap between meetings.</p>
+
+      <div class="risk-item">
+        <div class="risk-sev sev-high">HIGH</div>
+        <div class="risk-body"><div class="rtitle">No payments ledger exists</div><div class="rdetail">No system anywhere stores actual interest or redemption payments. Every interest figure shown anywhere in the product is computed live from bond master fields — there's nothing to reconcile against if it drifts wrong.</div></div>
+      </div>
+      <div class="risk-item">
+        <div class="risk-sev sev-med">MEDIUM</div>
+        <div class="risk-body"><div class="rtitle">T+1 allocation vs T+2 holdings display</div><div class="rdetail">Units allocate at T+1, but Optimus holdings only show the position at T+2. Confirmed inconsistency, flagged as "behaviour to be checked," still open.</div></div>
+      </div>
+      <div class="risk-item">
+        <div class="risk-sev sev-med">MEDIUM</div>
+        <div class="risk-body"><div class="rtitle">Mid-buy inventory drift</div><div class="rdetail">If quantity changes between two inventory file uploads while a customer is mid-buy, how does Optimus find out — and what happens if the order now exceeds actual available quantity?</div></div>
+      </div>
+      <div class="risk-item">
+        <div class="risk-sev sev-med">MEDIUM</div>
+        <div class="risk-body"><div class="rtitle">CCIL-exists-with-other-partner check</div><div class="rdetail">Flagged red/unconfirmed in the original onboarding sketch — treat as not-yet-settled logic, not a finished spec.</div></div>
+      </div>
+      <div class="risk-item">
+        <div class="risk-sev sev-med">MEDIUM</div>
+        <div class="risk-body"><div class="rtitle">29th/30th/31st coupon dates</div><div class="rdetail">Confirmed to actually happen. The two SFDC parameters needed to handle it in the cashflow calculation are not yet specified.</div></div>
+      </div>
+      <div class="risk-item">
+        <div class="risk-sev sev-med">MEDIUM</div>
+        <div class="risk-body"><div class="rtitle">Two paths compute "interest," only one should</div><div class="rdetail">The pricing sheet's flat "total interest per unit" and the LIP/NIP-derived schedule both describe the same cashflow. If they're refreshed on different cadences, the buy-details page and a later holdings/cashflow view could disagree.</div></div>
+      </div>
+      <div class="risk-item">
+        <div class="risk-sev sev-med">MEDIUM</div>
+        <div class="risk-body"><div class="rtitle">Buy error-scenario list not yet reviewed</div><div class="rdetail">Abhilash shared the canonical list with the SFDC team; Optimus is meant to mirror it, but the actual contents haven't made it into this document.</div></div>
+      </div>
+      <div class="risk-item">
+        <div class="risk-sev sev-low">LOW</div>
+        <div class="risk-body"><div class="rtitle">"WIP" branch on the CCIL gate</div><div class="rdetail">Labelled WIP rather than a clean Yes/No — worth confirming there's no missing hard-rejection state.</div></div>
+      </div>
+      <div class="risk-item">
+        <div class="risk-sev sev-low">LOW</div>
+        <div class="risk-body"><div class="rtitle">Add-money flow forces full re-validation</div><div class="rdetail">After topping up a low balance, the user re-triggers proceed and every validation reruns from scratch — confirm this is the intended UX, not an artifact of how the flow was wired.</div></div>
+      </div>
+      <div class="risk-item">
+        <div class="risk-sev sev-low">LOW</div>
+        <div class="risk-body"><div class="rtitle">"Top Pick" ranking logic</div><div class="rdetail">Undefined. Needs a real answer before it can be reflected anywhere on Optimus screens.</div></div>
+      </div>
+      <div class="risk-item">
+        <div class="risk-sev sev-low">LOW</div>
+        <div class="risk-body"><div class="rtitle">Qty-validation error message wording</div><div class="rdetail">Pending review from Abhilash.</div></div>
+      </div>
+      <div class="risk-item">
+        <div class="risk-sev sev-low">LOW</div>
+        <div class="risk-body"><div class="rtitle">"20th June" design PDF not reviewed directly</div><div class="rdetail">Referenced as the latest screen design, but this document only has the text recap of its interest-calculation logic — not the visuals themselves.</div></div>
+      </div>
+    </section>
+
+    <section class="section" id="glossary" data-accent="#6b7280" style="--accent:#6b7280">
+      <span class="eyebrow">Section 11 · The Decoder Ring</span>
+      <h2>Glossary</h2>
+      <table class="ref" id="glossaryTable">
+        <tr><th>Term</th><th>Meaning</th></tr>
+        <tr><td class="term">G-Sec</td><td>Government Security — tradeable Centre/State debt, virtually default-risk-free ("gilt-edged").</td></tr>
+        <tr><td class="term">SDL / SGS</td><td>State Development Loan — a State government's dated security, same mechanics as a GSec.</td></tr>
+        <tr><td class="term">T-bill</td><td>Treasury Bill — zero-coupon, ≤1yr, sold at a discount, money-market day count (actual/365).</td></tr>
+        <tr><td class="term">STRIPS</td><td>Separately traded coupon (C-STRIPS) or principal (P-STRIPS) pieces of a coupon bond, sold as individual zero-coupon instruments.</td></tr>
+        <tr><td class="term">YTM</td><td>Yield to Maturity — the discount rate equating a bond's future cashflows to its current price.</td></tr>
+        <tr><td class="term">Dirty / Clean price</td><td>Dirty = clean price + accrued interest = the actual consideration amount paid.</td></tr>
+        <tr><td class="term">LIP / NIP</td><td>Last / Next Interest Payment date — the two anchor fields the proposed payout-schedule logic rolls forward from.</td></tr>
+        <tr><td class="term">IP(n) / AI(n)</td><td>The n-th coupon payment event / the accrued-interest segment between two events on the holding timeline.</td></tr>
+        <tr><td class="term">SFDC</td><td>Salesforce — the orchestration and SR hub for onboarding, inventory, and buy flows.</td></tr>
+        <tr><td class="term">CDP</td><td>Customer Data Platform — holds CCID linked to UCIC.</td></tr>
+        <tr><td class="term">eDMS</td><td>Electronic Document Management System — stores AOF forms and deal PDFs.</td></tr>
+        <tr><td class="term">FM Converge</td><td>Deal-booking system; source of truth for invested amount and units held.</td></tr>
+        <tr><td class="term">CCIL</td><td>Clearing Corporation of India — runs NDS-OM, the actual G-Sec clearing market.</td></tr>
+        <tr><td class="term">NDS-OM</td><td>Negotiated Dealing System – Order Matching, RBI's electronic G-Sec trading platform.</td></tr>
+        <tr><td class="term">NSDL</td><td>National Securities Depository — records settlement obligations.</td></tr>
+        <tr><td class="term">Speed-e</td><td>NSDL's system that executes the actual depository (DP) transfer.</td></tr>
+        <tr><td class="term">SR</td><td>Service Request — Salesforce's unit of work tracking onboarding/buy state.</td></tr>
+        <tr><td class="term">AOF</td><td>Account Opening Form.</td></tr>
+        <tr><td class="term">UCIC / CCID</td><td>Unique Customer Identification Code / the customer ID linked to it in CDP.</td></tr>
+        <tr><td class="term">P2P</td><td>Direct point-to-point integration (used between SFDC and Optimus).</td></tr>
+        <tr><td class="term">Kong / Mule</td><td>API gateway / integration layer routing calls to third parties and FM Converge.</td></tr>
+        <tr><td class="term">SA</td><td>Savings Account — the account debited for a buy and credited for coupons.</td></tr>
+      </table>
+    </section>
+
+    <footer>Built section by section from project conversations — last assembled to reflect everything discussed through the buy journey, interest accrual model, and screen-level UX decisions. Treat §10 as the live punch list.</footer>
+
+  </main>
+</div>
+
+<script>
+function toggleExplain(btn){
+  var hint = btn.nextElementSibling;
+  var showing = hint.classList.toggle('show');
+  btn.innerHTML = showing
+    ? '<span class="icon">&minus;</span> Hide explanation'
+    : '<span class="icon">+</span> Show explanation';
+}
+(function(){
+  var expandAllBtn = document.getElementById('expandAllBtn');
+  var allExpanded = false;
+  expandAllBtn.addEventListener('click', function(){
+    allExpanded = !allExpanded;
+    var hints = document.querySelectorAll('.callout-mastery .hint');
+    var btns = document.querySelectorAll('.callout-mastery .hint-toggle');
+    for(var i=0;i<hints.length;i++){ hints[i].classList.toggle('show', allExpanded); }
+    for(var j=0;j<btns.length;j++){
+      btns[j].innerHTML = allExpanded
+        ? '<span class="icon">&minus;</span> Hide explanation'
+        : '<span class="icon">+</span> Show explanation';
+    }
+    expandAllBtn.innerHTML = allExpanded ? '&minus; Collapse all explanations' : '+ Expand all explanations';
+    expandAllBtn.classList.toggle('active', allExpanded);
+  });
+})();
+(function(){
+  var sections = Array.prototype.slice.call(document.querySelectorAll('main .section'));
+  var nav = document.getElementById('sideNav');
+  var groups = [
+    {label:'Overview', items:['welcome','fundamentals']},
+    {label:'Systems', items:['architecture','onboarding','permissions','inventory']},
+    {label:'The Buy Journey', items:['buyjourney']},
+    {label:'The Math', items:['cashflow','accrual']},
+    {label:'Product Screens', items:['screens']},
+    {label:'Reference', items:['risks','glossary']}
+  ];
+  var titleMap = {};
+  sections.forEach(function(s){
+    var h = s.querySelector('h1,h2');
+    titleMap[s.id] = h ? h.textContent : s.id;
+  });
+  groups.forEach(function(g){
+    var lab = document.createElement('div'); lab.className='navlabel'; lab.textContent=g.label;
+    nav.appendChild(lab);
+    g.items.forEach(function(id){
+      if(!titleMap[id]) return;
+      var el = document.getElementById(id);
+      var accent = (el.getAttribute('style')||'').match(/--accent:\s*(#[0-9a-fA-F]+)/);
+      accent = accent ? accent[1] : '#a8782a';
+      var a = document.createElement('a');
+      a.href = '#'+id;
+      a.innerHTML = '<span class="dot" style="background:'+accent+'"></span>'+titleMap[id];
+      a.dataset.target = id;
+      nav.appendChild(a);
+    });
+  });
+
+  var navLinks = Array.prototype.slice.call(nav.querySelectorAll('a'));
+  var readSet = {};
+  var readCount = 0;
+  document.getElementById('readTotal').textContent = sections.length;
+
+  function setActive(id){
+    navLinks.forEach(function(a){ a.classList.toggle('active', a.dataset.target===id); });
+  }
+  function markRead(id){
+    if(readSet[id]) return;
+    readSet[id] = true; readCount++;
+    var link = navLinks.filter(function(a){return a.dataset.target===id;})[0];
+    if(link) link.classList.add('read');
+    document.getElementById('readCount').textContent = readCount;
+  }
+
+  if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting) setActive(entry.target.id);
+      });
+    }, {rootMargin:'-90px 0px -55% 0px', threshold:0});
+    sections.forEach(function(s){ io.observe(s); });
+  }
+
+  window.addEventListener('scroll', function(){
+    sections.forEach(function(s){
+      var rect = s.getBoundingClientRect();
+      if(rect.bottom < 140) markRead(s.id);
+    });
+  }, {passive:true});
+
+  var searchInput = document.getElementById('search');
+  var lastFlashed = null;
+  function clearFlash(){ if(lastFlashed){ lastFlashed.style.boxShadow=''; lastFlashed=null; } }
+  searchInput.addEventListener('input', function(){
+    var q = searchInput.value.trim().toLowerCase();
+    clearFlash();
+    if(q.length < 2) return;
+    for(var i=0;i<sections.length;i++){
+      if(sections[i].textContent.toLowerCase().indexOf(q) !== -1){
+        sections[i].scrollIntoView({behavior:'smooth', block:'start'});
+        sections[i].style.boxShadow = 'inset 5px 0 0 0 #a8782a';
+        lastFlashed = sections[i];
+        break;
+      }
+    }
+  });
+
+  var sidebar = document.getElementById('sidebar');
+  var menuBtn = document.getElementById('menuBtn');
+  if(menuBtn){ menuBtn.addEventListener('click', function(){ sidebar.classList.toggle('open'); }); }
+  navLinks.forEach(function(a){ a.addEventListener('click', function(){ sidebar.classList.remove('open'); }); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Lab — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="ticker-wrap"><div class="ticker-track" id="ticker-track">
+  <span class="ticker-item muted">Click "Refresh live prices" below to load the ticker →</span>
+</div></div>
+
+<div class="shell">
+  <div class="topnav">
+    <div class="brand">
+      <span class="mark">◆ PORTFOLIO LAB</span>
+      <h1>Your holdings, at a glance</h1>
+    </div>
+    <div class="navlinks">
+      <a class="active" href="dashboard.html">Dashboard</a>
+      <a href="analysis.html">Deep Analysis</a>
+    </div>
+  </div>
+
+  <div id="key-banner"></div>
+
+  <div class="grid cols-4" id="summary-cards">
+    <div class="card"><div class="label">Invested</div><div class="big mono" id="s-invested">—</div></div>
+    <div class="card"><div class="label">Current value</div><div class="big mono" id="s-current">—</div></div>
+    <div class="card"><div class="label">Unrealised P&amp;L</div><div class="big mono" id="s-pnl">—</div><div class="sub" id="s-pnl-pct"></div></div>
+    <div class="card"><div class="label">Holdings</div><div class="big mono" id="s-count">—</div><div class="sub muted" id="s-sectors"></div></div>
+  </div>
+
+  <div class="grid cols-2" style="margin-top:16px;">
+    <div class="card">
+      <div class="label" style="margin-bottom:14px;">Holdings</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Stock</th><th>Sector</th>
+            <th class="num">Qty</th><th class="num">Avg. buy</th>
+            <th class="num">LTP</th><th class="num">Day chg</th>
+            <th class="num">P&amp;L</th>
+          </tr>
+        </thead>
+        <tbody id="holdings-body"></tbody>
+      </table>
+      <div class="status-line" id="status-line">Prices not loaded yet — sample holdings shown from config.js.</div>
+      <div style="margin-top:14px; display:flex; gap:10px;">
+        <button class="btn" id="refresh-btn">Refresh live prices</button>
+        <button class="btn ghost" id="clear-btn">Clear cache</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="label" style="margin-bottom:14px;">Allocation by sector</div>
+      <canvas id="alloc-chart" height="220"></canvas>
+    </div>
+  </div>
+
+  <div class="section-title">Notes</div>
+  <div class="card faint" style="font-size:13px; line-height:1.6;">
+    Alpha Vantage's free tier allows 25 requests/day, 5/minute — this dashboard fetches
+    one quote per holding and throttles requests accordingly, and caches results in memory
+    for this session only (nothing is written to disk or browser storage). For fundamentals
+    (P/E, P/B, EPS) and technical charts on a specific stock, open
+    <a href="analysis.html" style="color:var(--gold);">Deep Analysis</a>.
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+<script>
+let allocChart = null;
+
+function renderKeyBanner(){
+  const el = document.getElementById("key-banner");
+  if (!API_KEY || API_KEY === "YOUR_ALPHA_VANTAGE_KEY"){
+    el.innerHTML = `<div class="card" style="border-color:var(--gold); margin-bottom:20px; font-size:13px;">
+      <strong style="color:var(--gold);">No API key set.</strong>
+      Add your free Alpha Vantage key to <code class="mono">config.js</code> to pull live prices —
+      until then this page shows your buy-price data only.
+    </div>`;
+  } else {
+    el.innerHTML = "";
+  }
+}
+
+function renderStaticTable(){
+  const body = document.getElementById("holdings-body");
+  body.innerHTML = HOLDINGS.map(h => {
+    const invested = h.qty * h.buyPrice;
+    return `<tr onclick="location.href='analysis.html?symbol=${encodeURIComponent(h.symbol)}'">
+      <td><strong>${h.name}</strong><br><span class="faint mono" style="font-size:11px;">${h.symbol}</span></td>
+      <td><span class="badge-sector">${h.sector}</span></td>
+      <td class="num mono">${h.qty}</td>
+      <td class="num mono">${fmtINR(h.buyPrice)}</td>
+      <td class="num mono faint">—</td>
+      <td class="num mono faint">—</td>
+      <td class="num mono faint">—</td>
+    </tr>`;
+  }).join("");
+
+  document.getElementById("s-invested").textContent = fmtINR(HOLDINGS.reduce((a,h)=>a + h.qty*h.buyPrice, 0));
+  document.getElementById("s-current").textContent = "—";
+  document.getElementById("s-pnl").textContent = "—";
+  document.getElementById("s-count").textContent = HOLDINGS.length;
+  const sectors = [...new Set(HOLDINGS.map(h=>h.sector))];
+  document.getElementById("s-sectors").textContent = sectors.join(" · ");
+
+  renderAllocation(HOLDINGS.map(h => ({ label: h.sector, value: h.qty * h.buyPrice })));
+}
+
+function renderAllocation(entries){
+  const bySector = {};
+  entries.forEach(e => { bySector[e.label] = (bySector[e.label]||0) + e.value; });
+  const labels = Object.keys(bySector);
+  const values = Object.values(bySector);
+  const palette = ["#F2B84B","#3ECF8E","#5B8DEF","#F0654B","#B98BF2","#4BC7F2"];
+
+  if (allocChart) allocChart.destroy();
+  allocChart = new Chart(document.getElementById("alloc-chart"), {
+    type: "doughnut",
+    data: { labels, datasets: [{ data: values, backgroundColor: palette, borderColor: "#121A2E", borderWidth: 2 }] },
+    options: {
+      plugins: { legend: { position: "bottom", labels: { color: "#8793AC", font: { family: "Inter", size: 11 } } } },
+      cutout: "62%",
+    }
+  });
+}
+
+async function refreshLive(){
+  const btn = document.getElementById("refresh-btn");
+  const status = document.getElementById("status-line");
+  btn.disabled = true;
+  status.textContent = "Fetching quotes (throttled, ~0.8s apart to respect free-tier limits)...";
+
+  try {
+    const results = await withThrottle(HOLDINGS, async (h) => {
+      const q = await fetchQuote(h.symbol);
+      return { ...h, ...q };
+    });
+
+    if (results.every(r => r.error)) {
+      status.textContent = results[0].error === "RATE_LIMIT"
+        ? "Alpha Vantage daily/rate limit hit — try again later, or reduce holdings."
+        : "Could not fetch live prices — check your API key in config.js.";
+      btn.disabled = false;
+      return;
+    }
+
+    let invested = 0, current = 0;
+    const body = document.getElementById("holdings-body");
+    body.innerHTML = results.map(r => {
+      const inv = r.qty * r.buyPrice;
+      invested += inv;
+      const ltp = r.price;
+      const curVal = isNaN(ltp) ? inv : ltp * r.qty;
+      current += curVal;
+      const pnl = curVal - inv;
+      const pnlPct = inv ? (pnl / inv) * 100 : 0;
+      return `<tr onclick="location.href='analysis.html?symbol=${encodeURIComponent(r.symbol)}'">
+        <td><strong>${r.name}</strong><br><span class="faint mono" style="font-size:11px;">${r.symbol}</span></td>
+        <td><span class="badge-sector">${r.sector}</span></td>
+        <td class="num mono">${r.qty}</td>
+        <td class="num mono">${fmtINR(r.buyPrice)}</td>
+        <td class="num mono">${r.error ? "—" : fmtINR(ltp)}</td>
+        <td class="num"><span class="pill ${pillClass(r.changePct)}">${r.error ? "—" : fmtPct(r.changePct)}</span></td>
+        <td class="num"><span class="pill ${pillClass(pnl)}">${r.error ? "—" : fmtINR(pnl)}</span></td>
+      </tr>`;
+    }).join("");
+
+    document.getElementById("s-invested").textContent = fmtINR(invested);
+    document.getElementById("s-current").textContent = fmtINR(current);
+    const pnl = current - invested;
+    document.getElementById("s-pnl").textContent = fmtINR(pnl);
+    document.getElementById("s-pnl").style.color = pnl >= 0 ? "var(--gain)" : "var(--loss)";
+    document.getElementById("s-pnl-pct").innerHTML = `<span class="pill ${pillClass(pnl)}">${fmtPct(invested ? (pnl/invested)*100 : 0)}</span>`;
+
+    renderTicker(results.filter(r => !r.error));
+    renderAllocation(results.map(r => ({ label: r.sector, value: (isNaN(r.price) ? r.qty*r.buyPrice : r.price*r.qty) })));
+
+    status.textContent = `Live prices loaded at ${new Date().toLocaleTimeString("en-IN")}. Cached for this session.`;
+  } catch (e) {
+    status.textContent = e.message === "NO_API_KEY"
+      ? "Add your Alpha Vantage key to config.js first."
+      : "Something went wrong fetching live data: " + e.message;
+  }
+  btn.disabled = false;
+}
+
+document.getElementById("refresh-btn").addEventListener("click", refreshLive);
+document.getElementById("clear-btn").addEventListener("click", () => {
+  window.__cache = { quotes:{}, overview:{}, daily:{} };
+  document.getElementById("status-line").textContent = "Cache cleared.";
+});
+
+renderKeyBanner();
+renderStaticTable();
+</script>
+</body>
+</html>

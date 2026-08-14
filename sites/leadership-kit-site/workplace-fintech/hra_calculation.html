@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HRA Calculation — Office Fintech</title>
+<style>
+  :root {
+    --bg: #F7F5F0; --surface: #FFFFFF; --ink: #1A1915; --ink-muted: #7A7060;
+    --accent: #C47B2B; --accent-mid: #E0973A; --accent-tint: #FDF3E3;
+    --border: #DDD8CC; --tag-bg: #EEE9DF; --tag-ink: #5A5040;
+    --code-bg: #F0EDE5; --code-ink: #3A3020;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111009; --surface: #1A1815; --ink: #EAEAE6; --ink-muted: #8C8880;
+      --accent: #D4903A; --accent-mid: #E8A84E; --accent-tint: #2A1E0A;
+      --border: #2A2720; --tag-bg: #221F18; --tag-ink: #A0987A;
+      --code-bg: #0C0A07; --code-ink: #C8A052;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #111009; --surface: #1A1815; --ink: #EAEAE6; --ink-muted: #8C8880;
+    --accent: #D4903A; --accent-mid: #E8A84E; --accent-tint: #2A1E0A;
+    --border: #2A2720; --tag-bg: #221F18; --tag-ink: #A0987A;
+    --code-bg: #0C0A07; --code-ink: #C8A052;
+  }
+  :root[data-theme="light"] {
+    --bg: #F7F5F0; --surface: #FFFFFF; --ink: #1A1915; --ink-muted: #7A7060;
+    --accent: #C47B2B; --accent-mid: #E0973A; --accent-tint: #FDF3E3;
+    --border: #DDD8CC; --tag-bg: #EEE9DF; --tag-ink: #5A5040;
+    --code-bg: #F0EDE5; --code-ink: #3A3020;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+  .topnav { position: sticky; top: 0; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--border); height: 48px; padding: 0 28px; display: flex; align-items: center; gap: 16px; }
+  .back-link { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .06em; color: var(--ink-muted); transition: color .15s; }
+  .back-link:hover { color: var(--accent); text-decoration: none; }
+  .site-tag { margin-left: auto; font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); opacity: .7; user-select: none; }
+  .theme-btn { background: none; border: 1px solid var(--border); border-radius: 4px; padding: 3px 9px; font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-muted); cursor: pointer; transition: border-color .15s, color .15s; }
+  .theme-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .page-header { max-width: 780px; margin: 0 auto; padding: 44px 28px 28px; border-bottom: 1px solid var(--border); }
+  .page-eyebrow { font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+  .page-title { font-family: Georgia, 'Times New Roman', serif; font-size: 1.9rem; font-weight: normal; line-height: 1.2; color: var(--ink); text-wrap: balance; margin-bottom: 12px; }
+  .page-sub { font-size: .9rem; color: var(--ink-muted); line-height: 1.65; max-width: 580px; }
+
+  .content { max-width: 780px; margin: 0 auto; padding: 36px 28px 80px; }
+
+  .section-label { display: flex; align-items: center; gap: 10px; font-family: 'Courier New', monospace; font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin: 40px 0 14px; }
+  .section-label::before { content: ''; width: 18px; height: 1px; background: var(--accent); flex-shrink: 0; }
+  .content > .card:first-child { margin-top: 0; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; overflow: clip; transition: border-color .2s; }
+  .card:hover { border-color: var(--accent); }
+  .card[open] { border-color: var(--accent); }
+  .card summary { list-style: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 15px 18px; border-left: 3px solid var(--border); font-family: Georgia, 'Times New Roman', serif; font-size: .94rem; color: var(--ink); line-height: 1.45; cursor: pointer; user-select: none; transition: background .15s, border-color .15s; }
+  .card summary::-webkit-details-marker { display: none; }
+  .card:hover summary, .card[open] summary { border-left-color: var(--accent); background: var(--accent-tint); }
+  .card summary::after { content: '+'; font-family: 'Courier New', monospace; font-size: 1rem; color: var(--accent); flex-shrink: 0; margin-top: 1px; opacity: .7; transition: transform .2s; }
+  .card[open] summary::after { transform: rotate(45deg); }
+  .card .body { border-left: 3px solid var(--accent); padding: 4px 18px 18px; overflow-x: auto; }
+  .card .body p { margin: 10px 0; font-size: .9rem; line-height: 1.65; }
+  .card .body ul { margin: 10px 0; padding-left: 22px; font-size: .9rem; }
+  .card .body li { margin: 5px 0; line-height: 1.55; }
+  strong { font-weight: 600; }
+
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: .875rem; font-variant-numeric: tabular-nums; }
+  th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+  th { background: var(--accent); color: #fff; font-family: 'Courier New', monospace; font-size: .75rem; letter-spacing: .04em; font-weight: normal; }
+  tr:nth-child(even) td { background: var(--tag-bg); }
+
+  pre.ascii { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-family: 'Courier New', monospace; font-size: .8rem; color: var(--code-ink); line-height: 1.65; margin: 12px 0; }
+
+  .note { background: var(--accent-tint); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; padding: 12px 16px; font-size: .875rem; color: var(--ink-muted); line-height: 1.6; margin: 14px 0 2px; }
+  .note strong { color: var(--ink); }
+
+  .bottom-nav { max-width: 780px; margin: 0 auto; padding: 20px 28px 48px; border-top: 1px solid var(--border); }
+  .bottom-nav a { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .06em; color: var(--ink-muted); transition: color .15s; }
+  .bottom-nav a:hover { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="index.html" class="back-link">← All Notes</a>
+  <span class="site-tag">Office Fintech</span>
+  <button class="theme-btn" onclick="toggleTheme()">Toggle theme</button>
+</nav>
+
+<header class="page-header">
+  <div class="page-eyebrow">Tax Planning · HRA</div>
+  <h1 class="page-title">HRA — The 3-Way Formula Most People Get Wrong</h1>
+  <p class="page-sub">HRA isn't a fixed exemption — it's the minimum of three numbers, and two of those numbers depend on your actual rent and city. Getting the formula wrong means paying tax on income that doesn't need to be taxed.</p>
+</header>
+
+<main class="content">
+
+  <details class="card" open>
+    <summary>1. What is HRA, and who can claim the exemption?</summary>
+    <div class="body">
+      <p>HRA is a salary component paid to help cover rent. The <strong>exemption</strong> on it is only available if:</p>
+      <ul>
+        <li>You are a salaried employee actually paying rent for accommodation you live in</li>
+        <li>You've opted for the <strong>Old Tax Regime</strong> (HRA exemption does not exist under the New Regime)</li>
+        <li>You don't own the house you're living in (or the ownership situation doesn't disqualify you — e.g., you can still claim if you rent in a different city from a house you own)</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>2. What is the exact HRA exemption formula?</summary>
+    <div class="body">
+      <p>The exempt amount is the <strong>least of the following three</strong>:</p>
+      <table>
+        <tr><th>#</th><th>Component</th></tr>
+        <tr><td>A</td><td>Actual HRA received from employer</td></tr>
+        <tr><td>B</td><td>Rent paid <strong>minus</strong> 10% of (Basic + DA)</td></tr>
+        <tr><td>C</td><td>50% of (Basic + DA) if living in a metro city, or 40% if non-metro</td></tr>
+      </table>
+      <div class="note">Metro cities for this rule: Delhi, Mumbai, Kolkata, Chennai. All other cities (including Bangalore, Hyderabad, Pune) count as non-metro at 40%.</div>
+      <p>Whichever of A, B, or C is <strong>smallest</strong> is the amount you can exempt. The rest of your HRA (if any) is fully taxable.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>3. Worked example</summary>
+    <div class="body">
+      <p>Suppose: Basic + DA = ₹50,000/month, HRA received = ₹25,000/month, Rent paid = ₹20,000/month, living in a metro city.</p>
+      <table>
+        <tr><th>Component</th><th>Calculation</th><th>Amount</th></tr>
+        <tr><td>A. Actual HRA received</td><td>—</td><td>₹25,000</td></tr>
+        <tr><td>B. Rent − 10% of Basic</td><td>20,000 − (10% × 50,000)</td><td>₹15,000</td></tr>
+        <tr><td>C. 50% of Basic (metro)</td><td>50% × 50,000</td><td>₹25,000</td></tr>
+      </table>
+      <p>Least of the three = <strong>₹15,000/month</strong> is exempt. The remaining ₹10,000/month of HRA received is taxable as salary income.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>4. What documents do I need to actually claim it?</summary>
+    <div class="body">
+      <ul>
+        <li>Rent receipts (usually monthly, or at least quarterly)</li>
+        <li>Rental agreement</li>
+        <li>Landlord's <strong>PAN</strong> — mandatory if annual rent exceeds ₹1,00,000 (i.e., roughly rent above ₹8,333/month)</li>
+      </ul>
+      <div class="note">If your landlord doesn't have a PAN, they typically need to provide a signed declaration to that effect — check with your payroll team on their exact documentation requirement.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>5. What if I don't submit rent proofs to my employer in time?</summary>
+    <div class="body">
+      <p>Your employer will deduct TDS as if the full HRA is taxable (no exemption applied) through the year. You can still <strong>claim the HRA exemption directly while filing your ITR</strong> — you're not required to have declared it to payroll — but you'll need to keep your rent receipts, agreement, and landlord PAN ready in case of a query.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>6. Can I pay rent to a family member and still claim HRA?</summary>
+    <div class="body">
+      <p>Yes, in principle — for example, paying rent to a parent who owns the house — provided the transaction is genuine: actual rent is paid (ideally via bank transfer, not cash), a proper rental agreement exists, and the recipient declares that rental income in their own tax return. Tax authorities do scrutinize such arrangements, so documentation matters more here than in a typical landlord-tenant case.</p>
+      <div class="note">You generally cannot claim HRA for rent paid to a spouse, since that's viewed as a shared household rather than a genuine landlord-tenant relationship.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>7. Quick reference — when does HRA exemption not apply at all?</summary>
+    <div class="body">
+      <ul>
+        <li>You're on the <strong>New Tax Regime</strong></li>
+        <li>You own the house you live in (no rent being paid)</li>
+        <li>You receive HRA but don't actually pay rent</li>
+        <li>Your rent paid is less than 10% of Basic + DA (component B above becomes zero or negative, so nothing is exempt)</li>
+      </ul>
+    </div>
+  </details>
+
+</main>
+
+<footer class="bottom-nav">
+  <a href="index.html">← Back to all notes</a>
+</footer>
+
+<script>
+  function toggleTheme() {
+    const root = document.documentElement;
+    const sys = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const active = root.getAttribute('data-theme') || localStorage.getItem('wf-theme') || sys;
+    const next = active === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('wf-theme', next);
+  }
+  (function () {
+    const saved = localStorage.getItem('wf-theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+</body>
+</html>

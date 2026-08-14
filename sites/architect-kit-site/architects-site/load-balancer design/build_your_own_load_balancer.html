@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Design a Load Balancer From Scratch — A Design Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF9F5; --panel:#FFFFFF; --panel-2:#F2F0E8;
+    --border:#DEDACC; --text:#242420; --muted:#75736A;
+  }
+  body.dark-theme{
+    --paper:#0F1115; --panel:#161A20; --panel-2:#1C2027;
+    --border:#2A2E37; --text:#E7E3D8; --muted:#8B8F98;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;background:var(--paper);color:var(--text);
+    font-family:'IBM Plex Sans',sans-serif;line-height:1.55;
+    -webkit-font-smoothing:antialiased;transition:background .25s ease,color .25s ease;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:48px 32px 120px;}
+
+  .theme-toggle{
+    position:fixed;top:18px;right:18px;z-index:50;display:flex;align-items:center;gap:8px;
+    background:var(--panel);border:1px solid var(--border);color:var(--text);
+    font-family:'IBM Plex Mono',monospace;font-size:.75rem;font-weight:600;
+    padding:8px 14px;border-radius:20px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.12);
+    transition:background .25s ease,color .25s ease;
+  }
+  .theme-toggle:hover{border-color:#9A62D6;}
+  @media(max-width:600px){.theme-toggle{top:auto;bottom:18px;right:18px;}}
+
+  .ledger-strip{display:flex;height:10px;border-radius:3px;overflow:hidden;margin-bottom:28px;border:1px solid var(--border);}
+  .ledger-strip span{flex:1;border-right:1px solid var(--paper);}
+  .ledger-strip span:nth-child(1){background:#C1543A;} .ledger-strip span:nth-child(2){background:#C9871F;}
+  .ledger-strip span:nth-child(3){background:#6B9A44;} .ledger-strip span:nth-child(4){background:#2E8B82;}
+  .ledger-strip span:nth-child(5){background:#3480B0;} .ledger-strip span:nth-child(6){background:#7A63B8;}
+  .ledger-strip span:nth-child(7){background:#B57EDC;} .ledger-strip span:nth-child(8){background:#C1547A;}
+  .ledger-strip span:nth-child(9){background:#B9971F;} .ledger-strip span:nth-child(10){background:#279090;}
+  .ledger-strip span:nth-child(11){background:#4A5FBF;} .ledger-strip span:nth-child(12){background:#C1543A;}
+  .ledger-strip span:nth-child(13){background:#C9871F;} .ledger-strip span:nth-child(14){background:#6B9A44;}
+  .ledger-strip span:nth-child(15){background:#2E8B82;} .ledger-strip span:nth-child(16){background:#3480B0;}
+  .ledger-strip span:nth-child(17){background:#7A63B8;} .ledger-strip span:nth-child(18){background:#B57EDC;}
+  .ledger-strip span:nth-child(19){background:#C1547A;} .ledger-strip span:nth-child(20){background:#B9971F;}
+
+  header h1{font-family:'Fraunces',serif;font-weight:600;font-size:2.3rem;letter-spacing:-.5px;margin:0 0 6px;}
+  header h1 em{color:#C1543A;font-style:normal;}
+  header p.sub{color:var(--muted);font-size:1rem;margin:0 0 18px;max-width:70ch;}
+  .meta-bar{
+    display:flex;gap:14px;flex-wrap:wrap;font-family:'IBM Plex Mono',monospace;font-size:.76rem;color:var(--muted);
+    border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:12px 0;margin-bottom:26px;
+  }
+  .meta-bar b{color:#2E8B82;}
+
+  .how-to{
+    background:var(--panel-2);border:1px solid var(--border);border-radius:6px;
+    padding:16px 18px;margin-bottom:36px;font-size:.9rem;
+  }
+  .how-to b{color:#C1543A;}
+  .cast{display:flex;gap:18px;margin-top:10px;flex-wrap:wrap;}
+  .cast-card{
+    display:flex;align-items:center;gap:8px;font-size:.85rem;
+    background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:5px 12px 5px 6px;
+  }
+  .cast-avatar{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-family:'IBM Plex Mono',monospace;font-size:.72rem;font-weight:700;color:#fff;flex-shrink:0;}
+  .cast-avatar.a{background:#C1543A;}
+  .cast-avatar.b{background:#2E8B82;}
+
+  nav{
+    position:sticky;top:0;background:rgba(250,249,245,0.94);backdrop-filter:blur(6px);
+    padding:14px 0;margin:0 0 40px;border-bottom:1px solid var(--border);
+    display:flex;flex-wrap:wrap;gap:6px 12px;z-index:10;
+  }
+  body.dark-theme nav{background:rgba(15,17,21,0.94);}
+  nav a{font-family:'IBM Plex Mono',monospace;font-size:.68rem;text-decoration:none;padding:3px 7px;border-radius:4px;font-weight:600;}
+
+  section.stage{margin-bottom:54px;scroll-margin-top:70px;border-left:3px solid var(--seg,#2E8B82);padding-left:22px;}
+  .stage-head{display:flex;align-items:baseline;gap:14px;margin-bottom:12px;}
+  .stage-num{
+    font-family:'IBM Plex Mono',monospace;font-size:.85rem;background:var(--panel-2);
+    border:1px solid var(--border);padding:2px 8px;border-radius:4px;color:var(--seg,#2E8B82);font-weight:600;
+  }
+  .stage-head h2{font-family:'Fraunces',serif;font-weight:600;font-size:1.4rem;margin:0;}
+
+  /* Architect A's opening challenge — always visible */
+  .a-open{
+    background:var(--panel);border:1px solid var(--border);border-left:3px solid #C1543A;
+    border-radius:6px;padding:14px 18px;margin-bottom:14px;
+  }
+  .a-open .who{font-family:'IBM Plex Mono',monospace;font-size:.68rem;text-transform:uppercase;letter-spacing:.5px;color:#C1543A;font-weight:700;margin-bottom:6px;}
+  .a-open p{margin:0;font-size:.96rem;}
+  .a-open p+p{margin-top:8px;}
+
+  .build-box{
+    background:var(--panel);border:1.5px dashed var(--seg,#2E8B82);border-radius:6px;
+    padding:12px 18px;margin-bottom:16px;
+  }
+  .build-box .build-label{
+    font-family:'IBM Plex Mono',monospace;font-size:.66rem;text-transform:uppercase;letter-spacing:.6px;
+    color:var(--seg,#2E8B82);font-weight:700;margin-bottom:5px;
+  }
+  .build-box p{margin:0;font-size:.9rem;}
+
+  .q-card{background:var(--panel);border:1px solid var(--border);border-radius:6px;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,0.03);}
+  .q-head{display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:pointer;user-select:none;}
+  .q-head .reveal-label{font-size:.94rem;font-weight:600;flex:1;color:var(--seg,#2E8B82);}
+  .q-toggle{font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:var(--muted);flex-shrink:0;white-space:nowrap;border:1px solid var(--border);padding:3px 9px;border-radius:20px;}
+  .q-card.open .q-toggle{color:var(--seg,#2E8B82);border-color:var(--seg,#2E8B82);}
+  .q-answer{max-height:0;overflow:hidden;transition:max-height .3s ease;background:var(--panel-2);}
+  .q-card.open .q-answer{border-top:1px solid var(--border);}
+  .q-answer-inner{padding:18px 20px 20px;}
+
+  /* dialogue turns */
+  .turn{border-radius:8px;padding:11px 15px;margin-bottom:9px;font-size:.93rem;}
+  .turn .who{font-family:'IBM Plex Mono',monospace;font-size:.66rem;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:6px;}
+  .turn.a{background:rgba(193,84,58,0.07);border-left:3px solid #C1543A;}
+  .turn.a .who{color:#C1543A;}
+  .turn.b{background:var(--panel);border-left:3px solid var(--seg,#2E8B82);}
+  .turn.b .who{color:var(--seg,#2E8B82);}
+  body.dark-theme .turn.a{background:rgba(193,84,58,0.12);}
+  .turn p{margin:0;} .turn p+p{margin-top:6px;}
+
+  pre.sketch{
+    background:var(--panel-2);border:1px solid var(--border);border-left:3px solid var(--seg,#2E8B82);
+    padding:12px 15px;font-family:'IBM Plex Mono',monospace;font-size:.75rem;color:#4A4A44;
+    overflow-x:auto;border-radius:4px;margin:8px 0;
+  }
+  body.dark-theme pre.sketch{color:#B7BAC2;}
+  .turn.a pre.sketch{border-left-color:#C1543A;}
+
+  .insight{
+    margin-top:8px;padding:11px 15px;border-radius:6px;background:#EAF2ED;border:1px solid #C7DDD0;
+    font-size:.88rem;color:#2E4A3A;
+  }
+  .insight b{color:#2E8B62;}
+  body.dark-theme .insight{background:#16261E;border-color:#2A4536;color:#C7E0D2;}
+  body.dark-theme .insight b{color:#5FC28E;}
+
+  .final-q{
+    margin-top:24px;padding:18px 20px;border-radius:6px;background:var(--panel);
+    border:2px solid var(--seg,#4A5FBF);font-size:.98rem;
+  }
+  .final-q b{color:var(--seg,#4A5FBF);}
+
+  .roadmap{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:16px 20px;margin-top:10px;}
+  .roadmap ol{margin:8px 0 0;padding-left:20px;font-size:.88rem;color:var(--muted);columns:2;column-gap:24px;}
+  .roadmap ol li{margin-bottom:4px;break-inside:avoid;}
+
+  footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);color:var(--muted);font-size:.85rem;font-family:'IBM Plex Mono',monospace;}
+  @media(max-width:600px){header h1{font-size:1.7rem;} .roadmap ol{columns:1;}}
+
+  .eng-philosophy{
+    margin-top:20px;padding:13px 17px;border-radius:6px;
+    background:rgba(194,24,91,0.1);border:1px solid rgba(194,24,91,0.28);
+    border-left:3px solid #C2185B;font-size:.86rem;
+  }
+  .eng-philosophy .ep-label{
+    display:block;font-family:'IBM Plex Mono',monospace;font-size:.67rem;font-weight:600;
+    letter-spacing:.9px;text-transform:uppercase;color:#D94580;opacity:.9;margin-bottom:7px;
+  }
+  .eng-philosophy p{margin:0;font-style:italic;line-height:1.65;color:#F0A8C8;}
+</style>
+<link rel="stylesheet" href="../audio-sync.css">
+</head>
+<body>
+<button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☾&nbsp; Dark mode</button>
+<div class="wrap">
+
+  <div class="ledger-strip">
+    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+  </div>
+
+  <header>
+    <h1>Design a Load Balancer <em>from scratch</em></h1>
+    <p class="sub">Not "a load balancer distributes traffic across servers." Instead: two Principal Architects in a design review, trading sharp, checkable arguments — where nothing is allowed to be a definition, and every mechanism has to earn its place by defeating the decision before it.</p>
+    <div class="meta-bar">
+      <span><b>15 stages</b></span>
+      <span>Problem → Constraint → Trade-off → Design Decision → New Problem</span>
+    </div>
+    <div class="how-to">
+      <b>How this works:</b> Architect A is extremely skeptical and never accepts a buzzword — "high availability," "scalability," "fault tolerant" — without demanding the exact mechanism underneath. Architect B is you, designing from first principles, grounded in a real fintech traffic pattern — 80+ microservices, IPO allotment day spikes, NSDL/MOFSL calls, PolicyBazaar journeys. Read A's challenge, form your own answer, then reveal to compare against the reference dialogue.
+      <div class="cast">
+        <div class="cast-card"><span class="cast-avatar a">A</span> Interviewer — skeptical, never satisfied with a buzzword</div>
+        <div class="cast-card"><span class="cast-avatar b">B</span> You — designing the load balancer from zero, every claim must survive scrutiny</div>
+      </div>
+    </div>
+  </header>
+
+  <nav>
+    <a href="#st0" style="color:#C1543A;">0 Why at all</a>
+    <a href="#st1" style="color:#C9871F;">1 Optimize for what</a>
+    <a href="#st2" style="color:#6B9A44;">2 Naive dispatch breaks</a>
+    <a href="#st3" style="color:#2E8B82;">3 Choosing an algorithm</a>
+    <a href="#st4" style="color:#3480B0;">4 Health checks</a>
+    <a href="#st5" style="color:#7A63B8;">5 Active vs passive</a>
+    <a href="#st6" style="color:#B57EDC;">6 L4 vs L7</a>
+    <a href="#st7" style="color:#C1547A;">7 Sticky sessions</a>
+    <a href="#st8" style="color:#B9971F;">8 LB is the SPOF now</a>
+    <a href="#st9" style="color:#279090;">9 Split-brain health</a>
+    <a href="#st10" style="color:#4A5FBF;">10 Graceful draining</a>
+    <a href="#st11" style="color:#C1543A;">11 Scaling the LB</a>
+    <a href="#st12" style="color:#C9871F;">12 Overload &amp; shedding</a>
+    <a href="#st13" style="color:#6B9A44;">13 Global routing</a>
+    <a href="#st14" style="color:#2E8B82;">14 LB 2.0</a>
+  </nav>
+
+  <!-- STAGE 0 -->
+  <section class="stage" id="st0" style="--seg:#C1543A">
+    <div class="stage-head"><span class="stage-num">Stage 0</span><h2>Don't say "load balancer"</h2></div>
+    <div class="audio-panel" id="audio-panel-st0"></div>
+    <div class="a-open">
+      <div class="who">Architect A</div>
+      <p>I don't want a load balancer. I want a reason. You have one server handling mutual fund order placement. Convince me a second server even helps — before you tell me how traffic reaches it.</p>
+    </div>
+    <div class="build-box"><div class="build-label">✎ think first</div><p>If you add a second identical server, what problem does that alone solve — and what new problem does it immediately create?</p></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="reveal-label">Reveal the dialogue</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <div class="turn b"><div class="who">B</div><p>One server has a hard ceiling — CPU, memory, open connections. Past that ceiling, requests queue, then time out. A second identical server doubles the ceiling.</p></div>
+        <div class="turn a"><div class="who">A</div><p>Then just tell every client "here are two IPs, pick one." Why do you need anything sitting in front of them?</p></div>
+        <div class="turn b"><div class="who">B</div><p>Because now the decision of <em>which</em> server lives on the client — thousands of clients, each guessing independently, with no idea what the other clients just chose.</p>
+        <pre class="sketch">CLIENT-SIDE GUESSING:
+  Client 1 --> "I'll pick Server A"
+  Client 2 --> "I'll pick Server A"   <- no coordination
+  Client 3 --> "I'll pick Server A"
+  Server A: overloaded.  Server B: idle.</pre></div>
+        <div class="turn a"><div class="who">A</div><p>So the real problem was never "one server isn't enough." Say the actual problem.</p></div>
+        <div class="turn b"><div class="who">B</div><p>The real problem is that capacity and the decision of how to use it must live in the same place. Splitting them — capacity on the servers, decision on the clients — guarantees the two drift apart.</p></div>
+        <div class="insight"><b>Where this leaves us:</b> a load balancer isn't "traffic distribution" as a feature — it's the single place where the decision of where-to-send is kept as close as possible to the truth of who-can-take-it. Every later stage is really an argument about how to keep that decision accurate.</div>
+      </div></div></div>
+  </section>
+
+  <!-- STAGE 1 -->
+  <section class="stage" id="st1" style="--seg:#C9871F">
+    <div class="stage-head"><span class="stage-num">Stage 1</span><h2>What are we optimizing?</h2></div>
+    <div class="audio-panel" id="audio-panel-st1"></div>
+    <div class="a-open">
+      <div class="who">Architect A</div>
+      <p>Pick exactly one: fairness, latency, or throughput. Not all three — pick one and defend it from hardware up, not from a slide.</p>
+    </div>
+    <div class="build-box"><div class="build-label">✎ think first</div><p>If two backend servers have wildly different current load, does "fair" distribution and "fast" distribution point in the same direction, or opposite ones?</p></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="reveal-label">Reveal the dialogue</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <div class="turn b"><div class="who">B</div><p>Latency, not fairness. Fairness sounds virtuous, but a request doesn't care how evenly work is spread — it cares how fast <em>it</em> comes back.</p></div>
+        <div class="turn a"><div class="who">A</div><p>Prove it. Give me the case where "fair" and "fast" disagree.</p></div>
+        <div class="turn b"><div class="who">B</div><p>Round-robin is perfectly fair — every server gets the same number of requests. But if one server is mid-way through a slow NSDL callback and the other is idle, round-robin will still send the next request to the busy one, purely to keep the count even.</p>
+        <pre class="sketch">FAIR (round-robin):                LATENCY-AWARE:
+  A: [busy][busy][NEW]--queued      A: [busy][busy]
+  B: [idle]                         B: [idle][NEW]--served instantly
+  count is equal, request waits     count is unequal, request is fast</pre></div>
+        <div class="turn a"><div class="who">A</div><p>So fairness is actually the wrong goal dressed up as a good one?</p></div>
+        <div class="turn b"><div class="who">B</div><p>Fairness optimizes the load balancer's own bookkeeping, not the user's experience. Optimizing for latency means the algorithm has to know something about current server state — not just take turns.</p></div>
+        <div class="insight"><b>Where this leaves us:</b> latency-first rules out any algorithm that can't see real server state, which immediately rules out pure round-robin as the final answer — it just doesn't know enough to be right. Stage 3 has to build the mechanism that actually knows.</div>
+      </div></div></div>
+  <div class="eng-philosophy"><span class="ep-label">Engineering Philosophy</span><p>Fairness optimizes the load balancer's metrics. Latency optimizes the user's experience. When they conflict, optimize for the user. A balanced count that routes requests to a busy server is not actually fair.</p></div>
+  </section>
+
+  <!-- STAGE 2 -->
+  <section class="stage" id="st2" style="--seg:#6B9A44">
+    <div class="stage-head"><span class="stage-num">Stage 2</span><h2>The naive dispatcher, and where it snaps</h2></div>
+    <div class="audio-panel" id="audio-panel-st2"></div>
+    <div class="a-open">
+      <div class="who">Architect A</div>
+      <p>Round-robin: request 1 to server A, request 2 to server B, request 3 to A, and so on forever. Simple, deterministic, no state to maintain. Sell me the case against it.</p>
+    </div>
+    <div class="build-box"><div class="build-label">✎ think first</div><p>Round-robin assumes every request costs the same amount of work. Name one real request type in an order-placement system where that assumption is false.</p></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="reveal-label">Reveal the dialogue</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <div class="turn b"><div class="who">B</div><p>An IPO allotment status check is a 5-millisecond read. A mutual fund redemption that has to call out to MOFSL and wait for a settlement confirmation can take 2 full seconds. Round-robin treats both as one unit of "a request."</p>
+        <pre class="sketch">Round-robin sees:  [req][req][req][req][req] -- all equal
+Reality is:        [5ms][5ms][2000ms][5ms][5ms] -- wildly unequal
+
+Send three slow ones to the same server in a row by pure bad luck,
+and it's drowning while its neighbor sits idle.</pre></div>
+        <div class="turn a"><div class="who">A</div><p>"By pure bad luck" — that's not an argument, that's a shrug. Make it precise.</p></div>
+        <div class="turn b"><div class="who">B</div><p>Round-robin has no memory of what it already sent where. It can't see that server A is still processing the last three heavy redemptions — it just knows "A's turn." The moment request cost varies, blind turn-taking stops being fair even by its own definition, because it's fair on <em>count</em>, not on <em>work</em>.</p></div>
+        <div class="insight"><b>Where this leaves us:</b> the moment request cost is allowed to vary — which it always does in a real system — round-robin's core assumption breaks. The algorithm has to be replaced with one that tracks something closer to actual load, not turn order.</div>
+      </div></div></div>
+  </section>
+
+  <!-- STAGE 3 -->
+  <section class="stage" id="st3" style="--seg:#2E8B82">
+    <div class="stage-head"><span class="stage-num">Stage 3</span><h2>Choosing the algorithm that actually knows something</h2></div>
+    <div class="audio-panel" id="audio-panel-st3"></div>
+    <div class="a-open">
+      <div class="who">Architect A</div>
+      <p>Fine — track something. What, exactly? And don't say "load." Load is not a number until you define it.</p>
+    </div>
+    <div class="build-box"><div class="build-label">✎ think first</div><p>Between "number of open connections per server" and "average response time per server," which one can lie to you, and under what condition?</p></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="reveal-label">Reveal the dialogue</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <div class="turn b"><div class="who">B</div><p>Least-connections: route to whichever server currently has the fewest open connections. It's a live number, not a guess — the load balancer already terminates every connection, so it already knows this for free.</p>
+        <pre class="sketch">Server A: 42 open connections
+Server B: 11 open connections
+Next request --> Server B (fewer open, presumed less loaded)</pre></div>
+        <div class="turn a"><div class="who">A</div><p>Where does "fewest connections" lie to you?</p></div>
+        <div class="turn b"><div class="who">B</div><p>When connections aren't equal cost. A server with 11 open connections, all of them slow MOFSL redemption calls, can be more loaded than a server with 42 open connections that are all fast, idle-keep-alive reads.</p></div>
+        <div class="turn a"><div class="who">A</div><p>So connection count is a proxy for load, not load itself. What's the honest fix?</p></div>
+        <div class="turn b"><div class="who">B</div><p>Weighted least-connections, or better, least response time — factor in each server's recent average latency alongside its open connection count. It costs more to compute, but it stops mistaking "many cheap connections" for "overloaded."</p></div>
+        <div class="insight"><b>Where this leaves us:</b> every algorithm here is really a bet on which cheap signal best approximates true load. That bet is only ever as good as the freshness of the data behind it — which is exactly the problem health checking has to solve next.</div>
+      </div></div></div>
+  </section>
+
+  <!-- STAGE 4 -->
+  <section class="stage" id="st4" style="--seg:#3480B0">
+    <div class="stage-head"><span class="stage-num">Stage 4</span><h2>What if the server is just dead?</h2></div>
+    <div class="audio-panel" id="audio-panel-st4"></div>
+    <div class="a-open">
+      <div class="who">Architect A</div>
+      <p>Least-connections assumes every server in your list is alive. One crashes at 2 a.m. Your algorithm keeps sending it requests forever, because as far as it knows, that server has zero open connections — which looks like the <em>best</em> choice, not the worst.</p>
+    </div>
+    <div class="build-box"><div class="build-label">✎ think first</div><p>A crashed server looks identical to an idle, healthy one from a pure connection-count view. What's the minimum extra piece of information that breaks that tie?</p></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="reveal-label">Reveal the dialogue</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <div class="turn b"><div class="who">B</div><p>You're right — "zero connections" is ambiguous between "wonderfully idle" and "catastrophically dead." The load balancer needs an independent signal of liveness, separate from the load metric entirely.</p>
+        <pre class="sketch">CONNECTION COUNT ALONE:            + HEALTH SIGNAL:
+  Server C: 0 connections            Server C: 0 connections, but
+  --> "route here, it's free!"           last health check: FAILED
+  --> requests vanish into a dead server --> excluded from routing pool</pre></div>
+        <div class="turn a"><div class="who">A</div><p>So poll every server on a timer and ask "are you alive?" What's wrong with that, stated plainly?</p></div>
+        <div class="turn b"><div class="who">B</div><p>Nothing's wrong with it — it's necessary. But it's not sufficient by itself, because a server can pass a shallow "are you up" ping while its actual dependency — say, its connection to NSDL — is the part that's actually broken.</p></div>
+        <div class="insight"><b>Where this leaves us:</b> a raw ping tells you the process is running, not that it can do its job. That gap between "alive" and "actually useful" is exactly what forces the next argument — active checks alone were never going to be the full picture.</div>
+      </div></div></div>
+  <div class="eng-philosophy"><span class="ep-label">Engineering Philosophy</span><p>"Zero connections" looks like the best server to send traffic to — until the server is dead. Health and load are two separate signals. Never use one as a proxy for the other.</p></div>
+  </section>
+
+  <!-- STAGE 5 -->
+  <section class="stage" id="st5" style="--seg:#7A63B8">
+    <div class="stage-head"><span class="stage-num">Stage 5</span><h2>Active checks vs. passive observation — the real trade-off</h2></div>
+    <div class="audio-panel" id="audio-panel-st5"></div>
+    <div class="a-open">
+      <div class="who">Architect A</div>
+      <p>Active health checks — the load balancer pings every server every few seconds, on its own schedule. What does that cost you that nobody mentions in the marketing?</p>
+    </div>
+    <div class="build-box"><div class="build-label">✎ think first</div><p>If you check every server every 2 seconds and have 200 backend instances, what are you actually spending, and does that cost scale with your real traffic or with something else entirely?</p></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="reveal-label">Reveal the dialogue</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <div class="turn b"><div class="who">B</div><p>Active checks cost a fixed drumbeat of traffic that scales with server count, not with real user load. 200 servers, checked every 2 seconds, is 100 health-check requests a second — every second, forever, even at 3 a.m. when nobody's placing an order.</p>
+        <pre class="sketch">ACTIVE:  LB --ping--> every server, every 2s, regardless of traffic
+         cost = f(server count), NOT f(actual usage)</pre></div>
+        <div class="turn a"><div class="who">A</div><p>So drop active checks and just watch real traffic instead?</p></div>
+        <div class="turn b"><div class="who">B</div><p>Passive checks — marking a server unhealthy after N real requests fail in a row — cost nothing extra, but they only fire when real traffic happens to hit the broken server. At 3 a.m. with near-zero traffic, a dead server can sit undetected for a long time.</p>
+        <pre class="sketch">PASSIVE: only learns a server is dead when a REAL request fails
+         cost = free, but detection delay depends on traffic volume</pre></div>
+        <div class="turn a"><div class="who">A</div><p>You've just described two different failure modes, not a winner. Which do you actually ship?</p></div>
+        <div class="turn b"><div class="who">B</div><p>Both, deliberately layered — active checks for baseline liveness at low frequency to keep cost bounded, passive observation on real traffic for fast reaction during actual load. Neither one alone is honest about the trade-off; together they cover each other's blind spot.</p></div>
+        <div class="insight"><b>Where this leaves us:</b> health isn't a single boolean fact — it's an estimate, assembled from two different signals with two different costs and two different blind spots. That estimate is about to get harder to trust the moment there's more than one load balancer, which is exactly stage 9's problem.</div>
+      </div></div></div>
+  <div class="eng-philosophy"><span class="ep-label">Engineering Philosophy</span><p>Active checks find failures before traffic hits them. Passive checks find failures faster once traffic is flowing. Neither alone is enough — use both, and be honest about each one's blind spot.</p></div>
+  </section>
+
+  <!-- STAGE 6 -->
+  <section class="stage" id="st6" style="--seg:#B57EDC">
+    <div class="stage-head"><span class="stage-num">Stage 6</span><h2>How much should the load balancer be allowed to see?</h2></div>
+    <div class="audio-panel" id="audio-panel-st6"></div>
+    <div class="a-open">
+      <div class="who">Architect A</div>
+      <p>Right now you're routing on connection counts and health — you never look inside the request. Is that a limitation, or a design decision? Defend whichever one you claim.</p>
+    </div>
+    <div class="build-box"><div class="build-label">✎ think first</div><p>If the load balancer read the URL path of every request before routing it, what could it do that it can't do blind — and what would that cost it?</p></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="reveal-label">Reveal the dialogue</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <div class="turn b"><div class="who">B</div><p>Blind routing — Layer 4, just TCP/IP, no request inspection — is fast precisely because it's ignorant. It forwards packets without ever assembling or reading the HTTP request. That ignorance is the source of its speed.</p>
+        <pre class="sketch">L4 (blind):   packet in --> pick server by connection --> packet out
+              never parses HTTP, never sees the URL path
+
+L7 (aware):   request in --> PARSE full HTTP --> read path "/insurance/policybazaar/..."
+              --> route THIS path only to the insurance-journey pool</pre></div>
+        <div class="turn a"><div class="who">A</div><p>So why would anyone give that speed up?</p></div>
+        <div class="turn b"><div class="who">B</div><p>Because a fintech platform with 80 microservices doesn't have one homogeneous backend — it has an insurance-journey pool, a demat pool, an IPO-allotment pool. L4 can't tell those apart; it would happily send a PolicyBazaar request to a server that only knows how to handle NSDL calls.</p></div>
+        <div class="turn a"><div class="who">A</div><p>Then L7 is strictly better?</p></div>
+        <div class="turn b"><div class="who">B</div><p>Strictly more capable, not strictly better — parsing every request costs CPU that L4 never spends, and it's a trade you make deliberately, per route, not a free upgrade you take everywhere by default.</p></div>
+        <div class="insight"><b>Where this leaves us:</b> content-aware routing is the first mechanism that requires the load balancer to actually understand the request, not just forward it — and understanding the request is what makes the next problem, keeping a user glued to one server, even thinkable.</div>
+      </div></div></div>
+  </section>
+
+  <!-- STAGE 7 -->
+  <section class="stage" id="st7" style="--seg:#C1547A">
+    <div class="stage-head"><span class="stage-num">Stage 7</span><h2>Sticky sessions — the algorithm turns against itself</h2></div>
+    <div class="audio-panel" id="audio-panel-st7"></div>
+    <div class="a-open">
+      <div class="who">Architect A</div>
+      <p>A user starts a KYC video-verification flow on server A — server A is holding the in-progress session in memory. Your least-connections algorithm sends their next request to server B, which has never heard of this user. What happens?</p>
+    </div>
+    <div class="build-box"><div class="build-label">✎ think first</div><p>If the fix is "always send this user back to the same server," does that fight against everything stage 3 argued for, or fit alongside it? Be specific.</p></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="reveal-label">Reveal the dialogue</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <div class="turn b"><div class="who">B</div><p>The flow breaks. Server B has no idea the user was three steps into KYC — from its point of view, this is a brand-new session starting from zero.</p>
+        <pre class="sketch">STATEFUL FLOW, NO STICKINESS:
+  Req 1 --> Server A (session created, step 1 of 4)
+  Req 2 --> Server B (least-loaded right now) --> "who is this user?"</pre></div>
+        <div class="turn a"><div class="who">A</div><p>So pin the user to server A for the whole flow. Doesn't that directly contradict everything you argued in stage 3 about routing to whichever server has the least load?</p></div>
+        <div class="turn b"><div class="who">B</div><p>It's a direct, honest trade-off, not a contradiction I can hide from — for the lifetime of that session, correctness overrides load-awareness. A slightly slower correct response beats an instantly-fast broken one.</p></div>
+        <div class="turn a"><div class="who">A</div><p>What if server A becomes overloaded mid-session, precisely because it's now stuck holding every sticky user it was ever assigned?</p></div>
+        <div class="turn b"><div class="who">B</div><p>That's the honest cost of stickiness — it can concentrate load exactly where you don't want it. The real fix isn't clever routing; it's removing the need to stick in the first place, by moving session state out of the server and into a shared store both A and B can read.</p></div>
+        <div class="insight"><b>Where this leaves us:</b> stickiness is a patch for state living in the wrong place, not a feature to be proud of. The moment session state moves to a shared, external store, the load balancer is free to go back to being purely load-aware — this stage's decision is really a pointer to a fix one layer below the load balancer entirely.</div>
+      </div></div></div>
+  </section>
+
+  <!-- STAGE 8 -->
+  <section class="stage" id="st8" style="--seg:#B9971F">
+    <div class="stage-head"><span class="stage-num">Stage 8</span><h2>You just built the single point of failure you were trying to remove</h2></div>
+    <div class="audio-panel" id="audio-panel-st8"></div>
+    <div class="a-open">
+      <div class="who">Architect A</div>
+      <p>Walk through this slowly. You built a load balancer so that no single backend server's death takes the platform down. What happens the moment the load balancer itself dies?</p>
+    </div>
+    <div class="build-box"><div class="build-label">✎ think first</div><p>If every server behind it is healthy, and the load balancer is the only thing that's failed, is the platform up or down? Say why in one sentence.</p></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="reveal-label">Reveal the dialogue</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <div class="turn b"><div class="who">B</div><p>Down. Completely. Every backend can be perfectly healthy and it doesn't matter — nothing can reach them.</p>
+        <pre class="sketch">BEFORE:  clients --> [Server A] (dies) --> platform down for A's users only
+AFTER:   clients --> [Load Balancer] (dies) --> platform down for EVERYONE</pre></div>
+        <div class="turn a"><div class="who">A</div><p>So you've concentrated risk, not removed it. That's a serious accusation against your own design. Defend it or fix it.</p></div>
+        <div class="turn b"><div class="who">B</div><p>Fix it — run a standby load balancer, both sharing one virtual IP through a protocol like VRRP. The standby watches heartbeats from the primary; the instant they stop, it takes over the virtual IP itself. Clients never knew there were two.</p>
+        <pre class="sketch">VIRTUAL IP (VIP): 10.0.0.1
+
+  Primary LB  --- heartbeat ---> Standby LB
+  (owns VIP)                    (silent, watching)
+
+  Primary dies --> heartbeats stop --> Standby claims the VIP --> traffic resumes</pre></div>
+        <div class="turn a"><div class="who">A</div><p>How long is that gap — the moment between "primary dies" and "standby has fully taken over"?</p></div>
+        <div class="turn b"><div class="who">B</div><p>Not zero — heartbeat interval plus failover time, typically a few seconds. That's an honest, bounded cost, and it's a vastly better number than "unbounded, until someone gets paged and manually intervenes."</p></div>
+        <div class="insight"><b>Where this leaves us:</b> the load balancer solved the backend's single-point-of-failure problem only by becoming a new one itself — redundancy has to be applied recursively, at every layer that sits between the client and the truth, not just the layer you happened to build first.</div>
+      </div></div></div>
+  </section>
+
+  <!-- STAGE 9 -->
+  <section class="stage" id="st9" style="--seg:#279090">
+    <div class="stage-head"><span class="stage-num">Stage 9</span><h2>Two load balancers, two opinions about who's healthy</h2></div>
+    <div class="audio-panel" id="audio-panel-st9"></div>
+    <div class="a-open">
+      <div class="who">Architect A</div>
+      <p>Primary and standby both run health checks independently. A network blip means the primary sees server C as healthy, and at the exact same moment the standby sees server C as dead. Which one is right?</p>
+    </div>
+    <div class="build-box"><div class="build-label">✎ think first</div><p>Is there a version of "who's healthy" that's an objective fact both load balancers can agree on, or is it always somebody's local opinion? What follows from your answer?</p></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="reveal-label">Reveal the dialogue</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <div class="turn b"><div class="who">B</div><p>Neither is "right" in any absolute sense. Health is observed locally, from wherever the checker sits — a network blip between the standby and server C is a real event from the standby's vantage point, even if the primary's path to C is perfectly fine.</p>
+        <pre class="sketch">Primary LB  --path X--> Server C : reachable   --> "C is healthy"
+Standby LB  --path Y--> Server C : unreachable  --> "C is dead"
+
+Both are telling the truth about their OWN observation.</pre></div>
+        <div class="turn a"><div class="who">A</div><p>Then don't say "who's right." Say what the system does when they disagree.</p></div>
+        <div class="turn b"><div class="who">B</div><p>Only the active load balancer's opinion counts, ever — the standby's health view is informational until the moment it takes over the VIP, at which point its view becomes authoritative and the old primary's view is simply irrelevant because it's no longer serving traffic.</p></div>
+        <div class="turn a"><div class="who">A</div><p>What if, during a failover, both briefly think they're the active one — a split brain?</p></div>
+        <div class="turn b"><div class="who">B</div><p>That has to be structurally impossible, not just unlikely — the VIP can only be claimed by whichever node currently holds the failover protocol's lock or lease. Two nodes routing live traffic under the same identity at once isn't a health-check disagreement anymore, it's a correctness bug.</p></div>
+        <div class="insight"><b>Where this leaves us:</b> "healthy" was never a fact about the server — it was always a fact about the observer's vantage point. The system has to be built so that exactly one vantage point's opinion is ever acted on at a time, which is a much stronger requirement than "check health accurately."</div>
+      </div></div></div>
+  </section>
+
+  <!-- STAGE 10 -->
+  <section class="stage" id="st10" style="--seg:#4A5FBF">
+    <div class="stage-head"><span class="stage-num">Stage 10</span><h2>The hardest question: taking a server out without breaking anyone mid-request</h2></div>
+    <div class="audio-panel" id="audio-panel-st10"></div>
+    <div class="a-open">
+      <div class="who">Architect A</div>
+      <p>You deploy a new build to server A. Right now, at this exact second, it's mid-way through processing a mutual fund redemption for a real user. You kill the process to deploy. What happens to that user?</p>
+    </div>
+    <div class="build-box"><div class="build-label">✎ think first</div><p>What's the difference between "stop sending server A new requests" and "stop server A"? Why does that distinction matter more here than anywhere else in this design?</p></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="reveal-label">Reveal the dialogue</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <div class="turn b"><div class="who">B</div><p>Their request dies mid-flight. Best case, they see a connection-reset error. Worst case, the redemption partially completed on our side but the confirmation never reaches them — now the user and the ledger disagree about what happened.</p>
+        <pre class="sketch">HARD KILL:
+  Server A: [processing redemption] --SIGKILL--> gone
+  User: waiting for a response that will never arrive</pre></div>
+        <div class="turn a"><div class="who">A</div><p>So don't kill it. What's the actual sequence?</p></div>
+        <div class="turn b"><div class="who">B</div><p>Connection draining. Tell the load balancer to stop routing <em>new</em> requests to server A immediately, but let its existing, in-flight requests finish naturally before the process is ever touched.</p>
+        <pre class="sketch">DRAIN:
+  t=0   Server A marked "draining" --> LB stops sending NEW requests
+  t=0..N  existing in-flight requests on A finish normally
+  t=N   A has zero active connections --> now safe to deploy</pre></div>
+        <div class="turn a"><div class="who">A</div><p>What if one request never finishes — a client that opened a connection and went silent, holding server A open forever?</p></div>
+        <div class="turn b"><div class="who">B</div><p>Drain needs a hard ceiling — a maximum drain timeout. Past that, the remaining stragglers get force-closed anyway; you're trading "never break anyone" for "break the smallest possible number, on purpose, with a bound," because waiting forever isn't actually safer, it's just a deploy that never finishes.</p></div>
+        <div class="insight"><b>Where this leaves us:</b> "remove a server" was never one action — it's a sequence, stop-new then finish-old then force-close-stragglers, and skipping straight to the last step is what turns routine deploys into user-facing incidents.</div>
+      </div></div></div>
+  </section>
+
+  <!-- STAGE 11 -->
+  <section class="stage" id="st11" style="--seg:#C1543A">
+    <div class="stage-head"><span class="stage-num">Stage 11</span><h2>Now the load balancer itself is the bottleneck</h2></div>
+    <div class="audio-panel" id="audio-panel-st11"></div>
+    <div class="a-open">
+      <div class="who">Architect A</div>
+      <p>IPO allotment day. Traffic is 40 times normal. Your active-standby pair — one machine actually serving traffic at a time — is pegged at 100% CPU just terminating TCP connections. Adding backend servers doesn't help anymore. Why not?</p>
+    </div>
+    <div class="build-box"><div class="build-label">✎ think first</div><p>You already solved "one server isn't enough" once, in stage 0. Does that exact same argument apply one layer up, to the load balancer itself?</p></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="reveal-label">Reveal the dialogue</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <div class="turn b"><div class="who">B</div><p>It doesn't help because the bottleneck moved. Backend capacity was never the constraint anymore — the single active load balancer's own CPU, socket count, and NIC throughput are the ceiling now. You solved stage 0's problem and reintroduced it one layer up.</p>
+        <pre class="sketch">BEFORE (backend-bound):        NOW (LB-bound):
+  [1 LB] --> [A][B][C]...         [1 LB, pegged] --> [A][B][C]...[Z], all idle
+  adding servers helps            adding servers does NOTHING</pre></div>
+        <div class="turn a"><div class="who">A</div><p>So run multiple active load balancers. Who balances the load across the load balancers?</p></div>
+        <div class="turn b"><div class="who">B</div><p>Nothing needs to sit above them if you use DNS round-robin or ECMP — multiple load balancer IPs advertised at once, and routers or resolvers spread client connections across all of them before traffic ever reaches any single one.</p>
+        <pre class="sketch">DNS returns: LB1, LB2, LB3, LB4 (rotated per query)
+Clients spread themselves across all four --> no new single choke point</pre></div>
+        <div class="turn a"><div class="who">A</div><p>Haven't you just recreated the exact client-side-guessing problem from stage 0, one layer up?</p></div>
+        <div class="turn b"><div class="who">B</div><p>Partially, and deliberately — the trade-off is acceptable here because DNS-level imbalance is coarse and slow-moving, while each individual load balancer still makes a precise, real-time decision underneath it. You've traded a hard, single choke point for a soft, self-correcting one — not eliminated the problem, but moved it somewhere its cost is tolerable.</p></div>
+        <div class="insight"><b>Where this leaves us:</b> load balancing isn't a single layer that can be built once and trusted forever — it's recursive. Every layer you scale out reveals the exact same coordination problem one level above it, and the honest answer is always "push the choke point somewhere coarser," never "eliminate it."</div>
+      </div></div></div>
+  </section>
+
+  <!-- STAGE 12 -->
+  <section class="stage" id="st12" style="--seg:#C9871F">
+    <div class="stage-head"><span class="stage-num">Stage 12</span><h2>What happens when every backend is drowning at once?</h2></div>
+    <div class="audio-panel" id="audio-panel-st12"></div>
+    <div class="a-open">
+      <div class="who">Architect A</div>
+      <p>IPO allotment traffic exceeds total backend capacity — not one server, all of them. Your load balancer is faithfully finding "the least-loaded" server. What's wrong with that sentence?</p>
+    </div>
+    <div class="build-box"><div class="build-label">✎ think first</div><p>If every option is bad, does picking the "least bad" one actually help the user, or does it just guarantee everyone gets a slow, degraded response instead of some getting a fast one?</p></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="reveal-label">Reveal the dialogue</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <div class="turn b"><div class="who">B</div><p>"Least loaded" implicitly assumes at least one option is actually good. When every server is overloaded, routing to the "least bad" one just spreads the overload evenly — everyone gets a slow, degraded response instead of some users getting a fast one and others getting none.</p>
+        <pre class="sketch">LOAD BALANCING UNDER OVERLOAD:
+  All servers at 130% capacity --> "least loaded" picks the 128% one
+  --> still overloaded --> EVERY request now degrades, none fail cleanly</pre></div>
+        <div class="turn a"><div class="who">A</div><p>So what's the alternative — reject some requests on purpose?</p></div>
+        <div class="turn b"><div class="who">B</div><p>Yes — load shedding. Past a defined capacity threshold, the load balancer starts rejecting a portion of incoming requests immediately, with a clear "try again shortly," rather than accepting all of them and letting every single one degrade.</p>
+        <pre class="sketch">WITHOUT SHEDDING:  1000 requests --> all 1000 degrade badly
+WITH SHEDDING:      1000 requests --> 700 served well, 300 rejected fast, cleanly</pre></div>
+        <div class="turn a"><div class="who">A</div><p>Isn't rejecting a paying customer's request during an IPO allotment exactly the outcome you built this whole system to avoid?</p></div>
+        <div class="turn b"><div class="who">B</div><p>It's the better of two bad outcomes, and the honest one — a fast, clear rejection lets the client retry or the user see an explicit "system is busy" message. A silent, system-wide slowdown gives everyone the illusion that it's about to work, right up until it times out anyway, having wasted everyone's time on the way there.</p></div>
+        <div class="insight"><b>Where this leaves us:</b> "always route somewhere" was an assumption baked into every earlier stage — overload is the case where that assumption itself has to be abandoned. A load balancer's job under true overload isn't finding the best option among bad ones; it's protecting the system from all of them collapsing together.</div>
+      </div></div></div>
+  </section>
+
+  <!-- STAGE 13 -->
+  <section class="stage" id="st13" style="--seg:#6B9A44">
+    <div class="stage-head"><span class="stage-num">Stage 13</span><h2>What if the servers aren't even in the same city?</h2></div>
+    <div class="audio-panel" id="audio-panel-st13"></div>
+    <div class="a-open">
+      <div class="who">Architect A</div>
+      <p>You now run backend clusters in Mumbai and Chennai, for disaster recovery. A user in Chennai gets routed to Mumbai by simple round-robin across data centers. What did that decision just cost them, and can your load balancer even see it?</p>
+    </div>
+    <div class="build-box"><div class="build-label">✎ think first</div><p>Everything you've built so far balances load between servers that are roughly equidistant from the user. What breaks the instant that stops being true?</p></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="reveal-label">Reveal the dialogue</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <div class="turn b"><div class="who">B</div><p>Physical distance adds real, unavoidable network latency — a Chennai user routed to Mumbai pays a round-trip penalty on every single request, no matter how idle or healthy the Mumbai cluster is. Every algorithm we've built so far assumed distance was a constant; here it's a variable, and it's the dominant one.</p>
+        <pre class="sketch">Chennai user --> Chennai cluster: ~5ms round trip
+Chennai user --> Mumbai cluster:  ~25ms round trip, EVERY request
+
+"Least loaded" picked Mumbai correctly by load,
+but wrongly by the metric the user actually feels.</pre></div>
+        <div class="turn a"><div class="who">A</div><p>So load balancing needs a geography input now. Where does that decision have to be made — inside one of your existing load balancers, or somewhere else entirely?</p></div>
+        <div class="turn b"><div class="who">B</div><p>Somewhere else entirely, and earlier — at the DNS layer, before the connection even opens. Global server load balancing resolves the domain name itself to the nearest healthy cluster's IP, based on the resolver's location, so the Chennai user never even learns the Mumbai IP exists unless Chennai is down.</p>
+        <pre class="sketch">GSLB (DNS-level):
+  Chennai resolver asks --> "Chennai cluster is healthy" --> returns Chennai IP
+  Mumbai resolver asks  --> "Mumbai cluster is healthy"  --> returns Mumbai IP
+  Chennai cluster DOWN  --> Chennai resolver now gets Mumbai IP instead</pre></div>
+        <div class="turn a"><div class="who">A</div><p>You've just added another layer above the one you built in stage 11. Justify that it's not turtles all the way down.</p></div>
+        <div class="turn b"><div class="who">B</div><p>It bottoms out because each layer is solving a genuinely different-shaped problem: GSLB picks a <em>region</em>, coarse and slow-changing; the regional load balancer picks a <em>server</em>, precise and real-time. Once you're choosing a server within a region, distance is roughly constant again — which is exactly the assumption this whole design started with, back at stage 1.</p></div>
+        <div class="insight"><b>Where this leaves us:</b> geography turns "which server" into two nested decisions with two different granularities and two different update speeds — and recognizing that a problem has changed shape, not just scale, is what stops you from bolting a bad fix onto the wrong layer.</div>
+      </div></div></div>
+  </section>
+
+  <!-- STAGE 14 -->
+  <section class="stage" id="st14" style="--seg:#2E8B82">
+    <div class="stage-head"><span class="stage-num">Stage 14</span><h2>Load Balancer 2.0 — what would you redesign?</h2></div>
+    <div class="audio-panel" id="audio-panel-st14"></div>
+    <div class="a-open">
+      <div class="who">Architect A</div>
+      <p>Last question. If you were starting today, with everything you now know, what's the one decision from this conversation you'd revisit — and what would you knowingly give up to change it?</p>
+    </div>
+    <div class="build-box"><div class="build-label">✎ this one has no reference answer</div><p>This is deliberately open. Pick one stage's decision — the algorithm, sticky sessions, load shedding, GSLB, anything — and argue what you'd change and what it costs. A real answer defends a trade-off; it doesn't just criticize.</p></div>
+
+    <div class="final-q">
+      <b>No answer key.</b> Notice what this whole conversation never did: it never said "a load balancer has algorithms, health checks, and failover" as a starting fact. Every mechanism showed up because a previous decision was caught, in the very next line, being insufficient —
+      <pre class="sketch">Problem → Constraint → Trade-off → Design Decision → New Problem → Next Design Decision</pre>
+      — not <code>Feature → Definition → Next Feature</code>. That's the real difference between reciting a load balancer's feature list and understanding why it has to look the way it does. Your answer to this last question is the actual test of which one you did.
+    </div>
+
+    <div class="roadmap">
+      <b style="font-family:'IBM Plex Mono',monospace;font-size:.78rem;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);">Stages not covered here — extend this same format into them yourself:</b>
+      <ol>
+        <li>TLS termination — where it should happen, and what it costs to move</li>
+        <li>Rate limiting per client, and how it differs from load shedding</li>
+        <li>Consistent hashing for cache-aware routing at real scale</li>
+        <li>Blue-green and canary routing as a load-balancing problem, not just a deploy strategy</li>
+        <li>Observability — what a load balancer must expose to be debuggable at 3 a.m.</li>
+        <li>Service mesh sidecars as load balancing pushed all the way down to the client</li>
+      </ol>
+    </div>
+  </section>
+
+  <footer>
+    // the whole conversation, compressed: decision and capacity must live together, not split across clients and servers →
+    latency over fairness → connection count is a proxy for load, not load itself → health is a second, independent signal →
+    active and passive checks cover each other's blind spot → content-awareness trades speed for intelligence, deliberately →
+    stickiness is a patch for state in the wrong place → the load balancer becomes its own single point of failure →
+    "healthy" is a vantage point, not a fact → removing a server is a sequence, not an action →
+    every scaled-out layer reveals the same coordination problem one level up → under true overload, reject fast, don't degrade everyone →
+    geography changes the shape of the problem, not just its scale → every "feature" here was a forced move, not a choice made in a vacuum.
+  </footer>
+
+</div>
+
+<script>
+function toggleTheme(){
+  const body = document.body; const btn = document.getElementById('themeBtn');
+  body.classList.toggle('dark-theme');
+  btn.innerHTML = body.classList.contains('dark-theme') ? '☀&nbsp; Light mode' : '☾&nbsp; Dark mode';
+}
+function toggle(headEl){
+  const card = headEl.closest('.q-card');
+  const answer = card.querySelector('.q-answer');
+  const isOpen = card.classList.contains('open');
+  if(isOpen){
+    card.classList.remove('open'); answer.style.maxHeight = null;
+    headEl.querySelector('.q-toggle').textContent = 'reveal';
+  } else {
+    card.classList.add('open'); answer.style.maxHeight = answer.scrollHeight + 'px';
+    headEl.querySelector('.q-toggle').textContent = 'hide';
+  }
+}
+</script>
+<script src="../audio-module.js"></script>
+<script>
+window.ALAB_PAGE_CONFIG = {
+  storageKey: 'alab_audio_data_build_your_own_load_balancer_v1',
+  metaKey:    'alab_audio_meta_build_your_own_load_balancer_v1',
+  topicIds:   ["st0", "st1", "st2", "st3", "st4", "st5", "st6", "st7", "st8", "st9", "st10", "st11", "st12", "st13", "st14"],
+  ghPath:     'audio-data/build_your_own_load_balancer.json'
+};
+</script>
+<script src="../audio-sync.js"></script>
+</body>
+</html>

@@ -1,0 +1,1057 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architects Lab</title>
+<meta name="description" content="A collection of system design explorations — hand-drawn in HTML.">
+<style>
+  /* ── Tokens ── */
+  :root {
+    --bg:          #F5F4EF;
+    --surface:     #FFFFFF;
+    --ink:         #16171A;
+    --ink-muted:   #72727F;
+    --accent:      #0052CC;
+    --accent-mid:  #3D78E8;
+    --accent-tint: #E8EFFE;
+    --border:      #DDDCE8;
+    --dot:         #CCCBDA;
+    --tag-bg:      #EEEDF6;
+    --tag-ink:     #4A4A6A;
+    --rail-w:      260px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:          #0F1117;
+      --surface:     #171B26;
+      --ink:         #EAEAF0;
+      --ink-muted:   #8888A0;
+      --accent:      #4D8AFF;
+      --accent-mid:  #7AABFF;
+      --accent-tint: #192040;
+      --border:      #252835;
+      --dot:         #252A3A;
+      --tag-bg:      #1E2236;
+      --tag-ink:     #9898C0;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg:          #0F1117;
+    --surface:     #171B26;
+    --ink:         #EAEAF0;
+    --ink-muted:   #8888A0;
+    --accent:      #4D8AFF;
+    --accent-mid:  #7AABFF;
+    --accent-tint: #192040;
+    --border:      #252835;
+    --dot:         #252A3A;
+    --tag-bg:      #1E2236;
+    --tag-ink:     #9898C0;
+  }
+
+  :root[data-theme="light"] {
+    --bg:          #F5F4EF;
+    --surface:     #FFFFFF;
+    --ink:         #16171A;
+    --ink-muted:   #72727F;
+    --accent:      #0052CC;
+    --accent-mid:  #3D78E8;
+    --accent-tint: #E8EFFE;
+    --border:      #DDDCE8;
+    --dot:         #CCCBDA;
+    --tag-bg:      #EEEDF6;
+    --tag-ink:     #4A4A6A;
+  }
+
+  /* ── Reset ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: inherit; text-decoration: none; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+
+  /* ── Layout ── */
+  .layout {
+    display: grid;
+    grid-template-columns: var(--rail-w) 1fr;
+    min-height: 100vh;
+  }
+
+  @media (max-width: 720px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  /* ── Left Rail ── */
+  .rail {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 36px 28px;
+    gap: 0;
+    overflow: hidden;
+
+    background-image: radial-gradient(circle, var(--dot) 1px, transparent 1px);
+    background-size: 20px 20px;
+    background-color: var(--bg);
+  }
+
+  @media (max-width: 720px) {
+    .rail {
+      position: static;
+      height: auto;
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+      padding: 28px 24px 24px;
+    }
+  }
+
+  .site-eyebrow {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+    user-select: none;
+  }
+
+  .site-name {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 26px;
+    font-weight: normal;
+    line-height: 1.15;
+    color: var(--ink);
+    text-wrap: balance;
+    margin-bottom: 16px;
+  }
+
+  .site-name em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .site-desc {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--ink-muted);
+    margin-bottom: 32px;
+    max-width: 200px;
+  }
+
+  .rail-divider {
+    width: 32px;
+    height: 1px;
+    background: var(--border);
+    margin-bottom: 24px;
+  }
+
+  .rail-meta {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 11px;
+    color: var(--ink-muted);
+    line-height: 2;
+  }
+
+  .rail-meta span {
+    color: var(--ink);
+  }
+
+  .rail-footer {
+    margin-top: auto;
+    padding-top: 24px;
+  }
+
+  .theme-toggle {
+    margin-top: 14px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+    display: block;
+  }
+  .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  .theme-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ── Section action buttons (Collapse All / Expand All) ── */
+  .section-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .section-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .section-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .section-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ── Collapsible topic groups ── */
+  .topic-group-header {
+    cursor: pointer;
+    user-select: none;
+    transition: margin-bottom 0.25s ease;
+  }
+  .topic-group-header:hover .topic-group-title { color: var(--topic-color, var(--accent)); }
+
+  .topic-group.is-collapsed .topic-group-header { margin-bottom: 0; }
+
+  .topic-group-chevron {
+    font-size: 9px;
+    color: var(--ink-muted);
+    transition: transform 0.22s ease;
+    margin-left: 6px;
+    flex-shrink: 0;
+    display: inline-block;
+  }
+  .topic-group.is-collapsed .topic-group-chevron { transform: rotate(-90deg); }
+
+  .topic-notes {
+    max-height: 1600px;
+    overflow: hidden;
+    transition: max-height 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease;
+    opacity: 1;
+  }
+  .topic-group.is-collapsed .topic-notes {
+    max-height: 0;
+    opacity: 0;
+  }
+
+  /* ── Main Content ── */
+  .main {
+    padding: 48px 48px 80px;
+  }
+
+  @media (max-width: 720px) {
+    .main { padding: 32px 24px 64px; }
+  }
+
+  /* ── Section header ── */
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 40px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-title {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 18px;
+    font-weight: normal;
+    color: var(--ink);
+  }
+
+  .section-count {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 11px;
+    color: var(--ink-muted);
+    letter-spacing: 0.06em;
+  }
+
+  /* ── Topic Groups ── */
+  .topic-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 44px;
+  }
+
+  .topic-group {
+    /* color variables cascade to children */
+  }
+
+  .topic-group-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+    border-bottom: 2px solid var(--topic-color, var(--border));
+  }
+
+  .topic-group-icon {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--topic-color, var(--border));
+    flex-shrink: 0;
+  }
+
+  .topic-group-title {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--topic-color, var(--ink));
+  }
+
+  .topic-note-count {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 10px;
+    color: var(--ink-muted);
+    letter-spacing: 0.06em;
+    margin-left: auto;
+    background: var(--topic-tint, var(--tag-bg));
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+
+  /* ── Per-topic color palette (vibrant!) ── */
+  .topic-kafka   { --topic-color: #6366F1; --topic-color2: #4338CA; --topic-tint: rgba(99,102,241,0.09); }
+  .topic-tracing { --topic-color: #A855F7; --topic-color2: #7C3AED; --topic-tint: rgba(168,85,247,0.09); }
+  .topic-txns    { --topic-color: #06B6D4; --topic-color2: #0369A1; --topic-tint: rgba(6,182,212,0.09);  }
+  .topic-lb      { --topic-color: #F59E0B; --topic-color2: #B45309; --topic-tint: rgba(245,158,11,0.09); }
+  .topic-nosql   { --topic-color: #10B981; --topic-color2: #047857; --topic-tint: rgba(16,185,129,0.09); }
+  .topic-sql     { --topic-color: #F43F5E; --topic-color2: #9F1239; --topic-tint: rgba(244,63,94,0.09);  }
+  .topic-sidecar { --topic-color: #EC4899; --topic-color2: #9D174D; --topic-tint: rgba(236,72,153,0.09); }
+  .topic-logical { --topic-color: #F97316; --topic-color2: #C2410C; --topic-tint: rgba(249,115,22,0.09); }
+
+  @media (prefers-color-scheme: dark) {
+    .topic-kafka   { --topic-tint: rgba(99,102,241,0.15); }
+    .topic-tracing { --topic-tint: rgba(168,85,247,0.15); }
+    .topic-txns    { --topic-tint: rgba(6,182,212,0.15);  }
+    .topic-lb      { --topic-tint: rgba(245,158,11,0.15); }
+    .topic-nosql   { --topic-tint: rgba(16,185,129,0.15); }
+    .topic-sql     { --topic-tint: rgba(244,63,94,0.15);  }
+    .topic-sidecar { --topic-tint: rgba(236,72,153,0.15); }
+    .topic-logical { --topic-tint: rgba(249,115,22,0.15); }
+  }
+  :root[data-theme="dark"] .topic-kafka   { --topic-tint: rgba(99,102,241,0.15); }
+  :root[data-theme="dark"] .topic-tracing { --topic-tint: rgba(168,85,247,0.15); }
+  :root[data-theme="dark"] .topic-txns    { --topic-tint: rgba(6,182,212,0.15);  }
+  :root[data-theme="dark"] .topic-lb      { --topic-tint: rgba(245,158,11,0.15); }
+  :root[data-theme="dark"] .topic-nosql   { --topic-tint: rgba(16,185,129,0.15); }
+  :root[data-theme="dark"] .topic-sql     { --topic-tint: rgba(244,63,94,0.15);  }
+  :root[data-theme="dark"] .topic-sidecar { --topic-tint: rgba(236,72,153,0.15); }
+  :root[data-theme="dark"] .topic-logical { --topic-tint: rgba(249,115,22,0.15); }
+
+  /* ── Card Grid ── */
+  .topic-notes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  @media (max-width: 1000px) {
+    .topic-notes { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 560px) {
+    .topic-notes { grid-template-columns: 1fr; }
+  }
+
+  /* ── Note Box Cards ── */
+  .note-box {
+    display: flex;
+    flex-direction: column;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.22s cubic-bezier(0.34, 1.4, 0.64, 1), box-shadow 0.22s ease;
+    cursor: pointer;
+    min-height: 196px;
+  }
+
+  .note-box:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.10), 0 4px 10px rgba(0,0,0,0.06);
+    border-color: var(--topic-color, var(--accent));
+  }
+
+  :root[data-theme="dark"] .note-box:hover,
+  @media (prefers-color-scheme: dark) {
+    .note-box:hover {
+      box-shadow: 0 16px 40px rgba(0,0,0,0.45), 0 4px 10px rgba(0,0,0,0.25);
+    }
+  }
+
+  /* Gradient accent bar at top */
+  .note-box-accent {
+    height: 7px;
+    flex-shrink: 0;
+    background: linear-gradient(90deg, var(--topic-color, var(--accent)) 0%, var(--topic-color2, var(--accent-mid)) 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .note-box-accent::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 40%, rgba(255,255,255,0.25) 70%, transparent 100%);
+  }
+
+  .note-box-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 16px 18px 15px;
+  }
+
+  .note-box-title {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 13.5px;
+    font-weight: normal;
+    color: var(--ink);
+    line-height: 1.45;
+    margin-bottom: 8px;
+    transition: color 0.15s;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .note-box:hover .note-box-title {
+    color: var(--topic-color, var(--accent));
+  }
+
+  .note-box-desc {
+    font-size: 11.5px;
+    color: var(--ink-muted);
+    line-height: 1.55;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .note-box-footer {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 14px;
+  }
+
+  .tag {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--topic-color, var(--tag-ink));
+    background: var(--topic-tint, var(--tag-bg));
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+
+  .note-box-arrow {
+    font-size: 13px;
+    color: var(--topic-color, var(--accent));
+    opacity: 0;
+    transition: opacity 0.15s, transform 0.15s;
+    margin-left: auto;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+
+  .note-box:hover .note-box-arrow {
+    opacity: 1;
+    transform: translateX(3px);
+  }
+
+  /* ── Empty state ── */
+  .empty-note {
+    margin-top: 48px;
+    padding: 32px 28px;
+    border: 1px dashed var(--border);
+    border-radius: 4px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    color: var(--ink-muted);
+    line-height: 1.8;
+  }
+
+  .empty-note .prompt {
+    color: var(--accent);
+    margin-right: 6px;
+  }
+
+
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ── Left Rail ── -->
+  <aside class="rail">
+    <div class="site-eyebrow">System Design</div>
+    <h1 class="site-name"><em>Architects</em><br>Lab</h1>
+    <p class="site-desc">A leadership thought-provoking space — explore system design the way a CTO or director would, one architecture at a time.</p>
+
+    <div class="rail-divider"></div>
+
+    <div class="rail-meta">
+      author &nbsp;<span>Ankur</span><br>
+      started <span>2026</span><br>
+      format &nbsp;<span>.html</span><br>
+      host &nbsp;&nbsp;&nbsp;<span>gh-pages</span>
+    </div>
+
+    <div class="rail-footer">
+      <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()">Toggle theme</button>
+    </div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <main class="main">
+
+    <div class="section-header">
+      <h2 class="section-title">All Designs</h2>
+      <span class="section-count" id="design-count">— topics</span>
+      <div class="section-actions">
+        <button class="section-btn" onclick="collapseAll()">Collapse All</button>
+        <button class="section-btn" onclick="expandAll()">Expand All</button>
+      </div>
+    </div>
+
+    <div class="topic-groups" id="topic-groups">
+
+      <!-- ── Kafka ── -->
+      <div class="topic-group topic-kafka">
+        <div class="topic-group-header">
+          <span class="topic-group-icon"></span>
+          <span class="topic-group-title">Kafka</span>
+          <span class="topic-note-count">2 notes</span>
+        </div>
+        <div class="topic-notes">
+
+          <a class="note-box" href="kafka design/kafka_system_design.html">
+            <div class="note-box-accent"></div>
+            <div class="note-box-body">
+              <div class="note-box-title">Kafka — The Log, Not The Queue</div>
+              <p class="note-box-desc">How Kafka reimagines the message queue as a distributed, append-only log — covering topics, partitions, consumer groups, and delivery guarantees at scale.</p>
+              <div class="note-box-footer">
+                <span class="tag">Event Streaming</span>
+                <span class="tag">Partitions</span>
+                <span class="tag">Messaging</span>
+                <span class="note-box-arrow">→</span>
+              </div>
+            </div>
+          </a>
+
+          <a class="note-box" href="kafka design/kafka_own_design.html">
+            <div class="note-box-accent"></div>
+            <div class="note-box-body">
+              <div class="note-box-title">Design Your Own Kafka — A Build Session</div>
+              <p class="note-box-desc">Work through the decisions an engineer faces when building Kafka from scratch — log segments, partition leadership, consumer group coordination, and replication trade-offs.</p>
+              <div class="note-box-footer">
+                <span class="tag">Build Session</span>
+                <span class="tag">Architecture</span>
+                <span class="note-box-arrow">→</span>
+              </div>
+            </div>
+          </a>
+
+        </div>
+      </div>
+
+      <!-- ── Distributed Tracing ── -->
+      <div class="topic-group topic-tracing">
+        <div class="topic-group-header">
+          <span class="topic-group-icon"></span>
+          <span class="topic-group-title">Distributed Tracing</span>
+          <span class="topic-note-count">2 notes</span>
+        </div>
+        <div class="topic-notes">
+
+          <a class="note-box" href="distributed tracing design/distributed_tracing_prep.html">
+            <div class="note-box-accent"></div>
+            <div class="note-box-body">
+              <div class="note-box-title">Distributed Tracing — The Journey, Not The Event</div>
+              <p class="note-box-desc">Understanding how traces span service boundaries — exploring span propagation, context passing, sampling strategies, and the observability tools that make distributed debugging tractable.</p>
+              <div class="note-box-footer">
+                <span class="tag">Observability</span>
+                <span class="tag">Microservices</span>
+                <span class="tag">Tracing</span>
+                <span class="note-box-arrow">→</span>
+              </div>
+            </div>
+          </a>
+
+          <a class="note-box" href="distributed tracing design/distributed_tracing_build_your_own.html">
+            <div class="note-box-accent"></div>
+            <div class="note-box-body">
+              <div class="note-box-title">Build Your Own Distributed Tracing System</div>
+              <p class="note-box-desc">Design a distributed tracing system from the ground up — span propagation, context injection, sampling decisions, and the storage layer that makes traces queryable at scale.</p>
+              <div class="note-box-footer">
+                <span class="tag">Build Session</span>
+                <span class="tag">Observability</span>
+                <span class="note-box-arrow">→</span>
+              </div>
+            </div>
+          </a>
+
+        </div>
+      </div>
+
+      <!-- ── Distributed Transactions ── -->
+      <div class="topic-group topic-txns">
+        <div class="topic-group-header">
+          <span class="topic-group-icon"></span>
+          <span class="topic-group-title">Distributed Transactions</span>
+          <span class="topic-note-count">4 notes</span>
+        </div>
+        <div class="topic-notes">
+
+          <a class="note-box" href="distributed-txns/distributed_transactions.html">
+            <div class="note-box-accent"></div>
+            <div class="note-box-body">
+              <div class="note-box-title">Distributed Transactions — Correctness, Not Commitment</div>
+              <p class="note-box-desc">When ACID breaks across service boundaries — comparing two-phase commit, sagas, and eventual consistency patterns for building correct systems without coordination overhead.</p>
+              <div class="note-box-footer">
+                <span class="tag">SAGA</span>
+                <span class="tag">2PC</span>
+                <span class="tag">Consistency</span>
+                <span class="note-box-arrow">→</span>
+              </div>
+            </div>
+          </a>
+
+          <a class="note-box" href="distributed-txns/distributed_transactions_Interactive_Simulator.html">
+            <div class="note-box-accent"></div>
+            <div class="note-box-body">
+              <div class="note-box-title">Distributed Transactions — Interactive Simulator</div>
+              <p class="note-box-desc">Step through four real-world consistency patterns side-by-side — Two-Phase Commit, Saga, Transactional Outbox, and Idempotency with Reconciliation — with animated walkthroughs and failure scenarios.</p>
+              <div class="note-box-footer">
+                <span class="tag">Interactive</span>
+                <span class="tag">2PC</span>
+                <span class="tag">Saga</span>
+                <span class="tag">Outbox</span>
+                <span class="note-box-arrow">→</span>
+              </div>
+            </div>
+          </a>
+
+          <a class="note-box" href="distributed-txns/distributed_transaction_system_design_yours.html">
+            <div class="note-box-accent"></div>
+            <div class="note-box-body">
+              <div class="note-box-title">Design Your Own Distributed Transaction Coordinator</div>
+              <p class="note-box-desc">A build session — design a distributed transaction coordinator from scratch before seeing the reference. Each segment asks you to draw, decide, or write pseudocode covering requirements, coordination protocols, and failure recovery.</p>
+              <div class="note-box-footer">
+                <span class="tag">Build Session</span>
+                <span class="tag">2PC</span>
+                <span class="tag">Coordinator</span>
+                <span class="note-box-arrow">→</span>
+              </div>
+            </div>
+          </a>
+
+          <a class="note-box" href="distributed-txns/distributed_transaction_design.html">
+            <div class="note-box-accent"></div>
+            <div class="note-box-body">
+              <div class="note-box-title">Distributed Transactions — The Design Session</div>
+              <p class="note-box-desc">A deep design review covering when 2PC is justified, why saga is a product decision as much as a technical one, and how compensation differs from rollback — built around real mutual fund and settlement flows.</p>
+              <div class="note-box-footer">
+                <span class="tag">2PC</span>
+                <span class="tag">Saga</span>
+                <span class="tag">Build Session</span>
+                <span class="note-box-arrow">→</span>
+              </div>
+            </div>
+          </a>
+
+        </div>
+      </div>
+
+      <!-- ── Load Balancer ── -->
+      <div class="topic-group topic-lb">
+        <div class="topic-group-header">
+          <span class="topic-group-icon"></span>
+          <span class="topic-group-title">Load Balancer</span>
+          <span class="topic-note-count">3 notes</span>
+        </div>
+        <div class="topic-notes">
+
+          <a class="note-box" href="load-balancer design/load_balancer_notes.html">
+            <div class="note-box-accent"></div>
+            <div class="note-box-body">
+              <div class="note-box-title">Load Balancer — The Question Before The Algorithm</div>
+              <p class="note-box-desc">Why choosing a load balancing strategy starts with understanding your traffic shape — comparing Round Robin, Least Connections, IP Hash, and Weighted strategies against real-world constraints.</p>
+              <div class="note-box-footer">
+                <span class="tag">Load Balancing</span>
+                <span class="tag">Routing</span>
+                <span class="tag">Scalability</span>
+                <span class="note-box-arrow">→</span>
+              </div>
+            </div>
+          </a>
+
+          <a class="note-box" href="load-balancer design/build_your_own_load_balancer.html">
+            <div class="note-box-accent"></div>
+            <div class="note-box-body">
+              <div class="note-box-title">Build Your Own Load Balancer — A Design Session</div>
+              <p class="note-box-desc">Walk through designing a production load balancer — from health checking and connection tracking to weighted routing and the session-stickiness trade-offs operators actually face.</p>
+              <div class="note-box-footer">
+                <span class="tag">Build Session</span>
+                <span class="tag">Networking</span>
+                <span class="note-box-arrow">→</span>
+              </div>
+            </div>
+          </a>
+
+          <a class="note-box" href="load-balancer design/request_lifecycle.html">
+            <div class="note-box-accent"></div>
+            <div class="note-box-body">
+              <div class="note-box-title">One Request, Eight Checkpoints — The Request Lifecycle</div>
+              <p class="note-box-desc">Follow a single HTTP request hop by hop — from DNS resolution through TLS handshake, load balancer, backend, and back — with one sharp question at each checkpoint.</p>
+              <div class="note-box-footer">
+                <span class="tag">Request Lifecycle</span>
+                <span class="tag">Networking</span>
+                <span class="note-box-arrow">→</span>
+              </div>
+            </div>
+          </a>
+
+        </div>
+      </div>
+
+      <!-- ── NoSQL ── -->
+      <div class="topic-group topic-nosql">
+        <div class="topic-group-header">
+          <span class="topic-group-icon"></span>
+          <span class="topic-group-title">NoSQL Databases</span>
+          <span class="topic-note-count">1 note</span>
+        </div>
+        <div class="topic-notes">
+
+          <a class="note-box" href="db design/nosql-db-systemdesign.html">
+            <div class="note-box-accent"></div>
+            <div class="note-box-body">
+              <div class="note-box-title">NoSQL Databases — The Tradeoff, Not The Table</div>
+              <p class="note-box-desc">How to pick the right NoSQL store for your access patterns — comparing document, key-value, wide-column, and graph models against CAP theorem constraints and real system requirements.</p>
+              <div class="note-box-footer">
+                <span class="tag">NoSQL</span>
+                <span class="tag">CAP Theorem</span>
+                <span class="tag">Data Modeling</span>
+                <span class="note-box-arrow">→</span>
+              </div>
+            </div>
+          </a>
+
+        </div>
+      </div>
+
+      <!-- ── SQL ── -->
+      <div class="topic-group topic-sql">
+        <div class="topic-group-header">
+          <span class="topic-group-icon"></span>
+          <span class="topic-group-title">SQL Databases</span>
+          <span class="topic-note-count">2 notes</span>
+        </div>
+        <div class="topic-notes">
+
+          <a class="note-box" href="db design/sql-db-system-design.html">
+            <div class="note-box-accent"></div>
+            <div class="note-box-body">
+              <div class="note-box-title">SQL Database Internals — Correctness Under the Hood</div>
+              <p class="note-box-desc">Internals of SQL engines — covering B-tree indexes, WAL-based durability, MVCC for concurrency control, and the query planner decisions that separate fast queries from slow ones.</p>
+              <div class="note-box-footer">
+                <span class="tag">Internals</span>
+                <span class="tag">ACID</span>
+                <span class="tag">Storage</span>
+                <span class="note-box-arrow">→</span>
+              </div>
+            </div>
+          </a>
+
+          <a class="note-box" href="db design/sql-indexes-deep-dive.html">
+            <div class="note-box-accent"></div>
+            <div class="note-box-body">
+              <div class="note-box-title">SQL Indexes Deep Dive</div>
+              <p class="note-box-desc">A deep dive into SQL indexes — how B-tree and hash indexes work under the hood, when to use composite vs. covering indexes, and the trade-offs that determine query performance.</p>
+              <div class="note-box-footer">
+                <span class="tag">Indexes</span>
+                <span class="tag">Performance</span>
+                <span class="tag">B-tree</span>
+                <span class="note-box-arrow">→</span>
+              </div>
+            </div>
+          </a>
+
+        </div>
+      </div>
+
+      <!-- ── Sidecar / Service Mesh ── -->
+      <div class="topic-group topic-sidecar">
+        <div class="topic-group-header">
+          <span class="topic-group-icon"></span>
+          <span class="topic-group-title">Sidecar &amp; Service Mesh</span>
+          <span class="topic-note-count">1 note</span>
+        </div>
+        <div class="topic-notes">
+
+          <a class="note-box" href="sidecar mesh design/sidecar_service_mesh.html">
+            <div class="note-box-accent"></div>
+            <div class="note-box-body">
+              <div class="note-box-title">Sidecars &amp; Service Mesh — What's Really Riding Inside a Pod</div>
+              <p class="note-box-desc">What's actually living alongside your app container — how sidecar proxies intercept traffic, why service meshes offload mTLS and retries from application code, and when the overhead is worth it.</p>
+              <div class="note-box-footer">
+                <span class="tag">Kubernetes</span>
+                <span class="tag">mTLS</span>
+                <span class="tag">Observability</span>
+                <span class="note-box-arrow">→</span>
+              </div>
+            </div>
+          </a>
+
+        </div>
+      </div>
+
+      <!-- ── Logical Designs ── -->
+      <div class="topic-group topic-logical">
+        <div class="topic-group-header">
+          <span class="topic-group-icon"></span>
+          <span class="topic-group-title">Logical Designs</span>
+          <span class="topic-note-count">10 notes</span>
+        </div>
+        <div class="topic-notes">
+
+          <a class="note-box" href="logicals designs/distributed-job-scheduler-slides.html">
+            <div class="note-box-accent"></div>
+            <div class="note-box-body">
+              <div class="note-box-title">Distributed Job Scheduler — Design &amp; Internals</div>
+              <p class="note-box-desc">How to design a job scheduler that guarantees at-least-once execution across nodes — covering distributed locks, leader election, idempotency, and failure recovery patterns.</p>
+              <div class="note-box-footer">
+                <span class="tag">Scheduler</span>
+                <span class="tag">Distributed Locks</span>
+                <span class="tag">Idempotency</span>
+                <span class="note-box-arrow">→</span>
+              </div>
+            </div>
+          </a>
+
+          <a class="note-box" href="logicals designs/log-structured-storage-slides.html">
+            <div class="note-box-accent"></div>
+            <div class="note-box-body">
+              <div class="note-box-title">Log-Structured Storage — LSM Trees &amp; SSTables</div>
+              <p class="note-box-desc">Why sequential writes are faster than random writes, how compaction trades write amplification for read performance, and the durability promise that WAL files make.</p>
+              <div class="note-box-footer">
+                <span class="tag">LSM</span>
+                <span class="tag">WAL</span>
+                <span class="tag">Compaction</span>
+                <span class="note-box-arrow">→</span>
+              </div>
+            </div>
+          </a>
+
+          <a class="note-box" href="logicals designs/nosql-database-design-slides.html">
+            <div class="note-box-accent"></div>
+            <div class="note-box-body">
+              <div class="note-box-title">NoSQL Database — Logical Design Patterns</div>
+              <p class="note-box-desc">Access-pattern-first design for wide-column and document stores — partition key decisions, denormalization tradeoffs, and why schema thinking never left NoSQL.</p>
+              <div class="note-box-footer">
+                <span class="tag">Partition Key</span>
+                <span class="tag">Access Patterns</span>
+                <span class="tag">Wide-Column</span>
+                <span class="note-box-arrow">→</span>
+              </div>
+            </div>
+          </a>
+
+          <a class="note-box" href="logicals designs/oauth2-build-your-own-slides.html">
+            <div class="note-box-accent"></div>
+            <div class="note-box-body">
+              <div class="note-box-title">OAuth2 — Build Your Own Auth Flow</div>
+              <p class="note-box-desc">Design an OAuth2 server from scratch — covering authorization code flow, token lifecycle, security boundaries, and failure modes that shallow implementations miss.</p>
+              <div class="note-box-footer">
+                <span class="tag">OAuth2</span>
+                <span class="tag">Auth</span>
+                <span class="tag">Tokens</span>
+                <span class="note-box-arrow">→</span>
+              </div>
+            </div>
+          </a>
+
+          <a class="note-box" href="logicals designs/social-network-design-slides.html">
+            <div class="note-box-accent"></div>
+            <div class="note-box-body">
+              <div class="note-box-title">Social Network — Feed &amp; Graph Design</div>
+              <p class="note-box-desc">How to design a read-optimized social graph at scale — fan-out strategies, celebrity hot partition handling, and why ranking is a product decision as much as a technical one.</p>
+              <div class="note-box-footer">
+                <span class="tag">Fan-out</span>
+                <span class="tag">Graph</span>
+                <span class="tag">Feed Ranking</span>
+                <span class="note-box-arrow">→</span>
+              </div>
+            </div>
+          </a>
+
+          <a class="note-box" href="logicals designs/sqs-queue-design-slides.html">
+            <div class="note-box-accent"></div>
+            <div class="note-box-body">
+              <div class="note-box-title">SQS-Style Queue — Design &amp; Internals</div>
+              <p class="note-box-desc">Building a durable message queue — visibility timeouts, at-least-once delivery, dead-letter queues, and why failure handling is the real design challenge.</p>
+              <div class="note-box-footer">
+                <span class="tag">Queue</span>
+                <span class="tag">At-least-once</span>
+                <span class="tag">DLQ</span>
+                <span class="note-box-arrow">→</span>
+              </div>
+            </div>
+          </a>
+
+          <a class="note-box" href="logicals designs/reconciliation-system-design-slides.html">
+            <div class="note-box-accent"></div>
+            <div class="note-box-body">
+              <div class="note-box-title">Reconciliation System — Design &amp; Internals</div>
+              <p class="note-box-desc">How to design a system that detects and resolves discrepancies between data sources — covering idempotent runs, precision vs recall tradeoffs, and correctness-first architecture.</p>
+              <div class="note-box-footer">
+                <span class="tag">Reconciliation</span>
+                <span class="tag">Idempotency</span>
+                <span class="tag">Correctness</span>
+                <span class="note-box-arrow">→</span>
+              </div>
+            </div>
+          </a>
+
+          <a class="note-box" href="logicals designs/sql-engine-architecture-slides.html">
+            <div class="note-box-accent"></div>
+            <div class="note-box-body">
+              <div class="note-box-title">The Architecture of a SQL Database</div>
+              <p class="note-box-desc">A mental model — twenty problems from the relational model down to the write-ahead log, and the one tension every layer is fighting.</p>
+              <div class="note-box-footer">
+                <span class="tag">SQL Engine</span>
+                <span class="tag">WAL</span>
+                <span class="tag">Internals</span>
+                <span class="note-box-arrow">→</span>
+              </div>
+            </div>
+          </a>
+
+          <a class="note-box" href="logicals designs/distributed-tracing-slides.html">
+            <div class="note-box-accent"></div>
+            <div class="note-box-body">
+              <div class="note-box-title">Designing a Distributed Tracing System</div>
+              <p class="note-box-desc">Two stages, fifteen problems — design a distributed tracing system from span propagation through storage and query. Work through each problem before revealing the answer.</p>
+              <div class="note-box-footer">
+                <span class="tag">Tracing</span>
+                <span class="tag">Observability</span>
+                <span class="tag">Build Session</span>
+                <span class="note-box-arrow">→</span>
+              </div>
+            </div>
+          </a>
+
+          <a class="note-box" href="logicals designs/phoenix-dr-architecture-slides.html">
+            <div class="note-box-accent"></div>
+            <div class="note-box-body">
+              <div class="note-box-title">The Phoenix Architecture — Intelligent Disaster Recovery</div>
+              <p class="note-box-desc">Design a DR system that finds failure before it finds you — active-active topology, intelligent failover, and the tie-breaker decisions that separate resilient systems from merely redundant ones.</p>
+              <div class="note-box-footer">
+                <span class="tag">Disaster Recovery</span>
+                <span class="tag">Active-Active</span>
+                <span class="tag">Resilience</span>
+                <span class="note-box-arrow">→</span>
+              </div>
+            </div>
+          </a>
+
+        </div>
+      </div>
+
+    </div>
+
+    <div class="empty-note" id="empty-note" style="display:none;">
+      <span class="prompt">$</span> No explorations yet.<br>
+      <span class="prompt">$</span> Every design here is a chance to think like a leader.<br>
+      <span class="prompt">$</span> Use your mind. Question the trade-offs. Sharpen the thought.
+    </div>
+
+
+  </main>
+</div>
+
+<script>
+  function getActiveTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    const stored = localStorage.getItem('theme');
+    const sys = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return current || stored || sys;
+  }
+
+  function updateThemeBtn() {
+    const btn = document.getElementById('theme-toggle-btn');
+    if (!btn) return;
+    const active = getActiveTheme();
+    btn.textContent = active === 'dark' ? '☀ Light' : '☽ Dark';
+  }
+
+  function toggleTheme() {
+    const next = getActiveTheme() === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    updateThemeBtn();
+  }
+
+  function collapseAll() {
+    document.querySelectorAll('#topic-groups .topic-group').forEach(g => g.classList.add('is-collapsed'));
+  }
+
+  function expandAll() {
+    document.querySelectorAll('#topic-groups .topic-group').forEach(g => g.classList.remove('is-collapsed'));
+  }
+
+  (function () {
+    const saved = localStorage.getItem('theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+    updateThemeBtn();
+  })();
+
+  (function () {
+    const groups = document.querySelectorAll('#topic-groups .topic-group');
+    const counter = document.getElementById('design-count');
+    counter.textContent = groups.length === 1 ? '1 topic' : `${groups.length} topics`;
+
+    groups.forEach(group => {
+      const header = group.querySelector('.topic-group-header');
+      const chevron = document.createElement('span');
+      chevron.className = 'topic-group-chevron';
+      chevron.textContent = '▼';
+      header.appendChild(chevron);
+      header.addEventListener('click', () => group.classList.toggle('is-collapsed'));
+    });
+  })();
+</script>
+
+</body>
+</html>

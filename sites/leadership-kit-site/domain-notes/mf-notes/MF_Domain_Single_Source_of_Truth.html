@@ -1,0 +1,2175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mutual Fund Domain — Single Source of Truth</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F7F4EC;
+  --paper-deep:#F0EBDE;
+  --surface:#FFFFFF;
+  --ink:#16243E;
+  --ink-soft:#4A5468;
+  --ink-faint:#8891A0;
+  --hair:#E4DFD0;
+  --hair-strong:#D8D1BD;
+  --gold:#A8742C;
+  --gold-soft:#D9B97C;
+  --gold-bg:#FBF3E3;
+  --teal:#2D6E68;
+  --teal-bg:#E9F2F0;
+  --brick:#A8453F;
+  --brick-bg:#F8EAE8;
+  --indigo:#3D4F8C;
+  --indigo-bg:#ECEFFA;
+  --radius:10px;
+  --maxw:1180px;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Inter',system-ui,sans-serif;
+  font-size:16px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:var(--gold-soft);}
+h1,h2,h3,h4{font-family:'Fraunces',serif;color:var(--ink);margin:0;}
+a{color:var(--teal);text-decoration:none;}
+code, pre, .mono{font-family:'IBM Plex Mono',monospace;}
+
+/* ---------- layout shell ---------- */
+.shell{display:flex;max-width:var(--maxw);margin:0 auto;}
+.sidebar{
+  width:268px;flex-shrink:0;
+  position:sticky;top:0;align-self:flex-start;
+  height:100vh;overflow-y:auto;
+  padding:28px 18px 60px 0;
+  border-right:1px solid var(--hair);
+}
+.sidebar::-webkit-scrollbar{width:6px;}
+.sidebar::-webkit-scrollbar-thumb{background:var(--hair-strong);border-radius:4px;}
+.side-brand{display:flex;align-items:center;gap:10px;padding:0 10px 18px 10px;}
+.side-brand .stamp{
+  width:34px;height:34px;border-radius:7px;background:var(--ink);color:var(--gold-soft);
+  display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:700;font-size:15px;flex-shrink:0;
+}
+.side-brand .name{font-size:13px;font-weight:600;color:var(--ink-soft);letter-spacing:.02em;line-height:1.25;}
+.side-search{margin:0 10px 16px 10px;}
+.side-search input{
+  width:100%;padding:9px 12px;border:1px solid var(--hair-strong);border-radius:8px;
+  background:var(--surface);font-family:'Inter';font-size:13px;color:var(--ink);outline:none;
+}
+.side-search input:focus{border-color:var(--gold);}
+.side-nav{list-style:none;margin:0;padding:0;}
+.side-nav>li{margin-bottom:2px;}
+.side-nav a{
+  display:flex;gap:10px;align-items:baseline;padding:8px 10px;border-radius:7px;
+  font-size:13.5px;color:var(--ink-soft);font-weight:500;
+}
+.side-nav a:hover{background:var(--paper-deep);color:var(--ink);}
+.side-nav a.active{background:var(--ink);color:var(--gold-soft);}
+.side-nav .num{font-family:'IBM Plex Mono';font-size:11px;color:var(--gold);flex-shrink:0;}
+.side-nav a.active .num{color:var(--gold-soft);}
+.side-foot{padding:16px 10px 0;margin-top:10px;border-top:1px solid var(--hair);font-size:11.5px;color:var(--ink-faint);}
+
+.main{flex:1;min-width:0;padding:0 0 80px 0;}
+.container{padding:0 36px;}
+
+/* ---------- hero ---------- */
+.hero{padding:56px 36px 38px;border-bottom:1px solid var(--hair);position:relative;overflow:hidden;}
+.hero::before{
+  content:"";position:absolute;top:-60px;right:-60px;width:280px;height:280px;border-radius:50%;
+  background:radial-gradient(circle, var(--gold-soft) 0%, transparent 70%);opacity:.35;
+}
+.hero .eyebrow{
+  font-family:'IBM Plex Mono';font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);
+  display:flex;align-items:center;gap:8px;margin-bottom:14px;
+}
+.hero .eyebrow .line{width:28px;height:1px;background:var(--gold);}
+.hero h1{font-size:42px;font-weight:600;line-height:1.12;max-width:780px;letter-spacing:-.01em;}
+.hero h1 em{font-style:italic;color:var(--gold);font-weight:500;}
+.hero p.lead{font-size:17px;color:var(--ink-soft);max-width:640px;margin-top:16px;}
+.hero-stats{display:flex;gap:28px;margin-top:30px;flex-wrap:wrap;}
+.hero-stat{}
+.hero-stat .n{font-family:'Fraunces';font-size:26px;font-weight:600;color:var(--ink);}
+.hero-stat .l{font-size:12px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em;}
+.hero-actions{margin-top:26px;display:flex;gap:10px;flex-wrap:wrap;}
+.btn{
+  font-family:'Inter';font-size:13px;font-weight:600;padding:9px 16px;border-radius:8px;border:1px solid var(--ink);
+  background:var(--ink);color:var(--paper);cursor:pointer;transition:.15s;
+}
+.btn:hover{background:#222;}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--hair-strong);}
+.btn.ghost:hover{border-color:var(--ink);}
+
+/* ---------- map / legend ---------- */
+.legend{display:flex;gap:14px;flex-wrap:wrap;padding:18px 36px 0;font-size:12px;color:var(--ink-soft);}
+.legend .lg-item{display:flex;align-items:center;gap:6px;}
+.legend .sw{width:9px;height:9px;border-radius:3px;display:inline-block;}
+
+/* ---------- section ---------- */
+.section{padding:54px 36px 10px;border-bottom:1px solid var(--hair);}
+.section:last-of-type{border-bottom:none;}
+.sec-head{display:flex;gap:18px;align-items:flex-start;margin-bottom:18px;}
+.sec-stamp{
+  flex-shrink:0;width:54px;height:54px;border-radius:8px;border:1.5px solid var(--ink);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transform:rotate(-3deg);background:var(--surface);
+}
+.sec-stamp .fo{font-family:'IBM Plex Mono';font-size:8.5px;letter-spacing:.08em;color:var(--gold);}
+.sec-stamp .nn{font-family:'Fraunces';font-weight:700;font-size:20px;color:var(--ink);line-height:1;}
+.sec-titles .kicker{font-family:'IBM Plex Mono';font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:4px;}
+.sec-titles h2{font-size:28px;font-weight:600;letter-spacing:-.01em;}
+.sec-intro{max-width:760px;color:var(--ink-soft);font-size:15.5px;margin:14px 0 22px;}
+.sec-intro strong{color:var(--ink);}
+
+.askbox{
+  background:var(--indigo-bg);border:1px solid #C9D1EF;border-radius:var(--radius);
+  padding:16px 20px;margin-bottom:26px;max-width:760px;
+}
+.askbox .lbl{font-family:'IBM Plex Mono';font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--indigo);font-weight:600;margin-bottom:8px;}
+.askbox ul{margin:0;padding-left:18px;}
+.askbox li{font-size:14.5px;color:var(--ink);margin-bottom:5px;}
+
+.subhead{
+  font-family:'IBM Plex Mono';font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);
+  margin:30px 0 12px;padding-bottom:8px;border-bottom:1px dashed var(--hair-strong);
+}
+
+/* ---------- cards ---------- */
+.card{
+  background:var(--surface);border:1px solid var(--hair);border-radius:var(--radius);
+  margin-bottom:10px;overflow:hidden;
+}
+.card summary{
+  list-style:none;cursor:pointer;padding:14px 18px;display:flex;gap:12px;align-items:flex-start;
+  font-weight:600;font-size:15px;color:var(--ink);
+}
+.card summary::-webkit-details-marker{display:none;}
+.card summary::after{
+  content:"+";margin-left:auto;font-family:'IBM Plex Mono';color:var(--ink-faint);font-size:18px;font-weight:400;flex-shrink:0;
+}
+.card[open] summary::after{content:"–";}
+.card summary:hover{background:var(--paper-deep);}
+.card .card-body{padding:0 18px 18px 18px;font-size:14.5px;color:var(--ink-soft);border-top:1px solid var(--hair);padding-top:14px;}
+.card .card-body p{margin:0 0 10px;}
+.card .card-body ul, .card .card-body ol{margin:0 0 10px;padding-left:20px;}
+.card .card-body li{margin-bottom:5px;}
+.card .card-body strong{color:var(--ink);}
+.tag{
+  flex-shrink:0;font-family:'IBM Plex Mono';font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+  padding:3px 8px;border-radius:5px;margin-top:1px;
+}
+.tag-concept{background:var(--teal-bg);color:var(--teal);}
+.tag-api{background:var(--indigo-bg);color:var(--indigo);}
+.tag-scenario{background:var(--gold-bg);color:var(--gold);}
+.tag-design{background:#EFE6F6;color:#6B3FA0;}
+.tag-risk{background:var(--brick-bg);color:var(--brick);}
+.tag-data{background:#E4F3E8;color:#2E7D4F;}
+
+.kinsight{
+  background:var(--gold-bg);border-left:3px solid var(--gold);padding:10px 14px;border-radius:0 6px 6px 0;
+  margin:10px 0;font-size:14px;color:#5C3F12;
+}
+.kinsight strong{color:#3D2A0C;}
+.warn{
+  background:var(--brick-bg);border-left:3px solid var(--brick);padding:10px 14px;border-radius:0 6px 6px 0;
+  margin:10px 0;font-size:14px;color:#6E2B26;
+}
+
+/* flow diagram */
+.flow{display:flex;align-items:center;gap:0;flex-wrap:wrap;margin:14px 0;}
+.flow-step{
+  background:var(--paper-deep);border:1px solid var(--hair-strong);border-radius:7px;
+  padding:9px 13px;font-size:13px;font-weight:600;color:var(--ink);text-align:center;
+}
+.flow-arrow{padding:0 8px;color:var(--ink-faint);font-size:15px;}
+.flow.vert{flex-direction:column;align-items:flex-start;}
+.flow.vert .flow-arrow{padding:2px 0 2px 18px;}
+.flow.vert .flow-step{width:auto;}
+
+.timeline{border-left:2px solid var(--hair-strong);margin:14px 0 14px 8px;padding-left:20px;}
+.timeline .t-item{position:relative;padding-bottom:14px;}
+.timeline .t-item::before{
+  content:"";position:absolute;left:-26px;top:4px;width:9px;height:9px;border-radius:50%;background:var(--teal);
+}
+.timeline .t-item .t-label{font-weight:600;color:var(--ink);font-size:13.5px;}
+.timeline .t-item .t-sub{font-size:13px;color:var(--ink-soft);}
+
+table.dtable{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px;}
+table.dtable th{
+  text-align:left;background:var(--paper-deep);color:var(--ink);font-family:'IBM Plex Mono';
+  font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;padding:8px 10px;border-bottom:2px solid var(--hair-strong);
+}
+table.dtable td{padding:9px 10px;border-bottom:1px solid var(--hair);color:var(--ink-soft);vertical-align:top;}
+table.dtable tr:last-child td{border-bottom:none;}
+
+pre.codeblock{
+  background:#1B2436;color:#D9E2F1;padding:14px 16px;border-radius:8px;overflow-x:auto;
+  font-size:12.5px;line-height:1.55;margin:10px 0;
+}
+pre.codeblock .k{color:#E3B05D;}
+.statepill{
+  display:inline-block;background:var(--paper-deep);border:1px solid var(--hair-strong);border-radius:5px;
+  padding:3px 9px;font-family:'IBM Plex Mono';font-size:12px;margin:2px 4px 2px 0;color:var(--ink);
+}
+
+.mastery{
+  background:var(--ink);color:var(--paper);border-radius:var(--radius);padding:24px 26px;margin:30px 0 40px;
+}
+.mastery .lbl{font-family:'IBM Plex Mono';font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-soft);margin-bottom:12px;}
+.mastery h4{color:var(--paper);font-size:18px;margin-bottom:6px;}
+.mastery-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:14px;}
+.mastery-col .ml{font-size:12px;color:var(--gold-soft);font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em;}
+.mastery-col ul{margin:0;padding-left:18px;}
+.mastery-col li{font-size:13.5px;margin-bottom:7px;color:#D6DAE6;}
+@media (max-width:780px){.mastery-grid{grid-template-columns:1fr;}}
+
+.archnote{
+  border:1px solid var(--hair-strong);border-radius:8px;padding:14px 16px;background:var(--paper-deep);margin:10px 0;font-size:13.5px;
+}
+
+footer.docfoot{padding:40px 36px;color:var(--ink-faint);font-size:12.5px;}
+
+@media (max-width:920px){
+  .sidebar{display:none;}
+  .container, .section, .hero, .legend{padding-left:20px;padding-right:20px;}
+}
+.hidden{display:none !important;}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<aside class="sidebar" id="sidebar">
+  <div class="side-brand">
+    <div class="stamp">MF</div>
+    <div class="name">Optimus Mutual Fund<br>Domain Reference</div>
+  </div>
+  <div class="side-search">
+    <input type="text" id="searchBox" placeholder="Search every topic…">
+  </div>
+  <ul class="side-nav" id="sideNav"></ul>
+  <div class="side-foot">Single source of truth · compiled from the Optimus MF domain study notes · <span id="cardCount">—</span> Q&amp;A cards</div>
+</aside>
+
+<main class="main">
+<div id="searchEmpty" class="hidden" style="padding:60px 36px;color:var(--ink-faint);font-size:14px;">No topics match that search.</div>
+<div id="contentRoot">
+
+<section class="hero">
+  <div class="eyebrow"><span class="line"></span>OPTIMUS · WEALTH &amp; MF PLATFORM</div>
+  <h1>The Mutual Fund Domain,<br><em>end to end.</em></h1>
+  <p class="lead">Everything about how Optimus, WinSoft and Valuefy work together to onboard, invest, hold, redeem and lend against mutual funds — clustered by topic, framed as questions, and built to be read once and referenced forever.</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="n">10</div><div class="l">Topic Clusters</div></div>
+    <div class="hero-stat"><div class="n">90+</div><div class="l">Q&amp;A Cards</div></div>
+    <div class="hero-stat"><div class="n">20</div><div class="l">Worked Scenarios</div></div>
+    <div class="hero-stat"><div class="n">3</div><div class="l">Core Systems</div></div>
+  </div>
+  <div class="hero-actions">
+    <button class="btn" id="expandAllTop">Expand everything</button>
+    <button class="btn ghost" id="collapseAllTop">Collapse everything</button>
+  </div>
+</section>
+
+<div class="legend">
+  <span class="lg-item"><span class="sw" style="background:#2D6E68"></span>Concept</span>
+  <span class="lg-item"><span class="sw" style="background:#3D4F8C"></span>API / Data flow</span>
+  <span class="lg-item"><span class="sw" style="background:#A8742C"></span>Scenario</span>
+  <span class="lg-item"><span class="sw" style="background:#6B3FA0"></span>System design</span>
+  <span class="lg-item"><span class="sw" style="background:#A8453F"></span>Risk / failure mode</span>
+  <span class="lg-item"><span class="sw" style="background:#2E7D4F"></span>Reference data</span>
+</div>
+
+<!-- SECTIONS GET INSERTED HERE -->
+<div id="sectionsMount">
+<section class="section" id="sec-foundations" data-section="Foundations">
+  <div class="sec-head">
+    <div class="sec-stamp"><span class="fo">FOLIO</span><span class="nn">01</span></div>
+    <div class="sec-titles">
+      <div class="kicker">Start here · mental model</div>
+      <h2>Foundations — AMC, Scheme, Portfolio, NAV</h2>
+    </div>
+  </div>
+  <p class="sec-intro">Before any Optimus API or WinSoft integration makes sense, the underlying mutual fund mechanics need to click. This is the layer almost everyone skips and almost everyone gets fuzzy on later — <strong>what your money actually becomes</strong> the moment you click "Invest."</p>
+
+  <div class="askbox">
+    <div class="lbl">Before you dive in, sit with these</div>
+    <ul>
+      <li>When you "invest in a mutual fund," where does your money actually go — and who decides what to buy with it?</li>
+      <li>If one AMC has 100 schemes, is there one common pool of money or 100 separate ones?</li>
+      <li>Two people invest in the same scheme on different days — why do they end up owning different numbers of units?</li>
+      <li>When the market goes up, what exactly goes up: the AMC's value, the NAV, or your units?</li>
+    </ul>
+  </div>
+
+  <div class="subhead">The cast of characters</div>
+
+  <details class="card" open>
+    <summary><span class="tag tag-concept">Concept</span> What is an AMC, and how is it different from a scheme?</summary>
+    <div class="card-body">
+      <p><strong>AMC = Asset Management Company.</strong> It's the company that creates and manages mutual fund schemes — but it never holds your money as its own. Think of it as the kitchen, not the dish.</p>
+      <div class="flow vert">
+        <div class="flow-step">AMC — the company (e.g. "XYZ Mutual Fund")</div>
+        <div class="flow-arrow">↓ creates many</div>
+        <div class="flow-step">Schemes — individual products (Large Cap, Debt, Hybrid…)</div>
+        <div class="flow-arrow">↓ each has its own</div>
+        <div class="flow-step">Portfolio — the actual stocks/bonds/cash held by that scheme</div>
+      </div>
+      <p>A single AMC never has one shared basket of money for all its schemes. <strong>SBI Mutual Fund with 100 schemes means 100 separate portfolios</strong>, not one giant pool split 100 ways.</p>
+      <table class="dtable">
+        <tr><th>Role in the kitchen analogy</th><th>Real-world term</th></tr>
+        <tr><td>The company / kitchen</td><td>AMC</td></tr>
+        <tr><td>The dish / recipe</td><td>Scheme</td></tr>
+        <tr><td>The actual ingredients in the dish</td><td>Portfolio</td></tr>
+        <tr><td>The chef</td><td>Fund Manager</td></tr>
+        <tr><td>The customer</td><td>Investor</td></tr>
+        <tr><td>Price per plate</td><td>NAV</td></tr>
+      </table>
+      <div class="kinsight"><strong>If the AMC fails:</strong> scheme assets are held under a separate regulatory structure — the AMC manages them, it doesn't own them like company cash. That separation is what protects investor money from an AMC's own business troubles.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-concept">Concept</span> What is a scheme, and what's actually inside its portfolio?</summary>
+    <div class="card-body">
+      <p>A <strong>scheme</strong> is a specific investment product with a defined objective — "invest mostly in large companies," "invest in bonds," "balance equity and debt." That objective drives everything: its risk level, its rules, and what its portfolio is allowed to hold.</p>
+      <p>The <strong>portfolio</strong> is the actual basket sitting inside the scheme:</p>
+      <table class="dtable">
+        <tr><th>Scheme type</th><th>Typical portfolio holdings</th></tr>
+        <tr><td>Equity scheme</td><td>HDFC Bank, Infosys, Reliance, TCS, ICICI Bank, a small cash buffer</td></tr>
+        <tr><td>Debt scheme</td><td>Government bonds, corporate bonds, treasury bills, cash</td></tr>
+      </table>
+      <p><strong>Scheme = the investment plan / rules. Portfolio = the actual holdings living inside that plan.</strong> One AMC running 50 schemes means 50 portfolios being tracked independently — never a shared basket.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-concept">Concept</span> How does money actually flow from investor to portfolio?</summary>
+    <div class="card-body">
+      <p>Three simple steps:</p>
+      <div class="timeline">
+        <div class="t-item"><div class="t-label">1 · Investors put money into a scheme</div><div class="t-sub">Ravi → ₹10,000, Neha → ₹20,000, Amit → ₹30,000</div></div>
+        <div class="t-item"><div class="t-label">2 · The scheme pools the money</div><div class="t-sub">Ravi + Neha + Amit → one common pool of ₹60,000</div></div>
+        <div class="t-item"><div class="t-label">3 · The fund manager invests per the scheme's objective</div><div class="t-sub">A large-cap scheme's pooled money goes into large-cap stocks — investors never pick the individual stock.</div></div>
+      </div>
+      <p>The <strong>fund manager</strong> takes day-to-day buy/sell decisions, but always inside the scheme's mandate and regulator rules. The AMC appoints the fund manager; the investor never chooses each stock directly.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-concept">Concept</span> If I invest ₹5,000, what do I actually end up owning?</summary>
+    <div class="card-body">
+      <p>You don't own individual stocks directly. You own <strong>units</strong> of the scheme — a proportionate share of whatever the scheme's portfolio is worth.</p>
+      <div class="flow vert">
+        <div class="flow-step">You invest ₹5,000</div>
+        <div class="flow-arrow">↓ at NAV ₹10/unit</div>
+        <div class="flow-step">You receive 500 units</div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">500 units = your proportional share of the scheme's portfolio</div>
+      </div>
+      <p>Worked example: total scheme assets ₹1,00,000, total units 10,000 → NAV = 1,00,000 / 10,000 = ₹10 per unit. At that NAV, ₹5,000 buys exactly 500 units.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-concept">Concept</span> What exactly is NAV, and why does it move?</summary>
+    <div class="card-body">
+      <p><strong>NAV = price per unit of the scheme.</strong></p>
+      <pre class="codeblock">NAV = (Total value of scheme assets − expenses/liabilities) / total units</pre>
+      <p>Worked example: portfolio market value ₹10,00,000, minus expenses ₹20,000 → net assets ₹9,80,000. Total units 98,000 → NAV = 9,80,000 / 98,000 = <strong>₹10</strong>.</p>
+      <p><strong>Why it moves:</strong> NAV is a pure reflection of the underlying portfolio. If the stocks or bonds inside the portfolio rise, net assets rise, and NAV rises — and the reverse is equally true.</p>
+      <div class="flow vert">
+        <div class="flow-step">Stocks/bonds in the portfolio move</div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">Portfolio value moves</div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">Net assets move</div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">NAV moves</div>
+      </div>
+      <div class="kinsight">Two people investing the same rupee amount on different days get a <strong>different number of units</strong>, because each day's NAV is different. Your unit count is fixed at purchase — what changes daily afterward is the NAV, and therefore your investment's current value, not your unit count.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-concept">Concept</span> Two real-life analogies that make this click instantly</summary>
+    <div class="card-body">
+      <p><strong>School lunch box business:</strong> AMC = the lunch company · Scheme = one lunch plan · Portfolio = the actual food items in that lunch · Fund manager = the chef deciding ingredients · NAV = price per lunch unit · Investor = the person buying lunch units.</p>
+      <p><strong>Apartment builder:</strong> AMC = the builder · Scheme = one apartment project · Portfolio = the actual flats/assets in that project · Units = your proportional ownership of the project.</p>
+    </div>
+  </details>
+
+  <div class="mastery">
+    <div class="lbl">Mastery questions for this section</div>
+    <h4>Carry these forward before you move on</h4>
+    <ul style="margin-top:10px;padding-left:18px;">
+      <li>If one AMC has 50 schemes, why must each scheme have completely separate portfolio tracking?</li>
+      <li>If NAV increases, does your number of units increase too — or only your investment's value?</li>
+      <li>Why is understanding a scheme's "objective" critical before you ever look at its past returns?</li>
+    </ul>
+  </div>
+</section>
+<section class="section" id="sec-landscape" data-section="System Landscape">
+  <div class="sec-head">
+    <div class="sec-stamp"><span class="fo">FOLIO</span><span class="nn">02</span></div>
+    <div class="sec-titles">
+      <div class="kicker">Architecture overview</div>
+      <h2>System Landscape — Optimus, WinSoft &amp; Valuefy</h2>
+    </div>
+  </div>
+  <p class="sec-intro">With the financial mental model in place, here's the engineering picture: who owns what, who's the source of truth, and what Optimus is actually for.</p>
+
+  <div class="askbox">
+    <div class="lbl">Before you dive in, sit with these</div>
+    <ul>
+      <li>If Optimus isn't the source of truth for anything, what is its actual job?</li>
+      <li>Why do you need two downstream systems (WinSoft and Valuefy) instead of one?</li>
+      <li>What does it mean for a banking app to "cache" master data instead of always calling live?</li>
+    </ul>
+  </div>
+
+  <details class="card" open>
+    <summary><span class="tag tag-concept">Concept</span> What is the overall business domain and which systems power it?</summary>
+    <div class="card-body">
+      <p>The domain is <strong>Wealth Management</strong>, specifically MF Investments. <strong>Optimus</strong> is the core customer-facing application, and it integrates with two key downstream systems:</p>
+      <table class="dtable">
+        <tr><th>System</th><th>Owns</th></tr>
+        <tr><td><strong>WinSoft (WMS)</strong></td><td>Customer master data (KYC, FATCA), Investment Accounts, Folios, order placement &amp; execution with RTAs, order status</td></tr>
+        <tr><td><strong>Valuefy</strong></td><td>Portfolio valuation, NAV tracking, returns calculation, goal-based recommendations, personalized fund suggestions</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-design">Design</span> What is Optimus's architectural philosophy regarding data?</summary>
+    <div class="card-body">
+      <p><strong>Optimus is a pass-through and orchestration layer — never a source of truth.</strong></p>
+      <table class="dtable">
+        <tr><th>System</th><th>Source of truth for</th></tr>
+        <tr><td>WinSoft</td><td>Customer master, KYC, accounts, folios, transactions</td></tr>
+        <tr><td>Valuefy</td><td>Portfolio valuation, analytics, recommendations</td></tr>
+        <tr><td>CBS (Core Banking System)</td><td>Savings account details</td></tr>
+      </table>
+      <div class="kinsight">Optimus orchestrates the journey and decides what the customer sees next — but every fact it shows ultimately traces back to one of these three systems of record.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-concept">Concept</span> What's the precise division of labor between WinSoft and Valuefy?</summary>
+    <div class="card-body">
+      <ul>
+        <li><strong>WinSoft (Transactional):</strong> system of record for CRUD operations, order execution, and RTA communication.</li>
+        <li><strong>Valuefy (Analytical):</strong> system of insight for NAV, returns, recommendations, dashboards and valuation.</li>
+      </ul>
+      <p>One executes and remembers what happened; the other tells you what it's currently worth and what to do next.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-concept">Concept</span> What are the key customer-facing journeys in Optimus?</summary>
+    <div class="card-body">
+      <ul>
+        <li><strong>DIY (Do-It-Yourself):</strong> customer manually browses and selects funds from lists or categories.</li>
+        <li><strong>ACE / Journey:</strong> a guided, simplified investment path for specific customer segments.</li>
+        <li><strong>Goals-Based Investing:</strong> customer invests toward predefined financial goals (Wedding, Retirement). Goals are configured in both WinSoft and Valuefy.</li>
+        <li><strong>Carting:</strong> aggregates multiple funds (SIP and/or Lump Sum) into a single basket before checkout.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-data">Reference</span> How is master data (fund lists, RTA codes) managed?</summary>
+    <div class="card-body">
+      <p>A scheduled <strong>"key dump"</strong> process syncs master data from WinSoft and Valuefy into Optimus's own database, enabling fast local validations without a live call on every check.</p>
+      <p>This is what lets Optimus power fund-discovery and search UIs, and validate things like "is this RTA code valid?" — without hitting WinSoft in real time for every screen load.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-risk">Risk</span> What are the known integration pain points or architectural gaps?</summary>
+    <div class="card-body">
+      <ol>
+        <li><strong>No native async support in WinSoft</strong> — Optimus runs a Kafka workaround to protect against order loss when WinSoft is briefly unavailable.</li>
+        <li><strong>Pull-based status tracking</strong> instead of real-time push or webhook updates — Optimus has to poll for the latest order status rather than being told.</li>
+      </ol>
+      <p>Both of these surface repeatedly later — in the Order Placement section and in the LAMF system design — as the architectural debt that any future "Pulse" platform is meant to retire.</p>
+    </div>
+  </details>
+
+  <div class="subhead">Three entities you'll see everywhere from here on</div>
+
+  <details class="card" open>
+    <summary><span class="tag tag-concept">Concept</span> Customer, Investment Account (Portfolio) and Folio — what's the actual difference?</summary>
+    <div class="card-body">
+      <ul>
+        <li><strong>Customer:</strong> identified by a <strong>UCIC</strong> (Unique Customer Identification Code). Has a savings account with the bank.</li>
+        <li><strong>Investment Account (IA) / Portfolio Code:</strong> a bridge between the bank and the RTA world. A customer can have multiple IAs — it's the primary container for MF investments at the bank level.</li>
+        <li><strong>Folio:</strong> an account with a specific RTA (e.g. CAMS, KFinTech) for a specific fund. One Investment Account can hold multiple Folios, each linked to a different fund/RTA combination.</li>
+      </ul>
+      <div class="flow vert">
+        <div class="flow-step">One Customer (UCIC)</div>
+        <div class="flow-arrow">↓ can have many</div>
+        <div class="flow-step">Investment Accounts / Portfolio Codes (P1, P2, P3…)</div>
+        <div class="flow-arrow">↓ each can have many</div>
+        <div class="flow-step">Folios (one per fund-house/RTA relationship)</div>
+      </div>
+      <p>This three-layer hierarchy is the single most important data model in the whole MF domain — it gets its own deep dive next.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-api">API</span> How does Optimus fetch a customer's investment details at the start of an order journey?</summary>
+    <div class="card-body">
+      <p>Optimus calls a composite <code>investment/v2</code> API, which internally calls two WinSoft APIs:</p>
+      <ol>
+        <li><strong>PSM Folio for UCIC:</strong> fetches all existing folios for the customer.</li>
+        <li><strong>PSP Folio for UCIC:</strong> fetches all portfolios (IAs) along with KYC/FATCA information.</li>
+      </ol>
+      <p>Optimus aggregates this, groups folios under their respective portfolios, and caches it for the journey.</p>
+    </div>
+  </details>
+
+  <div class="mastery">
+    <div class="lbl">Mastery questions for this section</div>
+    <h4>Carry these forward before you move on</h4>
+    <ul style="margin-top:10px;padding-left:18px;">
+      <li>Why would a bank deliberately design its customer-facing app to own zero source-of-truth data?</li>
+      <li>What breaks if the "key dump" master-data sync runs late, or fails silently for a day?</li>
+      <li>If WinSoft and Valuefy ever disagree on a number, which one should the UI trust, and why?</li>
+    </ul>
+  </div>
+</section>
+<section class="section" id="sec-registry" data-section="Investment Registry">
+  <div class="sec-head">
+    <div class="sec-stamp"><span class="fo">FOLIO</span><span class="nn">03</span></div>
+    <div class="sec-titles">
+      <div class="kicker">Customer → Portfolio → Folio</div>
+      <h2>Investment Registry</h2>
+    </div>
+  </div>
+  <p class="sec-intro">WinSoft is the master system for customer investment accounts, portfolios, folios and KYC/FATCA status. This section is the complete picture of that hierarchy, the APIs that read it, and exactly when a new folio gets created.</p>
+
+  <div class="askbox">
+    <div class="lbl">Before you dive in, sit with these</div>
+    <ul>
+      <li>Is "Portfolio Code" the same thing as "Folio"? (It isn't — and confusing the two is the single most common mistake.)</li>
+      <li>Who decides when a brand-new folio needs to be created — the customer, Optimus, or WinSoft?</li>
+      <li>What does an empty <code>folios: []</code> response actually tell you?</li>
+    </ul>
+  </div>
+
+  <details class="card" open>
+    <summary><span class="tag tag-concept">Concept</span> Investment Account vs Folio — the exact distinction</summary>
+    <div class="card-body">
+      <p><strong>Investment Account (Portfolio Code):</strong> a high-level relationship with the RTA (Registrar &amp; Transfer Agent — CAMS/KFintech). Created when a customer first registers with the RTA. On the bank side, the Portfolio Code is the main identifier for MF investments — it acts like a bridge between BIMBO Bank and the RTA world.</p>
+      <p><strong>Folio:</strong> a specific holding account for a single mutual fund scheme — the customer's unique number inside one mutual fund house/RTA (e.g. an HDFC MF folio number, an SBI MF folio number). One customer with one Investment Account can have multiple folios.</p>
+      <div class="kinsight"><strong>Portfolio Code = bank-side identity. Folio = MF house / RTA-side identity.</strong> If an API response shows <code>folios: []</code>, it means the investment account relationship exists, but the customer has no fund-specific holdings yet — a perfectly valid "new investor" state, not an error.</div>
+    </div>
+  </details>
+
+  <details class="card" open>
+    <summary><span class="tag tag-design">System map</span> The full big picture, end to end</summary>
+    <div class="card-body">
+      <div class="flow vert">
+        <div class="flow-step">Customer (UCIC)</div>
+        <div class="flow-arrow">↓ one customer can have many</div>
+        <div class="flow-step">Investment Accounts / Portfolio Codes — P1, P2, P3…</div>
+        <div class="flow-arrow">↓ one portfolio can have many</div>
+        <div class="flow-step">Folios — one per fund house / RTA (HDFC, SBI, ICICI…)</div>
+        <div class="flow-arrow">↓ if a needed folio isn't present</div>
+        <div class="flow-step">Create New Folio in WinSoft</div>
+      </div>
+      <p>Side flows that plug into this spine:</p>
+      <ul>
+        <li><code>UCIC → PSP Folio API → Portfolio + KYC/FATCA</code></li>
+        <li><code>UCIC → PSM Folio API → Existing folios + ISIN + RTA</code></li>
+        <li><code>Goal ID → mapped to Folio</code> (for goal-based investments)</li>
+      </ul>
+    </div>
+  </details>
+
+  <div class="subhead">The two read APIs</div>
+
+  <details class="card">
+    <summary><span class="tag tag-api">API</span> PSP Folio for UCIC — what does it fetch?</summary>
+    <div class="card-body">
+      <div class="flow">
+        <div class="flow-step">UCIC</div><div class="flow-arrow">→</div>
+        <div class="flow-step">PSP Folio API</div><div class="flow-arrow">→</div>
+        <div class="flow-step">WinSoft</div><div class="flow-arrow">→</div>
+        <div class="flow-step">Portfolios + KYC/FATCA status</div>
+      </div>
+      <p>Returns all portfolio codes (IAs) belonging to the customer, along with KYC and FATCA status. This is the call that powers the onboarding/permission picture.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-api">API</span> PSM Folio for UCIC — what does it fetch?</summary>
+    <div class="card-body">
+      <div class="flow">
+        <div class="flow-step">UCIC</div><div class="flow-arrow">→</div>
+        <div class="flow-step">PSM Folio API</div><div class="flow-arrow">→</div>
+        <div class="flow-step">WinSoft</div><div class="flow-arrow">→</div>
+        <div class="flow-step">Folio details (ISIN, RTA code)</div>
+      </div>
+      <p>Returns all existing folios for the customer, with fund details, ISIN, and RTA code — the transactional, fund-specific view.</p>
+    </div>
+  </details>
+
+  <div class="subhead">When and how a new folio gets created</div>
+
+  <details class="card">
+    <summary><span class="tag tag-concept">Concept</span> When is a new folio actually needed?</summary>
+    <div class="card-body">
+      <p>When a customer wants to invest in a fund belonging to an RTA where no folio yet exists.</p>
+      <div class="flow vert">
+        <div class="flow-step">Investment order placed</div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">Check: does a folio already exist for this fund/RTA?</div>
+        <div class="flow-arrow">↓ Found → use it&nbsp;&nbsp;&nbsp;&nbsp;Not found ↓</div>
+        <div class="flow-step">WinSoft Create Folio API → new folio created</div>
+      </div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-concept">Concept</span> Who actually triggers folio creation — the customer or the system?</summary>
+    <div class="card-body">
+      <p><strong>Optimus</strong> triggers it, during the pre-order check — the customer never sees a separate "create folio" step.</p>
+      <div class="flow">
+        <div class="flow-step">Optimus</div><div class="flow-arrow">→</div>
+        <div class="flow-step">Pre-order check</div><div class="flow-arrow">→</div>
+        <div class="flow-step">WinSoft</div><div class="flow-arrow">→</div>
+        <div class="flow-step">Create Folio</div>
+      </div>
+      <p>Optimus asks WinSoft to create the folio if needed, transparently, as part of getting the order ready.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-concept">Concept</span> How does Goal-based investing map onto this hierarchy?</summary>
+    <div class="card-body">
+      <p>When a customer invests toward a goal (e.g. Child Education, Retirement), the <strong>Goal ID is mapped to a specific folio</strong> in WinSoft, so that goal transactions and holdings can be tracked properly.</p>
+      <div class="flow">
+        <div class="flow-step">Goal ID</div><div class="flow-arrow">↔</div>
+        <div class="flow-step">Folio</div>
+      </div>
+      <p>This mapping is what later lets the system answer "how much of my Retirement goal is in Axis Bluechip?" — it's revisited in detail in the Folio Switch scenario later in this document.</p>
+    </div>
+  </details>
+
+  <div class="mastery">
+    <div class="lbl">Mastery questions for this section</div>
+    <h4>Carry these forward before you move on</h4>
+    <ul style="margin-top:10px;padding-left:18px;">
+      <li>If PSP Folio and PSM Folio ever disagree — say one shows a complete IA and the other can't find the matching folio — whose problem is that, and what should Optimus do about it?</li>
+      <li>Could a single cart order ever span two different Investment Accounts (Portfolio Codes) for the same customer? Why or why not?</li>
+      <li>Why does the system track Folio at this granularity instead of just "customer owns ₹X of Fund Y"?</li>
+    </ul>
+  </div>
+</section>
+<section class="section" id="sec-prebuy" data-section="Pre-Order Gatekeeping">
+  <div class="sec-head">
+    <div class="sec-stamp"><span class="fo">FOLIO</span><span class="nn">04</span></div>
+    <div class="sec-titles">
+      <div class="kicker">App launch → buy button</div>
+      <h2>Pre-Order Gatekeeping &amp; Permissions</h2>
+    </div>
+  </div>
+  <p class="sec-intro">Everything that happens between "customer opens the app" and "Optimus is willing to publish the order to Kafka." This is a fail-fast pipeline — the order matters, and it's deliberately designed so the cheapest checks run first.</p>
+
+  <div class="askbox">
+    <div class="lbl">Before you dive in, sit with these</div>
+    <ul>
+      <li>Why would a system check for a signature before checking KYC status, when KYC sounds like the "bigger" requirement?</li>
+      <li>What's actually being computed at app launch, before the customer has even chosen a fund?</li>
+      <li>What happens to a non-Savings-Account customer who tries to navigate straight to the MF section?</li>
+    </ul>
+  </div>
+
+  <details class="card" open>
+    <summary><span class="tag tag-concept">Concept</span> What happens at app launch, before any fund is even selected?</summary>
+    <div class="card-body">
+      <p>App launch triggers <strong>permission calculation</strong> for the logged-in customer:</p>
+      <ol>
+        <li><strong>Permission derivation</strong> based on business metrics, customer profile, and registration data.</li>
+        <li>System calls: Optimus → WinSoft (fetch Investment Accounts &amp; Folios), and Optimus → Valuefy (check holdings summary).</li>
+      </ol>
+      <p>These inputs determine permissions such as access to Wealth tabs and buy/sell capability — all computed before the customer even opens the Mutual Fund tab.</p>
+    </div>
+  </details>
+
+  <details class="card" open>
+    <summary><span class="tag tag-design">System design</span> What is the full pre-order validation sequence?</summary>
+    <div class="card-body">
+      <p>Before publishing an order to Kafka, Optimus runs through, in order:</p>
+      <div class="timeline">
+        <div class="t-item"><div class="t-label">1 · Authentication &amp; Customer Validation</div><div class="t-sub">Is the authenticated user a valid BIMBO Bank customer?</div></div>
+        <div class="t-item"><div class="t-label">2 · Account Ownership</div><div class="t-sub">Does the provided savings account and portfolio code (IA) belong to this customer?</div></div>
+        <div class="t-item"><div class="t-label">3 · Master Data Check</div><div class="t-sub">Validate fund details — RTA code, fund ID, type — against internal cached master data.</div></div>
+        <div class="t-item"><div class="t-label">4 · KYC / FATCA Status</div><div class="t-sub">Checked via a dedicated KYC Status API, and cross-verified from the PSP Folio for UCIC WinSoft API.</div></div>
+        <div class="t-item"><div class="t-label">5 · Folio Existence Check</div><div class="t-sub">PSM Folio for UCIC; if absent, triggers folio creation.</div></div>
+      </div>
+      <p>One-line version: <code>Customer → Account → Fund → KYC/FATCA → Folio → Kafka</code></p>
+      <p>If all checks pass, the order publishes to Kafka. If any fail, the order is rejected with a validation error.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-design">Design decision</span> Why is the signature check performed before the KYC status check?</summary>
+    <div class="card-body">
+      <p>This is a deliberate <strong>fail-fast</strong> design. The signature is required both for e-signing KYC documents and for transaction authentication — so if the signature is missing, the customer can't complete KYC or purchase anyway, no matter what else passes.</p>
+      <p>Checking it first avoids wasting resources on downstream KYC checks that would be useless without a signature, and gives the fastest possible feedback ("you need a signature") instead of a slower, more confusing failure later.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-risk">Risk / gate</span> What happens to a customer with no Savings Account at all?</summary>
+    <div class="card-body">
+      <p>Wealth services are restricted to liability (Savings Account) customers. A non-SA customer who navigates directly to Mutual Funds is <strong>blocked at the menu level</strong> — they never see the "Select a fund" screen, and no investment-account or signature APIs are ever called.</p>
+      <div class="flow">
+        <div class="flow-step">Login</div><div class="flow-arrow">→</div>
+        <div class="flow-step">Wealth permission check</div><div class="flow-arrow">→</div>
+        <div class="flow-step" style="background:var(--brick-bg);border-color:#E0B6B2;">Fail → Access denied</div>
+      </div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-concept">Concept</span> What does the RTA code in an order actually identify, and where does it come from?</summary>
+    <div class="card-body">
+      <p>The RTA code identifies the specific Registrar &amp; Transfer Agent (e.g. CAMS, KFintech). It matters because different fund houses use different RTAs, and a customer may exist with one RTA but not another — so the system has to know exactly which RTA to query. The RTA code is typically derived from the mutual fund the customer is attempting to purchase.</p>
+    </div>
+  </details>
+
+  <div class="mastery">
+    <div class="lbl">Mastery questions for this section</div>
+    <h4>Carry these forward before you move on</h4>
+    <ul style="margin-top:10px;padding-left:18px;">
+      <li>If the cheapest check (signature) runs first but the most expensive check (folio existence, a live WinSoft call) runs last, is that purely about cost — or also about which failures are most common?</li>
+      <li>What should the user actually see when validation fails at step 3 (Master Data) versus step 4 (KYC/FATCA)? Should the messaging differ?</li>
+      <li>Permission calculation happens at app launch — what happens if a customer's KYC status changes mid-session? Does the cached permission ever get re-evaluated before the next login?</li>
+    </ul>
+  </div>
+</section>
+<section class="section" id="sec-kyc" data-section="KYC, FATCA & Onboarding">
+  <div class="sec-head">
+    <div class="sec-stamp"><span class="fo">FOLIO</span><span class="nn">05</span></div>
+    <div class="sec-titles">
+      <div class="kicker">The compliance gate</div>
+      <h2>KYC, FATCA &amp; Onboarding</h2>
+    </div>
+  </div>
+  <p class="sec-intro">This is the densest section in the whole domain — KYC mechanics, the Digilocker/e-sign/CVL pipeline, ten worked scenarios that stress-test the design, a full FATCA deep-dive, and the orchestration system design that ties it all together.</p>
+
+  <div class="askbox">
+    <div class="lbl">Before you dive in, sit with these</div>
+    <ul>
+      <li>If a customer drops off mid-KYC and comes back tomorrow, what exactly is remembered, and what is lost?</li>
+      <li>Why is Aadhaar mandatory from Digilocker, but PAN can be manually uploaded?</li>
+      <li>If Optimus's UI says "KYC In Progress" but WinSoft says "Y" — which one wins, and why does that even make sense?</li>
+    </ul>
+  </div>
+
+  <div class="subhead">KYC mechanics</div>
+
+  <details class="card" open>
+    <summary><span class="tag tag-design">Design</span> Who owns what in the KYC journey?</summary>
+    <div class="card-body">
+      <ul>
+        <li><strong>WinSoft is the system of record</strong> for final KYC and FATCA compliance status.</li>
+        <li>The <strong>KYC journey itself is hosted by Optimus</strong>; WMS stores only the final outcome (KYC Complete/Incomplete, FATCA Complete/Incomplete).</li>
+        <li>The KYC/FATCA status stored in WinSoft is a critical input for calculating customer permissions in Optimus ("can this customer buy?") — computed at app launch.</li>
+        <li>WinSoft exposes APIs (likely part of the PSP Folio response) that surface the KYC/FATCA flags Optimus uses to gate order placement. If incomplete, Optimus redirects to the right onboarding flow.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="card" open>
+    <summary><span class="tag tag-concept">Concept</span> How is the KYC/FATCA journey managed across sessions?</summary>
+    <div class="card-body">
+      <ul>
+        <li><strong>State Management:</strong> KYC is a multi-step workflow. If a customer drops off, Optimus saves the "initial stage" milestone so the journey can resume.</li>
+        <li><strong>System of Record:</strong> the final KYC/FATCA completion status is sent to and stored in WinSoft.</li>
+        <li><strong>Journey Trigger:</strong> the KYC/FATCA screen appears after the customer enters the investment amount and clicks "swipe to invest," but before final order submission.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-concept">Concept</span> What triggers the transition from one KYC stage to the next?</summary>
+    <div class="card-body">
+      <p>The transition is <strong>manually triggered by an API call</strong> from the Optimus frontend after each stage completes successfully. Example: Email Verification → Liveliness.</p>
+      <div class="timeline">
+        <div class="t-item"><div class="t-label">1 · User enters email, receives OTP</div></div>
+        <div class="t-item"><div class="t-label">2 · Frontend calls <code>verify-email-otp</code></div></div>
+        <div class="t-item"><div class="t-label">3 · Backend validates OTP</div></div>
+        <div class="t-item"><div class="t-label">4 · Backend updates internal KYC stage to <span class="statepill">LIVELINESS_PENDING</span></div></div>
+        <div class="t-item"><div class="t-label">5 · Frontend navigates to liveliness screen</div></div>
+      </div>
+      <p>The backend maintains a <strong>state machine</strong>, so users can resume later from the last completed stage rather than starting over.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-concept">Concept</span> Why is Aadhaar mandatory from Digilocker, but PAN can be manually uploaded?</summary>
+    <div class="card-body">
+      <table class="dtable">
+        <tr><th>Aadhaar</th><th>PAN</th></tr>
+        <tr><td>Anchors biometric KYC (CKYC); Digilocker gives a digitally signed XML required for biometric match and CKYC submission. Manual upload lacks a verifiable digital signature.</td><td>Primarily a tax identity document; PAN can be validated independently via NSDL. Manual upload with OCR extraction is sufficient — the requirement is the PAN data, not a digitally signed container.</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-api">API / flow</span> What role does Mule play in the Digilocker flow?</summary>
+    <div class="card-body">
+      <p>Mule acts as a <strong>middleware / event bridge</strong>:</p>
+      <div class="timeline">
+        <div class="t-item"><div class="t-label">1 · User consents in Digilocker webview</div></div>
+        <div class="t-item"><div class="t-label">2 · Digilocker sends data to a callback URL hosted on Mule</div></div>
+        <div class="t-item"><div class="t-label">3 · Mule receives and optionally transforms the payload</div></div>
+        <div class="t-item"><div class="t-label">4 · Mule calls the internal Optimus/MF Compliance endpoint <code>/digilocker/callback</code></div></div>
+        <div class="t-item"><div class="t-label">5 · Optimus stores the data in a temporary cache</div></div>
+      </div>
+      <p>Mule handles external integration plumbing and decouples Digilocker from internal banking systems.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-risk">Risk / hard gate</span> What happens if the liveliness check score is below threshold?</summary>
+    <div class="card-body">
+      <p>The user cannot proceed. The frontend shows an error ("Liveliness check failed. Please try again."), and the user is forced to retake the selfie. <strong>This is a hard gate — no manual override, no alternate path.</strong></p>
+      <p>It protects against fraud patterns like photo-of-a-photo attacks and replay attempts.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-concept">Concept</span> When the system "generates the KYC document," what exactly goes into the PDF?</summary>
+    <div class="card-body">
+      <p>The PDF generation service combines:</p>
+      <ol>
+        <li><strong>Customer Demographics</strong> — name, address (from Windsor/CDP)</li>
+        <li><strong>FATCA / TNC Data</strong> — tax residency, occupation, income, PEP status (from forms stored in CDP)</li>
+        <li><strong>Biometric / Liveliness Proof</strong> — selfie image (stored in Omnidocs)</li>
+        <li><strong>Identity Proofs</strong> — Aadhaar XML and PAN details (from Digilocker cache or manual upload)</li>
+        <li><strong>Bank &amp; Product Details</strong> — bank name, UCIC, MF product information</li>
+      </ol>
+      <p>This compiled PDF is sent to the e-sign platform (<strong>SignDesk</strong>).</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-api">API / flow</span> After e-sign, what exactly gets uploaded to CVL?</summary>
+    <div class="card-body">
+      <p>A complete KYC submission package:</p>
+      <ol>
+        <li>E-signed KYC PDF</li>
+        <li>Supporting documents — Aadhaar XML, PAN image/certified copy</li>
+        <li>Liveliness selfie (proof of In-Person Verification)</li>
+        <li>Signed application form (often embedded in the KYC PDF)</li>
+      </ol>
+      <p>This forms the official regulatory KYC record sent to the KRA (KYC Registration Agency).</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-concept">Concept</span> Why use UCIC as the primary key instead of an internal user ID?</summary>
+    <div class="card-body">
+      <p><strong>UCIC (Universal Customer Identification Code)</strong> is a bank-wide unique customer identifier spanning all products — Savings, Loans, Wealth — and is stored in the Core Banking System (CBS).</p>
+      <p>Using it instead of an internal ID: core systems (WinSoft, CBS, RAS) are already keyed on UCIC, it avoids cross-reference lookups, ensures the correct legal customer entity is used, and acts as the common language across every downstream system.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-concept">Concept</span> If a signature was missing during pre-checks and later uploaded, do all checks restart?</summary>
+    <div class="card-body">
+      <p><strong>No — the flow is stateful.</strong> Once the signature upload succeeds and RAS confirms completion, the state machine resumes from the point of failure: it proceeds directly to the KYC status check, and previously successful checks are not re-run.</p>
+    </div>
+  </details>
+  <div class="subhead">Ten scenarios that stress-test the KYC design</div>
+  <p style="font-size:14px;color:var(--ink-soft);max-width:760px;margin-bottom:16px;">Each of these was originally posed as a question, then answered in a follow-up. They're combined here so you get the question and the resolved answer in one card.</p>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 1</span> The "Almost There" Customer — KYC and FATCA done, but no signature on file</summary>
+    <div class="card-body">
+      <p><strong>Setup:</strong> Ravi has a Savings Account and completed KYC (Aadhaar, PAN, e-sign) and FATCA in a previous session — but his signature was never captured in CBS.</p>
+      <p><strong>What happens when he tries to buy:</strong></p>
+      <div class="timeline">
+        <div class="t-item"><div class="t-label">Step 1 · Check existing folios (<code>portfolios/{UCIC}</code>) — ✅ Folios found</div></div>
+        <div class="t-item"><div class="t-label">Step 2 · Check signature (Internal RAS API) — ❌ signature_available = false</div></div>
+        <div class="t-item"><div class="t-label">STOP — redirected to the Signature Upload screen: "Your signature is not updated. Please upload signature."</div></div>
+        <div class="t-item"><div class="t-label">Ravi uploads signature → RAS/update-signature succeeds</div></div>
+        <div class="t-item"><div class="t-label">Since FATCA/TNC/KYC are already OK in WMS, Ravi proceeds straight to Payment / Order Confirmation</div></div>
+      </div>
+      <div class="kinsight"><strong>Key insight:</strong> pre-checks run in sequence and fail fast. Signature is checked before KYC status, so a missing signature blocks everything else even when KYC is otherwise complete.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 2</span> The International Investor's Dilemma — what does an NRI provide that a domestic investor doesn't?</summary>
+    <div class="card-body">
+      <p><strong>Setup:</strong> Priya is an NRI, tax resident of both India and the USA, with SA and signature already on file, making her first-ever MF purchase.</p>
+      <p><strong>What Priya provides that domestic investors don't:</strong></p>
+      <ol>
+        <li><strong>Multi-country tax residency declaration</strong> — she selects India (default) + USA (additional)</li>
+        <li><strong>Foreign Tax Identification Number (TIN)</strong> — for the USA, a 9-digit SSN, format-validated by the system</li>
+        <li><strong>Enhanced details</strong> — residency type, occupation, source of income, Politically Exposed Person (PEP) status</li>
+      </ol>
+      <p><strong>When this happens:</strong> immediately after the signature check passes but the FATCA check fails.</p>
+      <p><strong>Where data is stored:</strong> submitted immediately via the <code>fatca/update</code> endpoint to Windsor; Windsor then publishes the permanent record to CDP (Customer Data Platform).</p>
+      <p>A domestic investor simply selects "India only" and skips the foreign TIN entry entirely.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 3</span> The Mid-Flow Dropout — does a half-filled FATCA form survive an app close?</summary>
+    <div class="card-body">
+      <p><strong>Setup:</strong> Arjun passes signature check, fails FATCA, starts the FATCA form, selects USA, enters his US TIN/SSN — then closes the app before hitting submit.</p>
+      <p><strong>Day 2, he reopens the app and tries again. Does he see a pre-filled form?</strong></p>
+      <div class="warn"><strong>No. Arjun starts from scratch.</strong> The blank FATCA form is shown again — USA selection and SSN re-entry are both required again.</div>
+      <table class="dtable">
+        <tr><th>Aspect</th><th>FATCA / TNC Form</th><th>KYC Stages</th></tr>
+        <tr><td>State management</td><td>Stateless</td><td>Stateful</td></tr>
+        <tr><td>Data persistence</td><td>On final submit only</td><td>Intermediate persistence</td></tr>
+        <tr><td>Drop-off handling</td><td>Data lost</td><td>Resume supported</td></tr>
+      </table>
+      <div class="kinsight"><strong>Logic:</strong> FATCA is a binary gate — partial data is never stored, "until unless customer submits, those intermediary values are not stored."</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 4</span> The Source of Truth Challenge — Optimus's UI says "In Progress," WinSoft says "Y"</summary>
+    <div class="card-body">
+      <p><strong>Setup:</strong> Optimus shows KYC as "In Progress" at the Digilocker stage, but <code>portfolios/{UCIC}</code> on Windsor returns <code>UCIC1MF_KYC: "Y"</code>.</p>
+      <p><strong>Which status does the pre-check trust?</strong> Windsor — always. <strong>Business rule: if Windsor says "Y," trading is allowed regardless of the UI's intermediate state.</strong></p>
+      <p>This separates two different "sources of truth": Optimus owns the <em>journey orchestration</em> state (what screen to show), while Windsor owns the <em>regulatory truth</em> (can this person legally trade). Pre-checks only ever consult the regulatory truth.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 5</span> The Manual Intervention — Aadhaar fetched fine, but PAN isn't in Digilocker</summary>
+    <div class="card-body">
+      <p><strong>What happens:</strong> Aadhaar fetched successfully; PAN missing → manual upload allowed, with OCR + validation performed, and the journey continues normally.</p>
+      <div class="kinsight"><strong>The asymmetry:</strong> missing Aadhaar breaks the flow entirely (it's the biometric anchor); missing PAN has a graceful alternative path (it's just a tax-identity document that can be OCR'd from an upload).</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 6</span> The Liveliness Expiry — 25 hours between liveliness and e-sign</summary>
+    <div class="card-body">
+      <p><strong>Setup:</strong> a customer completed liveliness and Digilocker consent 25 hours ago, but never finished e-sign. They return to complete the purchase.</p>
+      <p><strong>What breaks:</strong> Aadhaar/PAN data is cached for only <strong>24 hours</strong>. That cache has expired, which blocks KYC PDF generation — the customer is forced back to Digilocker to re-fetch.</p>
+      <div class="kinsight"><strong>Design insight:</strong> a security-driven TTL deliberately limits how long intermediate KYC data is allowed to sit in cache.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 7</span> The Pre-Check Permissions Gate — a customer with no Savings Account</summary>
+    <div class="card-body">
+      <p>Covered above in <a href="#sec-prebuy">Pre-Order Gatekeeping</a>: blocked entirely at the menu level, no fund screen, no API calls triggered. Wealth services are restricted to liability (SA) customers.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 8</span> The Asynchronous Black Box — is KYC really "complete" once submitted to CVL?</summary>
+    <div class="card-body">
+      <p><strong>Setup:</strong> Optimus submits the e-signed KYC document to CVL (the KRA) and updates Windsor with <code>cv_submitted_flg: "Y"</code>. The purchase order then proceeds.</p>
+      <p><strong>Is KYC 100% complete from Optimus's perspective?</strong> Optimus's view: yes, KYC complete. But that's a hidden risk — <strong>CVL can still reject the submission asynchronously</strong>, and Optimus has no responsibility to poll or check for that rejection.</p>
+      <div class="flow vert">
+        <div class="flow-step">E-sign → CVL Submit → Windsor Flag = Y → Trading Allowed</div>
+        <div class="flow-arrow">↓ (possible, later, silently)</div>
+        <div class="flow-step" style="background:var(--brick-bg);border-color:#E0B6B2;">CVL rejects later</div>
+      </div>
+      <p><strong>Monitoring owner:</strong> Windsor, not Optimus.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 9</span> The Data Flow for E-Sign — where does the liveliness selfie actually travel?</summary>
+    <div class="card-body">
+      <p>From capture to final KYC submission, the selfie passes through several systems, each adding a different purpose:</p>
+      <table class="dtable">
+        <tr><th>Stage</th><th>Purpose</th></tr>
+        <tr><td>Capture (app)</td><td>Biometric proof</td></tr>
+        <tr><td>Liveness check (3rd party)</td><td>Fraud prevention</td></tr>
+        <tr><td>Storage (Omnidocs)</td><td>Audit trail</td></tr>
+        <tr><td>PDF generation</td><td>Regulatory format</td></tr>
+        <tr><td>E-sign (SignDesk)</td><td>Legal consent</td></tr>
+        <tr><td>CVL submission</td><td>KRA filing</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 10</span> The "Ghost" Investment Account — what does an empty <code>folios: []</code> response mean?</summary>
+    <div class="card-body">
+      <p><strong>Setup:</strong> the first pre-check calls <code>portfolios/{UCIC}</code> and gets a successful response with <code>folios: []</code>.</p>
+      <p><strong>Interpretation:</strong> this is a <strong>valid state</strong>, not an error — it simply means the customer has no holdings yet. Pre-checks continue normally; this is exactly the "new investor" path. The same API call doubles as both an existence check and the data source for whatever comes next in the journey.</p>
+    </div>
+  </details>
+  <div class="subhead">FATCA tax residency, demystified</div>
+
+  <details class="card" open>
+    <summary><span class="tag tag-concept">Concept</span> What does "additional country of tax residency" actually mean?</summary>
+    <div class="card-body">
+      <p>It is <strong>not</strong> about where you're travelling. It's about which country has the right to ask you to pay tax or report income/assets — "Apart from India, does any other country also consider you taxable there?"</p>
+      <p>If someone selects USA as an additional tax residency, it usually means the US may treat them as taxable there because of citizenship, a green card, or meeting the US substantial-presence test.</p>
+      <p><strong>Easy analogy:</strong> your home address tells you where you live; tax residency tells you which country can ask tax questions about you. A person can live in India while another country still says "from a tax point of view, you also belong in our system."</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-concept">Concept</span> Why does FATCA ask this, and why is TIN needed?</summary>
+    <div class="card-body">
+      <p>FATCA exists to help identify people with tax obligations connected to the US — foreign financial institutions are generally required to identify and report certain accounts held by US account holders. So the platform is really asking: <em>are you only taxable in India, or also taxable somewhere else like the USA?</em></p>
+      <p><strong>TIN (Taxpayer Identification Number)</strong> is the exact tax identity used by that country to track you. Country name alone isn't enough — the financial institution needs the precise tax identity linked to that country. AMFI/CAMS/KFin forms make TIN (or equivalent) mandatory if the country issues one, and if a person is tax resident in more than one country outside India, a TIN must be kept for each.</p>
+      <div class="kinsight">Without TIN, the declaration just says "I may be taxable in USA." With TIN, it becomes "I may be taxable in USA, and this is my exact US tax identity" — like the difference between knowing someone's country and knowing their passport number.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-concept">Concept</span> Arjun's FATCA decision tree, visually</summary>
+    <div class="card-body">
+      <div class="flow vert">
+        <div class="flow-step">"Are you tax resident in any country other than India?"</div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">No → simple path&nbsp;&nbsp;&nbsp;&nbsp;Yes ↓</div>
+        <div class="flow-step">Mention country name (e.g. USA)</div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">Mention tax ID for that country (TIN / SSN)</div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">System now knows: which country + which tax identity</div>
+      </div>
+      <p>USA specifically draws extra attention because FATCA is heavily focused on identifying US-linked persons and accounts — selecting USA as additional tax residency makes the system require US tax-ID details more carefully than most other jurisdictions.</p>
+      <p><strong>One-line summary:</strong> additional country of tax residency means another country may also treat you as taxable, and TIN is needed so that country-specific tax identity can be properly recorded for compliance.</p>
+    </div>
+  </details>
+
+  <div class="subhead">Designing the KYC orchestration system</div>
+
+  <details class="card" open>
+    <summary><span class="tag tag-design">System design</span> What's the real "output" of onboarding?</summary>
+    <div class="card-body">
+      <p>Is the output "user registered," or <strong>"user is eligible to place an MF buy order"</strong>? For an MF buy app, it's the latter — onboarding's real job is to answer, precisely, whether the user can proceed, and if not, exactly what blocker remains.</p>
+      <p>Not all checks are equal:</p>
+      <table class="dtable">
+        <tr><th>Check</th><th>Type</th></tr>
+        <tr><td>Signature missing</td><td>Recoverable blocker</td></tr>
+        <tr><td>KYC failed</td><td>Hard blocker</td></tr>
+        <tr><td>FATCA incomplete</td><td>Blocker</td></tr>
+        <tr><td>Folio missing</td><td>Maybe a create-on-first-buy path, not a true blocker</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <details class="card" open>
+    <summary><span class="tag tag-design">System design</span> The proposed architecture — an Onboarding Orchestrator</summary>
+    <div class="card-body">
+      <p><strong>Main idea:</strong> don't let the app call five different systems and decide the flow itself. Instead: <code>App → Onboarding Orchestrator → all checks → one decision</code>.</p>
+      <pre class="codeblock">{
+  <span class="k">"overall_status"</span>: "BLOCKED",
+  <span class="k">"next_step"</span>: "UPLOAD_SIGNATURE",
+  <span class="k">"completed_checks"</span>: ["FOLIO_EXISTS"],
+  <span class="k">"pending_checks"</span>: ["SIGNATURE", "FATCA", "TNC", "KYC"]
+}</pre>
+      <p>This keeps mobile/web journeys simple — the app never has to reason about five independent systems.</p>
+      <div class="flow vert">
+        <div class="flow-step">User App</div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">Onboarding Orchestrator</div>
+        <div class="flow-arrow">↓ fans out to</div>
+        <div class="flow-step">Portfolio/Folio Service · Signature Service (RAS) · Compliance Service (KYC/FATCA/TNC) · Draft State Store · Eligibility Decision Engine · Journey Tracker / Audit Log</div>
+      </div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-design">Component</span> The four building blocks of the orchestrator</summary>
+    <div class="card-body">
+      <p><strong>Eligibility Decision Engine</strong> — contains the business rules, evaluated in order:</p>
+      <pre class="codeblock">If signature missing -> next step = upload signature
+Else if KYC not valid -> next step = complete KYC
+Else if FATCA incomplete -> next step = complete FATCA
+Else if TNC not accepted -> next step = accept TNC
+Else -> eligible for buy</pre>
+      <p><strong>Compliance Aggregator</strong> — normalizes wildly different downstream representations ("Y", true, false, null, expired, pending) into one standard internal vocabulary: <span class="statepill">COMPLETED</span> <span class="statepill">PENDING</span> <span class="statepill">FAILED</span> <span class="statepill">NOT_AVAILABLE</span> <span class="statepill">IN_PROGRESS</span>.</p>
+      <p><strong>Draft State Store</strong> — needed for interrupted onboarding. If Arjun fills FATCA partially and closes the app, the store keeps: <code>journey_id, user_id, current_step=FATCA, draft_payload={additional_tax_country: USA, tin_entered: true}, submission_status=DRAFT, last_updated_at</code> — so the next login can resume.</p>
+      <p><strong>Response contract</strong> — one unified onboarding response, instead of scattered screen-level logic:</p>
+      <pre class="codeblock">{
+  <span class="k">"user_id"</span>: "U123",
+  <span class="k">"journey_status"</span>: "BLOCKED",
+  <span class="k">"primary_blocker"</span>: "FATCA",
+  <span class="k">"next_step"</span>: "COMPLETE_FATCA",
+  <span class="k">"checks"</span>: {
+    "folio": "COMPLETED", "signature": "COMPLETED",
+    "kyc": "COMPLETED", "fatca": "PENDING", "tnc": "COMPLETED"
+  },
+  <span class="k">"resume_supported"</span>: true
+}</pre>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-design">Design</span> The onboarding state machine</summary>
+    <div class="card-body">
+      <div class="flow vert">
+        <div class="flow-step">NOT_STARTED</div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">PRECHECK_IN_PROGRESS</div>
+        <div class="flow-arrow">↓ branches to</div>
+        <div class="flow-step">BLOCKED_SIGNATURE · BLOCKED_KYC · BLOCKED_FATCA · BLOCKED_TNC · READY_FOR_BUY</div>
+      </div>
+      <p>For interrupted journeys specifically: <code>BLOCKED_FATCA → FATCA_DRAFT_SAVED → FATCA_SUBMITTED → READY_FOR_BUY</code>.</p>
+      <p><strong>Minimal database entities:</strong> <code>onboarding_journey</code> (journey_id, user_id, status, primary_blocker, current_step, started_at, updated_at), <code>onboarding_check_status</code> (per check_type/check_status/source), <code>onboarding_draft</code> (per-step draft payloads), <code>onboarding_audit_log</code> (event_type, event_details, timestamp).</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-design">Architect decisions</span> Five decisions that make this design hold up</summary>
+    <div class="card-body">
+      <ol>
+        <li><strong>Central orchestration</strong> — don't spread rules across app + backend + downstream.</li>
+        <li><strong>Normalized statuses</strong> — every dependent API response converts into one internal model.</li>
+        <li><strong>Resumable journeys</strong> — partial onboarding must never be lost.</li>
+        <li><strong>Auditability</strong> — every decision must be explainable: "why was the user blocked?"</li>
+        <li><strong>Idempotent step submission</strong> — uploading a signature or submitting FATCA twice must behave safely.</li>
+      </ol>
+    </div>
+  </details>
+
+  <div class="mastery">
+    <div class="lbl">Mastery questions for this section</div>
+    <h4>Carry these forward before you move on</h4>
+    <div class="mastery-grid">
+      <div class="mastery-col">
+        <div class="ml">Resilience &amp; UX</div>
+        <ul>
+          <li>If you only show one blocker at a time, the user may fix it and immediately hit another — should the backend surface every blocker up front instead?</li>
+          <li>If downstream systems disagree (compliance API says KYC=Y, internal cache says pending), what source-of-truth and timestamp rules resolve it?</li>
+        </ul>
+      </div>
+      <div class="mastery-col">
+        <div class="ml">Operability</div>
+        <ul>
+          <li>How would an ops team debug a stuck journey without a structured event log like: clicked buy → folio passed → signature passed → FATCA incomplete → redirected → draft saved → app closed?</li>
+          <li>Where exactly should business rules live — in the UI, or only in the Decision Engine — and what breaks if that boundary blurs?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="section" id="sec-orderplacement" data-section="Order Placement & Lifecycle">
+  <div class="sec-head">
+    <div class="sec-stamp"><span class="fo">FOLIO</span><span class="nn">06</span></div>
+    <div class="sec-titles">
+      <div class="kicker">From "swipe to invest" to RTA</div>
+      <h2>Order Placement &amp; Lifecycle</h2>
+    </div>
+  </div>
+  <p class="sec-intro">WinSoft is the sole gateway for all mutual fund order execution from the bank side out to external RTAs. Here's how Lump Sum, SIP and combined cart orders actually travel — and the known synchronous-coupling weakness that Kafka currently papers over.</p>
+
+  <div class="askbox">
+    <div class="lbl">Before you dive in, sit with these</div>
+    <ul>
+      <li>Why does Optimus respond to the customer immediately, before the order has actually reached WinSoft?</li>
+      <li>What's the real difference between "WinSoft doesn't support async" and "Optimus pretends WinSoft is async"?</li>
+      <li>If a cart has one SIP and one Lump Sum item, is that one order or two?</li>
+    </ul>
+  </div>
+
+  <details class="card" open>
+    <summary><span class="tag tag-concept">Concept</span> What's the basic shape of an order's journey?</summary>
+    <div class="card-body">
+      <div class="flow">
+        <div class="flow-step">Optimus</div><div class="flow-arrow">→ sends order request →</div>
+        <div class="flow-step">WinSoft</div><div class="flow-arrow">→ forwards to correct RTA →</div>
+        <div class="flow-step">CAMS / KFintech / other RTA</div>
+      </div>
+      <p>Optimus places orders by calling a WinSoft API directly (<code>Optimus → Sync API → WinSoft</code>).</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-concept">Concept</span> What types of orders exist, and how does a combined cart order work?</summary>
+    <div class="card-body">
+      <ul>
+        <li><strong>Lump Sum</strong> — one-time purchase.</li>
+        <li><strong>SIP</strong> — repeated investment with a start date, frequency, and installment amount.</li>
+        <li><strong>Combined Order</strong> — a cart with both SIP and Lump Sum items in one request.</li>
+      </ul>
+      <div class="flow vert">
+        <div class="flow-step">One Optimus request — Line 1: Lump Sum, Line 2: SIP</div>
+        <div class="flow-arrow">↓ WinSoft splits internally</div>
+        <div class="flow-step">Lump Sum endpoint &amp; SIP endpoint, called separately</div>
+      </div>
+      <p>For SIPs specifically: WinSoft reads start date, frequency, and amount; if it's a "Same Day SIP," the first debit happens immediately.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-api">API / routing</span> How does an order get routed to the right RTA, and how is it tracked?</summary>
+    <div class="card-body">
+      <div class="flow vert">
+        <div class="flow-step">Order comes in</div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">WMS checks the fund's RTA code</div>
+        <div class="flow-arrow">↓ branches to</div>
+        <div class="flow-step">CAMS &nbsp;&nbsp;or&nbsp;&nbsp; KFintech</div>
+      </div>
+      <p>For each transaction line, WinSoft generates a unique Order ID and returns it to Optimus — tracking is <strong>line-item level</strong>, not cart level:</p>
+      <pre class="codeblock">Cart Order
+-------------------
+Line 1 -> Order ID 101
+Line 2 -> Order ID 102
+-------------------</pre>
+    </div>
+  </details>
+
+  <details class="card" open>
+    <summary><span class="tag tag-risk">Risk</span> The current pain point — and the Kafka workaround</summary>
+    <div class="card-body">
+      <p>The current flow is <strong>synchronous</strong>: <code>Optimus → WinSoft API → RTA</code>. If WinSoft is down, the order call can fail outright, with real risk of order loss.</p>
+      <p><strong>Current safety workaround:</strong> Optimus pushes orders into an internal Kafka topic, queues them safely, and sends them to WinSoft later — Kafka is a temporary protection layer bolted on because WinSoft's API itself is synchronous.</p>
+      <div class="flow">
+        <div class="flow-step">Customer request → mutualfund/order</div><div class="flow-arrow">→</div>
+        <div class="flow-step">Optimus validates &amp; publishes to internal Kafka</div><div class="flow-arrow">→</div>
+        <div class="flow-step">Optimus replies with a transaction ID immediately</div>
+      </div>
+      <p>A Kafka consumer inside Optimus then makes the actual synchronous HTTP call to WinSoft, and Optimus tracks the result in its internal transaction table.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-design">Future state</span> Where is this headed — the "Pulse" / Wealth Core vision?</summary>
+    <div class="card-body">
+      <p>The new Wealth Core system ("<strong>Pulse</strong>") is being built from scratch. The intent: Optimus publishes order messages directly to a Kafka topic <em>owned by Pulse</em>; Pulse consumes and processes asynchronously — removing the need for Optimus's internal Kafka-to-HTTP bridge entirely.</p>
+      <div class="flow">
+        <div class="flow-step">Optimus</div><div class="flow-arrow">→</div>
+        <div class="flow-step">Publish to Kafka</div><div class="flow-arrow">→</div>
+        <div class="flow-step">Pulse / resilient topic</div><div class="flow-arrow">→</div>
+        <div class="flow-step">WinSoft</div><div class="flow-arrow">→</div>
+        <div class="flow-step">RTA</div>
+      </div>
+      <p><strong>Why this is better:</strong> no direct dependency on a live synchronous call, safer if WinSoft is temporarily down, reduced order-loss risk, and easier retries.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-concept">Concept</span> How does carting actually work, and how is it different from goal-based orders?</summary>
+    <div class="card-body">
+      <p><strong>Carting:</strong> entirely an Optimus-side feature — WinSoft is unaware a cart ever existed. At checkout, if the cart has both SIPs and Lump Sums, Optimus makes two separate API calls: SIPs via the MF SIP Plans API, Lump Sums via the Orders MF API. After placement, the cart dissolves and each transaction is tracked individually.</p>
+      <p><strong>Goal-based orders:</strong> use a different endpoint (<code>goals/v2/create</code>). Goal metadata and recommendations come from Valuefy, and the Goal ID is passed to WinSoft during order placement — which then maps that Goal ID to a specific folio, enabling per-goal tracking.</p>
+    </div>
+  </details>
+
+  <div class="mastery">
+    <div class="lbl">Mastery questions for this section</div>
+    <h4>Carry these forward before you move on</h4>
+    <ul style="margin-top:10px;padding-left:18px;">
+      <li>If the consumer pod that picks an order off Kafka crashes right after it commits, how does the retry avoid creating a duplicate order at WinSoft?</li>
+      <li>Once Pulse exists, does Optimus still need its own internal transaction table — or does that responsibility move too?</li>
+      <li>Why is cart state owned entirely by Optimus instead of being synced into WinSoft as a "draft order"?</li>
+    </ul>
+  </div>
+</section>
+<section class="section" id="sec-scenarios" data-section="Order & Portfolio Scenarios">
+  <div class="sec-head">
+    <div class="sec-stamp"><span class="fo">FOLIO</span><span class="nn">07</span></div>
+    <div class="sec-titles">
+      <div class="kicker">20 worked scenarios</div>
+      <h2>Order &amp; Portfolio Scenarios</h2>
+    </div>
+  </div>
+  <p class="sec-intro">Twenty scenarios that take the architecture from sections 03–06 and run it through real edge cases — first purchases, resilience failures, goals, nominations, STPs and plan-selection nuances. Grouped by theme rather than original numbering.</p>
+
+  <div class="askbox">
+    <div class="lbl">Before you dive in, sit with these</div>
+    <ul>
+      <li>For a brand-new investor, in what exact order do PSP Folio, Create IA, and PSM Folio get called?</li>
+      <li>If the Optimus pod processing a Kafka order crashes right after sending the customer a 200 OK, what state is that order actually in?</li>
+      <li>Is "Direct vs Regular plan" a UI toggle, or a completely separate instrument with its own ISIN?</li>
+    </ul>
+  </div>
+
+  <div class="subhead">Group A — First purchase &amp; onboarding mechanics</div>
+
+  <details class="card" open>
+    <summary><span class="tag tag-scenario">Scenario 1</span> The First-Time DIY Investor (Lump Sum)</summary>
+    <div class="card-body">
+      <p><strong>Setup:</strong> a fully onboarded new customer, never invested before, picks a fund and a ₹10,000 Lump Sum, then clicks "Invest Now."</p>
+      <p><strong>What happens:</strong> the system discovers the need for an Investment Account and Folio <em>just in time</em>, during order pre-checks — not at login.</p>
+      <div class="kinsight"><strong>Key insight:</strong> PSP Folio (returning portfolios + KYC data) runs first. Since it returns empty, Optimus triggers Create IA. It then calls PSM Folio to check for a fund-specific folio, which also returns empty — WinSoft creates the folio automatically when it processes the order.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 2</span> The SIP Cart with Existing Folio</summary>
+    <div class="card-body">
+      <p><strong>Setup:</strong> an existing investor with portfolio <code>INV_ACC_001</code> and a folio for "XYZ Mutual Fund" starts a new SIP in "PQR Debt Fund" and adds a lump sum to the existing XYZ fund — both via "Add to Cart."</p>
+      <div class="kinsight"><strong>Key insight:</strong> a single cart checkout request splits internally at WinSoft. The critical pre-processing step is folio enrichment for existing holdings; SIPs and Lump Sums are routed to two different WinSoft endpoints.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 3</span> The KYC-Dropoff &amp; FATCA Pending Case</summary>
+    <div class="card-body">
+      <p><strong>Setup:</strong> a customer started KYC three days ago, dropped off after Aadhaar authentication (status <code>KYC_IN_PROGRESS</code>, stage <code>PAN_VERIFICATION</code>), never did FATCA, and now tries to place a lump sum order.</p>
+      <div class="kinsight"><strong>Key insight:</strong> a lightweight <code>kyc-status</code> call gives early awareness on the homepage, but the <strong>definitive block happens during the PSP Folio call at the final "Swipe to Invest" step</strong> — ensuring the most up-to-date compliance status from WinSoft (the source of truth) gates any order, not a stale earlier check.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 4</span> The "Same-Day SIP" Edge Case</summary>
+    <div class="card-body">
+      <p><strong>Setup:</strong> on the 5th, one customer starts an SIP with first debit on the 7th; another selects "today" (the 5th) as first debit date.</p>
+      <div class="kinsight"><strong>Key insight:</strong> the <code>sipDate</code> field is a plain date in the payload — Optimus only adds a UI label for "same-day debit." All business logic for the first installment, NAV applicability, and debit timing lives entirely inside WinSoft.</div>
+    </div>
+  </details>
+
+  <div class="subhead">Group B — Order resilience &amp; data integrity</div>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 5</span> Post-Order: Tracking &amp; Status Reconciliation</summary>
+    <div class="card-body">
+      <p><strong>Setup:</strong> a customer placed a lump sum order 2 hours ago and checks "My Portfolio → Transactions" anxiously.</p>
+      <p><strong>Resolution:</strong> the Transactions screen always makes a <strong>fresh call</strong> to WinSoft's transactions API — it does not rely on the internal table populated when the Kafka event was published. There's <strong>no caching</strong>, because statuses are too dynamic. The "Order ID" the customer sees ultimately traces back to: Optimus's initial Transaction ID → WinSoft/RTA's generated Order ID, fetched via the pull API.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 8</span> System Failure During Order Placement</summary>
+    <div class="card-body">
+      <p><strong>Setup:</strong> a customer places an SIP order; Optimus validates, generates a Transaction ID, publishes to its internal Kafka topic, sends a 200 OK — and immediately after, the consuming Optimus pod crashes.</p>
+      <p><strong>What the customer sees:</strong> a successful confirmation (the 200 OK already went out) — the order sits in Optimus's DB in a pending/queued state, accepted but not yet executed at WinSoft.</p>
+      <p><strong>On consumer restart:</strong> Kafka's consumer-group offset semantics ensure the message is re-delivered rather than lost; idempotent processing (keyed on the Transaction ID) prevents it from being executed twice.</p>
+      <p><strong>If Optimus published directly to a Pulse Kafka topic instead:</strong> the same crash would matter much less — Pulse, not Optimus's own consumer, would own reliable delivery and retry, removing Optimus's internal Kafka-to-HTTP bridge as a point of failure.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 9</span> The Multi-Investment Account Holder</summary>
+    <div class="card-body">
+      <p><strong>Setup:</strong> a high-net-worth customer has two Investment Accounts — <code>INV_ACC_PERSONAL</code> and <code>INV_ACC_HUF</code> — and wants to invest ₹50,000 from each into the same fund.</p>
+      <p>The list of Investment Accounts in the UI is primarily populated by the <strong>PSP Folio</strong> call (portfolio-level data). During pre-order validation, Optimus verifies the submitted <code>portfolioCode</code> genuinely belongs to this customer before accepting the order.</p>
+      <div class="kinsight">A single cart order cannot span two different portfolios — each Investment Account is validated and processed independently, which is consistent with the Investment Registry hierarchy where a Folio always sits under exactly one Portfolio Code.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 10</span> The Master Data Dependency</summary>
+    <div class="card-body">
+      <p><strong>Setup:</strong> every order payload carries an <code>rtaCode</code>, <code>fundName</code>, <code>nav</code> etc. — all Optimus local master data.</p>
+      <p><strong>Source of truth:</strong> WinSoft (and, by extension, the RTAs) for fund list, RTA codes and categories. The "key dump" is a scheduled batch sync from WinSoft into Optimus's database, not a real-time API.</p>
+      <div class="warn">If a fund is <strong>INACTIVE at the RTA but still ACTIVE in Optimus's cache</strong>, Optimus's local master-data check will pass — the order will only be rejected later, at <strong>WinSoft</strong>, when the live call discovers the fund is actually inactive. This is the staleness risk inherent in any cached master-data design.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 13</span> The "PSP Folio" vs "PSM Folio" Data Discrepancy</summary>
+    <div class="card-body">
+      <p><strong>Setup:</strong> a rare race condition — PSP Folio returns <code>KYC_STATUS=COMPLETE</code>, but PSM Folio fails because the customer's IA record hasn't fully propagated between WinSoft's internal modules.</p>
+      <p><strong>User experience:</strong> a generic error ("We are unable to process your request at the moment. Please try again.") — the order doesn't go through, and "Swipe to Invest" fails or shows a loading error.</p>
+      <p><strong>Root cause:</strong> a WinSoft-internal data consistency issue. WinSoft likely runs separate modules for Client Management/Onboarding (PSP — KYC, FATCA, Investment Account record) and Transaction Processing (PSM — folios, transactions). Create IA writes to the Client Management module; a subsequent PSM Folio call can fail if that data hasn't yet replicated to the Transaction module.</p>
+      <div class="kinsight"><strong>The right failure handling is Queue and Retry, not Fail-Fast.</strong> Optimus should log the PSM Folio failure, still publish the order event to Kafka tagged <code>PENDING_FOLIO_VALIDATION</code>, retry with delay, and either proceed on success or mark FAILED and alert after retries exhaust. The system is designed for eventual consistency — Kafka decoupling absorbs temporary downstream inconsistencies without hurting perceived reliability.</div>
+    </div>
+  </details>
+  <div class="subhead">Group C — Holdings, goals &amp; compliance</div>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 6</span> The Goal-Based Investment Flow</summary>
+    <div class="card-body">
+      <p><strong>Setup:</strong> a customer uses the Goals journey, picks "Child's Education," sets a target amount/date, gets a recommended 3-fund equity+debt portfolio, accepts and invests.</p>
+      <p><strong>vs a DIY order:</strong> <strong>Valuefy</strong> provides the goal list, risk profile and fund recommendations — called as the customer builds the goal. The final "Place Order" call hits a different endpoint (<code>goals/v2/create</code> instead of <code>mf/order</code>), and critically carries the <strong>Goal ID</strong> — which WinSoft later uses for folio tagging, enabling per-goal progress tracking.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 11</span> The Folio Switch — same fund held under two different goals</summary>
+    <div class="card-body">
+      <p><strong>Setup:</strong> two goals, "Retirement" (G1) and "Vacation" (G2), both invested years ago into the same fund (Axis Bluechip) — resulting in two separate folios, FOLIO_A (tagged G1) and FOLIO_B (tagged G2). The customer clicks "Switch" from the holdings page.</p>
+      <p><strong>Identifying the source folio</strong> is the critical step. Valuefy's holdings response for "Axis Bluechip" must be an <em>array</em>, not a single line item — each object is a unique folio-level holding enriched with goal metadata:</p>
+      <pre class="codeblock">[
+  { <span class="k">"fundName"</span>: "Axis Bluechip", <span class="k">"folioId"</span>: "FOLIO_A", <span class="k">"goalId"</span>: "G1", "goalName": "Retirement", "units": 150, "currentValue": 30000 },
+  { <span class="k">"fundName"</span>: "Axis Bluechip", <span class="k">"folioId"</span>: "FOLIO_B", <span class="k">"goalId"</span>: "G2", "goalName": "Vacation", "units": 50, "currentValue": 10000 }
+]</pre>
+      <p>Clicking "Switch" on the Retirement line gives the frontend the exact context: <code>folioId=FOLIO_A, goalId=G1</code>. The switch payload to WinSoft's <code>/switch</code> endpoint must include <code>sourceFolioId</code>, <code>sourceFundRtaCode</code>, <code>targetFundRtaCode</code>, the switch amount/units, and — crucially — <code>goalId: "G1"</code>, so the new units inherit the same goal tag and the goal's asset allocation stays intact.</p>
+      <div class="kinsight">A "holding" is really a <strong>fund + folio + goal tuple</strong>. UI and backend must always operate at this granularity for any transaction action — never at fund level alone.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 15</span> The Nomination Flow</summary>
+    <div class="card-body">
+      <p>Nomination status is part of the onboarding profile, fetched via <strong>PSP Folio</strong>. SEBI mandates nomination or an explicit opt-out:</p>
+      <div class="flow vert">
+        <div class="flow-step">nominationStatus = PENDING</div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">Optimus blocks the order, redirects to nomination flow</div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">Optimus calls /update-nomination → success → order proceeds</div>
+      </div>
+      <p>Nomination is <strong>folio-level</strong>: a new folio requires nomination as mandatory; an existing folio that already has nomination on file needs no further action.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 16</span> The Corporate Action Impact — Dividend Payout</summary>
+    <div class="card-body">
+      <p><strong>Setup:</strong> a fund declares a dividend; the customer chose "Payout," not "Reinvestment."</p>
+      <p><strong>WinSoft is the system of record</strong> for dividend credits in transaction history. Cash is configured at folio creation, typically credited to the linked savings account via CBS. On the ex-dividend date, NAV drops, Valuefy reflects the reduced NAV immediately, the cash component appears separately, and on actual payout the cash converts into a transaction-history entry.</p>
+      <div class="kinsight">Corporate actions split value into a fund component and a cash component — Valuefy handles valuation, WinSoft handles the transactional record.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 19</span> The Family Portfolio View</summary>
+    <div class="card-body">
+      <p><strong>Setup:</strong> a primary user views and manages the consolidated portfolio of linked family members (spouse, children).</p>
+      <ul>
+        <li><strong>Linked members</strong> are managed centrally by IAM, exposed via JWT claims.</li>
+        <li><strong>Fetching family data</strong> most likely uses an impersonation pattern, or a dedicated family-group API in WinSoft.</li>
+        <li><strong>Placing an order on a family member's behalf</strong> still requires the primary user's authentication and OTP, with explicit legal delegation/consent. The payload carries <code>targetUcic</code> and <code>targetPortfolioCode</code>.</li>
+      </ul>
+      <div class="kinsight">Authorization lives centrally — wealth systems act on trusted claims rather than re-implementing their own family-linkage logic.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 20</span> The Direct Plan vs Regular Plan Selection</summary>
+    <div class="card-body">
+      <p><strong>Setup:</strong> every fund has a Direct variant (lower expense ratio) and a Regular variant (includes distributor commission) — a choice that materially affects returns.</p>
+      <ol>
+        <li><strong>Master data representation:</strong> Direct and Regular are separate instruments with separate ISINs, not a toggle on one instrument.</li>
+        <li><strong>UI logic:</strong> which plan is shown is filtered based on the distribution channel (DIY vs through a Relationship Manager).</li>
+        <li><strong>Folio implications:</strong> a Regular-plan folio is not the same as a Direct-plan folio — starting in a new plan always means a new folio, even for the same underlying fund.</li>
+      </ol>
+      <div class="kinsight">Direct vs Regular is enforced through <strong>data modeling, not a UI toggle</strong>.</div>
+    </div>
+  </details>
+
+  <div class="subhead">Group D — Advanced products &amp; edge cases</div>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 7</span> The Redemption Request</summary>
+    <div class="card-body">
+      <p><strong>Setup:</strong> an investor wants to redeem 50% of units from a fund held for a year.</p>
+      <p>"Current Value" and available units on the redemption screen come from <strong>Valuefy</strong>. Currently, the redemption API call from Optimus to WinSoft is processed <strong>synchronously</strong> — same pattern, same risk profile as the purchase order flow before the Kafka workaround. The <strong>Folio ID</strong> from the holding is critical in the redemption payload to identify exactly which holding instance is being redeemed.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 12</span> The Cart Abandonment &amp; Session Recovery</summary>
+    <div class="card-body">
+      <p><strong>Setup:</strong> a user adds a Lump Sum and an SIP to the cart, closes the app, and returns a week later.</p>
+      <p><strong>Cart persistence:</strong> the cart is Optimus-only, stored in Optimus's DB keyed by <code>userId</code>, likely with a 7–30 day TTL to clean up stale carts. On login, Optimus fetches the active cart and repopulates the UI.</p>
+      <div class="kinsight"><strong>NAV is never locked in at cart addition.</strong> The cart stores only the fund identifier and the amount/units — NAV is applied by the RTA at order execution time, based on cut-off rules. Fund-status validation is re-run in full at order placement; if the fund has gone <code>INACTIVE</code> or <code>CLOSED_FOR_NEW_INVESTMENT</code> in the meantime, the user sees an error and the item may be auto-removed from the cart.</div>
+      <p>The window between cart save and order placement is a deliberate "weak link" — the definitive validation always happens at WinSoft when the order API is actually called. <strong>A cart is a draft intent, not a reservation</strong> — there's no financial commitment until final submission, by design.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 14</span> The Multi-RTA Investment</summary>
+    <div class="card-body">
+      <p><strong>Setup:</strong> one Investment Account holds folios across multiple RTAs (CAMS, KFintech, etc).</p>
+      <p>The master fund dump includes an <code>rtaCode</code> (and likely an <code>rtaIdentifier</code>) per fund. Each folio returned by PSM Folio carries its own <code>folioNumber</code> and <code>rtaCode</code> to avoid ambiguity. When placing an order, Optimus calls a single generic endpoint (<code>POST /mf/order</code>) — <strong>WinSoft selects the correct adapter internally</strong> and handles RTA-specific authentication, formatting and error mapping.</p>
+      <div class="kinsight">WinSoft abstracts RTA complexity using an Adapter Pattern at enterprise scale — Optimus never needs to know which RTA-specific quirks apply.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 17</span> The STP (Systematic Transfer Plan) — Equity to Debt</summary>
+    <div class="card-body">
+      <p><strong>Setup:</strong> a customer wants to auto-transfer ₹10,000/month from "Axis Equity Fund" (source folio) into "ICICI Debt Fund" (target folio).</p>
+      <p>STP is treated as a <strong>first-class recurring product</strong> with its own API contract — not a manual redeem+purchase pair triggered repeatedly by the app:</p>
+      <pre class="codeblock">{
+  <span class="k">"stpType"</span>: "EQUITY_TO_DEBT",
+  <span class="k">"sourceFolioId"</span>: "FOLIO_EQUITY",
+  <span class="k">"sourceFundRtaCode"</span>: "...",
+  <span class="k">"targetFolioId"</span>: "FOLIO_DEBT",
+  <span class="k">"targetFundRtaCode"</span>: "...",
+  <span class="k">"transferAmount"</span>: 10000,
+  <span class="k">"frequency"</span>: "MONTHLY",
+  <span class="k">"startDate"</span>: "2023-12-05",
+  <span class="k">"numberOfInstallments"</span>: 12
+}</pre>
+      <p>WinSoft requires dedicated logic for STP due to tax, eligibility and redemption rules, plus extra validations: same UCIC and IA on both legs, sufficient units in the source folio, holding-period checks, and cut-off timing.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-scenario">Scenario 18</span> Real-Time NAV vs Cut-Off Time Order</summary>
+    <div class="card-body">
+      <p><strong>Setup:</strong> equity funds cut off at, say, 3:00 PM — orders before that get today's NAV, after get tomorrow's.</p>
+      <p><strong>Enforcement:</strong> final authority sits with the RTA, mediated by WinSoft. The critical async gap: Optimus must pass <code>orderReceivedAt</code>, and WinSoft must honor the customer's original intent even if processing is delayed by queueing — e.g. an order placed at 2:58 PM that WinSoft only processes at 3:05 PM due to queue delay must still get the pre-cut-off NAV. <strong>SIPs sidestep this</strong> entirely since they're scheduled well ahead of time.</p>
+      <div class="kinsight">Cut-off time is a business SLA, not just a timestamp — user intent has to flow end-to-end, surviving any async delay introduced by the Kafka layer.</div>
+    </div>
+  </details>
+
+  <div class="mastery">
+    <div class="lbl">Mastery questions for this section</div>
+    <h4>Carry these forward before you move on</h4>
+    <div class="mastery-grid">
+      <div class="mastery-col">
+        <div class="ml">Data integrity</div>
+        <ul>
+          <li>How would you redesign cart-to-order validation so a fund going inactive mid-week is caught earlier than the final submit click?</li>
+          <li>What's the minimum data the system needs to preserve to fully explain why a redemption used FOLIO_A and not FOLIO_B?</li>
+        </ul>
+      </div>
+      <div class="mastery-col">
+        <div class="ml">Resilience</div>
+        <ul>
+          <li>Which of these twenty scenarios disappear entirely once Pulse replaces the Kafka-to-HTTP bridge — and which ones are actually orthogonal to that migration?</li>
+          <li>If WinSoft's PSP and PSM modules can fall out of sync internally, should Optimus ever treat WinSoft as a single logical system, or always as two?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="section" id="sec-postorder" data-section="Post-Order & Holdings">
+  <div class="sec-head">
+    <div class="sec-stamp"><span class="fo">FOLIO</span><span class="nn">08</span></div>
+    <div class="sec-titles">
+      <div class="kicker">After the order lands</div>
+      <h2>Post-Order, Holdings &amp; Transaction Status</h2>
+    </div>
+  </div>
+  <p class="sec-intro">Once an order is accepted, two different questions arise: "where is my order in its lifecycle?" and "what do I actually hold now?" — answered by two different systems.</p>
+
+  <div class="askbox">
+    <div class="lbl">Before you dive in, sit with these</div>
+    <ul>
+      <li>Why doesn't Optimus simply push order-status updates to the customer the moment they change?</li>
+      <li>Which system tells you "what you hold," and which tells you "what happened to your order"?</li>
+    </ul>
+  </div>
+
+  <details class="card" open>
+    <summary><span class="tag tag-concept">Concept</span> How does order status tracking actually work?</summary>
+    <div class="card-body">
+      <ul>
+        <li><strong>Pull model:</strong> WinSoft does not push status updates.</li>
+        <li><strong>Customer trigger:</strong> when the customer views transactions or portfolio, Optimus calls WinSoft to fetch the latest statuses.</li>
+        <li><strong>No caching</strong> — statuses are too dynamic to safely cache.</li>
+        <li><strong>Order ID:</strong> the final order number is generated by WinSoft or the RTA, fetched via pull APIs.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-concept">Concept</span> What's the holdings &amp; redemption data flow?</summary>
+    <div class="card-body">
+      <ul>
+        <li><strong>Data source:</strong> holdings data comes from Valuefy, synced with WinSoft transaction data.</li>
+        <li><strong>Actions available:</strong> redeem (full or partial), switch funds, or invest more.</li>
+        <li><strong>Redemption:</strong> currently processed via synchronous calls to downstream systems.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="card" open>
+    <summary><span class="tag tag-design">System of record</span> Transaction &amp; Order Status Master</summary>
+    <div class="card-body">
+      <p><strong>WinSoft is the authoritative source</strong> for the lifecycle status of all orders.</p>
+      <div class="flow vert">
+        <div class="flow-step">Received</div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">Pending at RTA</div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">Processed</div>
+        <div class="flow-arrow">↓ (or)</div>
+        <div class="flow-step">Failed &nbsp;&nbsp;/&nbsp;&nbsp; Completed</div>
+      </div>
+      <ul>
+        <li><strong>Polling model:</strong> WinSoft does NOT push status updates to Optimus — Optimus must poll WinSoft's transaction status API.</li>
+        <li><strong>Customer-facing APIs:</strong> power "My Transactions" / "Track Order." Every page view triggers a fresh call to WinSoft — no caching, because statuses are dynamic.</li>
+        <li><strong>Data sync for holdings:</strong> once an order is executed at the RTA and units are allotted, WinSoft updates its records, which are then synced to Valuefy (the portfolio and analytics system).</li>
+      </ul>
+    </div>
+  </details>
+
+  <div class="mastery">
+    <div class="lbl">Mastery questions for this section</div>
+    <h4>Carry these forward before you move on</h4>
+    <ul style="margin-top:10px;padding-left:18px;">
+      <li>If WinSoft never pushes status changes, what's the realistic lag between "order completed at the RTA" and "customer sees it as completed" — and is that lag acceptable for a redemption versus a SIP installment?</li>
+      <li>How would adopting a push/webhook model (once available) change the design of "My Transactions," beyond just removing the polling call?</li>
+    </ul>
+  </div>
+</section>
+<section class="section" id="sec-lamf" data-section="Loan Against Mutual Fund">
+  <div class="sec-head">
+    <div class="sec-stamp"><span class="fo">FOLIO</span><span class="nn">09</span></div>
+    <div class="sec-titles">
+      <div class="kicker">A full architect-level system design</div>
+      <h2>Loan Against Mutual Fund (LAMF)</h2>
+    </div>
+  </div>
+  <p class="sec-intro">LAMF is not "loan + lien on units." It's a fusion of a lending system, an investment-holding system, a risk engine, partner integrations, a real-time valuation system, and a journey/pledge orchestration layer — plus collections and liquidation control. This section designs it revision-first: business questions before boxes, fifteen named problems, then the architecture.</p>
+
+  <div class="askbox">
+    <div class="lbl">Before you dive in, sit with these</div>
+    <ul>
+      <li>Is the bank lending against mutual fund <em>units</em>, or against their rupee <em>value</em> — and why does that distinction change the entire design?</li>
+      <li>Should offer generation and pledge confirmation be the same step, or two separate ones?</li>
+      <li>What's actually the harder engineering problem: disbursing the loan, or managing collateral risk for the life of the loan?</li>
+    </ul>
+  </div>
+
+  <div class="subhead">Business understanding questions an architect must ask first</div>
+
+  <details class="card" open>
+    <summary><span class="tag tag-design">Design</span> Ten questions to ask before drawing a single box</summary>
+    <div class="card-body">
+      <ol>
+        <li><strong>What exactly is the bank lending against?</strong> Mutual fund units, mutual fund value, only approved schemes, only demat holdings, or both SOA (Statement of Account) and demat? This changes custody, pledge flow, and integration design.</li>
+        <li><strong>Term loan or overdraft/credit line?</strong> One of the biggest design splitters — a term loan disburses a fixed amount once; an OD/line lets the customer withdraw as needed with interest only on the used amount.</li>
+        <li><strong>Who controls the mutual fund holdings?</strong> Already inside the wealth platform, discovered via RTA/CAMS/KFintech/MF Central/depository, or manually declared? This affects trust, eligibility, fraud checks and reconciliation.</li>
+        <li><strong>Do we allow all schemes?</strong> Or exclude debt-only, hybrid-only, selected-equity-only, no ELSS, no locked-in or lien-marked schemes — this becomes a scheme eligibility service problem.</li>
+        <li><strong>What is the LTV policy?</strong> e.g. liquid fund up to 80%, debt fund 70%, equity fund 50% — meaning loan logic is never one rule, it's a policy engine.</li>
+        <li><strong>What happens when NAV falls?</strong> Alert the customer, block fresh drawdown, ask for top-up collateral, or auto-liquidate pledged units? This is the heart of risk design.</li>
+        <li><strong>Who performs pledge marking?</strong> Directly by the bank, or via RTA, BSE Star MF / NSE NMF, registrar, or wealth platform partner? Without understanding this, the design is fake.</li>
+        <li><strong>When is money actually disbursed?</strong> After eKYC, holdings fetch, eligibility, pledge confirmation, loan agreement, mandate/eSign, fraud checks — the exact order matters.</li>
+        <li><strong>Can the customer keep transacting in the pledged folio/scheme?</strong> Redeem unpledged units, SIP more, switch, continue receiving dividends? These define the collateral control model, not side questions.</li>
+        <li><strong>What is the source of truth for outstanding collateral value?</strong> Yesterday's NAV, latest available NAV, an internal cached valuation, or a partner valuation feed? If this is weak, risk management breaks entirely.</li>
+      </ol>
+    </div>
+  </details>
+
+  <details class="card" open>
+    <summary><span class="tag tag-concept">First principles</span> What is LAMF, stripped to its essence?</summary>
+    <div class="card-body">
+      <div class="flow vert">
+        <div class="flow-step">Customer has MF units</div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">Bank marks lien / pledge on those units</div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">Bank gives loan up to allowed % of value</div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">If MF value falls too much → margin call / sell / liquidation to protect the bank</div>
+      </div>
+      <p>The system is really solving five core problems: <strong>(1)</strong> identify holdings, <strong>(2)</strong> decide eligibility, <strong>(3)</strong> lock collateral, <strong>(4)</strong> give/manage the loan, <strong>(5)</strong> continuously manage risk.</p>
+    </div>
+  </details>
+
+  <details class="card" open>
+    <summary><span class="tag tag-design">High-level design</span> The system map, end to end</summary>
+    <div class="card-body">
+      <div class="flow vert">
+        <div class="flow-step">Customer App</div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">Journey Orchestrator</div>
+        <div class="flow-arrow">↓ fans out to</div>
+        <div class="flow-step">Customer Profile/KYC · MF Holdings · Scheme Eligibility Engine · Valuation Engine · Loan Policy Engine · Pledge Orchestration · Loan Management System · Agreement/eSign · Disbursement · Risk &amp; Margin Monitoring · Notifications · Collections/Liquidation</div>
+      </div>
+      <p><strong>Typical customer flow:</strong></p>
+      <div class="timeline">
+        <div class="t-item"><div class="t-label">Open Loan Against MF → fetch holdings → show eligible schemes + drawing power</div></div>
+        <div class="t-item"><div class="t-label">Customer selects schemes/folios to pledge</div></div>
+        <div class="t-item"><div class="t-label">Run eligibility + valuation + policy checks → generate sanction offer</div></div>
+        <div class="t-item"><div class="t-label">Customer accepts terms, eSigns</div></div>
+        <div class="t-item"><div class="t-label">Create pledge/lien request → receive pledge confirmation</div></div>
+        <div class="t-item"><div class="t-label">Create loan account/line → disburse money</div></div>
+        <div class="t-item"><div class="t-label">Ongoing NAV monitoring + margin management</div></div>
+      </div>
+    </div>
+  </details>
+  <div class="subhead">Fifteen named design problems</div>
+
+  <details class="card">
+    <summary><span class="tag tag-design">Problem #1</span> How do we model holdings?</summary>
+    <div class="card-body">
+      <p><strong>Thought-provoking questions:</strong> is a holding identified by folio+scheme, or ISIN+demat account, or both? Can the same customer hold the same scheme across multiple folios? Can one folio contain both pledged and unpledged units? Do we store units as the source of truth, or only market-value snapshots? What if a partner sends delayed holding data?</p>
+      <p><strong>Better model:</strong></p>
+      <pre class="codeblock">Customer
+ -> Investment Account
+    -> Folio / Demat Account
+       -> Scheme Holding
+          - scheme_id, folio_no
+          - units_total, units_available, units_pledged
+          - latest_nav, market_value
+          - last_sync_time</pre>
+      <div class="kinsight"><strong>Architect insight:</strong> never model collateral only in rupee amount. Always preserve units, the NAV used, the valuation timestamp, and the haircut/LTV rule applied — because disputes will happen ("why did you allow only this much loan?"), and full explainability requires all four.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-design">Problem #2</span> How do we decide eligible collateral?</summary>
+    <div class="card-body">
+      <p><strong>Questions:</strong> are ELSS funds excluded for lock-in? Closed-ended schemes excluded? Low-liquidity/high-volatility funds excluded? Only "approved AMC + approved scheme" combinations allowed? Can risk teams change eligibility without a code deployment? <em>(That last one matters most.)</em></p>
+      <p><strong>Design answer:</strong> a policy-driven <strong>Scheme Eligibility Engine</strong>.</p>
+      <pre class="codeblock">Input:  scheme_id, amc_id, fund_type, lock_in_flag,
+        volatility_bucket, regulatory_status, operational_support_flag
+Output: eligible/ineligible, max_ltv, risk_bucket, reason_code</pre>
+      <div class="warn">Don't hardcode <code>if scheme_type == EQUITY then 50%</code> — this logic changes constantly. Build a policy table / rule engine instead.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-design">Problem #3</span> How do we calculate drawing power?</summary>
+    <div class="card-body">
+      <pre class="codeblock">Collateral Value = units × latest eligible NAV
+Drawing Power    = sum(collateral value × allowed LTV)</pre>
+      <p><strong>Real architectural questions:</strong> which NAV do we use? What if it's stale, or today's NAV isn't published yet? Do we apply a buffer haircut beyond LTV? Scheme level or portfolio level? Recalculate on every page load, or use a cached result?</p>
+      <p><strong>Better design — a Valuation Engine</strong> combining Holdings + NAV feed + Eligibility policy + Haircut/LTV rules = Drawing Power, split into: <strong>NAV Ingestion Service</strong> (latest NAVs) → <strong>Valuation Service</strong> (scheme-level values) → <strong>Loan Policy Engine</strong> (LTV rules) → <strong>Offer Engine</strong> (final sanctioned amount) — separated because NAV and policy change at very different speeds.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-design">Problem #4</span> Should this be synchronous or asynchronous?</summary>
+    <div class="card-body">
+      <p><strong>Ask yourself:</strong> can the user get an instant offer, or do external partner dependencies make the journey slow? Possible slow steps: holdings fetch, pledge creation, OTP/authorization, lien confirmation, document execution, loan account creation in LOS/LMS.</p>
+      <p><strong>Best practical design:</strong> sync for user-facing immediate checks, async for external finalization.</p>
+      <div class="flow vert">
+        <div class="flow-step">App → sync: fetch holdings, estimate eligibility, show offer</div>
+        <div class="flow-arrow">+</div>
+        <div class="flow-step">App → async: pledge request, partner confirmation, loan activation</div>
+      </div>
+      <p><strong>Why:</strong> the customer wants a fast response, but external systems are slow and failure-prone — design the journey as a state machine, not one long API chain.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-design">Problem #5</span> Why do we need a journey state machine?</summary>
+    <div class="card-body">
+      <p>Because LAMF is not one transaction — it's a multi-step business process.</p>
+      <p><strong>Sample states:</strong></p>
+      <p>
+        <span class="statepill">INITIATED</span><span class="statepill">HOLDINGS_FETCHED</span><span class="statepill">ELIGIBILITY_COMPUTED</span><span class="statepill">OFFER_ACCEPTED</span><span class="statepill">AGREEMENT_SIGNED</span><span class="statepill">PLEDGE_REQUESTED</span><span class="statepill">PLEDGE_CONFIRMED</span><span class="statepill">LOAN_ACCOUNT_CREATED</span><span class="statepill">DISBURSED</span><span class="statepill">ACTIVE</span><span class="statepill">MARGIN_SHORTFALL</span><span class="statepill">LIQUIDATION_IN_PROGRESS</span><span class="statepill">CLOSED</span><span class="statepill">FAILED</span>
+      </p>
+      <p><strong>Thought-provoking questions:</strong> if pledge succeeds but disbursement fails, what happens? If the agreement is signed but the pledge is rejected, do we restart or roll back? If the customer exits mid-app, where do we resume? Can support safely replay the journey?</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-design">Problem #6</span> How do we design pledge orchestration?</summary>
+    <div class="card-body">
+      <p><strong>Business reality:</strong> pledge isn't a simple DB update — it involves external confirmation and legal control.</p>
+      <div class="flow vert">
+        <div class="flow-step">Customer selects holdings</div><div class="flow-arrow">↓</div>
+        <div class="flow-step">Pledge Orchestrator creates pledge request</div><div class="flow-arrow">↓</div>
+        <div class="flow-step">Sent to partner / RTA / exchange / depository</div><div class="flow-arrow">↓</div>
+        <div class="flow-step">Customer authorization / OTP / consent</div><div class="flow-arrow">↓</div>
+        <div class="flow-step">External confirmation received</div><div class="flow-arrow">↓</div>
+        <div class="flow-step">Internal collateral ledger updated</div>
+      </div>
+      <p><strong>Key questions:</strong> is pledge creation idempotent? How do we avoid duplicate pledges on retry? What if the partner says "accepted" but the callback never comes — or comes twice? What if the internal DB update fails after external success?</p>
+      <div class="kinsight"><strong>Design answer:</strong> an idempotency key per pledge request, external reference mapping, a callback event store, a reconciliation job, and a compensation workflow for stuck states.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-design">Problem #7</span> How do we model the collateral ledger?</summary>
+    <div class="card-body">
+      <p>Don't only store "loan amount" — store collateral as its <strong>own ledger</strong>:</p>
+      <pre class="codeblock">Collateral Account
+ - customer_id, loan_account_id
+ - scheme_id, folio_no
+ - pledged_units, pledge_reference
+ - valuation_at_pledge, current_valuation
+ - lien_status, liquidation_status</pre>
+      <p><strong>Why separate it:</strong> later you must answer exactly what units are locked, which pledge created this lien, which units were released, which were liquidated, and what their value was when the loan was granted. Without a dedicated collateral ledger, audit becomes painful.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-design">Problem #8</span> How do we manage risk after disbursement?</summary>
+    <div class="card-body">
+      <p>This is the true heart of the system — once the loan is active, risk is dynamic because MF value changes continuously.</p>
+      <p><strong>Core questions:</strong> how often do we revalue collateral? What threshold triggers an alert, blocks drawdown, or triggers forced liquidation? Do we need human approval before liquidation? Can the customer add more schemes as top-up collateral?</p>
+      <div class="flow vert">
+        <div class="flow-step">Daily / periodic NAV refresh</div><div class="flow-arrow">↓</div>
+        <div class="flow-step">Recompute collateral value</div><div class="flow-arrow">↓</div>
+        <div class="flow-step">Compare against outstanding loan</div><div class="flow-arrow">↓ → healthy / warning / shortfall / liquidation zone</div>
+      </div>
+      <table class="dtable">
+        <tr><th>LTV</th><th>Zone</th></tr>
+        <tr><td>≤ 70%</td><td>Healthy</td></tr>
+        <tr><td>70–75%</td><td>Warning</td></tr>
+        <tr><td>75–80%</td><td>Freeze further drawdown</td></tr>
+        <tr><td>&gt; 80%</td><td>Liquidation trigger</td></tr>
+      </table>
+      <div class="kinsight">Risk is not just a cron job — it needs valuation freshness, threshold rules, alerting, an action workflow, an audit trail, and integration with collections.</div>
+    </div>
+  </details>
+  <details class="card">
+    <summary><span class="tag tag-design">Problem #9</span> How do we design liquidation safely?</summary>
+    <div class="card-body">
+      <p>Sensitive because it directly affects customer assets.</p>
+      <p><strong>Questions:</strong> can liquidation be automatic? Is partial liquidation allowed? Which schemes get sold first — cheapest units, or most liquid? What if the market is closed, or the partner rejects redemption due to an operational issue?</p>
+      <p><strong>Better design — a Liquidation Strategy Engine.</strong> Inputs: shortfall amount, eligible pledged schemes, liquidity priority, tax/customer-fairness rules, operational constraints. Output: a redemption plan.</p>
+      <div class="flow vert">
+        <div class="flow-step">Risk breach</div><div class="flow-arrow">↓</div>
+        <div class="flow-step">Compute shortfall amount</div><div class="flow-arrow">↓</div>
+        <div class="flow-step">Choose units to redeem</div><div class="flow-arrow">↓</div>
+        <div class="flow-step">Send redemption / invoke enforcement flow</div><div class="flow-arrow">↓</div>
+        <div class="flow-step">Receive proceeds → adjust loan outstanding</div>
+      </div>
+      <div class="kinsight"><strong>Architect-level thought:</strong> liquidation strategy is a business policy, not just technical logic — keep it configurable.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-design">Problem #10</span> How do we design the LOS vs LMS split?</summary>
+    <div class="card-body">
+      <p>A very common mistake is mixing onboarding with loan servicing — keep them separate:</p>
+      <table class="dtable">
+        <tr><th>LOS — Loan Origination System (before disbursal)</th><th>LMS — Loan Management System (after activation)</th></tr>
+        <tr><td>Application, eligibility, offer generation, documents, pledge initiation, sanction decision</td><td>Account creation, interest accrual, statements, repayment, overdue, foreclosure, collections</td></tr>
+      </table>
+      <div class="kinsight">Origination and servicing evolve at different speeds, and LMS is often an external enterprise platform — splitting them avoids coupling two systems with very different change cadences.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-api">Problem #11</span> How do we expose APIs?</summary>
+    <div class="card-body">
+      <p>Think in terms of <strong>journey APIs</strong>, not raw database APIs.</p>
+      <table class="dtable">
+        <tr><th>Group</th><th>Example APIs</th></tr>
+        <tr><td>Discovery</td><td><code>getEligibleHoldings(customerId)</code>, <code>getLoanEstimate(customerId)</code></td></tr>
+        <tr><td>Offer</td><td><code>createLoanApplication()</code>, <code>recomputeOffer()</code>, <code>acceptOffer()</code></td></tr>
+        <tr><td>Pledge</td><td><code>initiatePledge()</code>, <code>getPledgeStatus()</code></td></tr>
+        <tr><td>Loan</td><td><code>getLoanAccount()</code>, <code>drawdown()</code>, <code>repay()</code>, <code>getMarginStatus()</code></td></tr>
+        <tr><td>Risk</td><td><code>getCollateralSnapshot()</code>, <code>getShortfallAlerts()</code></td></tr>
+      </table>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-design">Problem #12</span> What domain events should exist?</summary>
+    <div class="card-body">
+      <p>This is event-heavy architecture by nature:</p>
+      <p>
+        <span class="statepill">HoldingsSynced</span><span class="statepill">NAVUpdated</span><span class="statepill">EligibilityComputed</span><span class="statepill">LoanOfferGenerated</span><span class="statepill">OfferAccepted</span><span class="statepill">AgreementSigned</span><span class="statepill">PledgeRequested</span><span class="statepill">PledgeConfirmed</span><span class="statepill">LoanCreated</span><span class="statepill">DisbursementCompleted</span><span class="statepill">MarginShortfallDetected</span><span class="statepill">TopUpCollateralAdded</span><span class="statepill">LiquidationTriggered</span><span class="statepill">LiquidationCompleted</span><span class="statepill">LoanClosed</span>
+      </p>
+      <p><strong>Why events matter:</strong> notifications, audit, CRM, collections, analytics, risk dashboards, and reconciliation all react to these — events are the contract that keeps those consumers decoupled from the core loan flow.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-risk">Problem #13</span> Where can this system break? Five failure scenarios an architect should actively hunt for</summary>
+    <div class="card-body">
+      <table class="dtable">
+        <tr><th>Case</th><th>Failure mode</th></tr>
+        <tr><td>1</td><td>Holdings shown to the user are stale, but the pledge request uses old units — the customer now sees more drawing power than is actually possible.</td></tr>
+        <tr><td>2</td><td>Pledge confirmed externally, but internal state remains pending — the loan stays blocked even though collateral is already locked.</td></tr>
+        <tr><td>3</td><td>Loan disbursed before pledge confirmation due to a race condition — a major control failure.</td></tr>
+        <tr><td>4</td><td>NAV crashes sharply, but the margin job runs late — risk goes unaddressed for that window.</td></tr>
+        <tr><td>5</td><td>Customer repays fully, but lien release is delayed — a terrible customer experience.</td></tr>
+      </table>
+      <p>These are exactly the places where a strong architect's design choices show.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-design">Problem #14</span> What should be strongly consistent vs eventually consistent?</summary>
+    <div class="card-body">
+      <table class="dtable">
+        <tr><th>Strong consistency needed for</th><th>Eventual consistency acceptable for</th></tr>
+        <tr><td>Pledge confirmation before activation · loan disbursal control · outstanding balance · collateral units locked · repayment posting</td><td>Dashboards · reporting · notifications · analytics · recommendation widgets · historical aggregation</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-data">Problem #15</span> What data stores would you use?</summary>
+    <div class="card-body">
+      <table class="dtable">
+        <tr><th>Store</th><th>Used for</th></tr>
+        <tr><td><strong>OLTP relational DB</strong></td><td>Applications, journey states, loan accounts, collateral ledger, repayment ledger, audit references</td></tr>
+        <tr><td><strong>Cache</strong></td><td>Latest NAV lookup, eligibility rules snapshot, active offer summary</td></tr>
+        <tr><td><strong>Event bus</strong></td><td>Callbacks, risk triggers, notifications, reconciliation workflows</td></tr>
+        <tr><td><strong>Search / analytics store</strong></td><td>Ops dashboard, customer support search, portfolio risk monitoring</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <details class="card" open>
+    <summary><span class="tag tag-design">Architecture</span> The rough end-to-end LAMF architecture</summary>
+    <div class="card-body">
+      <div class="flow vert">
+        <div class="flow-step">Customer App</div><div class="flow-arrow">↓</div>
+        <div class="flow-step">Journey Orchestrator</div>
+        <div class="flow-arrow">↓ fans out to</div>
+        <div class="flow-step">KYC/CKYC · Holdings · Valuation Engine · Policy Engine · eSign Service · Agreement Service</div>
+        <div class="flow-arrow">↓ (Holdings → RTA/DP · Valuation → NAV Feed · Policy → Risk Rules)</div>
+        <div class="flow-step">Pledge Orchestrator</div><div class="flow-arrow">↓</div>
+        <div class="flow-step">External Pledge Partner</div><div class="flow-arrow">↓</div>
+        <div class="flow-step">Loan Origination System (LOS)</div><div class="flow-arrow">↓</div>
+        <div class="flow-step">Loan Management System (LMS)</div>
+        <div class="flow-arrow">↓ fans out to</div>
+        <div class="flow-step">Disbursement Service · Margin Engine · Collections / Liquidation</div>
+      </div>
+    </div>
+  </details>
+  <div class="subhead">The six discussion points that signal architect-level depth</div>
+
+  <details class="card" open>
+    <summary><span class="tag tag-design">Discussion points</span> Six sentences that sound very strong in any design review</summary>
+    <div class="card-body">
+      <ol>
+        <li><strong>"Collateral is not money, it is units."</strong> The system must preserve unit-level traceability, not just a rupee figure.</li>
+        <li><strong>"Offer generation and pledge confirmation should be separated."</strong> Displayed eligibility is preliminary; enforceable eligibility only exists after a successful pledge.</li>
+        <li><strong>"This must be state-machine driven."</strong> External partner calls make the journey long-running and failure-prone — a single API chain can't model that safely.</li>
+        <li><strong>"Risk monitoring is a first-class subsystem."</strong> Not a support job bolted on afterward.</li>
+        <li><strong>"Collateral ledger must be separate from loan ledger."</strong> Pledged-asset lifecycle and loan lifecycle are related, but not identical.</li>
+        <li><strong>"Policy engine should control eligibility, LTV, and liquidation thresholds."</strong> Because business rules in this space change often, and should never require a deployment to change.</li>
+      </ol>
+    </div>
+  </details>
+
+  <details class="card" open>
+    <summary><span class="tag tag-design">Interview-ready answer</span> One clean way to present this whole design out loud</summary>
+    <div class="card-body">
+      <p style="font-style:italic;border-left:3px solid var(--gold);padding-left:14px;">"I would design Loan Against Mutual Fund as a collateralized lending platform with five core capabilities: holdings discovery, eligibility and valuation, pledge orchestration, loan servicing, and continuous risk monitoring. The key architectural principle is that mutual fund units are the true collateral, so I would maintain a separate collateral ledger and state-machine-driven journey. Because external pledge partners and valuation feeds are involved, I would keep customer-facing eligibility synchronous where possible, but move pledge confirmation, callbacks, reconciliation, and margin workflows into asynchronous orchestration. The hardest part is not disbursal — it is ongoing collateral risk management and safe liquidation."</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-concept">Summary</span> The ultra-short version</summary>
+    <div class="card-body">
+      <pre class="codeblock">Loan Against MF system =
+  holdings system
+  + policy engine
+  + valuation engine
+  + pledge workflow
+  + loan system
+  + risk monitoring
+  + liquidation control</pre>
+      <div class="kinsight"><strong>The deepest architect insight:</strong> do not design this as "loan journey only." Design it as <strong>"collateral lifecycle + loan lifecycle + risk lifecycle"</strong> — three lifecycles running in parallel, not one.</div>
+    </div>
+  </details>
+
+  <div class="mastery">
+    <div class="lbl">Very thought-provoking questions for deeper mastery</div>
+    <h4>The kind of questions that build business + technical sharpness</h4>
+    <div class="mastery-grid">
+      <div class="mastery-col">
+        <div class="ml">Product / business side</div>
+        <ul>
+          <li>Why would a customer choose Loan Against MF instead of just redeeming units?</li>
+          <li>Which customer segments are most suitable for this product?</li>
+          <li>What schemes create high operational risk but low revenue value?</li>
+          <li>How do we avoid lending against volatile assets at the wrong time?</li>
+          <li>Should the customer see only approved holdings, or all holdings with reasons for ineligibility?</li>
+        </ul>
+      </div>
+      <div class="mastery-col">
+        <div class="ml">Risk side</div>
+        <ul>
+          <li>Should LTV depend only on scheme type, or also customer credit profile?</li>
+          <li>One uniform margin rule, or dynamic risk buckets?</li>
+          <li>What happens if NAV is stale for two days?</li>
+          <li>Can drawdown continue while a warning threshold is breached?</li>
+          <li>Should liquidation be rule-based, or maker-checker approved?</li>
+        </ul>
+      </div>
+      <div class="mastery-col">
+        <div class="ml">Operations side</div>
+        <ul>
+          <li>How will support see exactly where a journey is stuck?</li>
+          <li>How do we safely replay failed callback-driven steps?</li>
+          <li>What's the reconciliation process with the RTA / pledge partner?</li>
+          <li>How do we release a lien safely after full repayment?</li>
+          <li>Which SLAs matter most — offer generation, pledge marking, disbursal, or lien release?</li>
+        </ul>
+      </div>
+      <div class="mastery-col">
+        <div class="ml">Architecture side</div>
+        <ul>
+          <li>Which parts must be synchronous for UX, and which must be async for resilience?</li>
+          <li>What idempotency keys exist across loan app, pledge request, disbursement, and callbacks?</li>
+          <li>Where do we need transactional guarantees, and where is eventual consistency acceptable?</li>
+          <li>How do we design auditability for a regulator / dispute / ops inquiry?</li>
+          <li>What domain events are contract-worthy and stable enough for other systems to consume?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="section" id="sec-cots" data-section="COTS Reference">
+  <div class="sec-head">
+    <div class="sec-stamp"><span class="fo">FOLIO</span><span class="nn">10</span></div>
+    <div class="sec-titles">
+      <div class="kicker">Reference catalog</div>
+      <h2>COTS Systems — WinSoft &amp; Valuefy</h2>
+    </div>
+  </div>
+  <p class="sec-intro">A consolidated reference for the two off-the-shelf systems everything in this document ultimately calls into — what each one owns, the APIs each exposes, and the architectural implications of depending on them.</p>
+
+  <div class="subhead">WinSoft (WMS)</div>
+
+  <details class="card" open>
+    <summary><span class="tag tag-data">Reference</span> What WinSoft owns end to end</summary>
+    <div class="card-body">
+      <p>WinSoft is the primary Wealth Management System, handling core transactional operations: customer master data (KYC, FATCA), Investment Accounts, Folios, order placement &amp; execution with RTAs, and order status.</p>
+      <p><strong>Master Data Provider for Fund Metadata</strong> — WinSoft maintains and distributes the static <strong>Fund Catalog</strong>: Fund Name, RTA Code (critical for routing), ISIN, Fund Category (Equity/Debt/Hybrid/etc.), and allowed transaction types (SIP, Lump Sum). A defined <strong>"key dump"</strong> process periodically syncs this into Optimus's local database, enabling local validation and powering fund-discovery/search UIs without a real-time WinSoft call.</p>
+      <p><strong>Goals Configuration &amp; Tracking</strong> — WinSoft stores a Goals Master (predefined goal types like Wedding, Retirement, Child Education) shown in the Optimus app, and maintains the Goal-to-Folio mapping that enables per-goal progress reporting.</p>
+    </div>
+  </details>
+
+  <details class="card" open>
+    <summary><span class="tag tag-api">API catalog</span> Summary of WinSoft's APIs (inferred from context)</summary>
+    <div class="card-body">
+      <table class="dtable">
+        <tr><th>Category</th><th>API</th><th>Consumer / when called</th></tr>
+        <tr><td>Customer/Portfolio Data</td><td>PSP Folio for UCIC — fetch portfolios &amp; KYC status</td><td>App launch, pre-order checks</td></tr>
+        <tr><td>Customer/Portfolio Data</td><td>PSM Folio for UCIC — fetch existing folios &amp; holdings</td><td>Pre-order checks (folio check)</td></tr>
+        <tr><td>Customer/Portfolio Data</td><td>Create IA — create new Investment Account</td><td>Onboarding / first investment</td></tr>
+        <tr><td>Customer/Portfolio Data</td><td>Create Folio — create new folio with an RTA</td><td>First investment in a new fund house</td></tr>
+        <tr><td>Order Placement</td><td>MF Order API — place Lump Sum order</td><td>Order journey (sync call)</td></tr>
+        <tr><td>Order Placement</td><td>MF SIP Plans API — register a new SIP</td><td>Order journey (sync call)</td></tr>
+        <tr><td>Post-Order</td><td>Transactions API — fetch status of all orders</td><td>"My Transactions" / Track Order UI</td></tr>
+        <tr><td>Master Data</td><td>Fund Master Data Dump — bulk sync of fund metadata</td><td>Periodic "key dump" process</td></tr>
+        <tr><td>Goals</td><td>Goals Master API — fetch list of available goals</td><td>Goals journey UI</td></tr>
+        <tr><td>Permissions</td><td>APIs to check investment account existence &amp; holdings</td><td>App launch (permission calculation)</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag tag-risk">Implications</span> Key architectural implications of depending on WinSoft</summary>
+    <div class="card-body">
+      <ol>
+        <li><strong>System of Record:</strong> WinSoft is the single source of truth for all investment records — Portfolios, Folios, Orders, KYC Status. Valuefy derives its holdings data from WinSoft.</li>
+        <li><strong>Synchronous Coupling:</strong> the current synchronous order API creates tight coupling and a single point of failure, necessitating the Kafka workaround inside Optimus — a recognized architectural flaw.</li>
+        <li><strong>Polling-Based Status:</strong> no push mechanism for order status means Optimus cannot provide real-time notifications and must rely on user-initiated polling.</li>
+        <li><strong>Critical Path:</strong> WinSoft is in the critical path for every transaction flow — Buy, SIP, Redeem, Switch. Its availability directly impacts customer-facing functionality.</li>
+        <li><strong>Upstream Dependency:</strong> WinSoft itself depends on downstream RTAs (CAMS, KFintech, etc.) to ultimately execute orders and update holdings — making it part of a longer transactional chain than it first appears.</li>
+      </ol>
+    </div>
+  </details>
+
+  <div class="subhead">Valuefy</div>
+
+  <details class="card" open>
+    <summary><span class="tag tag-data">Reference</span> What Valuefy owns end to end</summary>
+    <div class="card-body">
+      <p>Valuefy handles analytics, insights, and holdings data — it's the system of <em>insight</em>, sitting beside WinSoft's system of <em>record</em>. It provides:</p>
+      <ul>
+        <li>Portfolio valuation</li>
+        <li>NAV tracking</li>
+        <li>Returns calculation</li>
+        <li>Goal-based recommendations</li>
+        <li>Personalized fund suggestions</li>
+      </ul>
+      <p>Valuefy gets its underlying data from WinSoft via batch syncs — it never originates transactional truth, only derives analytical views from it. This is exactly why, in the Folio Switch scenario earlier, Valuefy had to be told to expose folio-granular (not just fund-level) data: it can only ever report what WinSoft hands it, at whatever granularity WinSoft provides.</p>
+    </div>
+  </details>
+
+  <div class="mastery">
+    <div class="lbl">Mastery questions for this section</div>
+    <h4>To close out the whole document with</h4>
+    <ul style="margin-top:10px;padding-left:18px;">
+      <li>If WinSoft is the system of record and Valuefy only derives from it, what's the worst-case staleness window between "WinSoft knows" and "Valuefy shows" — and does any scenario in this document depend on that window being small?</li>
+      <li>Given WinSoft is in the critical path for every transaction type, what would actually change for Optimus's architecture if WinSoft offered native async order placement tomorrow?</li>
+      <li>Across everything in this document — onboarding, ordering, holdings, LAMF — which single architectural decision (Optimus owning zero source-of-truth data) shows up most often as the reason a scenario resolves the way it does?</li>
+    </ul>
+  </div>
+</section>
+
+</div>
+
+</div>
+
+<footer class="docfoot">
+  Compiled as a single reference document for the Optimus MF domain — onboarding, ordering, holdings and Loan Against Mutual Fund. Use the search box or the left rail to jump anywhere.
+</footer>
+</main>
+</div>
+
+<script>
+(function(){
+  const sections = Array.from(document.querySelectorAll('.section'));
+  const sideNav = document.getElementById('sideNav');
+  const cardCountEl = document.getElementById('cardCount');
+  const allCards = Array.from(document.querySelectorAll('.card'));
+  cardCountEl.textContent = allCards.length;
+
+  // Build sidebar nav from sections
+  sections.forEach((sec, i) => {
+    const li = document.createElement('li');
+    const a = document.createElement('a');
+    a.href = '#' + sec.id;
+    const num = String(i + 1).padStart(2, '0');
+    a.innerHTML = '<span class="num">' + num + '</span><span>' + sec.dataset.section + '</span>';
+    li.appendChild(a);
+    sideNav.appendChild(li);
+  });
+  const navLinks = Array.from(sideNav.querySelectorAll('a'));
+
+  // Scroll-spy active state
+  function onScroll(){
+    let current = sections[0];
+    const scrollPos = window.scrollY + 140;
+    for (const sec of sections){
+      if (sec.offsetTop <= scrollPos) current = sec;
+    }
+    navLinks.forEach(a => {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + current.id);
+    });
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+
+  // Expand / collapse all
+  function setAll(open){
+    allCards.forEach(c => { c.open = open; });
+  }
+  document.getElementById('expandAllTop').addEventListener('click', () => setAll(true));
+  document.getElementById('collapseAllTop').addEventListener('click', () => setAll(false));
+
+  // Search / filter across all cards
+  const searchBox = document.getElementById('searchBox');
+  const searchEmpty = document.getElementById('searchEmpty');
+  const contentRoot = document.getElementById('contentRoot');
+  let debounceTimer;
+
+  searchBox.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(runSearch, 120);
+  });
+
+  function runSearch(){
+    const q = searchBox.value.trim().toLowerCase();
+    if (!q){
+      contentRoot.classList.remove('hidden');
+      searchEmpty.classList.add('hidden');
+      sections.forEach(sec => sec.classList.remove('hidden'));
+      allCards.forEach(c => { c.classList.remove('hidden'); });
+      return;
+    }
+    let anyVisible = false;
+    sections.forEach(sec => {
+      let sectionHasMatch = false;
+      const cardsInSec = sec.querySelectorAll('.card');
+      cardsInSec.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        const match = text.includes(q);
+        card.classList.toggle('hidden', !match);
+        if (match){
+          sectionHasMatch = true;
+          anyVisible = true;
+          card.open = true;
+        }
+      });
+      sec.classList.toggle('hidden', !sectionHasMatch);
+    });
+    contentRoot.classList.toggle('hidden', !anyVisible);
+    searchEmpty.classList.toggle('hidden', anyVisible);
+  }
+})();
+</script>
+</body>
+</html>

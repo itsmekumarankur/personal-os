@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Demat API — Memory Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FFFFFF;
+    --bg-vignette: radial-gradient(ellipse 90% 70% at 50% -10%, #FBFAF7 0%, #FFFFFF 55%);
+    --surface:#F6F4F0;
+    --surface-2:#FFFFFF;
+    --border:rgba(20,24,32,0.12);
+    --border-soft:rgba(20,24,32,0.07);
+    --text:#1A1F2B;
+    --text-muted:#5B6577;
+    --text-faint:#9298A6;
+    --gold:#B8842E;
+    --shadow: 0 8px 20px -10px rgba(20,20,20,0.16);
+
+    --c-mofsl:#B8842E;
+    --c-nsdl:#0E8A7D;
+    --c-other:#3D5A8C;
+    --c-acct:#3F7A4D;
+    --c-hold:#A14860;
+    --c-pis:#6E4F9E;
+    --c-sr:#C06A1E;
+    --c-pdf:#9C7E1F;
+    --c-plat:#51607A;
+    --c-gloss:#8A6F4A;
+    --c-flag:#C0432E;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;background:var(--bg);}
+  body{
+    font-family:'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+    color:var(--text);
+    background:var(--bg-vignette);
+    overflow:hidden;
+  }
+  #app{
+    position:relative;
+    width:100vw;
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* ---------- TOPBAR ---------- */
+  header.topbar{
+    flex:0 0 auto;
+    padding:14px 18px 10px;
+    border-bottom:1px solid var(--border-soft);
+    background:linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,255,255,0.65));
+    backdrop-filter:blur(6px);
+    z-index:20;
+  }
+  .topbar-row{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+  .brand{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    margin-right:auto;
+  }
+  .brand h1{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:17px;
+    font-weight:700;
+    letter-spacing:0.2px;
+    margin:0;
+    color:var(--text);
+  }
+  .brand h1 span{ color:var(--gold); }
+  .brand small{
+    font-size:11px;
+    color:var(--text-muted);
+    letter-spacing:0.3px;
+  }
+
+  .search-wrap{
+    position:relative;
+    flex:0 1 320px;
+    min-width:180px;
+  }
+  .search-wrap input{
+    width:100%;
+    background:var(--surface);
+    border:1px solid var(--border);
+    color:var(--text);
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:13px;
+    padding:9px 12px 9px 32px;
+    border-radius:9px;
+    outline:none;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  .search-wrap input::placeholder{ color:var(--text-faint); }
+  .search-wrap input:focus{
+    border-color:var(--gold);
+    box-shadow:0 0 0 3px rgba(184,132,46,0.18);
+  }
+  .search-icon{
+    position:absolute; left:10px; top:50%; transform:translateY(-50%);
+    width:14px; height:14px; opacity:0.55; pointer-events:none;
+  }
+  .search-count{
+    font-size:11px;
+    color:var(--text-muted);
+    white-space:nowrap;
+  }
+
+  .btn-group{ display:flex; gap:6px; }
+  button.ctrl{
+    background:var(--surface);
+    border:1px solid var(--border);
+    color:var(--text-muted);
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:12px;
+    font-weight:500;
+    padding:8px 11px;
+    border-radius:8px;
+    cursor:pointer;
+    transition:all .15s;
+    white-space:nowrap;
+  }
+  button.ctrl:hover{ color:var(--text); border-color:rgba(20,24,32,0.22); background:var(--surface-2); }
+  button.ctrl:active{ transform:scale(0.96); }
+  button.ctrl.zoom{ padding:8px 12px; font-family:'Space Grotesk',sans-serif; font-weight:600; }
+
+  .hint{
+    font-size:11px;
+    color:var(--text-faint);
+    margin-top:8px;
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+  .hint b{ color:var(--text-muted); font-weight:500; }
+
+  /* ---------- LEGEND ---------- */
+  .legend{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    padding:10px 18px 12px;
+    flex:0 0 auto;
+    border-bottom:1px solid var(--border-soft);
+    background:rgba(246,244,240,0.75);
+    scrollbar-width:thin;
+  }
+  .legend::-webkit-scrollbar{ height:5px; }
+  .legend::-webkit-scrollbar-thumb{ background:var(--border); border-radius:3px; }
+  .legend-chip{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    flex:0 0 auto;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:6px 12px 6px 8px;
+    font-size:11.5px;
+    color:var(--text-muted);
+    cursor:pointer;
+    transition:all .15s;
+  }
+  .legend-chip:hover{ border-color: var(--dot); color:var(--text); transform:translateY(-1px); }
+  .legend-chip .dot{
+    width:9px; height:9px; border-radius:50%;
+    background:var(--dot);
+    box-shadow:0 0 6px var(--dot);
+    flex:0 0 auto;
+  }
+  .legend-chip .n{ color:var(--text-faint); font-family:'IBM Plex Mono',monospace; font-size:10.5px; }
+
+  /* ---------- CANVAS ---------- */
+  .canvas-wrap{
+    position:relative;
+    flex:1 1 auto;
+    overflow:hidden;
+    cursor:grab;
+  }
+  .canvas-wrap:active{ cursor:grabbing; }
+  svg#tree-svg{ width:100%; height:100%; display:block; }
+
+  .grid-pattern{ opacity:0.7; }
+
+  .link{
+    fill:none;
+    stroke-width:1.6;
+    opacity:0.55;
+    stroke-dasharray:1 5;
+    stroke-linecap:round;
+    animation:flow 1.6s linear infinite;
+  }
+  @keyframes flow{ to{ stroke-dashoffset:-12; } }
+
+  .node-g{ cursor:pointer; }
+  .node-g foreignObject{ overflow:visible; }
+
+  .chip{
+    width:100%; height:100%;
+    display:flex;
+    align-items:center;
+    gap:9px;
+    padding:7px 10px;
+    border-radius:12px;
+    background:linear-gradient(180deg, var(--surface-2), var(--surface));
+    border:1px solid var(--border);
+    box-shadow:var(--shadow);
+    transition:border-color .15s, box-shadow .15s, transform .15s;
+    position:relative;
+  }
+  .chip:hover{
+    border-color:var(--accent);
+    box-shadow:0 0 0 1px var(--accent) inset, 0 10px 22px -10px rgba(20,20,20,0.22);
+    transform:translateY(-1px);
+  }
+  .node-g:focus .chip, .node-g:focus-visible .chip{
+    outline:none;
+    border-color:var(--accent);
+    box-shadow:0 0 0 2px var(--accent);
+  }
+  .chip.is-match{
+    border-color:var(--accent);
+    box-shadow:0 0 0 2px var(--accent), 0 0 16px 2px var(--accent);
+  }
+  .chip.is-root{
+    background:linear-gradient(180deg, #1B2536, #121A28);
+    border-color:rgba(184,132,46,0.6);
+  }
+  .chip.is-root .chip-title{ color:#F4EFE4; }
+
+  .chip-badge{
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:500;
+    color:var(--accent);
+    background:rgba(20,24,32,0.035);
+    border:1.5px solid var(--accent);
+  }
+  .depth0 .chip-badge, .depth1 .chip-badge{
+    width:38px; height:38px; border-radius:50%;
+    font-size:11px;
+    letter-spacing:0.3px;
+  }
+  .depth2 .chip-badge{
+    width:30px; height:22px; border-radius:6px;
+    font-size:9.5px;
+  }
+
+  .chip-body{
+    flex:1 1 auto;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:1px;
+  }
+  .chip-title{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--text);
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+    line-height:1.25;
+  }
+  .depth1 .chip-title{ font-size:13.5px; }
+  .chip-sub{
+    font-size:10px;
+    color:var(--text-faint);
+    font-family:'IBM Plex Mono', monospace;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  .chip-count{
+    position:absolute;
+    top:-7px; right:34px;
+    background:var(--accent);
+    color:#FFFFFF;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:9.5px;
+    font-weight:700;
+    border-radius:9px;
+    padding:1px 6px;
+    box-shadow:0 2px 6px rgba(20,20,20,0.25);
+  }
+  .chip-toggle{
+    flex:0 0 auto;
+    width:18px; height:18px;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--text-faint);
+    transition:transform .25s;
+  }
+  .chip-toggle.open{ transform:rotate(90deg); color:var(--accent); }
+
+  /* ---------- ZOOM CONTROLS ---------- */
+  .zoom-controls{
+    position:absolute;
+    bottom:18px; right:18px;
+    display:flex; flex-direction:column;
+    gap:6px;
+    z-index:10;
+  }
+  .zoom-controls button{
+    width:36px; height:36px;
+    border-radius:9px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    color:var(--text);
+    font-size:16px;
+    font-family:'Space Grotesk',sans-serif;
+    cursor:pointer;
+  }
+  .zoom-controls button:hover{ background:var(--surface-2); border-color:var(--gold); color:var(--gold); }
+
+  /* ---------- DETAIL DRAWER ---------- */
+  #drawer{
+    position:fixed;
+    top:0; right:0;
+    width:380px; height:100%;
+    background:linear-gradient(180deg, #FFFFFF, #FBFAF7);
+    border-left:1px solid var(--border);
+    box-shadow:-16px 0 40px -20px rgba(20,20,20,0.22);
+    transform:translateX(100%);
+    transition:transform .32s cubic-bezier(.2,.9,.25,1);
+    z-index:30;
+    display:flex;
+    flex-direction:column;
+  }
+  #drawer.open{ transform:translateX(0); }
+  .drawer-accent{ height:5px; flex:0 0 auto; background:var(--accent, var(--gold)); }
+  .drawer-head{
+    padding:18px 20px 14px;
+    border-bottom:1px solid var(--border-soft);
+    display:flex; gap:12px; align-items:flex-start;
+  }
+  .drawer-badge{
+    flex:0 0 auto;
+    width:44px;height:44px;border-radius:50%;
+    border:2px solid var(--accent, var(--gold));
+    color:var(--accent, var(--gold));
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px; font-weight:600;
+  }
+  .drawer-head h2{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:17px; font-weight:700;
+    margin:0 0 4px;
+    color:var(--text);
+    line-height:1.3;
+  }
+  .drawer-head .cat-label{
+    font-size:10.5px;
+    letter-spacing:0.6px;
+    text-transform:uppercase;
+    color:var(--accent, var(--gold));
+    font-weight:600;
+  }
+  .drawer-close{
+    margin-left:auto; flex:0 0 auto;
+    background:none; border:none; color:var(--text-faint);
+    font-size:20px; cursor:pointer; line-height:1; padding:4px;
+  }
+  .drawer-close:hover{ color:var(--text); }
+  .drawer-body{
+    padding:18px 20px 30px;
+    overflow-y:auto;
+    flex:1 1 auto;
+  }
+  .drawer-body::-webkit-scrollbar{ width:6px; }
+  .drawer-body::-webkit-scrollbar-thumb{ background:var(--border); border-radius:4px; }
+
+  .endpoint-line{
+    display:flex; align-items:center; gap:8px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:9px 11px;
+    margin-bottom:14px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+  }
+  .method-pill{
+    font-weight:700; font-size:10px; letter-spacing:0.4px;
+    padding:2px 7px; border-radius:5px;
+    color:#0B1220;
+  }
+  .method-GET{ background:#7FD8C8; }
+  .method-POST{ background:#E8C26B; }
+  .method-INT{ background:#9AA5B8; }
+  .method-path{ color:var(--text); word-break:break-all; }
+
+  .drawer-body p.desc{
+    font-size:13.5px;
+    line-height:1.6;
+    color:var(--text);
+    margin:0 0 16px;
+  }
+  .io-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-bottom:16px;
+  }
+  .io-box{
+    background:var(--surface);
+    border:1px solid var(--border-soft);
+    border-radius:8px;
+    padding:10px 11px;
+  }
+  .io-box .lab{
+    font-size:9.5px; text-transform:uppercase; letter-spacing:0.5px;
+    color:var(--text-faint); margin-bottom:5px; display:block;
+  }
+  .io-box .val{
+    font-size:12px; color:var(--text-muted); line-height:1.5;
+    font-family:'IBM Plex Mono', monospace;
+  }
+  .section-lab{
+    font-size:10.5px; text-transform:uppercase; letter-spacing:0.6px;
+    color:var(--text-faint); margin:18px 0 8px; font-weight:600;
+  }
+  ol.flow-steps{
+    margin:0; padding-left:0; list-style:none; counter-reset:step;
+  }
+  ol.flow-steps li{
+    counter-increment:step;
+    position:relative;
+    padding:0 0 14px 28px;
+    font-size:12.5px;
+    line-height:1.55;
+    color:var(--text-muted);
+    border-left:1.5px solid var(--border);
+    margin-left:11px;
+  }
+  ol.flow-steps li:last-child{ border-left:1.5px solid transparent; padding-bottom:2px; }
+  ol.flow-steps li::before{
+    content:counter(step);
+    position:absolute; left:-11.5px; top:-1px;
+    width:21px; height:21px; border-radius:50%;
+    background:var(--surface-2);
+    border:1.5px solid var(--accent, var(--gold));
+    color:var(--accent, var(--gold));
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px; font-weight:600;
+    display:flex; align-items:center; justify-content:center;
+  }
+  ul.bullets{ margin:0; padding-left:0; list-style:none; }
+  ul.bullets li{
+    position:relative; padding-left:16px; margin-bottom:9px;
+    font-size:12.5px; line-height:1.55; color:var(--text-muted);
+  }
+  ul.bullets li::before{
+    content:'';
+    position:absolute; left:0; top:7px;
+    width:5px; height:5px; border-radius:50%;
+    background:var(--accent, var(--gold));
+  }
+  .child-hint{
+    margin-top:6px;
+    font-size:12px;
+    color:var(--text-faint);
+    display:flex; align-items:center; gap:6px;
+  }
+  .child-hint b{ color:var(--accent, var(--gold)); }
+
+  .load-error{
+    color:#C0432E; padding:40px; text-align:center; font-size:14px;
+  }
+
+  @media (max-width: 760px){
+    #drawer{ width:100%; top:auto; bottom:0; height:65vh; border-left:none; border-top:1px solid var(--border);
+      border-radius:18px 18px 0 0; transform:translateY(100%); }
+    #drawer.open{ transform:translateY(0); }
+    .hint{ display:none; }
+    .search-wrap{ flex:1 1 100%; order:3; }
+    .zoom-controls{ bottom:14px; right:14px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .link{ animation:none; }
+    .chip, .node-g, #drawer{ transition:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header class="topbar">
+    <div class="topbar-row">
+      <div class="brand">
+        <h1>Demat API <span>· Memory Map</span></h1>
+        <small>BIMBO Bank Wealth &amp; Demat Platform — MOFSL · NSDL · Zerodha · ISEC · PIS</small>
+      </div>
+      <div class="search-wrap">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="#8B96A8" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="search" type="text" placeholder="Search endpoints, terms, flags…" autocomplete="off" />
+      </div>
+      <span class="search-count" id="search-count"></span>
+      <div class="btn-group">
+        <button class="ctrl" id="btn-expand">Expand all</button>
+        <button class="ctrl" id="btn-collapse">Collapse all</button>
+        <button class="ctrl" id="btn-fit">Fit view</button>
+      </div>
+    </div>
+    <div class="hint">
+      <span><b>Click</b> a node to open it &amp; see full detail</span>
+      <span><b>Drag</b> to pan</span>
+      <span><b>Scroll / pinch</b> to zoom</span>
+      <span><b>Type</b> to search across the whole map</span>
+    </div>
+  </header>
+
+  <div class="legend" id="legend"></div>
+
+  <div class="canvas-wrap" id="canvas-wrap">
+    <svg id="tree-svg">
+      <defs>
+        <pattern id="dotgrid" width="26" height="26" patternUnits="userSpaceOnUse">
+          <circle cx="1.5" cy="1.5" r="1" fill="#DAD6CC" />
+        </pattern>
+      </defs>
+      <rect class="grid-pattern" x="-4000" y="-4000" width="9000" height="9000" fill="url(#dotgrid)"></rect>
+    </svg>
+
+    <div class="zoom-controls">
+      <button id="zoom-in" title="Zoom in">+</button>
+      <button id="zoom-out" title="Zoom out">–</button>
+      <button id="zoom-reset" title="Reset zoom">⟲</button>
+    </div>
+  </div>
+</div>
+
+<div id="drawer">
+  <div class="drawer-accent" id="drawer-accent"></div>
+  <div class="drawer-head">
+    <div class="drawer-badge" id="drawer-badge">?</div>
+    <div>
+      <div class="cat-label" id="drawer-cat">CATEGORY</div>
+      <h2 id="drawer-title">Title</h2>
+    </div>
+    <button class="drawer-close" id="drawer-close">✕</button>
+  </div>
+  <div class="drawer-body" id="drawer-body"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script>
+(function(){
+
+/* =====================================================================
+   1. DATA  —  the whole memory map, extracted from the source docs
+   ===================================================================== */
+
+const DATA = {
+  name: "Demat API Universe",
+  id: "root",
+  kind: "root",
+  desc: "Everything BIMBO Bank's Demat platform talks to — depositories, brokers, account info, holdings, NRI trading, service requests, reports, and the internal plumbing holding it together.",
+  children: [
+
+    { name:"MOFSL", id:"mofsl", kind:"category", color:"var(--c-mofsl)", mono:"MO",
+      desc:"Broker integration. Bundles Trading + Demat + a linked Bank account into one onboarding journey — BIMBO Bank checks status, then hands the customer to MOFSL's portal to finish everything else.",
+      children:[
+        { name:"Get Status", id:"mofsl-status", kind:"endpoint", badge:"GET", path:"/api/demat/v1/mofsl/status", color:"var(--c-mofsl)",
+          desc:"Checks whether the customer already has a MOFSL Trading and/or Demat account, before starting a fresh one.",
+          input:"UCIC (from Auth Token) + PAN",
+          output:"tradingStatus, dematStatus, redirectUrl (optional)",
+          flow:[
+            "demat-api fetches the customer's PAN from their profile.",
+            "Calls the MOFSL PAN Check API via ESB Mule.",
+            "MOFSL replies NOT_EXISTS / IN_PROGRESS / EXISTS.",
+            "If IN_PROGRESS → return the Bitly resume link, journey was left mid-way.",
+            "If EXISTS → cross-check Demat status in Winsoft, then return the combined Trading + Demat status."
+          ]
+        },
+        { name:"Get Redirect URI (V1)", id:"mofsl-redirect-v1", kind:"endpoint", badge:"POST", path:"/api/demat/v1/mofsl/redirecturi", color:"var(--c-mofsl)",
+          desc:"Generates the URL that sends the customer to MOFSL's site to begin opening a 3-in-1 account.",
+          input:"accountNumber",
+          output:"redirectUrl",
+          flow:[
+            "Controller validates the account number.",
+            "Service requests a short-lived JWT token from MOFSL.",
+            "Calls the MOFSL Redirect API via ESB Mule, sending the account number.",
+            "Returns the redirectUrl — customer leaves the BIMBO Bank app here.",
+            "No callback: MOFSL owns the entire rest of the journey end-to-end."
+          ]
+        },
+        { name:"Get Redirect URI (V2)", id:"mofsl-redirect-v2", kind:"endpoint", badge:"POST", path:"/api/demat/v2/mofsl/redirecturi", color:"var(--c-mofsl)",
+          desc:"Same as V1, plus customer consent validation and a Kafka notification once the link is issued.",
+          input:"accountNumber + hasConsent",
+          output:"redirectUrl",
+          flow:[
+            "Controller adds a consent check before anything else runs.",
+            "Same JWT + redirect flow as V1 follows.",
+            "A Kafka event fires once the redirect URL is generated, for downstream systems."
+          ]
+        }
+      ]
+    },
+
+    { name:"NSDL", id:"nsdl", kind:"category", color:"var(--c-nsdl)", mono:"NS",
+      desc:"The depository — the only entity legally allowed to hold electronic share records in India. BIMBO Bank validates the customer heavily up front, then NSDL runs its own KYC checks and calls back with the result.",
+      children:[
+        { name:"Create Order (V1)", id:"nsdl-create-v1", kind:"endpoint", badge:"POST", path:"/api/demat/v1/order/create", color:"var(--c-nsdl)",
+          desc:"Original order-creation call. No consent flag. Superseded by V2 — kept here for reference only.",
+          flow:["Legacy version, no longer the active path.","Replaced by V2 once consent capture was added."]
+        },
+        { name:"Create Order (V2)", id:"nsdl-create-v2", kind:"endpoint", badge:"POST", path:"/api/demat/v2/order/create", color:"var(--c-nsdl)",
+          desc:"The active version — adds consent capture. This is the call that actually kicks off NSDL account opening.",
+          input:"UCIC, consent flag, bank account number",
+          output:"Transaction ID (temporary order reference)",
+          flow:[
+            "Validate UCIC is active, consent = true, and a digital signature exists on file — any single failure stops here, NSDL is never called.",
+            "Validate the bank account is real and owned by the customer.",
+            "Assemble the payload (name, PAN, email, mobile) and digitally sign it.",
+            "Call NSDL — it opens a temporary order and returns a Transaction ID.",
+            "BIMBO Bank saves the Transaction ID against the customer record.",
+            "Customer is redirected to NSDL's own portal to finish KYC + nominee details."
+          ]
+        },
+        { name:"NSDL-side processing", id:"nsdl-phase2", kind:"info", badge:"i", color:"var(--c-nsdl)",
+          desc:"Not an BIMBO Bank API at all — this phase happens entirely on NSDL's own site, outside BIMBO Bank's systems.",
+          flow:[
+            "Customer fills remaining KYC + nominee fields directly on NSDL's portal.",
+            "NSDL cross-checks PAN against income tax records.",
+            "NSDL validates KYC details against its own registries.",
+            "On success, NSDL provisions the account and generates a DP ID + Client ID."
+          ]
+        },
+        { name:"Success Redirect", id:"nsdl-success", kind:"endpoint", badge:"POST", path:"/api/demat/v1/handleSuccessRedirect", color:"var(--c-nsdl)",
+          desc:"Callback NSDL fires when account creation succeeds (NSDL → BIMBO Bank, the only integration with an explicit success callback).",
+          input:"DP ID, Client ID, digital signature",
+          output:"Status updated to SUCCESS",
+          flow:["BIMBO Bank validates the signature — confirms it genuinely came from NSDL, untampered.","DP ID + Client ID saved to the customer record.","Account is now live for trading."]
+        },
+        { name:"Failure Redirect", id:"nsdl-failure", kind:"endpoint", badge:"POST", path:"/api/demat/v1/handleFailureRedirect", color:"var(--c-nsdl)",
+          desc:"Callback NSDL fires when account creation fails.",
+          input:"Failure reason, digital signature",
+          output:"Status updated to FAILED",
+          flow:["BIMBO Bank validates the signature.","Failure reason saved to the record.","Customer notified to correct the issue and retry."]
+        },
+        { name:"Check Client ID", id:"nsdl-checkid", kind:"endpoint", badge:"INT", path:"internal · via ESB Mule client", color:"var(--c-nsdl)",
+          desc:"Internal-only pre-check, not customer-facing. Asks NSDL: does this customer already have a Client ID / DP ID?",
+          output:"Boolean",
+          flow:["Goal: avoid kicking off a duplicate order/create for someone who already has an account.","⚠ Open item: unclear if this runs automatically before every order/create call, or is invoked manually elsewhere — see Open Items."]
+        }
+      ]
+    },
+
+    { name:"Other Brokers", id:"other", kind:"category", color:"var(--c-other)", mono:"OB",
+      desc:"Zerodha and ISEC — additional broker integrations alongside MOFSL. ISEC is by far the largest integration surface, but not itemised in the source notes.",
+      children:[
+        { name:"Zerodha — Eligible Accounts (V1)", id:"zer-v1", kind:"endpoint", badge:"GET", path:"/api/demat/v1/accounts/zerodha", color:"var(--c-other)",
+          desc:"Returns accounts eligible to link with Zerodha." },
+        { name:"Zerodha — Eligible Accounts (V2)", id:"zer-v2", kind:"endpoint", badge:"GET", path:"/api/demat/v2/accounts/zerodha", color:"var(--c-other)",
+          desc:"Same as V1 — newer version." },
+        { name:"Zerodha Activate", id:"zer-activate", kind:"endpoint", badge:"POST", path:"/zerodhaActivate", color:"var(--c-other)",
+          desc:"Activates the customer's Zerodha trading link." },
+        { name:"Zerodha Deactivate", id:"zer-deactivate", kind:"endpoint", badge:"POST", path:"/zerodhaDeactivate", color:"var(--c-other)",
+          desc:"Deactivates the customer's Zerodha trading link." },
+        { name:"Zerodha Activate Status", id:"zer-status", kind:"endpoint", badge:"GET", path:"/zerodhaActivateStatus", color:"var(--c-other)",
+          desc:"Checks the current activation state of the Zerodha link." },
+        { name:"Zerodha Access Details", id:"zer-access", kind:"endpoint", badge:"POST", path:"/api/demat/v1/zerodhaAccessDetails", color:"var(--c-other)",
+          desc:"Returns Zerodha access/session details.",
+          flow:["Also referenced under Platform / Internal — same endpoint, shared because it serves both contexts."]
+        },
+        { name:"ISEC Integration", id:"isec", kind:"flag", badge:"!", color:"var(--c-other)",
+          desc:"~44 endpoints under /isec/* — the single largest integration in the whole platform, but the source notes only have a placeholder for it.",
+          flow:["Biggest documentation gap in this entire map.","Worth pulling the real ISEC route list separately before this goes into a formal architecture doc."]
+        }
+      ]
+    },
+
+    { name:"Account Info & Eligibility", id:"acct", kind:"category", color:"var(--c-acct)", mono:"AI",
+      desc:"The 'who is this customer and what accounts do they have' layer — queried before most other flows run.",
+      children:[
+        { name:"Get Debit / Linked Accounts", id:"acct-debits", kind:"endpoint", badge:"GET", path:"/api/demat/v1/accounts/debits", color:"var(--c-acct)", desc:"Returns the customer's linked bank accounts eligible for debits." },
+        { name:"Get PIS Eligible Accounts", id:"acct-pis", kind:"endpoint", badge:"GET", path:"/api/demat/v1/accounts/pis", color:"var(--c-acct)",
+          desc:"Checks if the customer qualifies for the NRI / PIS trading lane.",
+          flow:["Same endpoint also appears under PIS — used from both contexts."] },
+        { name:"Get ISEC Eligible Accounts", id:"acct-isec", kind:"endpoint", badge:"GET", path:"/api/demat/v1/accounts/iSec", color:"var(--c-acct)", desc:"Returns accounts eligible for ISEC integration." },
+        { name:"Get Demat Details", id:"acct-details", kind:"endpoint", badge:"GET", path:"/api/demat/v1/details", color:"var(--c-acct)", desc:"Returns full demat account details." },
+        { name:"Details — No Joint Holder", id:"acct-details-nj", kind:"endpoint", badge:"GET", path:"/api/demat/v1/detailsWithoutJointHolder", color:"var(--c-acct)", desc:"Same as above, excluding joint holder information." },
+        { name:"List All Demat Accounts", id:"acct-list", kind:"endpoint", badge:"GET", path:"/api/demat/v1/dematAccounts", color:"var(--c-acct)", desc:"Lists every demat account the customer holds." },
+        { name:"Check Account Exists", id:"acct-exists", kind:"endpoint", badge:"GET", path:"/api/demat/v1/dematAccountExists", color:"var(--c-acct)", desc:"Simple boolean — does a demat account already exist for this customer." },
+        { name:"Get CRM Details", id:"acct-crm", kind:"endpoint", badge:"POST", path:"/api/demat/v1/getCRMDetails", color:"var(--c-acct)",
+          desc:"Returns demographic / KYC details from CRM.",
+          flow:["Also counted under Service Requests in the source summary table — likely the same endpoint serving two purposes. See Open Items."] }
+      ]
+    },
+
+    { name:"Holdings & Transactions", id:"hold", kind:"category", color:"var(--c-hold)", mono:"HT",
+      desc:"What the customer owns, what they've done with it, and the downloadable proof.",
+      children:[
+        { name:"Get Holdings", id:"hold-get", kind:"endpoint", badge:"POST", path:"/api/demat/v1/getHoldings", color:"var(--c-hold)", desc:"Returns the customer's current demat holdings (shares)." },
+        { name:"Get Transaction History", id:"hold-tx", kind:"endpoint", badge:"POST", path:"/api/demat/v1/getTransaction", color:"var(--c-hold)", desc:"Returns the customer's transaction history." },
+        { name:"Download Holdings (PDF)", id:"hold-pdf", kind:"endpoint", badge:"POST", path:"/api/demat/v1/downloadHoldingsPdf", color:"var(--c-hold)",
+          desc:"Generates a PDF of current holdings.",
+          flow:["Same endpoint also lives under PDF / Report Generation — double-counted in the source notes."] },
+        { name:"Download Holdings (Excel)", id:"hold-excel", kind:"endpoint", badge:"POST", path:"/api/demat/v1/downloadHoldingsExcel", color:"var(--c-hold)", desc:"Generates an Excel export of current holdings." },
+        { name:"Email Holdings Statement", id:"hold-email", kind:"endpoint", badge:"POST", path:"/api/demat/v1/holdingEmail", color:"var(--c-hold)", desc:"Sends the holdings statement to the customer's registered email." }
+      ]
+    },
+
+    { name:"PIS — NRI Trading Lane", id:"pis", kind:"category", color:"var(--c-pis)", mono:"PI",
+      desc:"Public Issue System — an RBI-mandated route specifically for NRI stock trades, run through a dedicated PIS bank account so the bank can report trades to RBI under FEMA rules. Not used by regular resident investors.",
+      children:[
+        { name:"Get PIS Eligible Accounts", id:"pis-acct", kind:"endpoint", badge:"GET", path:"/api/demat/v1/accounts/pis", color:"var(--c-pis)", desc:"\"Is this customer an NRI who qualifies for the PIS lane?\" — same endpoint as listed under Account Info." },
+        { name:"Update PIS Holdings", id:"pis-update", kind:"endpoint", badge:"POST", path:"/api/demat/v1/sr/pisHoldingUpdate", color:"var(--c-pis)", desc:"Keeps the NRI customer's PIS holdings record in sync." },
+        { name:"Get PIS Broker Details", id:"pis-broker", kind:"endpoint", badge:"POST", path:"/api/demat/v1/pis/brokerDetails", color:"var(--c-pis)", desc:"Returns which broker is currently mapped to this customer's PIS account — PIS trades still route through a broker, just with extra RBI tracking." },
+        { name:"Set / Change PIS Broker", id:"pis-set", kind:"endpoint", badge:"POST", path:"/api/demat/v1/sr/pisBroker", color:"var(--c-pis)", desc:"Service request to update that broker mapping." }
+      ]
+    },
+
+    { name:"Service Requests", id:"sr", kind:"category", color:"var(--c-sr)", mono:"SR",
+      desc:"Customer-initiated actions on existing holdings — transfers and collateral, mostly.",
+      children:[
+        { name:"DIS Issuance", id:"sr-dis", kind:"endpoint", badge:"POST", path:"/api/demat/v1/sr/disIssuance", color:"var(--c-sr)",
+          desc:"DIS = Demat Instruction Slip — a digital version of a cheque, used to authorise a share transfer or sale.",
+          flow:["Customer requests a new DIS book / digital instruction to move shares out of their account."] },
+        { name:"Get DIS Details", id:"sr-disdetails", kind:"endpoint", badge:"POST", path:"/api/demat/v1/getDISDetails", color:"var(--c-sr)", desc:"Checks the status of a DIS request already submitted — \"did my transfer go through?\"" },
+        { name:"Pledge Request", id:"sr-pledge", kind:"endpoint", badge:"POST", path:"/api/demat/v1/pledgeRequest", color:"var(--c-sr)", desc:"Returns details when shares have been pledged as collateral for a loan — like pledging gold, but with shares." }
+      ]
+    },
+
+    { name:"PDF / Report Generation", id:"pdf", kind:"category", color:"var(--c-pdf)", mono:"PD",
+      desc:"Documents the customer (or compliance) can download as proof.",
+      children:[
+        { name:"Download CMR (Client Master Report)", id:"pdf-cmr", kind:"endpoint", badge:"POST", path:"/api/demat/v1/downloadCMRPdf", color:"var(--c-pdf)", desc:"CMR is the standard identity document for a demat account — like a bank statement, but for securities." },
+        { name:"Download Transaction Statement", id:"pdf-txstmt", kind:"endpoint", badge:"POST", path:"/api/demat/v1/downloadDematTransactionStatement", color:"var(--c-pdf)", desc:"Generates a PDF transaction statement." },
+        { name:"Download Holdings PDF", id:"pdf-hold", kind:"endpoint", badge:"POST", path:"/api/demat/v1/downloadHoldingsPdf", color:"var(--c-pdf)", desc:"Same endpoint as under Holdings & Transactions — shared between the two categories." }
+      ]
+    },
+
+    { name:"Platform & Internal", id:"plat", kind:"category", color:"var(--c-plat)", mono:"PL",
+      desc:"Infrastructure that keeps everything else running — not customer-facing.",
+      children:[
+        { name:"Health Check", id:"plat-health", kind:"endpoint", badge:"GET", path:"/api/demat/v1/healthz", color:"var(--c-plat)", desc:"Standard liveness/readiness check." },
+        { name:"IDeAS Redirect", id:"plat-ideas", kind:"endpoint", badge:"GET", path:"/api/demat/v1/iDeASRedirect", color:"var(--c-plat)", desc:"Redirect related to NSDL's IDeAS identity system." },
+        { name:"Zerodha Access Details", id:"plat-zer", kind:"endpoint", badge:"POST", path:"/api/demat/v1/zerodhaAccessDetails", color:"var(--c-plat)", desc:"Same endpoint as under Other Brokers — appears in both groupings." },
+        { name:"Ingest Client IDs (Internal)", id:"plat-clientids", kind:"endpoint", badge:"INT", path:"/internal/api/demat/v1/clientIDs", color:"var(--c-plat)", desc:"Internal-only endpoint for ingesting client IDs into the platform." }
+      ]
+    },
+
+    { name:"Glossary — Key Concepts", id:"gloss", kind:"category", color:"var(--c-gloss)", mono:"§",
+      desc:"The vocabulary that shows up across every integration above — worth knowing cold.",
+      children:[
+        { name:"DP ID", id:"g-dpid", kind:"concept", badge:"§", color:"var(--c-gloss)", desc:"Depository Participant ID — identifies which bank or broker (e.g. BIMBO Bank) the demat account sits under." },
+        { name:"Client ID", id:"g-clientid", kind:"concept", badge:"§", color:"var(--c-gloss)", desc:"The customer's unique ID within that DP. DP ID + Client ID together uniquely identify one demat account." },
+        { name:"Transaction ID", id:"g-txid", kind:"concept", badge:"§", color:"var(--c-gloss)", desc:"A temporary reference NSDL hands back the moment an order is created — used later to match the eventual success/failure callback to the right customer." },
+        { name:"JWT Token", id:"g-jwt", kind:"concept", badge:"§", color:"var(--c-gloss)", desc:"A short-lived security token BIMBO Bank uses to talk to MOFSL's systems." },
+        { name:"Digital Signature", id:"g-sig", kind:"concept", badge:"§", color:"var(--c-gloss)", desc:"Cryptographic proof that a payload or callback genuinely came from the claimed sender, and wasn't altered in transit." },
+        { name:"Consent", id:"g-consent", kind:"concept", badge:"§", color:"var(--c-gloss)", desc:"The customer's explicit agreement to open the account / share KYC data — a mandatory gate before any NSDL or MOFSL call goes out." },
+        { name:"Winsoft", id:"g-winsoft", kind:"concept", badge:"§", color:"var(--c-gloss)", desc:"External system where MOFSL stores Demat account details — checked whenever a status comes back as EXISTS." },
+        { name:"ESB Mule", id:"g-esb", kind:"concept", badge:"§", color:"var(--c-gloss)", desc:"The integration / middleware layer that every MOFSL and NSDL call is routed through." },
+        { name:"3-in-1 Account", id:"g-3in1", kind:"concept", badge:"§", color:"var(--c-gloss)", desc:"MOFSL's combined Trading + Demat + linked Bank account, opened in a single onboarding journey." },
+        { name:"PIS", id:"g-pis", kind:"concept", badge:"§", color:"var(--c-gloss)", desc:"Public Issue System — the NRI-specific compliance trading lane required under RBI / FEMA rules." },
+        { name:"DIS", id:"g-dis", kind:"concept", badge:"§", color:"var(--c-gloss)", desc:"Demat Instruction Slip — digital authorisation to transfer or sell shares out of a demat account." },
+        { name:"Pledge", id:"g-pledge", kind:"concept", badge:"§", color:"var(--c-gloss)", desc:"Using shares as collateral for a loan — conceptually identical to pledging gold." }
+      ]
+    },
+
+    { name:"Open Items", id:"open", kind:"category", color:"var(--c-flag)", mono:"!",
+      desc:"Flagged in the source notes as unresolved — worth confirming against the actual controller code before any of this goes into a formal doc.",
+      children:[
+        { name:"NSDL error granularity", id:"o-error", kind:"flag", badge:"!", color:"var(--c-flag)", desc:"Unclear if each Phase 1 validation failure (UCIC / consent / signature / bank account) returns a distinct error code, or one generic \"validation failed\" response. Matters for how frontend/QA differentiate failure messaging." },
+        { name:"NSDL correlation key", id:"o-corr", kind:"flag", badge:"!", color:"var(--c-flag)", desc:"Confirm handleSuccessRedirect / handleFailureRedirect actually key off the same Transaction ID issued at order/create, and not some other identifier." },
+        { name:"Pre-check wiring", id:"o-precheck", kind:"flag", badge:"!", color:"var(--c-flag)", desc:"Confirm whether the Client ID pre-check runs automatically before every order/create call, or is a separate manual check invoked elsewhere in the codebase." },
+        { name:"ISEC itemisation gap", id:"o-isec", kind:"flag", badge:"!", color:"var(--c-flag)", desc:"44 endpoints are counted but never listed individually — the single biggest unknown in this whole map." },
+        { name:"Duplicate / shared endpoints", id:"o-dupes", kind:"flag", badge:"!", color:"var(--c-flag)", desc:"downloadHoldingsPdf (Holdings + PDF Reports), zerodhaAccessDetails (Other Brokers + Platform), and getCRMDetails (Account Info + Service Requests count) each appear in two categories. Worth confirming true ownership with whoever owns those controllers." }
+      ]
+    }
+
+  ]
+};
+
+/* =====================================================================
+   2. ENGINE  —  D3 collapsible tree, zoom/pan, search, drawer
+   ===================================================================== */
+
+function initApp(){
+
+  const NODE_W = 232, NODE_H = 56;
+  const dx = 58, dy = 300;
+
+  const svgEl = document.getElementById('tree-svg');
+  const svg = d3.select(svgEl);
+  const gContent = svg.append('g').attr('class','content');
+  const gLinks = gContent.append('g').attr('class','links-layer');
+  const gNodes = gContent.append('g').attr('class','nodes-layer');
+
+  const tree = d3.tree().nodeSize([dx, dy]);
+  const diagonal = d3.linkHorizontal().x(d => d.y).y(d => d.x);
+
+  // assign stable ids to every datum up front
+  let idc = 0;
+  (function assignIds(d){ if(!d.id) d.id = 'n'+(idc++); else idc++; (d.children||[]).forEach(assignIds); })(DATA);
+
+  const root = d3.hierarchy(DATA);
+  root.x0 = 0; root.y0 = 0;
+
+  // collapse everything below depth 1 (root + 11 categories stay visible)
+  root.each(d => { if (d.depth === 1 && d.children) { d._children = d.children; d.children = null; } });
+
+  const highlighted = new Set();
+
+  function colorOf(d){
+    return (d.data && d.data.color) ? d.data.color.replace('var(--','').replace(')','') : null;
+  }
+  function accentVar(d){
+    return d.data.color || (d.parent ? accentVar(d.parent) : 'var(--gold)');
+  }
+
+  function hasKids(d){ return !!((d.children && d.children.length) || (d._children && d._children.length)); }
+  function isOpen(d){ return !!(d.children && d.children.length); }
+
+  function escapeHtml(s){
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function chipHtml(d){
+    const accent = accentVar(d);
+    const depthClass = 'depth'+d.depth;
+    const open = isOpen(d);
+    const kids = hasKids(d);
+    let badge = d.data.mono || d.data.badge || '·';
+    let title = escapeHtml(d.data.name);
+    let sub = '';
+    if (d.depth >= 2 && d.data.path) sub = escapeHtml(d.data.path);
+    let countBubble = '';
+    if (d.depth === 1) {
+      const total = (d.children ? d.children.length : (d._children ? d._children.length : 0));
+      countBubble = `<div class="chip-count">${total}</div>`;
+    }
+    return `
+      <div class="chip ${d.depth===0?'is-root':''} ${depthClass}" style="--accent:${accent}">
+        <div class="chip-badge">${badge}</div>
+        ${countBubble}
+        <div class="chip-body">
+          <div class="chip-title">${title}</div>
+          ${sub ? `<div class="chip-sub">${sub}</div>` : ''}
+        </div>
+        ${kids ? `<div class="chip-toggle ${open?'open':''}">▸</div>` : ''}
+      </div>`;
+  }
+
+  function update(source){
+    tree(root);
+    const nodes = root.descendants();
+    const links = root.links();
+
+    const t = svg.transition().duration(450).ease(d3.easeCubicOut);
+
+    /* ---- NODES ---- */
+    const node = gNodes.selectAll('g.node-g').data(nodes, d => d.id);
+
+    const nodeEnter = node.enter().append('g')
+      .attr('class','node-g')
+      .attr('tabindex', 0)
+      .attr('transform', () => `translate(${source.y0},${source.x0})`)
+      .style('opacity', 0)
+      .on('click', (event,d) => { event.stopPropagation(); toggle(d); })
+      .on('keydown', (event,d) => { if(event.key==='Enter'||event.key===' '){ event.preventDefault(); toggle(d); } });
+
+    nodeEnter.append('foreignObject')
+      .attr('width', NODE_W).attr('height', NODE_H)
+      .attr('x', -NODE_W/2).attr('y', -NODE_H/2)
+      .html(d => `<div xmlns="http://www.w3.org/1999/xhtml">${chipHtml(d)}</div>`);
+
+    const nodeMerge = node.merge(nodeEnter);
+    nodeMerge.select('foreignObject').html(d => `<div xmlns="http://www.w3.org/1999/xhtml">${chipHtml(d)}</div>`);
+    nodeMerge.select('.chip').classed('is-match', d => highlighted.has(d.data.id));
+
+    nodeMerge.transition(t)
+      .attr('transform', d => `translate(${d.y},${d.x})`)
+      .style('opacity', 1);
+
+    node.exit().transition(t)
+      .attr('transform', () => `translate(${source.y},${source.x})`)
+      .style('opacity', 0)
+      .remove();
+
+    /* ---- LINKS ---- */
+    const link = gLinks.selectAll('path.link').data(links, d => d.target.id);
+
+    const linkEnter = link.enter().append('path')
+      .attr('class','link')
+      .attr('stroke', d => accentVar(d.target).replace('var(','').replace(')','') )
+      .attr('d', () => { const o = {x:source.x0,y:source.y0}; return diagonal({source:o, target:o}); });
+
+    linkEnter.merge(link).attr('stroke', d => {
+        const v = accentVar(d.target);
+        return v.startsWith('var(') ? getComputedStyle(document.documentElement).getPropertyValue(v.slice(4,-1)).trim() || '#D4AF6A' : v;
+      })
+      .transition(t)
+      .attr('d', diagonal);
+
+    link.exit().transition(t)
+      .attr('d', () => { const o = {x:source.x,y:source.y}; return diagonal({source:o, target:o}); })
+      .remove();
+
+    root.each(d => { d.x0 = d.x; d.y0 = d.y; });
+  }
+
+  function toggle(d){
+    if (d.children) { d._children = d.children; d.children = null; }
+    else if (d._children) { d.children = d._children; d._children = null; }
+    update(d);
+    showDetail(d);
+  }
+
+  /* ---------- ZOOM / PAN ---------- */
+  const zoomBehavior = d3.zoom().scaleExtent([0.18, 2.2]).on('zoom', (event)=>{
+    gContent.attr('transform', event.transform);
+  });
+  svg.call(zoomBehavior);
+  svg.on('dblclick.zoom', null);
+
+  function fitToView(duration=600){
+    let bounds;
+    try { bounds = gNodes.node().getBBox(); } catch(e){ return; }
+    if (!bounds || !bounds.width || !bounds.height) return;
+    const rect = svgEl.getBoundingClientRect();
+    const fullWidth = rect.width, fullHeight = rect.height;
+    const pad = 100;
+    const scale = Math.min((fullWidth-pad)/bounds.width, (fullHeight-pad)/bounds.height, 1.05);
+    const tx = fullWidth/2 - scale*(bounds.x + bounds.width/2);
+    const ty = fullHeight/2 - scale*(bounds.y + bounds.height/2);
+    svg.transition().duration(duration).call(zoomBehavior.transform, d3.zoomIdentity.translate(tx,ty).scale(scale));
+  }
+
+  function centerOnNode(d, scale){
+    const rect = svgEl.getBoundingClientRect();
+    const cur = d3.zoomTransform(svgEl);
+    const s = scale || cur.k;
+    const tx = rect.width/2 - s*d.y;
+    const ty = rect.height/2 - s*d.x;
+    svg.transition().duration(650).call(zoomBehavior.transform, d3.zoomIdentity.translate(tx,ty).scale(s));
+  }
+
+  document.getElementById('zoom-in').onclick = () => svg.transition().duration(250).call(zoomBehavior.scaleBy, 1.3);
+  document.getElementById('zoom-out').onclick = () => svg.transition().duration(250).call(zoomBehavior.scaleBy, 1/1.3);
+  document.getElementById('zoom-reset').onclick = () => fitToView(500);
+  document.getElementById('btn-fit').onclick = () => fitToView(500);
+
+  /* ---------- EXPAND / COLLAPSE ALL ---------- */
+  document.getElementById('btn-expand').onclick = () => {
+    root.each(d => { if (d._children) { d.children = d._children; d._children = null; } });
+    update(root);
+    setTimeout(()=>fitToView(700), 480);
+  };
+  document.getElementById('btn-collapse').onclick = () => {
+    root.each(d => { if (d.depth >= 1 && d.children) { d._children = d.children; d.children = null; } });
+    closeDrawer();
+    update(root);
+    setTimeout(()=>fitToView(700), 480);
+  };
+
+  /* ---------- DETAIL DRAWER ---------- */
+  const drawer = document.getElementById('drawer');
+  function showDetail(d){
+    const data = d.data;
+    const accentRaw = accentVar(d);
+    const accent = accentRaw.startsWith('var(') ? getComputedStyle(document.documentElement).getPropertyValue(accentRaw.slice(4,-1)).trim() : accentRaw;
+    document.getElementById('drawer-accent').style.background = accent;
+    document.getElementById('drawer-badge').style.borderColor = accent;
+    document.getElementById('drawer-badge').style.color = accent;
+    document.getElementById('drawer-badge').textContent = data.mono || data.badge || '·';
+    document.getElementById('drawer-title').textContent = data.name;
+
+    let catLabel = '';
+    if (d.depth === 0) catLabel = 'OVERVIEW';
+    else if (d.depth === 1) catLabel = 'CATEGORY';
+    else {
+      let p = d.parent;
+      catLabel = (p && p.data && p.data.name ? p.data.name.toUpperCase() : 'ITEM');
+    }
+    document.getElementById('drawer-cat').textContent = catLabel;
+    document.getElementById('drawer-cat').style.color = accent;
+
+    let html = '';
+    if (data.path) {
+      const methodClass = ['GET','POST','INT'].includes(data.badge) ? data.badge : 'INT';
+      html += `<div class="endpoint-line"><span class="method-pill method-${methodClass}">${data.badge}</span><span class="method-path">${escapeHtml(data.path)}</span></div>`;
+    }
+    if (data.desc) html += `<p class="desc">${escapeHtml(data.desc)}</p>`;
+    if (data.input || data.output) {
+      html += `<div class="io-grid">`;
+      if (data.input) html += `<div class="io-box"><span class="lab">Input</span><span class="val">${escapeHtml(data.input)}</span></div>`;
+      if (data.output) html += `<div class="io-box"><span class="lab">Output</span><span class="val">${escapeHtml(data.output)}</span></div>`;
+      html += `</div>`;
+    }
+    if (data.flow && data.flow.length) {
+      html += `<div class="section-lab">${data.kind==='flag' ? 'Notes' : 'How it flows'}</div>`;
+      if (data.kind === 'flag' || data.kind === 'concept') {
+        html += `<ul class="bullets">` + data.flow.map(s=>`<li>${escapeHtml(s)}</li>`).join('') + `</ul>`;
+      } else {
+        html += `<ol class="flow-steps">` + data.flow.map(s=>`<li>${escapeHtml(s)}</li>`).join('') + `</ol>`;
+      }
+    }
+    if (hasKids(d)) {
+      const count = (d.children ? d.children.length : (d._children ? d._children.length : 0));
+      html += `<div class="child-hint">Contains <b>${count}</b> item${count===1?'':'s'} — click the node again to ${isOpen(d) ? 'collapse' : 'expand'} it on the map.</div>`;
+    }
+
+    document.getElementById('drawer-body').innerHTML = html;
+    drawer.classList.add('open');
+  }
+  function closeDrawer(){ drawer.classList.remove('open'); }
+  document.getElementById('drawer-close').onclick = closeDrawer;
+
+  /* ---------- LEGEND ---------- */
+  const legendEl = document.getElementById('legend');
+  root.children.forEach(catNode => {
+    const accentRaw = catNode.data.color;
+    const accent = accentRaw.startsWith('var(') ? getComputedStyle(document.documentElement).getPropertyValue(accentRaw.slice(4,-1)).trim() : accentRaw;
+    const count = (catNode.data.children || []).length;
+    const chip = document.createElement('div');
+    chip.className = 'legend-chip';
+    chip.style.setProperty('--dot', accent);
+    chip.innerHTML = `<span class="dot"></span>${catNode.data.name}<span class="n">${count}</span>`;
+    chip.onclick = () => {
+      if (catNode._children) { catNode.children = catNode._children; catNode._children = null; }
+      update(root);
+      setTimeout(()=>centerOnNode(catNode, 0.85), 470);
+      showDetail(catNode);
+    };
+    legendEl.appendChild(chip);
+  });
+
+  /* ---------- SEARCH ---------- */
+  function flattenAll(node, acc){
+    acc.push(node);
+    const kids = node.children || node._children;
+    if (kids) kids.forEach(k => flattenAll(k, acc));
+    return acc;
+  }
+  const searchInput = document.getElementById('search');
+  const searchCount = document.getElementById('search-count');
+  let searchTimer = null;
+  searchInput.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(()=>doSearch(searchInput.value), 200);
+  });
+
+  function doSearch(query){
+    const q = query.trim().toLowerCase();
+    highlighted.clear();
+    if (!q) { searchCount.textContent=''; update(root); return; }
+
+    const all = flattenAll(root, []);
+    const matches = all.filter(n => {
+      if (n.depth === 0) return false;
+      const d = n.data;
+      const haystack = [d.name, d.desc, d.path, d.input, d.output, (d.flow||[]).join(' ')].join(' ').toLowerCase();
+      return haystack.includes(q);
+    });
+    matches.forEach(m => {
+      highlighted.add(m.data.id);
+      let p = m.parent;
+      while (p) { if (p._children) { p.children = p._children; p._children = null; } p = p.parent; }
+    });
+    searchCount.textContent = matches.length ? `${matches.length} match${matches.length===1?'':'es'}` : 'no matches';
+    update(root);
+    if (matches.length) setTimeout(()=>centerOnNode(matches[0], 0.85), 470);
+  }
+
+  /* ---------- background click closes drawer ---------- */
+  svgEl.addEventListener('click', (e) => { if (e.target === svgEl) closeDrawer(); });
+
+  /* ---------- init ---------- */
+  update(root);
+  setTimeout(()=>fitToView(700), 60);
+  window.addEventListener('resize', () => fitToView(0));
+}
+
+if (typeof d3 === 'undefined') {
+  document.getElementById('canvas-wrap').innerHTML =
+    '<div class="load-error">Couldn\'t load the diagram engine (d3.js from cdnjs.cloudflare.com).<br/>Check that this domain isn\'t blocked in your network settings, then refresh.</div>';
+} else {
+  initApp();
+}
+
+})();
+</script>
+</body>
+</html>

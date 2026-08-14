@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COC Exit Calculation — Office Fintech</title>
+<style>
+  :root {
+    --bg: #F7F5F0; --surface: #FFFFFF; --ink: #1A1915; --ink-muted: #7A7060;
+    --accent: #C47B2B; --accent-mid: #E0973A; --accent-tint: #FDF3E3;
+    --border: #DDD8CC; --tag-bg: #EEE9DF; --tag-ink: #5A5040;
+    --code-bg: #F0EDE5; --code-ink: #3A3020;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111009; --surface: #1A1815; --ink: #EAEAE6; --ink-muted: #8C8880;
+      --accent: #D4903A; --accent-mid: #E8A84E; --accent-tint: #2A1E0A;
+      --border: #2A2720; --tag-bg: #221F18; --tag-ink: #A0987A;
+      --code-bg: #0C0A07; --code-ink: #C8A052;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #111009; --surface: #1A1815; --ink: #EAEAE6; --ink-muted: #8C8880;
+    --accent: #D4903A; --accent-mid: #E8A84E; --accent-tint: #2A1E0A;
+    --border: #2A2720; --tag-bg: #221F18; --tag-ink: #A0987A;
+    --code-bg: #0C0A07; --code-ink: #C8A052;
+  }
+  :root[data-theme="light"] {
+    --bg: #F7F5F0; --surface: #FFFFFF; --ink: #1A1915; --ink-muted: #7A7060;
+    --accent: #C47B2B; --accent-mid: #E0973A; --accent-tint: #FDF3E3;
+    --border: #DDD8CC; --tag-bg: #EEE9DF; --tag-ink: #5A5040;
+    --code-bg: #F0EDE5; --code-ink: #3A3020;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+  .topnav { position: sticky; top: 0; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--border); height: 48px; padding: 0 28px; display: flex; align-items: center; gap: 16px; }
+  .back-link { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .06em; color: var(--ink-muted); transition: color .15s; }
+  .back-link:hover { color: var(--accent); text-decoration: none; }
+  .site-tag { margin-left: auto; font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); opacity: .7; user-select: none; }
+  .theme-btn { background: none; border: 1px solid var(--border); border-radius: 4px; padding: 3px 9px; font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-muted); cursor: pointer; transition: border-color .15s, color .15s; }
+  .theme-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .page-header { max-width: 780px; margin: 0 auto; padding: 44px 28px 28px; border-bottom: 1px solid var(--border); }
+  .page-eyebrow { font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+  .page-title { font-family: Georgia, 'Times New Roman', serif; font-size: 1.9rem; font-weight: normal; line-height: 1.2; color: var(--ink); text-wrap: balance; margin-bottom: 12px; }
+  .page-sub { font-size: .9rem; color: var(--ink-muted); line-height: 1.65; max-width: 580px; }
+
+  .content { max-width: 780px; margin: 0 auto; padding: 36px 28px 80px; }
+
+  .section-label { display: flex; align-items: center; gap: 10px; font-family: 'Courier New', monospace; font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin: 40px 0 14px; }
+  .section-label::before { content: ''; width: 18px; height: 1px; background: var(--accent); flex-shrink: 0; }
+  .content > .section-label:first-child,
+  .content > .summary:first-child,
+  .content > pre.ascii:first-child { margin-top: 0; }
+
+  /* ── Stats panel ── */
+  .summary {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 22px;
+    margin-bottom: 24px;
+  }
+  .summary h2 {
+    font-family: 'Courier New', monospace;
+    font-size: .7rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+    font-weight: normal;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+  }
+  .stat { background: var(--tag-bg); border-radius: 6px; padding: 10px 12px; }
+  .stat .label { font-family: 'Courier New', monospace; font-size: .68rem; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+  .stat .value { font-size: 1.1rem; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; overflow: clip; transition: border-color .2s; }
+  .card:hover { border-color: var(--accent); }
+  .card[open] { border-color: var(--accent); }
+  .card summary { list-style: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 15px 18px; border-left: 3px solid var(--border); font-family: Georgia, 'Times New Roman', serif; font-size: .94rem; color: var(--ink); line-height: 1.45; cursor: pointer; user-select: none; transition: background .15s, border-color .15s; }
+  .card summary::-webkit-details-marker { display: none; }
+  .card:hover summary, .card[open] summary { border-left-color: var(--accent); background: var(--accent-tint); }
+  .card summary::after { content: '+'; font-family: 'Courier New', monospace; font-size: 1rem; color: var(--accent); flex-shrink: 0; margin-top: 1px; opacity: .7; transition: transform .2s; }
+  .card[open] summary::after { transform: rotate(45deg); }
+  .card .body { border-left: 3px solid var(--accent); padding: 4px 18px 18px; overflow-x: auto; }
+  .card .body p { margin: 10px 0; font-size: .9rem; line-height: 1.65; }
+  .card .body ul { margin: 10px 0; padding-left: 22px; font-size: .9rem; }
+  .card .body li { margin: 5px 0; line-height: 1.55; }
+  strong { font-weight: 600; }
+  em { font-style: italic; }
+
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: .875rem; font-variant-numeric: tabular-nums; }
+  th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+  th { background: var(--accent); color: #fff; font-family: 'Courier New', monospace; font-size: .75rem; letter-spacing: .04em; font-weight: normal; }
+  tr:nth-child(even) td { background: var(--tag-bg); }
+  .highlight { color: var(--accent); font-weight: 600; }
+  .warn { color: #B91C1C; font-weight: 600; }
+  @media (prefers-color-scheme: dark) { .warn { color: #FCA5A5; } }
+  :root[data-theme="dark"] .warn { color: #FCA5A5; }
+
+  pre.ascii { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-family: 'Courier New', monospace; font-size: .8rem; color: var(--code-ink); line-height: 1.65; margin: 12px 0; }
+
+  .note { background: var(--accent-tint); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; padding: 12px 16px; font-size: .875rem; color: var(--ink-muted); line-height: 1.6; margin: 14px 0 2px; }
+  .note strong { color: var(--ink); }
+
+  .bottom-nav { max-width: 780px; margin: 0 auto; padding: 20px 28px 48px; border-top: 1px solid var(--border); }
+  .bottom-nav a { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .06em; color: var(--ink-muted); transition: color .15s; }
+  .bottom-nav a:hover { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="index.html" class="back-link">← All Notes</a>
+  <span class="site-tag">Office Fintech</span>
+  <button class="theme-btn" onclick="toggleTheme()">Toggle theme</button>
+</nav>
+
+<header class="page-header">
+  <div class="page-eyebrow">Company Car · Exit Calculation</div>
+  <h1 class="page-title">COC Exit — Running the Numbers at 2.5 Years</h1>
+  <p class="page-sub">Based on actual numbers — ₹19.2L car, ₹40,000 EMI, 2.5 years completed. What you owe isn't thirty remaining EMIs multiplied out. It's the outstanding principal on a reducing-balance loan, and it's smaller — but only knowable with the amortization schedule.</p>
+</header>
+
+<main class="content">
+
+  <div class="summary">
+    <h2>Your Inputs</h2>
+    <div class="grid">
+      <div class="stat"><div class="label">Car value</div><div class="value">₹19,20,000</div></div>
+      <div class="stat"><div class="label">Monthly EMI</div><div class="value">₹40,000</div></div>
+      <div class="stat"><div class="label">Tenure</div><div class="value">5 yrs (60 EMIs)</div></div>
+      <div class="stat"><div class="label">Residual (buyout)</div><div class="value">₹1,00,000</div></div>
+      <div class="stat"><div class="label">Time served</div><div class="value">2.5 yrs (30 EMIs)</div></div>
+      <div class="stat"><div class="label">Paid so far</div><div class="value">₹12,00,000</div></div>
+    </div>
+  </div>
+
+  <pre class="ascii">
+Year 0 ─────────────────── Year 2.5 (YOU ARE HERE) ─────────────────── Year 5
+Car financed                 30 EMIs paid                      Loan closed
+₹19.2L                       ₹12,00,000 paid                   + ₹1L residual
+                              ~₹10.4L principal still owed      Ownership transfers
+  </pre>
+
+  <details class="card">
+    <summary>1. Financed amount — how the ₹19.2L splits</summary>
+    <div class="body">
+      <p>The residual value (₹1,00,000) is typically carved out separately — it's what you pay <em>at the end</em> to complete the ownership transfer. That leaves the amount actually financed via EMI:</p>
+      <p><span class="highlight">₹19,20,000 − ₹1,00,000 = ₹18,20,000</span> financed over 60 months.</p>
+      <p>Working backward from your EMI of ₹40,000/month for 60 months on a principal of ₹18,20,000, the implied interest rate is approximately <span class="highlight">11.5% per annum</span> (reducing balance basis).</p>
+      <div class="note">This is a back-calculated estimate. Your actual sanction letter/loan schedule will state the exact rate — worth confirming with HR/Finance since a slightly different rate changes your outstanding balance below.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>2. How much do I still owe right now (2.5 years in)?</summary>
+    <div class="body">
+      <p>This is the number that matters most for your exit — not "remaining EMIs × 40,000" (that double-counts future interest), but the <span class="highlight">outstanding principal</span> on a reducing-balance schedule.</p>
+      <table>
+        <tr><th>EMIs paid</th><td>30 of 60</td></tr>
+        <tr><th>Total paid</th><td>₹12,00,000</td></tr>
+        <tr><th>Estimated outstanding principal</th><td class="warn">≈ ₹10,39,000</td></tr>
+      </table>
+      <p>Why is it still ~₹10.4L when you've paid ₹12L on an ₹18.2L loan? Because reducing-balance EMIs are interest-heavy in the early years — a larger share of your first 30 EMIs went toward interest, not principal. This is standard and not specific to your bank.</p>
+      <div class="note">Ask Finance for the actual amortization schedule / current outstanding principal figure — this is your single most important number before resigning.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>3. What are my two realistic exit options?</summary>
+    <div class="body">
+      <p><strong>Option A — Settle the loan and keep the car.</strong> You pay the outstanding principal (≈₹10.4L) plus any foreclosure/processing charges the policy specifies (commonly 1–3% of outstanding, but check your document — it may be nil). Ownership transfers once cleared, likely without needing to separately pay the ₹1L residual since that gets folded into the foreclosure settlement.</p>
+      <p><strong>Option B — Return the car.</strong> Company takes the car back and sells it or revalues it internally. If the value recovered is less than your outstanding ₹10.4L, you pay the shortfall. If more, some companies refund the difference — many don't. Check your specific clause.</p>
+      <div class="note">You cannot simply "keep paying EMIs" after resigning — salary deduction and the company's loan guarantee end with employment, so the loan gets closed out one way or the other at exit.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>4. Illustrative cost if I choose to settle and keep the car</summary>
+    <div class="body">
+      <table>
+        <tr><th>Item</th><th>Amount</th></tr>
+        <tr><td>Outstanding principal</td><td>≈ ₹10,39,000</td></tr>
+        <tr><td>Foreclosure/processing charge (if any — check policy, illustrative 1–2%)</td><td>≈ ₹10,000 – 21,000</td></tr>
+        <tr><td><strong>Estimated total to settle & own the car</strong></td><td class="highlight">≈ ₹10.5L – 10.6L</td></tr>
+      </table>
+      <p>Compare: if you'd completed the full 5 years, you would have paid ₹24,00,000 (EMIs) + ₹1,00,000 (residual) = ₹25,00,000 total. Exiting early and settling now works out cheaper in absolute terms, since you skip the remaining interest — but you're paying a large lump sum upfront instead of spreading it.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>5. What exactly should I ask HR/Finance before deciding?</summary>
+    <div class="body">
+      <ul>
+        <li>What is the exact outstanding principal on my loan today?</li>
+        <li>Is there a foreclosure or early-settlement charge, and how much?</li>
+        <li>If I settle and keep the car, does the ₹1L residual still apply separately, or is it absorbed into the settlement?</li>
+        <li>If I return the car instead, how is the vehicle valued, and am I refunded any surplus?</li>
+        <li>What is the deadline for settlement relative to my last working day?</li>
+        <li>What documents will I get (NOC, RC transfer, loan closure letter) once settled?</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>6. Bottom line for your situation</summary>
+    <div class="body">
+      <p>At 2.5 years, you've paid <span class="highlight">₹12,00,000</span> but still owe roughly <span class="warn">₹10,39,000</span> in principal. Settling this (plus any foreclosure charge) to keep the car will likely cost somewhere around <span class="highlight">₹10.5L</span>, versus returning the car and having the shortfall (if any) adjusted from its resale/revaluation.</p>
+      <p>This estimate uses a back-calculated ~11.5% p.a. reducing-balance rate. The one document that will make this exact rather than estimated is your <strong>loan amortization schedule</strong> from Finance — ask for it before you resign.</p>
+    </div>
+  </details>
+
+</main>
+
+<footer class="bottom-nav">
+  <a href="index.html">← Back to all notes</a>
+</footer>
+
+<script>
+  function toggleTheme() {
+    const root = document.documentElement;
+    const sys = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const active = root.getAttribute('data-theme') || localStorage.getItem('wf-theme') || sys;
+    const next = active === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('wf-theme', next);
+  }
+  (function () {
+    const saved = localStorage.getItem('wf-theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+</body>
+</html>

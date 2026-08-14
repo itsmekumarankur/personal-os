@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NSDL demat account creation — interactive 3D journey</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+<style>
+:root{
+  --page-bg:#ffffff; --surface-1:#F7F6F2; --surface-2:#ffffff;
+  --text-primary:#222220; --text-secondary:#5F5E5A; --text-muted:#8B8980;
+  --border:#E3E1D8; --border-strong:#C7C4B8;
+  --bg-accent:#B5D4F4; --text-accent:#0C447C; --border-accent:#185FA5;
+  --bg-pro:#CECBF6; --text-pro:#3C3489; --border-pro:#534AB7;
+  --bg-success:#C0DD97; --text-success:#27500A; --border-success:#3B6D11;
+  --bg-danger:#F7C1C1; --text-danger:#791F1F; --border-danger:#A32D2D;
+  --bg-warning:#FCEFC7; --text-warning:#7A4A05; --border-warning:#C98A0C;
+  --radius:8px; --font-mono:'SF Mono',Consolas,monospace;
+  --font-sans:-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+body{font-family:var(--font-sans);background:var(--page-bg);color:var(--text-primary);margin:0;padding:32px 16px 64px}
+.wrap{max-width:680px;margin:0 auto}
+h1{font-size:22px;font-weight:600;margin:0 0 6px}
+.sub{font-size:14px;color:var(--text-secondary);margin:0 0 28px}
+.card{background:var(--surface-2);border:1px solid var(--border);border-radius:16px;padding:24px;box-shadow:0 4px 20px rgba(0,0,0,0.06);overflow:hidden;position:relative}
+.topbar{height:6px;border-radius:6px;background:linear-gradient(90deg,#185FA5,#534AB7,#3B6D11,#A32D2D);margin:-24px -24px 24px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.stage{perspective:1300px}
+.scene{position:relative;width:100%;max-width:640px;height:330px;margin:0 auto;transform-style:preserve-3d;transform:rotateX(10deg)}
+@media (prefers-reduced-motion:no-preference){.scene{animation:drift 9s ease-in-out infinite alternate}}
+@keyframes drift{from{transform:rotateX(10deg) rotateY(-4deg)}to{transform:rotateX(10deg) rotateY(4deg)}}
+.scene-backdrop{position:absolute;top:0;left:0;right:0;bottom:0;border-radius:16px;transition:background-color .8s ease}
+.track{position:absolute;border-radius:3px}
+.tower{position:absolute;width:132px;min-height:90px;padding:12px;border-radius:12px;text-align:center;box-sizing:border-box;border:1.5px solid;transition:transform .3s,box-shadow .3s}
+.tower.active{transform:scale(1.05);box-shadow:0 6px 16px rgba(0,0,0,0.12)}
+.tower.idfc{left:4px;top:70px;background:var(--bg-accent);border-color:var(--border-accent)}
+.tower.nsdl{left:504px;top:70px;background:var(--bg-pro);border-color:var(--border-pro)}
+.tower.db{width:150px;left:245px;top:230px}
+.icon-circle{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;background:#ffffff;box-shadow:0 1px 4px rgba(0,0,0,0.12)}
+.tower i{font-size:18px}
+.tower .th{font-size:14px;font-weight:600;color:#222220}
+.mover{position:absolute;width:28px;height:28px;left:70px;top:115px;transform:translate(-50%,-50%);transition:left 1.1s cubic-bezier(.4,0,.2,1),top 1.1s cubic-bezier(.4,0,.2,1);transform-style:preserve-3d}
+.cube{position:relative;width:28px;height:28px;transform-style:preserve-3d}
+@media (prefers-reduced-motion:no-preference){.cube{animation:spin 3.2s linear infinite}}
+@keyframes spin{from{transform:rotateY(0deg) rotateX(18deg)}to{transform:rotateY(360deg) rotateX(18deg)}}
+.face{position:absolute;width:28px;height:28px;border-radius:4px}
+.face.front{transform:translateZ(14px)}
+.face.back{transform:translateZ(-14px) rotateY(180deg)}
+.face.right{transform:translateX(14px) rotateY(90deg)}
+.face.left{transform:translateX(-14px) rotateY(-90deg)}
+.face.top{transform:translateY(-14px) rotateX(90deg)}
+.face.bottom{transform:translateY(14px) rotateX(-90deg)}
+.face.back,.face.left,.face.bottom{filter:brightness(.82)}
+.cat-request .face{background:var(--bg-accent)}
+.cat-nsdl .face{background:var(--bg-pro)}
+.cat-success .face{background:var(--bg-success)}
+.cat-failure .face{background:var(--bg-danger)}
+.caption{max-width:640px;margin:1.5rem auto 0}
+.phase-banner{display:inline-block;font-size:13px;font-weight:700;padding:7px 16px;border-radius:var(--radius);margin-bottom:12px;transition:background-color .5s,color .5s}
+@media (prefers-reduced-motion:no-preference){.phase-banner.slide{animation:bannerSlide .5s ease}}
+@keyframes bannerSlide{from{transform:translateX(-28px);opacity:.3}to{transform:translateX(0);opacity:1}}
+.toprow{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:var(--radius)}
+.step-counter{font-size:12px;color:var(--text-muted);margin-left:auto}
+.step-title{font-size:17px;font-weight:600;margin:0 0 4px}
+.step-desc{font-size:14px;color:var(--text-secondary);margin:0 0 10px;line-height:1.6}
+.endpoint{display:inline-block;font-family:var(--font-mono);font-size:12px;padding:3px 8px;border-radius:var(--radius);margin-bottom:10px}
+.section-label{font-size:11px;font-weight:700;color:var(--text-muted);margin:0 0 5px;text-transform:uppercase;letter-spacing:.03em}
+.bullets{list-style:none;margin:0 0 16px;padding:0;display:flex;flex-direction:column;gap:6px}
+.bullets li{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--text-secondary);line-height:1.5}
+.bullets .b-dot{width:6px;height:6px;border-radius:50%;margin-top:6px;flex:none}
+.goal-line{font-size:13px;color:var(--text-secondary);margin:0 0 16px;line-height:1.6}
+.question-box{display:flex;gap:10px;align-items:flex-start;background:var(--bg-warning);border-radius:var(--radius);padding:12px 14px}
+.question-box i{color:var(--text-warning);font-size:18px;margin-top:1px;flex:none}
+.question-box p{margin:0;font-size:13px;color:var(--text-warning);line-height:1.6;font-weight:500}
+.controls{display:flex;align-items:center;gap:8px;max-width:640px;margin:1.25rem auto 0;flex-wrap:wrap}
+.controls button{height:38px;padding:0 14px;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;background:var(--surface-1);border:1.5px solid var(--border-strong);border-radius:var(--radius);cursor:pointer;color:var(--text-primary)}
+.controls button:hover{filter:brightness(.97)}
+#play{background:var(--border-accent);color:#ffffff;border-color:var(--border-accent)}
+#stop{background:var(--bg-danger);color:var(--text-danger);border-color:var(--border-danger)}
+.dots{display:flex;gap:5px;flex:1;flex-wrap:wrap;align-items:center}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--border-strong);border:none;padding:0;cursor:pointer}
+.dot.active{background:var(--text-accent)}
+.outcome-toggle{display:flex;gap:6px}
+.outcome-toggle button{padding:0 12px;font-size:12px;height:34px;font-weight:600}
+.outcome-toggle button.sel.s{border-color:var(--border-success);color:var(--text-success);background:var(--bg-success)}
+.outcome-toggle button.sel.f{border-color:var(--border-danger);color:var(--text-danger);background:var(--bg-danger)}
+footer{margin-top:24px;font-size:12px;color:var(--text-muted);text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>NSDL demat account creation — interactive 3D journey</h1>
+  <p class="sub">Press Play to watch it run on loop, or use Prev / Next to step through manually. Each step shows what moves, what it is trying to achieve, and a question worth sitting with.</p>
+  <div class="card">
+    <div class="topbar"></div>
+    <h2 class="sr-only">Animated 3D walkthrough of the NSDL demat account creation journey. Each step shows what data moves, what it is trying to achieve, and a thought-provoking question. Each phase slides in with its own colour.</h2>
+    <div class="stage">
+      <div class="scene" id="scene">
+        <div class="scene-backdrop" id="backdrop"></div>
+        <div class="track" id="track1" style="left:70px;top:113px;width:500px;height:3px;background:var(--border-accent)"></div>
+        <div class="track" id="track2" style="left:318px;top:115px;width:3px;height:150px;background:var(--border-success)"></div>
+        <div class="tower idfc" id="t-idfc"><div class="icon-circle"><i class="ti ti-building-bank" style="color:var(--text-accent)" aria-hidden="true"></i></div><div class="th">BIMBO Bank demat app</div></div>
+        <div class="tower nsdl" id="t-nsdl"><div class="icon-circle"><i class="ti ti-server-2" style="color:var(--text-pro)" aria-hidden="true"></i></div><div class="th">NSDL</div></div>
+        <div class="tower db" id="t-db"><div class="icon-circle" id="db-icon-circle"><i class="ti ti-database" id="db-icon" aria-hidden="true"></i></div><div class="th">BIMBO Bank database</div></div>
+        <div class="mover" id="mover"><div class="cube cat-request" id="cube">
+          <div class="face front"></div><div class="face back"></div>
+          <div class="face left"></div><div class="face right"></div>
+          <div class="face top"></div><div class="face bottom"></div>
+        </div></div>
+      </div>
+    </div>
+    <div class="caption">
+      <div><span class="phase-banner" id="phase-banner">Phase 1 · Create order</span></div>
+      <div class="toprow">
+        <span class="pill" id="cat-badge">BIMBO Bank</span>
+        <span class="step-counter" id="step-counter">Step 1 of 12</span>
+      </div>
+      <p class="step-title" id="step-title">Customer initiates</p>
+      <code class="endpoint" id="endpoint" style="display:none"></code>
+      <p class="step-desc" id="step-desc"></p>
+      <p class="section-label">What moves here</p>
+      <ul class="bullets" id="bullets"></ul>
+      <p class="section-label">What it is trying to achieve</p>
+      <p class="goal-line" id="goal-line"></p>
+      <div class="question-box"><i class="ti ti-bulb" aria-hidden="true"></i><p id="question-text"></p></div>
+    </div>
+    <div class="controls">
+      <button id="stop" aria-label="Stop"><i class="ti ti-player-stop" aria-hidden="true"></i>Stop</button>
+      <button id="prev" aria-label="Previous step"><i class="ti ti-arrow-left" aria-hidden="true"></i>Prev</button>
+      <button id="play" aria-label="Play"><i class="ti ti-player-play" aria-hidden="true"></i>Play</button>
+      <button id="next" aria-label="Next step"><i class="ti ti-arrow-right" aria-hidden="true"></i>Next</button>
+      <div class="dots" id="dots"></div>
+      <div class="outcome-toggle">
+        <button id="out-success" class="sel s">Success path</button>
+        <button id="out-failure">Failure path</button>
+      </div>
+    </div>
+  </div>
+  <footer>BIMBO Bank Wealth &amp; Demat platform · NSDL API reference</footer>
+</div>
+<script>
+(function(){
+  var POS = { idfc:{left:70,top:115}, nsdl:{left:570,top:115}, db:{left:320,top:265} };
+  var CAT = {
+    request:{bg:'var(--bg-accent)',text:'var(--text-accent)',border:'var(--border-accent)',label:'BIMBO Bank request'},
+    nsdl:{bg:'var(--bg-pro)',text:'var(--text-pro)',border:'var(--border-pro)',label:'NSDL'},
+    success:{bg:'var(--bg-success)',text:'var(--text-success)',border:'var(--border-success)',label:'Success'},
+    failure:{bg:'var(--bg-danger)',text:'var(--text-danger)',border:'var(--border-danger)',label:'Failure'}
+  };
+  var PHASE_LABEL={1:'Phase 1 · Create order',2:'Phase 2 · NSDL processing',3:'Phase 3 · Callback and save'};
+  function phaseCat(idx,outcome){ return idx===1?'request':idx===2?'nsdl':(outcome==='success'?'success':'failure'); }
+
+  function buildSteps(outcome){
+    return [
+      {phaseIdx:1, title:'Customer initiates', desc:'Customer agrees to consent and submits a bank account number.', pos:'idfc', cat:'request',
+       bullets:['Consent flag set to true','Bank account number entered by the customer'],
+       goal:'Capture explicit consent and the bank account that will be linked to the new demat account.',
+       question:'What if the customer enters someone else\u2019s bank account by mistake \u2014 at what point does ownership actually get checked, before or after NSDL gets involved?'},
+      {phaseIdx:1, title:'Validate customer & signature', endpoint:'POST /api/demat/v2/order/create', desc:'Checks the customer is valid and has a signature on file.', pos:'idfc', cat:'request',
+       bullets:['UCIC checked against active customer records','Consent flag verified as true','Existing digital signature looked up on file'],
+       goal:'Make sure only a real, consenting, already-verified customer can trigger an NSDL order.',
+       question:'What if a customer\u2019s signature on file is years old, from outdated KYC norms \u2014 does the system accept it silently, or trigger a re-verification?'},
+      {phaseIdx:1, title:'Validate account, build payload', desc:'Confirms the bank account, then assembles a signed request.', pos:'idfc', cat:'request',
+       bullets:['Bank account ownership confirmed','Name, PAN, email and mobile pulled from the customer database','Payload assembled and digitally signed'],
+       goal:'Build NSDL a trustworthy, signed package containing exactly what it needs to act.',
+       question:'What if the PAN on file is outdated \u2014 say, after a name change \u2014 does NSDL reject the order outright, or does the mismatch only surface much later?'},
+      {phaseIdx:1, title:'Order sent to NSDL', desc:'The signed request travels across to NSDL\u2019s servers.', pos:'nsdl', cat:'request',
+       bullets:['Signed payload sent through the middleware / ESB layer','Customer and bank account details now in NSDL\u2019s hands'],
+       goal:'Hand the verified request over to NSDL and start the cross-company workflow.',
+       question:'What if this call times out after NSDL creates the order but before BIMBO Bank gets the transaction ID back \u2014 is there any way to recover that orphaned order?'},
+      {phaseIdx:1, title:'NSDL opens a temporary order', desc:'NSDL accepts the request and opens a temporary order.', pos:'nsdl', cat:'nsdl',
+       bullets:['Temporary order record created on NSDL\u2019s side','Transaction ID generated as the order reference'],
+       goal:'Give BIMBO Bank a tracking reference before any real account-creation work begins.',
+       question:'What if the customer never returns to finish the NSDL form \u2014 how long does this temporary order stay open, and who is responsible for cleaning it up?'},
+      {phaseIdx:1, title:'Transaction ID returned', desc:'NSDL\u2019s response carries the transaction ID back to BIMBO Bank.', pos:'idfc', cat:'request',
+       bullets:['Transaction ID returned in the API response','BIMBO Bank stores it against the customer record for tracking'],
+       goal:'Let BIMBO Bank track this exact request all the way through to its eventual outcome.',
+       question:'What if two requests for the same customer go out close together \u2014 could two valid transaction IDs exist at once, and what happens when both try to save?'},
+      {phaseIdx:1, title:'Redirect link generated', desc:'BIMBO Bank builds the link that hands the customer to NSDL.', pos:'idfc', cat:'request',
+       bullets:['Unique redirect URL built, carrying the transaction reference','Downstream systems optionally notified via event'],
+       goal:'Smoothly transition the customer from BIMBO Bank\u2019s app to NSDL\u2019s own portal.',
+       question:'What if the customer bookmarks or shares this link and someone else opens it later \u2014 does it expire, and is the account holder re-verified on NSDL\u2019s side?'},
+      {phaseIdx:2, title:'Customer completes the form on NSDL', desc:'Customer fills the demat application on NSDL\u2019s own portal.', pos:'nsdl', cat:'nsdl',
+       bullets:['Entirely on NSDL\u2019s site \u2014 no BIMBO Bank API involved here','Customer enters remaining KYC and nominee details'],
+       goal:'Collect the regulatory details NSDL needs that BIMBO Bank\u2019s systems don\u2019t already hold.',
+       question:'What if the customer enters different nominee or address details here than what BIMBO Bank already has on file \u2014 does anything reconcile the two records?'},
+      {phaseIdx:2, title:'NSDL verifies PAN and KYC', desc:'NSDL checks the customer\u2019s identity against official records.', pos:'nsdl', cat:'nsdl',
+       bullets:['PAN cross-checked against income tax records','KYC details validated against registries'],
+       goal:'Independently confirm the customer\u2019s identity against authoritative government sources.',
+       question:'What if this check fails because of a data-entry typo at the registry, not actual fraud \u2014 does the customer get a clear, fixable reason, or just a generic rejection?'},
+      {phaseIdx:2, title:'Demat account created', desc:'NSDL provisions the account once verification passes.', pos:'nsdl', cat:'nsdl',
+       bullets:['Account provisioned on NSDL\u2019s depository','DP ID and Client ID generated'],
+       goal:'Actually create the legally recognized depository account \u2014 the moment it starts to exist.',
+       question:'What if NSDL creates the account successfully but its callback to BIMBO Bank never arrives \u2014 does the customer now have a live demat account that BIMBO Bank doesn\u2019t even know about?'},
+      outcome==='success'
+        ? {phaseIdx:3, title:'Success callback to BIMBO Bank', endpoint:'POST /api/demat/v1/handleSuccessRedirect', desc:'NSDL calls back with the new account details.', pos:'idfc', cat:'success',
+           bullets:['DP ID, Client ID and a digital signature sent back','BIMBO Bank validates the signature before trusting the payload'],
+           goal:'Tell BIMBO Bank, in a way it can verifiably trust, exactly what happened on NSDL\u2019s side.',
+           question:'What if someone intercepted or replayed this callback \u2014 what specifically stops a forged success message from marking a non-existent account as live?'}
+        : {phaseIdx:3, title:'Failure callback to BIMBO Bank', endpoint:'POST /api/demat/v1/handleFailureRedirect', desc:'NSDL calls back to report that creation failed.', pos:'idfc', cat:'failure',
+           bullets:['Failure reason and a digital signature sent back','BIMBO Bank validates the signature before processing the error'],
+           goal:'Tell BIMBO Bank, in a way it can verifiably trust, exactly what went wrong on NSDL\u2019s side.',
+           question:'What if the failure reason NSDL sends is too generic for the customer to act on \u2014 does BIMBO Bank translate it into something fixable, or just relay it as-is?'},
+      outcome==='success'
+        ? {phaseIdx:3, title:'Saved to database', desc:'The new demat account is recorded against the customer.', pos:'db', cat:'success',
+           bullets:['DP ID and Client ID saved to the customer\u2019s record','Status updated to SUCCESS'],
+           goal:'Make the outcome durable and visible to every other system that depends on it.',
+           question:'What if this database write fails right after NSDL\u2019s callback succeeded \u2014 is there a reconciliation job, or does the customer end up with a live NSDL account and a stale BIMBO Bank record?'}
+        : {phaseIdx:3, title:'Failure saved to database', desc:'The failure is logged so the customer can retry.', pos:'db', cat:'failure',
+           bullets:['Failure reason and error details saved to the record','Status updated to FAILED'],
+           goal:'Make the failure durable and visible so the customer can be guided to retry.',
+           question:'What if the customer retries immediately \u2014 does the system reuse the old transaction ID, or does every retry start a brand new order on NSDL\u2019s side?'}
+    ];
+  }
+
+  var outcome='success';
+  var steps=buildSteps(outcome);
+  var current=0, playing=false, timer=null, prevPhaseIdx=null;
+  var DWELL=5200;
+
+  var mover=document.getElementById('mover');
+  var cube=document.getElementById('cube');
+  var backdrop=document.getElementById('backdrop');
+  var phaseBanner=document.getElementById('phase-banner');
+  var catBadge=document.getElementById('cat-badge');
+  var stepCounter=document.getElementById('step-counter');
+  var stepTitle=document.getElementById('step-title');
+  var stepDesc=document.getElementById('step-desc');
+  var endpointEl=document.getElementById('endpoint');
+  var bulletsEl=document.getElementById('bullets');
+  var goalEl=document.getElementById('goal-line');
+  var questionEl=document.getElementById('question-text');
+  var dotsWrap=document.getElementById('dots');
+  var playBtn=document.getElementById('play');
+  var track2=document.getElementById('track2');
+  var towers={idfc:document.getElementById('t-idfc'), nsdl:document.getElementById('t-nsdl'), db:document.getElementById('t-db')};
+  var dbIcon=document.getElementById('db-icon');
+
+  for(var i=0;i<steps.length;i++){
+    var d=document.createElement('button');
+    d.className='dot'+(i===0?' active':'');
+    d.setAttribute('aria-label','Go to step '+(i+1));
+    d.addEventListener('click',(function(idx){return function(){pause();render(idx);};})(i));
+    dotsWrap.appendChild(d);
+  }
+  var dotEls=dotsWrap.querySelectorAll('.dot');
+
+  function applyOutcomeColor(){
+    var cc=CAT[outcome==='success'?'success':'failure'];
+    track2.style.background=cc.border;
+    towers.db.style.background=cc.bg;
+    towers.db.style.borderColor=cc.border;
+    dbIcon.style.color=cc.text;
+  }
+
+  function render(idx){
+    current=idx;
+    var s=steps[idx];
+    var pc=CAT[phaseCat(s.phaseIdx, outcome)];
+    phaseBanner.textContent=PHASE_LABEL[s.phaseIdx];
+    phaseBanner.style.background=pc.bg; phaseBanner.style.color=pc.text;
+    backdrop.style.background=pc.bg;
+    if(s.phaseIdx!==prevPhaseIdx){
+      prevPhaseIdx=s.phaseIdx;
+      phaseBanner.classList.remove('slide');
+      void phaseBanner.offsetWidth;
+      phaseBanner.classList.add('slide');
+    }
+    var cc=CAT[s.cat];
+    catBadge.textContent=cc.label;
+    catBadge.style.background=cc.bg; catBadge.style.color=cc.text;
+    stepCounter.textContent='Step '+(idx+1)+' of '+steps.length;
+    stepTitle.textContent=s.title;
+    stepDesc.textContent=s.desc;
+    if(s.endpoint){ endpointEl.style.display='inline-block'; endpointEl.textContent=s.endpoint; endpointEl.style.background=cc.bg; endpointEl.style.color=cc.text; }
+    else { endpointEl.style.display='none'; }
+    bulletsEl.innerHTML='';
+    s.bullets.forEach(function(b){
+      var li=document.createElement('li');
+      var dot=document.createElement('span');
+      dot.className='b-dot';
+      dot.style.background=cc.border;
+      var txt=document.createElement('span');
+      txt.textContent=b;
+      li.appendChild(dot); li.appendChild(txt);
+      bulletsEl.appendChild(li);
+    });
+    goalEl.textContent=s.goal;
+    questionEl.textContent=s.question;
+    var p=POS[s.pos];
+    mover.style.left=p.left+'px';
+    mover.style.top=p.top+'px';
+    cube.className='cube cat-'+s.cat;
+    for(var k in towers){ towers[k].classList.toggle('active', k===s.pos); }
+    for(var j=0;j<dotEls.length;j++){ dotEls[j].classList.toggle('active', j===idx); dotEls[j].style.background = j===idx ? cc.border : ''; }
+  }
+
+  function scheduleNext(){
+    timer=setTimeout(function(){
+      var nxt=(current+1)%steps.length;
+      render(nxt);
+      if(playing) scheduleNext();
+    }, DWELL);
+  }
+  function play(){ playing=true; playBtn.innerHTML='<i class="ti ti-player-pause" aria-hidden="true"></i>Pause'; playBtn.setAttribute('aria-label','Pause'); scheduleNext(); }
+  function pause(){ playing=false; if(timer) clearTimeout(timer); playBtn.innerHTML='<i class="ti ti-player-play" aria-hidden="true"></i>Play'; playBtn.setAttribute('aria-label','Play'); }
+
+  playBtn.addEventListener('click', function(){ playing ? pause() : play(); });
+  document.getElementById('next').addEventListener('click', function(){ pause(); render((current+1)%steps.length); });
+  document.getElementById('prev').addEventListener('click', function(){ pause(); render((current-1+steps.length)%steps.length); });
+  document.getElementById('stop').addEventListener('click', function(){ pause(); render(0); });
+
+  var successBtn=document.getElementById('out-success');
+  var failureBtn=document.getElementById('out-failure');
+  function setOutcome(o){
+    outcome=o; steps=buildSteps(outcome);
+    successBtn.classList.toggle('sel', o==='success'); successBtn.classList.toggle('s', o==='success');
+    failureBtn.classList.toggle('sel', o==='failure'); failureBtn.classList.toggle('f', o==='failure');
+    applyOutcomeColor();
+    render(Math.min(current, steps.length-1));
+  }
+  successBtn.addEventListener('click', function(){ setOutcome('success'); });
+  failureBtn.addEventListener('click', function(){ setOutcome('failure'); });
+
+  applyOutcomeColor();
+  render(0);
+  play();
+})();
+</script>
+</body>
+</html>

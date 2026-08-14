@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% if page.title %}{{ page.title }} — {% endif %}{{ site.title }}</title>
+  <link rel="stylesheet" href="{{ site.baseurl }}/assets/style.css">
+  <style>
+    #gate-overlay {
+      position: fixed;
+      inset: 0;
+      background: #0f1117;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    #gate-box {
+      background: #1a1d27;
+      border: 1px solid #2e3348;
+      border-radius: 12px;
+      padding: 40px 48px;
+      text-align: center;
+      max-width: 360px;
+      width: 90%;
+    }
+    #gate-box h2 {
+      margin: 0 0 8px;
+      color: #e2e8f0;
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+    #gate-box p {
+      margin: 0 0 24px;
+      color: #8892a4;
+      font-size: 0.9rem;
+    }
+    #gate-input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid #2e3348;
+      background: #0f1117;
+      color: #e2e8f0;
+      font-size: 1rem;
+      text-align: center;
+      letter-spacing: 0.1em;
+      outline: none;
+      margin-bottom: 14px;
+    }
+    #gate-input:focus {
+      border-color: #6c63ff;
+    }
+    #gate-btn {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      background: #6c63ff;
+      color: #fff;
+      font-size: 1rem;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    #gate-btn:hover { background: #574fd6; }
+    #gate-error {
+      margin-top: 12px;
+      color: #fc8181;
+      font-size: 0.85rem;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="gate-overlay">
+    <div id="gate-box">
+      <h2>Access Required</h2>
+      <p>Enter the access code to continue.</p>
+      <input id="gate-input" type="password" placeholder="Enter code" autocomplete="off" />
+      <button id="gate-btn">Unlock</button>
+      <div id="gate-error">Incorrect code. Please try again.</div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <header class="site-header">
+      <a class="logo" href="{{ site.baseurl }}/">{{ site.title }}</a>
+      <div class="tagline">{{ site.description }}</div>
+    </header>
+    {{ content }}
+  </div>
+
+  <script>
+    (function () {
+      var CODE = "isha";
+      var KEY = "site_access_granted";
+
+      var overlay = document.getElementById("gate-overlay");
+
+      if (localStorage.getItem(KEY) === "1") {
+        overlay.remove();
+        return;
+      }
+
+      var input = document.getElementById("gate-input");
+      var btn = document.getElementById("gate-btn");
+      var error = document.getElementById("gate-error");
+
+      function attempt() {
+        if (input.value.trim().toLowerCase() === CODE) {
+          localStorage.setItem(KEY, "1");
+          overlay.remove();
+        } else {
+          error.style.display = "block";
+          input.value = "";
+          input.focus();
+        }
+      }
+
+      btn.addEventListener("click", attempt);
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") attempt();
+      });
+    })();
+  </script>
+</body>
+</html>

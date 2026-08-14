@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>पातञ्जल योगसूत्राणि | The Architecture of a Steady Mind</title>
+<style>
+  :root{
+    --bg: #0a0e14;
+    --bg-card: #10151d;
+    --bg-card-2: #141a24;
+    --border: #1e2733;
+    --border-soft: #182029;
+    --text: #dfe6ee;
+    --text-dim: #7c8a9c;
+    --text-dimmer: #566072;
+    --accent: #d4af37;
+    --accent-dim: #8a7226;
+    --accent-glow: rgba(212,175,55,0.15);
+    --manas: #4a8cc9;
+    --buddhi: #d4af37;
+    --ahamkara: #c96a4a;
+    --atman: #7ac97a;
+  }
+  *{ box-sizing: border-box; margin:0; padding:0; }
+  html{ scroll-behavior: smooth; }
+  body{
+    background: radial-gradient(ellipse at top, #0d1220 0%, #0a0e14 60%);
+    color: var(--text);
+    font-family: 'Georgia', 'Segoe UI', serif;
+    line-height: 1.7;
+  }
+  ::selection{ background: var(--accent-glow); color: var(--accent); }
+
+  nav{
+    position: sticky; top:0; z-index: 50;
+    background: rgba(10,14,20,0.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display:flex; align-items:center; justify-content:center;
+    gap: 20px; flex-wrap: wrap;
+  }
+  nav a{ color: var(--text-dim); text-decoration:none; font-size: 0.78rem; letter-spacing: 0.5px; text-transform: uppercase; transition: color .2s; }
+  nav a:hover{ color: var(--accent); }
+  nav .brand{ color: var(--accent); font-size: 1rem; margin-right: 12px; font-weight: bold; }
+
+  header.hero{
+    text-align:center; padding: 90px 20px 60px;
+    border-bottom: 1px solid var(--border);
+    position: relative; overflow: hidden;
+  }
+  header.hero::before{
+    content:""; position:absolute; inset:0;
+    background: radial-gradient(circle at 50% 30%, var(--accent-glow), transparent 60%);
+    pointer-events:none;
+  }
+  .chariot-glyph{ font-size: 3.4rem; margin-bottom: 10px; animation: breathe 6s ease-in-out infinite; }
+  @keyframes breathe{ 0%,100%{ opacity:0.88; transform: scale(1);} 50%{ opacity:1; transform: scale(1.05);} }
+  header.hero h1{ font-size: 2.5rem; font-weight: 400; letter-spacing: 1px; }
+  header.hero .sub{ color: var(--accent); font-size: 1rem; margin-top: 10px; letter-spacing: 3px; text-transform: uppercase; }
+  header.hero p.tagline{ max-width: 660px; margin: 22px auto 0; color: var(--text-dim); font-style: italic; font-size: 1rem; }
+  header.hero .commentary-note{
+    margin-top: 28px; display:inline-block; border: 1px solid var(--border); border-radius: 30px;
+    padding: 8px 20px; font-size: 0.78rem; color: var(--text-dimmer); letter-spacing: 0.5px;
+  }
+
+  section{ padding: 70px 20px; max-width: 980px; margin: 0 auto; }
+  section.wide{ max-width: 1100px; }
+  h2.section-title{ font-size: 1.9rem; font-weight: 400; text-align:center; margin-bottom: 6px; }
+  h2.section-title .sanskrit-tag{ display:block; color: var(--accent); font-size: 1rem; letter-spacing: 2px; margin-bottom: 10px; }
+  p.section-intro{ text-align:center; color: var(--text-dim); max-width: 680px; margin: 0 auto 40px; font-size: 0.98rem; }
+  hr.divider{ border: none; border-top: 1px dashed var(--border); margin: 70px auto; max-width: 980px; }
+
+  .chariot-wrap{ display:flex; flex-wrap: wrap; gap: 40px; align-items:center; justify-content:center; }
+  .chariot-svg{ width: 320px; height: 320px; flex-shrink:0; }
+  .chariot-svg .node{ cursor:pointer; transition: opacity .25s; }
+  .chariot-svg .node.dim{ opacity: 0.3; }
+  .chariot-detail{
+    flex:1; min-width: 280px; max-width: 480px;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 26px 28px; min-height: 240px;
+  }
+  .chariot-detail .part-name{ font-size: 1.3rem; color: var(--accent); margin-bottom: 4px; }
+  .chariot-detail .part-sub{ font-size: 0.85rem; color: var(--text-dimmer); margin-bottom: 16px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .chariot-detail .part-essence{ font-style: italic; color: var(--text); margin-bottom: 16px; border-left: 2px solid var(--accent-dim); padding-left: 14px; }
+  .chariot-detail ul{ margin-left: 18px; color: var(--text-dim); font-size: 0.92rem; }
+  .chariot-detail ul li{ margin-bottom: 6px; }
+  .part-pick-row{ display:flex; gap:8px; margin-top:18px; flex-wrap:wrap; justify-content:center; }
+  .part-pick-row button{
+    background: var(--bg-card-2); border: 1px solid var(--border); color: var(--text-dim);
+    padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; cursor: pointer; font-family: inherit; transition: all .2s;
+  }
+  .part-pick-row button.active{ border-color: var(--accent-dim); color: var(--accent); background: var(--accent-glow); }
+
+  .sutra-card{ background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 14px; }
+  .sutra-head{ display:flex; align-items:center; gap: 16px; padding: 18px 22px; cursor: pointer; user-select: none; }
+  .sutra-num{
+    width: 52px; height: 52px; flex-shrink:0; border: 1px solid var(--accent-dim); border-radius: 8px;
+    display:flex; align-items:center; justify-content:center; color: var(--accent); font-size: 0.78rem; text-align:center; line-height:1.15;
+  }
+  .sutra-head .sutra-title{ flex:1; color: var(--text); font-size: 1.05rem; }
+  .sutra-head .sutra-title .sutra-sub{ color: var(--text-dimmer); font-size: 0.78rem; margin-top: 3px; letter-spacing: 0.5px; }
+  .sutra-arrow{ color: var(--text-dimmer); transition: transform .25s; font-size: 0.9rem; }
+  .sutra-card.open .sutra-arrow{ transform: rotate(90deg); color: var(--accent); }
+  .sutra-body{ max-height: 0; overflow:hidden; transition: max-height .4s ease; border-top: 1px solid var(--border-soft); }
+  .sutra-card.open .sutra-body{ max-height: 2600px; }
+  .sutra-body-inner{ padding: 22px 26px 28px; color: var(--text-dim); font-size: 0.93rem; }
+  .sutra-body-inner h5{ color: var(--accent); font-weight:500; font-size: 0.85rem; letter-spacing: 0.5px; text-transform: uppercase; margin: 18px 0 8px; }
+  .sutra-body-inner h5:first-child{ margin-top: 0; }
+  .sutra-body-inner ul, .sutra-body-inner ol{ margin-left: 20px; margin-bottom: 8px; }
+  .sutra-body-inner li{ margin-bottom: 6px; }
+  .sanskrit-line{
+    color: var(--text); font-size: 1.15rem; text-align:center; padding: 16px; margin: 10px 0 14px;
+    border: 1px solid var(--border-soft); border-radius: 6px; background: var(--bg-card-2);
+  }
+  .translit-line{ text-align:center; color: var(--accent); font-size: 0.88rem; margin-top: -10px; margin-bottom: 14px; font-style: italic; }
+
+  .vritti-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 16px; }
+  .vritti-card{ background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; cursor:pointer; transition: border-color .2s; }
+  .vritti-card:hover{ border-color: var(--accent-dim); }
+  .vritti-card h4{ color: var(--accent); font-size: 1rem; margin-bottom: 6px; }
+  .vritti-card p{ font-size: 0.86rem; color: var(--text-dim); }
+  .vritti-card .vritti-eg{ margin-top: 10px; font-size: 0.8rem; color: var(--text-dimmer); font-style: italic; }
+
+  .staircase{ display:flex; flex-direction: column; gap: 0; }
+  .stair-step{ background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; margin-bottom: 14px; position: relative; }
+  .stair-step .step-mv{ color: var(--accent); font-size: 1.1rem; margin-bottom: 4px; }
+  .stair-step .step-meaning{ color: var(--text-dimmer); font-size: 0.82rem; font-style: italic; margin-bottom: 10px; }
+  .stair-step p{ color: var(--text-dim); font-size: 0.92rem; }
+  .stair-step .step-num{
+    position:absolute; top: -10px; left: -10px; background: var(--bg); border: 1px solid var(--accent-dim);
+    color: var(--accent); font-size: 0.7rem; width: 26px; height: 26px; border-radius: 50%; display:flex; align-items:center; justify-content:center;
+  }
+
+  .guna-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap: 20px; }
+  .guna-card{ background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 24px; }
+  .guna-card .g-icon{ font-size: 1.6rem; margin-bottom: 10px; display:block; }
+  .guna-card h4{ color: var(--accent); font-weight: 500; margin-bottom: 8px; font-size: 1.05rem; }
+  .guna-card p{ color: var(--text-dim); font-size: 0.9rem; }
+
+  .practicum-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap: 20px; }
+  .practicum-card{ background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 24px; }
+  .practicum-card .p-icon{ font-size: 1.5rem; margin-bottom: 10px; display:block; }
+  .practicum-card h4{ color: var(--accent); font-weight: 500; margin-bottom: 8px; font-size: 1.05rem; }
+  .practicum-card p{ color: var(--text-dim); font-size: 0.88rem; }
+  .practicum-card ol, .practicum-card ul{ margin-left: 18px; color: var(--text-dim); font-size: 0.88rem; }
+  .practicum-card li{ margin-bottom: 6px; }
+
+  .quiz-list{ display:flex; flex-direction:column; gap: 12px; }
+  .quiz-item{ background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; cursor: pointer; }
+  .quiz-q{ color: var(--text); font-size: 0.98rem; display:flex; justify-content:space-between; gap: 10px; }
+  .quiz-q .flip-hint{ color: var(--text-dimmer); font-size: 0.72rem; text-transform:uppercase; white-space:nowrap; }
+  .quiz-a{ max-height: 0; overflow:hidden; transition: max-height .3s ease; color: var(--accent); font-size: 0.9rem; margin-top: 0; }
+  .quiz-item.open .quiz-a{ max-height: 300px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); }
+  .quiz-item.open .flip-hint{ color: var(--accent); }
+
+  .closing{ text-align:center; padding: 90px 20px 100px; border-top: 1px solid var(--border); }
+  .closing .mahavakya-final{ font-size: 1.6rem; color: var(--accent); margin-bottom: 10px; }
+  .closing p{ color: var(--text-dim); max-width: 620px; margin: 18px auto 0; }
+  .closing .signoff{ margin-top: 40px; color: var(--text-dimmer); font-size: 0.82rem; letter-spacing: 1px; }
+
+  footer.page-footer{ text-align:center; padding: 26px; color: var(--text-dimmer); font-size: 0.78rem; border-top: 1px solid var(--border); }
+  footer.page-footer a{ color: var(--accent-dim); }
+
+  @media (max-width: 640px){ header.hero h1{ font-size: 2rem; } }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="brand">🧘 Yoga Sūtra</span>
+  <a href="index.html">← Sadhana Home</a>
+  <a href="#chariot">The Chariot</a>
+  <a href="#sutras">Ten Sūtras</a>
+  <a href="#vrittis">Five Vṛttis</a>
+  <a href="#wings">Two Wings</a>
+  <a href="#gunas">Three Guṇas</a>
+  <a href="#attitudes">Four Attitudes</a>
+</nav>
+
+<header class="hero">
+  <div class="chariot-glyph">🐎</div>
+  <h1>पातञ्जल योगसूत्राणि</h1>
+  <div class="sub">Samādhi Pāda · Sūtras 1.1 – 1.10</div>
+  <p class="tagline">A restless mind is not a flaw to be punished — it is a chariot without a trained
+  charioteer. Patañjali's opening sūtras are not philosophy for its own sake; they are a driving manual,
+  written for anyone who has ever been dragged somewhere by their own thoughts.</p>
+  <div class="commentary-note">Organized as a deep commentary — the classical images (chariot, lake, storm) held intact, unfolded for an adult reader</div>
+</header>
+
+<section id="opening">
+  <h2 class="section-title"><span class="sanskrit-tag">अथ योगानुशासनम्</span>Where the Text Begins</h2>
+  <p class="section-intro">Patañjali doesn't open with a claim about the universe, the way the Upanishads do.
+  He opens with a single word aimed directly at the reader.</p>
+  <div class="chariot-detail" style="max-width:800px;margin:0 auto;">
+    <div class="sanskrit-line">अथ योगानुशासनम् ॥ १.१ ॥</div>
+    <div class="translit-line">Atha yoga-anuśāsanam</div>
+    <div class="part-essence">"Now begins the disciplined teaching of Yoga."</div>
+    <p style="color:var(--text-dim); font-size:0.94rem;">The word <strong>atha</strong> — "now" — is doing more work than any other word in the text.
+    It isn't a scene-setter; it's a demand for readiness. Classical commentators read it as marking the moment
+    a student has done enough living, enough failing, enough wanting, to finally be prepared to hear something
+    difficult. Yoga is not reserved for renunciates or the already-calm — it is offered the instant anyone
+    is ready to stop postponing. And <strong>anuśāsanam</strong> — discipline, systematic training, not
+    punishment — tells you what kind of book you're holding: not inspiration, but a method, meant to be
+    practiced the way one learns music or a craft, through repetition rather than a single moment of insight.
+    Patañjali is explicit elsewhere that he isn't inventing this — the prefix <em>anu</em> ("continuing")
+    marks him as compiler and systematizer of a far older oral tradition, connected closely to Sāṅkhya
+    philosophy: where Sāṅkhya supplies the map of reality — puruṣa, prakṛti, the layers of mind — Yoga supplies
+    the practice of walking it.</p>
+  </div>
+</section>
+
+<hr class="divider">
+
+<section id="chariot" class="wide">
+  <h2 class="section-title"><span class="sanskrit-tag">चित्तम् त्रिविधम्</span>The Chariot of the Mind</h2>
+  <p class="section-intro">Before the sūtras can be understood, the machinery they're describing needs a name.
+  The tradition hands us an old image: body as chariot, senses as horses, mind as reins, discernment as
+  charioteer, and the true Self as the one being carried. Touch each part.</p>
+
+  <div class="chariot-wrap">
+    <svg class="chariot-svg" viewBox="0 0 320 320" id="chariotSvg">
+      <circle cx="160" cy="160" r="140" fill="none" stroke="var(--atman)" stroke-width="2" stroke-dasharray="3 5" class="node" data-part="atman"/>
+      <circle cx="160" cy="160" r="100" fill="#c96a4a1a" stroke="var(--ahamkara)" stroke-width="2" class="node" data-part="ahamkara"/>
+      <circle cx="160" cy="160" r="64"  fill="#d4af371f" stroke="var(--buddhi)" stroke-width="2" class="node" data-part="buddhi"/>
+      <circle cx="160" cy="160" r="32"  fill="#4a8cc926" stroke="var(--manas)" stroke-width="2" class="node" data-part="manas"/>
+      <text x="160" y="166" text-anchor="middle" fill="#4a8cc9" font-size="13" class="node" data-part="manas" style="cursor:pointer">Manas</text>
+      <text x="160" y="104" text-anchor="middle" fill="#d4af37" font-size="13" class="node" data-part="buddhi" style="cursor:pointer">Buddhi</text>
+      <text x="160" y="66"  text-anchor="middle" fill="#c96a4a" font-size="12" class="node" data-part="ahamkara" style="cursor:pointer">Ahaṃkāra</text>
+      <text x="160" y="26"  text-anchor="middle" fill="#7ac97a" font-size="11" letter-spacing="1" class="node" data-part="atman" style="cursor:pointer">ĀTMAN / PURUṢA</text>
+    </svg>
+    <div class="chariot-detail" id="chariotDetail"></div>
+  </div>
+  <div class="part-pick-row" id="partPickRow">
+    <button data-part="manas">Manas · Collector</button>
+    <button data-part="buddhi">Buddhi · Charioteer</button>
+    <button data-part="ahamkara">Ahaṃkāra · The "I"</button>
+    <button data-part="atman">Ātman · The Rider</button>
+  </div>
+
+  <div class="chariot-detail" style="max-width:800px; margin:34px auto 0;">
+    <div class="part-name">The Red Car, Rushing Toward You</div>
+    <p style="color:var(--text-dim); font-size:0.92rem;">Watch the three lower parts work in half a second. A car rushes toward you. <strong>Manas</strong> registers
+    red, sound, speed, and panics: <em>something fast — what do I do?</em> <strong>Buddhi</strong> — if it's trained —
+    stays quiet underneath the noise and issues one clear order: <em>move</em>. The body obeys before thought
+    finishes. Only afterward does <strong>Ahaṃkāra</strong> arrive, breathless, narrating: <em>that car was
+    coming for me — I saved myself.</em> Nothing in this sequence required a self to be in danger, or a self
+    to have acted — reflex and buddhi did the work — yet ahaṃkāra claims authorship anyway. This is the entire
+    machinery of ordinary suffering in miniature: a fast, confused collector; a quiet decision-maker who rarely
+    gets to drive; and a loud narrator that turns every event into a story about "me."</p>
+  </div>
+</section>
+
+<hr class="divider">
+
+<section id="sutras" class="wide">
+  <h2 class="section-title"><span class="sanskrit-tag">दश सूत्राणि</span>Ten Sūtras — Full Commentary</h2>
+  <p class="section-intro">Each sūtra is compressed almost to the point of riddle — that's intentional; they were
+  meant to be unpacked by a teacher, not read silently. Open each in turn.</p>
+  <div id="sutraList"></div>
+</section>
+
+<hr class="divider">
+
+<section id="vrittis">
+  <h2 class="section-title"><span class="sanskrit-tag">पञ्च वृत्तयः</span>The Five Vṛttis</h2>
+  <p class="section-intro">Sūtra 1.6 makes a striking claim: however many thousands of thoughts move through
+  a mind in a day, every single one sorts into exactly five categories. Learning to sort is itself most of
+  the practice.</p>
+  <div class="vritti-grid" id="vrittiGrid"></div>
+</section>
+
+<hr class="divider">
+
+<section id="wings">
+  <h2 class="section-title"><span class="sanskrit-tag">अभ्यासवैराग्याभ्याम्</span>The Two Wings of Stillness</h2>
+  <p class="section-intro">Sūtra 1.12 answers the practical question every seeker eventually asks: <em>how,
+  concretely, do the waves actually stop?</em> With exactly two tools, used together.</p>
+  <div class="chariot-wrap" style="align-items:flex-start;">
+    <div class="chariot-detail" style="flex:1; min-width:260px;">
+      <div class="part-name">अभ्यास — Abhyāsa</div>
+      <div class="part-sub">Practice, sustained without break</div>
+      <p style="color:var(--text-dim); font-size:0.92rem;">Not a single strong effort but a returning — coming back to the discipline again and again, especially
+      after slipping. Patañjali's own commentators specify three conditions: practiced over <strong>long
+      time</strong> (dīrgha-kāla), <strong>without interruption</strong> (nairantarya), and with
+      <strong>reverence</strong> (satkāra) — genuine seriousness rather than mechanical repetition. The measure
+      of practice was never "did I do this perfectly" — it was always "did I return." A five-day streak broken
+      on day six is not failure; failing to return on day seven is the only real failure the text recognizes.</p>
+    </div>
+    <div class="chariot-detail" style="flex:1; min-width:260px;">
+      <div class="part-name">वैराग्य — Vairāgya</div>
+      <div class="part-sub">Non-attachment to outcome</div>
+      <p style="color:var(--text-dim); font-size:0.92rem;">Not indifference and not suppression — vairāgya is holding effort tightly while holding the result
+      lightly. "I must come first" manufactures fear with every setback; "I will give my best and stay calm"
+      manufactures resilience instead. This is not detachment from the world, but detachment from the mind's
+      habit of gripping outcomes it was never fully in control of in the first place. Effort belongs to you.
+      Results only partly do.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<section id="ladder-steady">
+  <h2 class="section-title"><span class="sanskrit-tag">श्रद्धावीर्यस्मृतिसमाधिप्रज्ञापूर्वक</span>The Five-Step Ladder to a Steady Mind</h2>
+  <p class="section-intro">Sūtra 1.20 lays out how a steady mind actually forms — not as an event, but as a
+  sequence that has to be climbed in order, and can be re-climbed after every fall.</p>
+  <div class="staircase">
+    <div class="stair-step"><div class="step-num">1</div>
+      <div class="step-mv">श्रद्धा — Śraddhā</div>
+      <div class="step-meaning">Faith — "I believe this path can help me."</div>
+      <p>Not belief without evidence, but a working trust that makes the first step possible before any results
+      exist to point to. Since mind-work offers no scoreboard and no daily medal, this trust is what keeps
+      a person moving when progress is invisible.</p>
+    </div>
+    <div class="stair-step"><div class="step-num">2</div>
+      <div class="step-mv">वीर्य — Vīrya</div>
+      <div class="step-meaning">Energy — "I will put in effort, even when it's hard."</div>
+      <p>Faith without energy stays an opinion. Vīrya is the will that shows up even at partial strength — not
+      requiring motivation to already be high, only requiring the decision to begin anyway.</p>
+    </div>
+    <div class="stair-step"><div class="step-num">3</div>
+      <div class="step-mv">स्मृति — Smṛti</div>
+      <div class="step-meaning">Memory — "I will remember why I started."</div>
+      <p>Every sustained practice hits a day where faith and energy both go quiet. Smṛti is the return to the
+      original reason — not manufacturing new motivation, but retrieving the motivation that was already
+      sufficient the first time.</p>
+    </div>
+    <div class="stair-step"><div class="step-num">4</div>
+      <div class="step-mv">समाधि — Samādhi</div>
+      <div class="step-meaning">Absorption — "Doing it has become natural."</div>
+      <p>What began as effortful now happens without the earlier friction. This is not yet the technical samādhi
+      of the later sūtras, but its everyday cousin — the state where practice stops requiring willpower because
+      it has become the mind's default channel.</p>
+    </div>
+    <div class="stair-step"><div class="step-num">5</div>
+      <div class="step-mv">प्रज्ञा — Prajñā</div>
+      <div class="step-meaning">Wisdom — "I can now tell what's real from what's noise."</div>
+      <p>The end product of the climb is not calm for its own sake, but discernment — a mind clear enough to
+      correctly sort the important from the distracting, which is exactly the skill the Five Vṛttis above
+      were training all along.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<section id="gunas" class="wide">
+  <h2 class="section-title"><span class="sanskrit-tag">त्रिगुणाः</span>The Three Guṇas — Weather of the Mind</h2>
+  <p class="section-intro">Alongside the ladder, the tradition names three recurring qualities every mind
+  cycles through — not flaws to eliminate, but weather to recognize.</p>
+  <div class="guna-grid">
+    <div class="guna-card">
+      <span class="g-icon">☀️</span>
+      <h4>Sattva — the Sunny Mind</h4>
+      <p>Calm, clear, quietly luminous — like a still lake reflecting the sky. This is the state in which
+      thinking is accurate and decisions are wise. Not a permanent achievement, but a recurring weather
+      pattern to be recognized and returned to.</p>
+    </div>
+    <div class="guna-card">
+      <span class="g-icon">🌊</span>
+      <h4>Rajas — the River Mind</h4>
+      <p>Fast, active, restless — the state of wanting to move, build, act, and talk. Neither good nor bad in
+      itself; it is the energy that gets things done, but left unchecked it becomes the very agitation Sūtra
+      1.2 asks the practitioner to still.</p>
+    </div>
+    <div class="guna-card">
+      <span class="g-icon">🪨</span>
+      <h4>Tamas — the Rock Mind</h4>
+      <p>Heavy, dull, inert — sleep, sluggishness, the wish not to move at all. Necessary for rest and genuine
+      recovery, but dangerous when mistaken for peace, since dullness and stillness are not the same thing.</p>
+    </div>
+  </div>
+  <div class="chariot-detail" style="max-width:800px; margin:30px auto 0;">
+    <div class="part-name">The Skill Is Not Elimination — It's Recognition</div>
+    <p style="color:var(--text-dim); font-size:0.92rem;">All three arise in every mind, often within a single day — sunny in the morning, riverlike by
+    afternoon, rocky by night. None of them needs to be fought. The entire practical skill the tradition
+    teaches is noticing which weather is currently active, and choosing the next action accordingly — water,
+    breath, and movement for a Rock Mind; stillness and breath for a River Mind; nothing at all for a Sunny
+    Mind, since it needs no correction.</p>
+  </div>
+</section>
+
+<hr class="divider">
+
+<section id="samskara">
+  <h2 class="section-title"><span class="sanskrit-tag">संस्कारमार्गाः</span>The Paths Beneath the Field</h2>
+  <p class="section-intro">Sūtra 1.6's companion teaching on <em>viparyaya</em> — wrong knowledge — explains why
+  a person's habits and temperament feel so fixed, and exactly why they aren't.</p>
+  <div class="chariot-wrap" style="align-items:flex-start;">
+    <div class="chariot-detail" style="flex:1; min-width:260px;">
+      <div class="part-name">The Rope and the Snake</div>
+      <p style="color:var(--text-dim); font-size:0.92rem;">A glistening, curved shape in low light triggers a single wrong perception — <em>snake</em> — and that one
+      error cascades into a full storm of vṛttis: racing thoughts about venom, about death, about people once
+      read of dying from snakebite, each new thought more convincing than the last, none of them checked
+      against reality. Only when the breathing slows enough for buddhi to actually look does the shape resolve:
+      it was a rope. <strong>Viparyaya</strong> — wrong knowledge — is exactly this: a mind that builds a
+      convincing false picture and then reacts to the picture as if it were the fact.</p>
+    </div>
+    <div class="chariot-detail" style="flex:1; min-width:260px;">
+      <div class="part-name">Saṃskāra — the Worn Path</div>
+      <p style="color:var(--text-dim); font-size:0.92rem;">Every repeated thought leaves a trace — a saṃskāra — the way walking the same line through a field again
+      and again wears a visible path. Repeat a fearful thought, an angry thought, a lazy thought often enough,
+      and the mind starts finding that channel first, automatically, before any other option is considered.
+      This is why temperament feels fixed: "he can't help it, that's just his nature" describes a well-worn
+      path, not an unchangeable law. And a worn path can be walked less, while a new one is deliberately worn
+      beside it — one counter-thought, one paused breath, one on-time start at a time. Change is called
+      difficult for good reason: it works against gravity already established. But the text is explicit that
+      difficult is not the same as impossible.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<section id="attitudes" class="wide">
+  <h2 class="section-title"><span class="sanskrit-tag">मैत्रीकरुणामुदितोपेक्षाणाम्</span>Four Attitudes for a Calm Mind</h2>
+  <p class="section-intro">Sūtra 1.33 gives the most immediately practical instruction in the whole chapter — four
+  specific stances toward other people's fortune, plus one anchor beyond all of them, that keep the lake
+  from turning stormy in the first place.</p>
+  <div class="practicum-grid">
+    <div class="practicum-card">
+      <span class="p-icon">🤍</span>
+      <h4>Maitrī — toward the happy</h4>
+      <p>Friendliness toward those who are flourishing. Feelings spread — proximity to genuine cheerfulness
+      lightens a mind, the way proximity to complaint weighs one down. Choosing company deliberately is itself
+      a practice.</p>
+    </div>
+    <div class="practicum-card">
+      <span class="p-icon">💧</span>
+      <h4>Karuṇā — toward the suffering</h4>
+      <p>Compassion toward those in pain — presence, kind words, small help — without requiring oneself to
+      become sad in turn. Care and calm are not opposites; the steadiest people in a crisis are usually the
+      most useful.</p>
+    </div>
+    <div class="practicum-card">
+      <span class="p-icon">🎉</span>
+      <h4>Muditā — toward the successful</h4>
+      <p>Gladness at another's achievement, rather than the quiet subtraction jealousy performs — <em>why not
+      me</em>. Someone else's success was never actually taken from your own; muditā is simply refusing the
+      story that says otherwise.</p>
+    </div>
+    <div class="practicum-card">
+      <span class="p-icon">⚖️</span>
+      <h4>Upekṣā — toward the wrongdoer</h4>
+      <p>Equanimity toward those behaving badly — not approval, and not passivity, but declining to let hatred
+      take the wheel. Wrong can be named and stopped firmly without the mind itself catching fire in the
+      process.</p>
+    </div>
+  </div>
+  <div class="chariot-detail" style="max-width:800px; margin:30px auto 0;">
+    <div class="part-name">Īśvara-praṇidhāna — the Fifth Anchor</div>
+    <p style="color:var(--text-dim); font-size:0.92rem;">Beyond the four social attitudes sits one more: remembering something larger than the immediate storm.
+    When the mind is genuinely overwhelmed, the text offers a physical anchor rather than an argument — the
+    breath, and the sound of Om. Three slow repetitions of A-U-M are enough to measurably change breathing
+    rate and settle the nervous system, not through belief but through the simple mechanics of a slowed
+    exhale. The remembering itself is the practice: <em>this storm, like every other one, will pass.</em></p>
+  </div>
+</section>
+
+<hr class="divider">
+
+<section id="recall">
+  <h2 class="section-title"><span class="sanskrit-tag">स्वाध्याय-परीक्षा</span>Active Recall — Test the Understanding</h2>
+  <p class="section-intro">Tap a question to reveal the answer.</p>
+  <div class="quiz-list" id="quizList"></div>
+</section>
+
+<section class="closing">
+  <div class="mahavakya-final">योगश्चित्तवृत्तिनिरोधः</div>
+  <p style="color:var(--accent); font-style:italic;">Yogaś citta-vṛtti-nirodhaḥ — "Yoga is the stilling of the mind's movements."</p>
+  <p>Ten sūtras, and the whole architecture is already visible: a mind with layers, a charioteer worth training,
+  waves worth watching rather than chasing, paths worth re-walking on purpose, and a handful of concrete stances
+  toward other people that keep the lake from ever needing to storm at all. Nothing here asks for perfection.
+  It asks only for one thing Sūtra 1.1 already named: to begin now, and to keep returning.</p>
+  <div class="signoff">इति योगसूत्र समाधिपाद टिप्पणी — Notes on the Samādhi Pāda, Sūtras 1.1–1.10</div>
+</section>
+
+<footer class="page-footer">
+  Part of the <a href="index.html">Sadhana</a> project — a personal space for spiritual study and reflection
+</footer>
+
+<script>
+  const parts = {
+    manas: {
+      name: "Manas — the Collector",
+      sub: "The Reins · Sūtra 1.2",
+      essence: "Fast, tireless, and endlessly confused — gathering raw sense-data faster than it can be understood.",
+      points: [
+        "Draws in everything from the five senses: sight, sound, smell, taste, touch — instantly, without filtering",
+        "Constantly interrogates each input: what is this? good or bad? what should I do?",
+        "Speed is its gift; judgment is not — manas alone cannot tell truth from a convincing story",
+        "In the chariot image, manas is the reins — transmitting the charioteer's decisions to the horses, but easily yanked by panic if buddhi doesn't hold them"
+      ]
+    },
+    buddhi: {
+      name: "Buddhi — the Charioteer",
+      sub: "The Decision-Maker · Sūtra 1.2, 1.3",
+      essence: "The part that thinks clearly, remembers accurately, and decides — when actually given the reins.",
+      points: [
+        "Does not panic; looks, understands, and issues one clear instruction rather than a flood of reactions",
+        "Trained buddhi is what Yoga is ultimately cultivating — everything else in the sūtras exists to clear its view",
+        "When buddhi drives, ego quiets and clarity follows; when it doesn't, manas and ahaṃkāra run the chariot into the ditch",
+        "A calm lake is a working metaphor for a well-functioning buddhi: still enough to reflect what's actually there"
+      ]
+    },
+    ahamkara: {
+      name: "Ahaṃkāra — the \"I, Me, Mine\" Voice",
+      sub: "The Narrator · Sūtra 1.4",
+      essence: "The part that claims authorship of every event, whether or not it actually did anything.",
+      points: [
+        "Turns raw experience into a personal story: 'this happened to me,' 'I am important,' 'I am scared'",
+        "Not inherently bad — but noisy, and prone to making everything personal that doesn't need to be",
+        "The mechanism behind Sūtra 1.4: when the mind isn't still, this narrator convinces you that you ARE the passing wave, not the one watching it",
+        "Both flattering labels ('I am the smartest') and harsh ones ('I am useless') are equally its handiwork — and equally traps"
+      ]
+    },
+    atman: {
+      name: "Ātman / Puruṣa — the Rider",
+      sub: "The Seer · Sūtra 1.3",
+      essence: "The one being carried — aware of the whole ride, but never identical with the chariot, horses, or driver.",
+      points: [
+        "Sūtra 1.3's promise: when the vṛttis still, the Seer simply rests in its own nature — nothing needs to be added",
+        "Not the body (which changes), not the mind (which moves constantly), not even buddhi's decisions — just the awareness present through all of it",
+        "The classical test: whatever changes cannot be who you truly are, since the one thing that notices the changing must itself stay put",
+        "Called by many names across the tradition — Puruṣa, Ātman, Sākṣī (witness), Draṣṭā (seer) — always pointing at the same still center"
+      ]
+    }
+  };
+
+  const chariotDetail = document.getElementById('chariotDetail');
+  const chariotSvg = document.getElementById('chariotSvg');
+  const partPickRow = document.getElementById('partPickRow');
+
+  function renderPart(key){
+    const p = parts[key];
+    chariotDetail.innerHTML = `
+      <div class="part-name">${p.name}</div>
+      <div class="part-sub">${p.sub}</div>
+      <div class="part-essence">${p.essence}</div>
+      <ul>${p.points.map(x => `<li>${x}</li>`).join('')}</ul>
+    `;
+    chariotSvg.querySelectorAll('.node').forEach(n => n.classList.toggle('dim', n.dataset.part !== key));
+    partPickRow.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.part === key));
+  }
+  chariotSvg.querySelectorAll('[data-part]').forEach(el => el.addEventListener('click', () => renderPart(el.dataset.part)));
+  partPickRow.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => renderPart(btn.dataset.part)));
+  renderPart('manas');
+
+  const sutras = [
+    { num: "1.1", title: "Atha yoga-anuśāsanam", sub: "Now begins the disciplined teaching", sanskrit: "अथ योगानुशासनम्", translit: "Atha yoga-anuśāsanam", body: `
+      <h5>The Word "Now"</h5>
+      <p>Not a scene-setter — a demand for readiness. Classical readings treat <em>atha</em> as marking the
+      exact moment a student has lived and failed enough to finally be prepared to hear something difficult.
+      No prerequisite of monkhood, age, or a settled life is attached — only readiness.</p>
+      <h5>Anuśāsanam — Training, Not Doctrine</h5>
+      <p>The word specifically means disciplined, step-by-step instruction — learned the way music or a craft
+      is learned, through repetition, not through a single flash of understanding. This sets the tone for
+      everything that follows: Yoga is a practice to be done, not a belief to be held.</p>
+      <h5>Where It Comes From</h5>
+      <p>Patañjali frames himself as compiler, not inventor — "anu" (continuing) marks him as systematizing an
+      older oral tradition. Yoga sits among six orthodox (āstika) schools of ancient Indian philosophy, paired
+      closely with Sāṅkhya: Sāṅkhya supplies the map of reality (puruṣa, prakṛti, the layers of mind); Yoga
+      supplies the practice of walking that map directly, the way reading about swimming differs from entering
+      the water.</p>
+    `},
+    { num: "1.2", title: "Yogaś citta-vṛtti-nirodhaḥ", sub: "The heart of all Yoga, in one line", sanskrit: "योगश्चित्तवृत्तिनिरोधः", translit: "Yogaś citta-vṛtti-nirodhaḥ", body: `
+      <h5>Word by Word</h5>
+      <p><strong>Yoga</strong> — the path. <strong>Citta</strong> — the whole inner mind-system.
+      <strong>Vṛtti</strong> — movements, thoughts, emotional waves. <strong>Nirodhaḥ</strong> — stilling,
+      calming — never destroying.</p>
+      <h5>The Three Faces of Citta</h5>
+      <p>Manas gathers, confused and fast. Buddhi decides, calm and clear — when given the chance. Ahaṃkāra
+      narrates, turning every event into something personal. Together they form the "inner world-maker" the
+      rest of the text is trying to train.</p>
+      <h5>What Nirodhaḥ Actually Means</h5>
+      <p>Not pushing thoughts away, not forcing blankness. It means sitting at the lake's shore, watching waves
+      rise, and simply not chasing every one. Some waves come from the world, some from the senses — practice
+      first reduces the reaction-waves; deeper waves quiet only with sustained work. The lake is never asked
+      to stop having water. It is only asked to stop being whipped into storm.</p>
+    `},
+    { num: "1.3", title: "Tadā draṣṭuḥ svarūpe'vasthānam", sub: "What happens when the waves settle", sanskrit: "तदा द्रष्टुः स्वरूपेऽवस्थानम्", translit: "Tadā draṣṭuḥ svarūpe'vasthānam", body: `
+      <h5>A Result, Not an Instruction</h5>
+      <p>Where 1.2 gives the method, 1.3 gives the promise: <em>then</em>, the Seer rests in its own true
+      nature. Literally: then (tadā), the Seer (draṣṭuḥ), in its own form (svarūpe), abides (avasthānam).</p>
+      <h5>What You Are Not</h5>
+      <p>Not the body, which changes constantly. Not the mind, in perpetual motion. Not even the emotions,
+      which rise and fall like weather. Anything that changes cannot be the constant doing the noticing.</p>
+      <h5>What You Are</h5>
+      <p>The one who knows all of it — the witness (sākṣī), the seer (draṣṭā). It does nothing, panics at
+      nothing; it simply is aware. The storm has a center that never moves, however violent the wind at its
+      edge — and that stillness is available the instant identification with the storm loosens, not after
+      years of practice have "earned" it.</p>
+    `},
+    { num: "1.4", title: "Vṛtti-sārūpyam itaratra", sub: "What happens when the waves don't settle", sanskrit: "वृत्तिसारूप्यमितरत्र", translit: "Vṛtti-sārūpyam itaratra", body: `
+      <h5>The Mirror Image of 1.3</h5>
+      <p>Otherwise (itaratra) — when the mind is not still — one takes on the form (sārūpyam) of its own
+      movements (vṛtti). In plain terms: without stillness, you mistake yourself for your thoughts.</p>
+      <h5>How a Label Forms</h5>
+      <p>"I made a mistake" is an event. Left unchecked, the mind escalates it: <em>I am a failure</em>. One
+      small occurrence becomes a permanent identity. Both harsh labels ("I am lazy") and flattering ones ("I am
+      the smartest") work the same trap — the flattering ones simply cost more to defend, since now every hard
+      question threatens the label rather than just the outcome.</p>
+      <h5>Two Working Images</h5>
+      <p>Thoughts are clouds; you are the sky they pass through. Feelings are passengers; you are the driver —
+      they may ride along, but the wheel is not theirs. Practically, this means a small linguistic shift does
+      real work: not "I am angry," but "anger is visiting me right now."</p>
+    `},
+    { num: "1.5–1.6", title: "Vṛttayaḥ pañcatayyaḥ", sub: "The five kinds of thought — with or without pain", sanskrit: "वृत्तयः पञ्चतय्यः क्लिष्टाऽक्लिष्टाः", translit: "Vṛttayaḥ pañcatayyaḥ kliṣṭākliṣṭāḥ", body: `
+      <h5>Not All Thoughts Are the Enemy</h5>
+      <p>The goal was never "destroy all thoughts" — it was always "notice, sort, and let the useful ones stay
+      light." Every thought a mind produces, however many in a day, sorts into exactly five categories.</p>
+      <h5>The Five Categories</h5>
+      <ol>
+        <li><strong>Pramāṇa (right knowledge)</strong> — accurate, checked understanding: seen clearly, reasoned soundly, or heard from someone genuinely trustworthy.</li>
+        <li><strong>Viparyaya (wrong knowledge)</strong> — a false story the mind builds and believes, unchecked against reality.</li>
+        <li><strong>Vikalpa (imagination)</strong> — mental pictures with no direct grounding — sometimes useful ("what if I try a different approach"), sometimes purely fear-generating ("what if everyone laughs").</li>
+        <li><strong>Nidrā (sleep)</strong> — the mind's own distinct state during dreamless rest, counted as a vṛtti in its own right.</li>
+        <li><strong>Smṛti (memory)</strong> — past impressions surfacing again, useful when they teach, heavy when they merely replay old pain.</li>
+      </ol>
+      <h5>The Practical Skill</h5>
+      <p>Before believing a thought, ask which bucket it belongs to. "Nobody likes me" often turns out to be
+      viparyaya wearing the costume of pramāṇa. This single habit of sorting — not suppressing, just sorting —
+      is most of what separates a reactive mind from a clear one.</p>
+    `},
+    { num: "1.6 (cont.)", title: "Viparyaya and Saṃskāra", sub: "The rope-snake, and how a nature is built", sanskrit: "मिथ्याज्ञानम् अतद्रूपप्रतिष्ठम्", translit: "Mithyā-jñānam atadrūpa-pratiṣṭham", body: `
+      <h5>The Rope and the Snake</h5>
+      <p>A curved shape in dim light triggers one wrong perception, and that single error cascades: racing
+      thoughts about venom, about mortality, each one more convincing than the last, none of them checked. Only
+      when the breath slows enough for buddhi to actually look does the shape resolve into what it always
+      was — a rope. Viparyaya is exactly this: a convincing false picture, reacted to as though it were fact.</p>
+      <h5>Saṃskāra — the Worn Path</h5>
+      <p>Every repeated thought leaves a trace, the way a foot worn path appears from walking the same line
+      through a field. Repeat a fearful, angry, or lazy thought often enough, and the mind finds that channel
+      automatically before any alternative is even considered — this is why temperament feels fixed.</p>
+      <h5>Why This Is Actually Hopeful</h5>
+      <p>A worn path is not a life sentence. A new one can be deliberately worn alongside the old — one counter
+      thought, one paused breath, one on-time start at a time. Changing a nature is called difficult, not
+      impossible, because it genuinely works against a gravity already established by repetition — but the
+      same mechanism that built the old path can build a new one.</p>
+    `},
+    { num: "1.7", title: "Three Rooms of Life", sub: "Living well with imagination, memory, and rest", sanskrit: "शब्दज्ञानानुपाती वस्तुशून्यो विकल्पः", translit: "Śabda-jñāna-anupātī vastu-śūnyo vikalpaḥ", body: `
+      <h5>Vikalpa, Smṛti, Nidrā — Used Well or Badly</h5>
+      <p>Imagination that makes you scared, stuck, or small is unhelpful; imagination that makes you brave,
+      kind, or resourceful is not the same wave at all, even though both are technically "vikalpa." The same
+      split applies to memory — a replay that only weighs the heart down differs from a replay that teaches
+      something and lets go. Sleep, meanwhile, is not a wasted vṛtti but the mind's own necessary rest state.</p>
+      <h5>The Three Rooms</h5>
+      <p>Life can be pictured as three rooms: <strong>Now</strong>, where living actually happens — smiling,
+      learning, acting; <strong>Before</strong>, visited only to learn, to give thanks, or to improve, never to
+      move in permanently; and <strong>Later</strong>, visited for planning and genuine hope, never for
+      residence in fear. The golden rule the tradition offers: use the past for learning, the future for
+      planning, and the present for living — and notice immediately which room a given thought is trying to
+      pull you into.</p>
+    `},
+    { num: "1.8 (1.12)", title: "Abhyāsa-vairāgyābhyāṃ tan-nirodhaḥ", sub: "The two tools that actually still the waves", sanskrit: "अभ्यासवैराग्याभ्यां तन्निरोधः", translit: "Abhyāsa-vairāgyābhyāṃ tan-nirodhaḥ", body: `
+      <h5>Two Superpowers, Not One</h5>
+      <p>The restless mind is described as a monkey — jumping, avoiding hard work, making excuses. Against it,
+      the text offers exactly two tools, and insists both are required together.</p>
+      <h5>Abhyāsa — Practice</h5>
+      <p>Not "I never slip" but "even when I stop, I come back." Effective practice needs three qualities:
+      sustained over a long time, without real interruption, and carried out with genuine seriousness rather
+      than mechanical motion. The measure was never perfection — it was always return.</p>
+      <h5>Vairāgya — Non-Attachment</h5>
+      <p>Holding effort tightly, holding the result lightly. "I must come first" manufactures fear at every
+      setback; "I will give my best and stay calm" manufactures resilience instead — because effort is fully
+      within one's control, and outcome never entirely is.</p>
+      <h5>Mind as Teammate</h5>
+      <p>The practical shift the text recommends: stop treating the mind as an enemy to be defeated, and start
+      addressing it directly as a teammate — "come on, help me," "let's finish this" — which changes the entire
+      emotional register of practice from war to partnership.</p>
+    `},
+    { num: "1.9 (1.20)", title: "The Five-Step Journey to Steadiness", sub: "Faith, energy, memory, absorption, wisdom", sanskrit: "श्रद्धावीर्यस्मृतिसमाधिप्रज्ञापूर्वक इतरेषाम्", translit: "Śraddhā-vīrya-smṛti-samādhi-prajñā-pūrvaka itareṣām", body: `
+      <h5>A Staircase, Not a Switch</h5>
+      <p>A calm, clear mind is never a single decision — it grows in a fixed sequence, and importantly, each
+      step can be re-entered after a fall, without starting over from nothing.</p>
+      <ol>
+        <li><strong>Śraddhā (faith)</strong> — "I believe this can help me," enough trust to take the first step before results exist.</li>
+        <li><strong>Vīrya (energy)</strong> — the effort that follows genuine belief, even at partial strength.</li>
+        <li><strong>Smṛti (memory)</strong> — returning to the original reason for starting, when motivation runs quiet.</li>
+        <li><strong>Samādhi (absorption)</strong> — the point where practice stops requiring willpower and becomes the mind's own preferred channel.</li>
+        <li><strong>Prajñā (wisdom)</strong> — the resulting clarity to correctly tell what matters from what is merely noise.</li>
+      </ol>
+      <h5>Why Faith Comes First</h5>
+      <p>Mind-work offers no scoreboard, no daily medal — which is exactly why so many practices are abandoned
+      early. Faith is what survives the gap between effort and visible result; without it, the other four steps
+      never get the chance to compound.</p>
+    `}
+  ];
+
+  const sutraList = document.getElementById('sutraList');
+  sutras.forEach((s, i) => {
+    const div = document.createElement('div');
+    div.className = 'sutra-card';
+    div.innerHTML = `
+      <div class="sutra-head">
+        <div class="sutra-num">${s.num}</div>
+        <div class="sutra-title">${s.title}<div class="sutra-sub">${s.sub}</div></div>
+        <div class="sutra-arrow">▶</div>
+      </div>
+      <div class="sutra-body"><div class="sutra-body-inner">
+        <div class="sanskrit-line">${s.sanskrit}</div>
+        <div class="translit-line">${s.translit}</div>
+        ${s.body}
+      </div></div>
+    `;
+    div.querySelector('.sutra-head').addEventListener('click', () => div.classList.toggle('open'));
+    sutraList.appendChild(div);
+  });
+
+  const vrittis = [
+    { name: "Pramāṇa", label: "Right Knowledge", desc: "Accurate understanding — seen directly, reasoned soundly, or heard from someone genuinely trustworthy.", eg: "\"It is raining.\" \"I saw the bus arrive.\"" },
+    { name: "Viparyaya", label: "Wrong Knowledge", desc: "A false story the mind builds and believes, unchecked against what's actually true.", eg: "\"Nobody likes me.\" \"He didn't smile, so he must hate me.\"" },
+    { name: "Vikalpa", label: "Imagination", desc: "A mental picture with no direct grounding — can inspire or can terrify, depending entirely on where it's aimed.", eg: "\"What if I fail tomorrow?\" vs. \"What if I try a new approach?\"" },
+    { name: "Nidrā", label: "Sleep", desc: "The mind's own distinct state during dreamless rest — counted as a genuine vṛtti, not an absence of one.", eg: "The lake, gone still, at rest." },
+    { name: "Smṛti", label: "Memory", desc: "Past impressions returning — useful when they teach something, heavy when they only replay old pain.", eg: "\"Last time I learned to prepare earlier.\"" }
+  ];
+  const vrittiGrid = document.getElementById('vrittiGrid');
+  vrittis.forEach(v => {
+    const div = document.createElement('div');
+    div.className = 'vritti-card';
+    div.innerHTML = `<h4>${v.name}</h4><p><strong>${v.label}.</strong> ${v.desc}</p><div class="vritti-eg">${v.eg}</div>`;
+    vrittiGrid.appendChild(div);
+  });
+
+  const quiz = [
+    { q: "Why does Patañjali open with the word \"atha\" (now) rather than a definition of Yoga?", a: "Because \"atha\" marks readiness, not timing — the text is signaling that Yoga is available the instant a person is prepared to begin, not reserved for a special class of people or a later point in life." },
+    { q: "What are the three parts of Chitta, and their distinct functions?", a: "Manas (the fast, confused collector of sense-data), Buddhi (the calm decision-maker), and Ahaṃkāra (the narrator that claims personal authorship of events)." },
+    { q: "What does \"nirodhaḥ\" actually mean in Sūtra 1.2 — and what does it NOT mean?", a: "It means calming or stilling the mind's waves through non-reactive watching. It does NOT mean forcing blankness, destroying thought, or suppressing the mind." },
+    { q: "How does Sūtra 1.3 define who you truly are?", a: "As the Draṣṭā — the Seer or witness — the one who is aware of thoughts, feelings, and sensations, but is not identical with any of them, since all of those constantly change while the awareness noticing them does not." },
+    { q: "Name all five categories a thought must fall into, per Sūtra 1.5–1.6.", a: "Pramāṇa (right knowledge), Viparyaya (wrong knowledge), Vikalpa (imagination), Nidrā (sleep), and Smṛti (memory)." },
+    { q: "In the rope-snake story, what does the buddhi eventually do that the manas and ahaṃkāra couldn't?", a: "It waits for the breath to slow, then actually looks — replacing panic-driven reaction with a clear, checked perception, revealing the rope for what it always was." },
+    { q: "What is a saṃskāra, and why does it explain 'fixed' personality traits?", a: "A worn mental path formed by repeating the same kind of thought. Traits feel fixed because the mind defaults to its most-worn channel automatically — but a new channel can deliberately be worn alongside the old one." },
+    { q: "What are the three required qualities of effective Abhyāsa (practice)?", a: "Sustained over a long time (dīrgha-kāla), without real interruption (nairantarya), and carried out with genuine seriousness (satkāra)." },
+    { q: "How does Vairāgya differ from simple indifference?", a: "Vairāgya means holding effort tightly while holding the outcome lightly — full engagement in the doing, without the mind gripping a result it was never fully in control of." },
+    { q: "List the five steps of the ladder to a steady mind, in order.", a: "Śraddhā (faith) → Vīrya (energy) → Smṛti (memory of purpose) → Samādhi (absorption) → Prajñā (wisdom/discernment)." },
+    { q: "What distinguishes the three Guṇas — Sattva, Rajas, and Tamas?", a: "Sattva is the calm, clear \"sunny\" mind; Rajas is the fast, restless \"river\" mind; Tamas is the heavy, dull \"rock\" mind. All three cycle through every mind and are recognized rather than fought." },
+    { q: "What are the four attitudes of Sūtra 1.33, and toward whom is each directed?", a: "Maitrī (friendliness) toward the happy, Karuṇā (compassion) toward the suffering, Muditā (gladness) toward the successful, and Upekṣā (equanimity) toward the wrongdoer." },
+  ];
+  const quizList = document.getElementById('quizList');
+  quiz.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'quiz-item';
+    div.innerHTML = `<div class="quiz-q"><span>${item.q}</span><span class="flip-hint">tap to reveal</span></div><div class="quiz-a">${item.a}</div>`;
+    div.addEventListener('click', () => div.classList.toggle('open'));
+    quizList.appendChild(div);
+  });
+</script>
+
+</body>
+</html>

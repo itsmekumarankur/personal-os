@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loan Against Mutual Fund — System Design Memory Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#ffffff;
+    --bg-soft:#f6f7f9;
+    --surface:#ffffff;
+    --surface-2:#f0f2f5;
+    --surface-hover:#eaeef3;
+    --border:#e2e6ec;
+    --border-soft:#ebeef2;
+    --text:#1c2433;
+    --text-dim:#525f78;
+    --text-faint:#76839c;
+    --gold:#b9862a;
+    --gold-deep:#8a6f23;
+    --mono-bg:#f2f4f7;
+
+    --a:#b9862a; --a-tint:#fbf1da;
+    --b:#2f6fba; --b-tint:#e7f0fb;
+    --c:#1f8f78; --c-tint:#e1f6f0;
+    --d:#7456c2; --d-tint:#efe8fb;
+    --e:#c2701f; --e-tint:#fbe8d6;
+    --f:#c2453c; --f-tint:#fbe3e0;
+    --g:#2f8f5c; --g-tint:#e1f4e9;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{
+    font-family:'Manrope',-apple-system,sans-serif;
+    color:var(--text);
+    line-height:1.55;
+    padding:0 20px 80px;
+  }
+  .wrap{max-width:880px;margin:0 auto;}
+
+  /* ---------- header ---------- */
+  header{
+    padding:40px 0 20px;
+    border-bottom:1px solid var(--border-soft);
+    margin-bottom:24px;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--gold);
+    margin:0 0 10px;
+  }
+  h1{
+    font-size:clamp(26px,4vw,36px);
+    font-weight:800;
+    margin:0 0 8px;
+    letter-spacing:-0.01em;
+  }
+  .subtitle{
+    color:var(--text-dim);
+    font-size:15px;
+    margin:0 0 18px;
+    max-width:640px;
+  }
+  .stats{
+    display:flex;
+    gap:18px;
+    flex-wrap:wrap;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    color:var(--text-faint);
+  }
+  .stats b{color:var(--text-dim);font-weight:600;}
+
+  /* ---------- toolbar ---------- */
+  .toolbar{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:12px 14px;
+    margin-bottom:22px;
+    position:sticky;
+    top:12px;
+    z-index:50;
+    box-shadow:0 4px 14px rgba(16,24,40,.06);
+    backdrop-filter:blur(6px);
+  }
+  .btn{
+    font-family:'Manrope',sans-serif;
+    font-size:13px;
+    font-weight:600;
+    color:var(--text-dim);
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:7px 13px;
+    cursor:pointer;
+    transition:background .15s,color .15s,border-color .15s;
+  }
+  .btn:hover{background:var(--surface-hover);color:var(--text);border-color:var(--gold-deep);}
+  .search-wrap{
+    flex:1;
+    min-width:180px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--bg-soft);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:7px 12px;
+  }
+  .search-wrap svg{flex:0 0 14px;color:var(--text-faint);}
+  #search{
+    flex:1;
+    background:none;
+    border:none;
+    outline:none;
+    color:var(--text);
+    font-family:'Manrope',sans-serif;
+    font-size:13px;
+  }
+  #search::placeholder{color:var(--text-faint);}
+  #matchCount{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--text-faint);
+    white-space:nowrap;
+  }
+
+  /* ---------- legend / nav ---------- */
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:30px;
+  }
+  .legend a{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    text-decoration:none;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--text-dim);
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:6px 12px 6px 8px;
+    transition:border-color .15s,color .15s;
+  }
+  .legend a:hover{color:var(--text);border-color:var(--text-faint);}
+  .legend a.is-active{color:var(--text);font-weight:700;}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none;transition:box-shadow .25s ease;}
+  .legend a.is-active .dot{box-shadow:0 0 7px 2px currentColor;}
+
+  /* ---------- cluster (top level) ---------- */
+  .cluster{margin-bottom:14px;scroll-margin-top:80px;}
+  .cluster > summary{
+    list-style:none;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    cursor:pointer;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:14px 18px;
+    box-shadow:0 1px 3px rgba(16,24,40,.05);
+    transition:background .15s,border-color .15s;
+  }
+  .cluster > summary::-webkit-details-marker{display:none;}
+  .cluster > summary:hover{background:var(--surface-2);}
+  .cluster[open] > summary{border-bottom-left-radius:0;border-bottom-right-radius:0;}
+
+  .cluster-body{
+    border:1px solid var(--border);
+    border-top:none;
+    border-left:3px solid var(--accent);
+    border-bottom-left-radius:12px;
+    border-bottom-right-radius:12px;
+    padding:10px 18px 16px 18px;
+    background:var(--bg-soft);
+    background:linear-gradient(180deg, color-mix(in srgb, var(--accent) 9%, var(--bg-soft)) 0%, var(--bg-soft) 220px);
+    transition:opacity .4s ease, filter .4s ease;
+  }
+  body.focus-mode .cluster:not(.is-active-cluster) .cluster-body,
+  body.focus-mode .cluster:not(.is-active-cluster) > summary{
+    opacity:.4;
+    filter:saturate(.55);
+  }
+  .cluster.is-active-cluster > summary{box-shadow:0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent) inset;}
+
+  .badge-diamond{
+    width:30px;height:30px;flex:0 0 30px;
+    transform:rotate(45deg);
+    border-radius:5px;
+    display:flex;align-items:center;justify-content:center;
+    border:1.5px solid rgba(16,24,40,.10);
+  }
+  .badge-diamond span{
+    transform:rotate(-45deg);
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:14px;
+  }
+  .cluster-icon{flex:0 0 20px;width:20px;height:20px;color:var(--accent);}
+  .cluster-title{font-size:16px;font-weight:700;flex:1;}
+  .cluster-meta{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-faint);}
+  .chevron-big::before{
+    content:'';
+    display:inline-block;
+    width:8px;height:8px;
+    border-right:2px solid var(--accent);
+    border-bottom:2px solid var(--accent);
+    transform:rotate(-45deg);
+    transition:transform .15s ease;
+    margin-left:4px;
+  }
+  .cluster[open] > summary .chevron-big::before{transform:rotate(45deg);margin-top:-4px;}
+
+  /* ---------- topic (2nd level) ---------- */
+  .topic{
+    margin:10px 0;
+    border-left:2px solid var(--border);
+    padding-left:14px;
+    transition:border-color .15s;
+  }
+  .topic > summary{
+    list-style:none;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    cursor:pointer;
+    padding:9px 4px;
+    border-radius:6px;
+  }
+  .topic > summary::-webkit-details-marker{display:none;}
+  .topic > summary:hover{background:color-mix(in srgb, var(--accent) 10%, var(--surface-hover));}
+  .badge-pill{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    font-weight:700;
+    border-radius:5px;
+    padding:2px 7px;
+    flex:none;
+    border:1px solid currentColor;
+    background:color-mix(in srgb, currentColor 14%, transparent);
+  }
+  .topic-title{font-size:14.5px;font-weight:600;flex:1;}
+  .topic-count{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-faint);}
+  .chevron-sm::before{
+    content:'';
+    display:inline-block;
+    width:6px;height:6px;
+    border-right:1.5px solid var(--accent);
+    border-bottom:1.5px solid var(--accent);
+    transform:rotate(-45deg);
+    transition:transform .15s ease;
+  }
+  .topic[open] > summary .chevron-sm::before{transform:rotate(45deg);margin-top:-3px;}
+  .topic-body{padding:2px 4px 6px 4px;}
+
+  /* ---------- leaf details (3rd level, e.g. each of 10 questions) ---------- */
+  .leafd{
+    margin:6px 0;
+    background:var(--surface);
+    border:1px solid var(--border-soft);
+    border-left:2px solid color-mix(in srgb, var(--accent) 45%, var(--border-soft));
+    border-radius:8px;
+    box-shadow:0 1px 2px rgba(16,24,40,.03);
+  }
+  .leafd > summary{
+    list-style:none;
+    cursor:pointer;
+    display:flex;
+    align-items:flex-start;
+    gap:8px;
+    padding:8px 12px;
+    font-size:13.5px;
+    font-weight:600;
+  }
+  .leafd > summary::-webkit-details-marker{display:none;}
+  .leafd > summary:hover{background:color-mix(in srgb, var(--accent) 8%, var(--surface-hover));}
+  .leafd-body{
+    padding:0 14px 12px 14px;
+    font-size:13.5px;
+    color:var(--text-dim);
+  }
+  .chevron-xs{flex:none;margin-top:3px;}
+  .chevron-xs::before{
+    content:'';
+    display:inline-block;
+    width:5px;height:5px;
+    border-right:1.5px solid var(--accent);
+    border-bottom:1.5px solid var(--accent);
+    transform:rotate(-45deg);
+    transition:transform .15s ease;
+  }
+  .leafd[open] > summary .chevron-xs::before{transform:rotate(45deg);margin-top:-2px;}
+
+  /* ---------- plain leaf list ---------- */
+  ul.leaflist{list-style:none;margin:6px 0;padding:0;}
+  ul.leaflist > li{
+    position:relative;
+    padding:6px 0 6px 16px;
+    font-size:13.5px;
+    color:var(--text-dim);
+    border-bottom:1px solid var(--border-soft);
+  }
+  ul.leaflist > li:last-child{border-bottom:none;}
+  ul.leaflist > li::before{
+    content:'';
+    position:absolute;left:0;top:14px;
+    width:6px;height:1.5px;
+    background:var(--text-faint);
+  }
+  ul.leaflist > li b{color:var(--text);font-weight:600;}
+
+  ol.steps{margin:8px 0;padding-left:0;list-style:none;counter-reset:step;}
+  ol.steps > li{
+    counter-increment:step;
+    position:relative;
+    padding:6px 0 6px 30px;
+    font-size:13.5px;
+    color:var(--text-dim);
+    border-bottom:1px solid var(--border-soft);
+  }
+  ol.steps > li:last-child{border-bottom:none;}
+  ol.steps > li::before{
+    content:counter(step);
+    position:absolute;left:0;top:5px;
+    width:20px;height:20px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;
+    font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+    border-radius:50%;
+    background:var(--surface-2);
+    color:var(--text-dim);
+    border:1px solid var(--border);
+  }
+
+  .chip{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    background:var(--mono-bg);
+    border:1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+    border-radius:5px;
+    padding:2px 8px;
+    color:var(--text);
+    display:inline-block;
+    margin:2px 4px 2px 0;
+  }
+  .chipflow{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:8px 0;}
+  .chipflow .arrow{color:var(--text-faint);font-size:13px;}
+
+  .quote{
+    margin:8px 0;
+    padding:10px 14px;
+    border-left:3px solid var(--gold);
+    background:rgba(185,134,42,.07);
+    border-radius:0 6px 6px 0;
+    font-size:13.5px;
+  }
+  .quote .line{font-weight:600;color:var(--text);}
+  .quote .why{color:var(--text-faint);font-size:12.5px;margin-top:3px;}
+
+  .kv{display:flex;gap:10px;margin:6px 0;font-size:13.5px;flex-wrap:wrap;}
+  .kv .k{font-family:'JetBrains Mono',monospace;color:var(--gold);font-size:12px;min-width:70px;}
+  .kv .v{color:var(--text-dim);flex:1;min-width:180px;}
+
+  .zone-row{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px;border-bottom:1px solid var(--border-soft);}
+  .zone-row:last-child{border-bottom:none;}
+  .zone-tag{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;padding:2px 9px;border-radius:5px;flex:0 0 auto;width:90px;text-align:center;}
+  .zone-desc{color:var(--text-dim);}
+
+  .para{font-size:13.5px;color:var(--text-dim);margin:6px 0;}
+
+  mark{background:var(--gold);color:#fff;border-radius:3px;padding:0 2px;}
+
+  footer{
+    margin-top:40px;
+    padding-top:20px;
+    border-top:1px solid var(--border-soft);
+    color:var(--text-faint);
+    font-size:12px;
+    text-align:center;
+  }
+
+  /* ---------- ambient mood wash (tracks active cluster) ---------- */
+  .ambient{
+    position:fixed;inset:0;
+    pointer-events:none;
+    z-index:-1;
+    background-color:rgba(185,134,42,.045);
+    transition:background-color .8s ease;
+  }
+
+  /* ---------- reading rail : segmented progress bar by cluster ---------- */
+  .rail{
+    display:flex;
+    height:7px;
+    border-radius:6px;
+    overflow:hidden;
+    background:var(--surface);
+    margin:0 0 16px;
+    gap:2px;
+  }
+  .rail-seg{
+    position:relative;
+    height:100%;
+    background:color-mix(in srgb, var(--seg) 28%, var(--bg-soft));
+    cursor:pointer;
+    transition:opacity .3s;
+  }
+  .rail-seg:hover{opacity:.85;}
+  .rail-fill{
+    position:absolute;left:0;top:0;bottom:0;
+    width:0%;
+    background:var(--seg);
+    transition:width .12s linear;
+  }
+  .rail-seg.is-active{box-shadow:0 0 8px 1px var(--seg) inset;}
+
+  /* ---------- now-reading breadcrumb chip ---------- */
+  .now-reading{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--text-dim);
+    background:var(--bg-soft);
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:6px 12px 6px 10px;
+    white-space:nowrap;
+    transition:border-color .3s, color .3s;
+  }
+  .now-reading .dot{width:8px;height:8px;transition:background-color .3s, box-shadow .3s;box-shadow:0 0 6px 1px currentColor;}
+  .now-reading .nr-label{color:var(--text-faint);font-weight:500;}
+
+  .btn.is-on{color:var(--text);border-color:var(--gold);background:color-mix(in srgb, var(--gold) 16%, var(--surface-2));}
+
+  @media (prefers-reduced-motion: reduce){
+    .cluster-body,.cluster:not(.is-active-cluster) .cluster-body,.ambient,.now-reading .dot,.rail-fill{transition:none!important;}
+  }
+
+  @media (max-width:600px){
+    body{padding:0 12px 60px;}
+    header{padding:28px 0 16px;}
+    .toolbar{position:static;}
+    .badge-diamond{width:26px;height:26px;flex:0 0 26px;}
+    .now-reading{display:none;}
+  }
+</style>
+</head>
+<body class="focus-mode">
+<div class="ambient" id="ambient"></div>
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">System design · memory map</p>
+    <h1>Loan against mutual fund</h1>
+    <p class="subtitle">A collateralized lending platform mapped end to end — holdings, eligibility, valuation, pledge orchestration, loan servicing, and continuous risk management. Click any row to expand it; collapse it the same way.</p>
+    <div class="stats">
+      <span><b>7</b> clusters</span>
+      <span><b>24</b> topics</span>
+      <span><b>90+</b> expandable nodes</span>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="now-reading" id="nowReading"><span class="dot" id="nrDot" style="background:var(--a);color:var(--a)"></span><span class="nr-label">Reading</span> <span id="nrLabel">Understand the business</span></div>
+    <button class="btn" onclick="expandAll()">Expand all</button>
+    <button class="btn" onclick="collapseAll()">Collapse all</button>
+    <button class="btn" onclick="resetView()">Reset view</button>
+    <button class="btn is-on" id="focusBtn" onclick="toggleFocus()">Focus mode: on</button>
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="search" type="text" placeholder="Search the map… e.g. pledge, NAV, liquidation" oninput="runSearch()">
+    </div>
+    <span id="matchCount"></span>
+  </div>
+
+  <div class="rail" id="rail">
+    <div class="rail-seg is-active" data-target="cluster-a" style="--seg:var(--a);flex-grow:2;"><div class="rail-fill"></div></div>
+    <div class="rail-seg" data-target="cluster-b" style="--seg:var(--b);flex-grow:2;"><div class="rail-fill"></div></div>
+    <div class="rail-seg" data-target="cluster-c" style="--seg:var(--c);flex-grow:3;"><div class="rail-fill"></div></div>
+    <div class="rail-seg" data-target="cluster-d" style="--seg:var(--d);flex-grow:8;"><div class="rail-fill"></div></div>
+    <div class="rail-seg" data-target="cluster-e" style="--seg:var(--e);flex-grow:2;"><div class="rail-fill"></div></div>
+    <div class="rail-seg" data-target="cluster-f" style="--seg:var(--f);flex-grow:3;"><div class="rail-fill"></div></div>
+    <div class="rail-seg" data-target="cluster-g" style="--seg:var(--g);flex-grow:4;"><div class="rail-fill"></div></div>
+  </div>
+
+  <nav class="legend">
+    <a href="#cluster-a" data-target="cluster-a"><span class="dot" style="background:var(--a);color:var(--a)"></span>A · Understand the business</a>
+    <a href="#cluster-b" data-target="cluster-b"><span class="dot" style="background:var(--b);color:var(--b)"></span>B · Architecture overview</a>
+    <a href="#cluster-c" data-target="cluster-c"><span class="dot" style="background:var(--c);color:var(--c)"></span>C · Journey &amp; state</a>
+    <a href="#cluster-d" data-target="cluster-d"><span class="dot" style="background:var(--d);color:var(--d)"></span>D · Core subsystems</a>
+    <a href="#cluster-e" data-target="cluster-e"><span class="dot" style="background:var(--e);color:var(--e)"></span>E · Interfaces &amp; events</a>
+    <a href="#cluster-f" data-target="cluster-f"><span class="dot" style="background:var(--f);color:var(--f)"></span>F · Resilience &amp; consistency</a>
+    <a href="#cluster-g" data-target="cluster-g"><span class="dot" style="background:var(--g);color:var(--g)"></span>G · Mastery layer</a>
+  </nav>
+
+  <!-- ================= CLUSTER A ================= -->
+  <details class="cluster" id="cluster-a" open style="--accent:var(--a)">
+    <summary>
+      <div class="badge-diamond" style="background:var(--a-tint);color:var(--a);"><span>A</span></div>
+      <svg class="cluster-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="7.5"/><text x="10" y="13.5" text-anchor="middle" font-size="9" font-family="JetBrains Mono, monospace" fill="currentColor" stroke="none">?</text></svg>
+      <span class="cluster-title">Understand the business</span>
+      <span class="cluster-meta">2 topics</span>
+      <span class="chevron-big"></span>
+    </summary>
+    <div class="cluster-body">
+
+      <details class="topic" open style="border-color:var(--a)">
+        <summary>
+          <span class="badge-pill" style="color:var(--a)">A1</span>
+          <span class="topic-title">Business understanding questions</span>
+          <span class="topic-count">10 questions</span>
+          <span class="chevron-sm"></span>
+        </summary>
+        <div class="topic-body">
+
+          <details class="leafd"><summary><span class="chevron-xs"></span>What exactly is the bank lending against?</summary>
+            <div class="leafd-body">Units, value, only approved schemes, only demat holdings, or both SOA and demat — this single choice reshapes custody, pledge flow, and the whole integration design.</div></details>
+
+          <details class="leafd"><summary><span class="chevron-xs"></span>Term loan or overdraft / credit line?</summary>
+            <div class="leafd-body">One of the biggest design splitters. A term loan disburses once as a fixed amount; an OD/line lets the customer draw as needed with interest only on the used amount. The system design diverges sharply from here.</div></details>
+
+          <details class="leafd"><summary><span class="chevron-xs"></span>Who controls the mutual fund holdings?</summary>
+            <div class="leafd-body">Already inside the wealth platform, discovered via RTA/CAMS/KFintech/MF Central or the depository, or manually declared by the customer. This decides trust level, eligibility checks, fraud controls, and reconciliation effort.</div></details>
+
+          <details class="leafd"><summary><span class="chevron-xs"></span>Do we allow all schemes?</summary>
+            <div class="leafd-body">Or only debt, hybrid, or selected equity funds — excluding ELSS, lock-ins, and lien-marked schemes. This turns into a dedicated scheme eligibility service.</div></details>
+
+          <details class="leafd"><summary><span class="chevron-xs"></span>What is the LTV policy?</summary>
+            <div class="leafd-body">Example: liquid fund up to 80%, debt fund 70%, equity fund 50%. Loan logic is never one rule — it is a policy engine.</div></details>
+
+          <details class="leafd"><summary><span class="chevron-xs"></span>What happens when NAV falls?</summary>
+            <div class="leafd-body">Alert the customer, block fresh drawdown, ask for top-up collateral, or auto-liquidate pledged units. This is the heart of risk design.</div></details>
+
+          <details class="leafd"><summary><span class="chevron-xs"></span>Who performs pledge marking?</summary>
+            <div class="leafd-body">Can the bank do it directly, or does it route through an RTA, BSE StarMF / NSE NMF, a registrar, or a wealth-platform partner? Skipping this question makes the rest of the design fictional.</div></details>
+
+          <details class="leafd"><summary><span class="chevron-xs"></span>When is money disbursed?</summary>
+            <div class="leafd-body">After eKYC, holdings fetch, eligibility, pledge confirmation, loan agreement, mandate/eSign, and fraud checks — the exact ordering of these steps matters as much as the steps themselves.</div></details>
+
+          <details class="leafd"><summary><span class="chevron-xs"></span>Can the customer keep transacting in the pledged folio?</summary>
+            <div class="leafd-body">Redeem unpledged units, keep SIPs running, switch schemes, continue receiving dividends? These aren't side questions — they define the entire collateral control model.</div></details>
+
+          <details class="leafd"><summary><span class="chevron-xs"></span>What is the source of truth for outstanding collateral value?</summary>
+            <div class="leafd-body">Yesterday's NAV, latest available NAV, an internal cached valuation, or a partner valuation feed? Get this wrong and risk management breaks underneath everything else.</div></details>
+
+        </div>
+      </details>
+
+      <details class="topic" style="border-color:var(--a)">
+        <summary>
+          <span class="badge-pill" style="color:var(--a)">A2</span>
+          <span class="topic-title">First-principles model</span>
+          <span class="topic-count">mental model</span>
+          <span class="chevron-sm"></span>
+        </summary>
+        <div class="topic-body">
+          <div class="chipflow">
+            <span class="chip">Customer holds units</span><span class="arrow">→</span>
+            <span class="chip">Bank marks lien / pledge</span><span class="arrow">→</span>
+            <span class="chip">Loan up to allowed %</span><span class="arrow">→</span>
+            <span class="chip">If value falls → margin call / sell / liquidate</span>
+          </div>
+          <ul class="leaflist">
+            <li>The system really solves five core problems, in order: <b>identify holdings</b>, <b>decide eligibility</b>, <b>lock collateral</b>, <b>give and manage the loan</b>, and <b>continuously manage risk</b>.</li>
+          </ul>
+        </div>
+      </details>
+
+    </div>
+  </details>
+
+  <!-- ================= CLUSTER B ================= -->
+  <details class="cluster" id="cluster-b" style="--accent:var(--b)">
+    <summary>
+      <div class="badge-diamond" style="background:var(--b-tint);color:var(--b);"><span>B</span></div>
+      <svg class="cluster-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="14" height="4" rx="1.3"/><rect x="3" y="8" width="14" height="4" rx="1.3"/><rect x="3" y="13" width="14" height="4" rx="1.3"/></svg>
+      <span class="cluster-title">Architecture overview</span>
+      <span class="cluster-meta">2 topics</span>
+      <span class="chevron-big"></span>
+    </summary>
+    <div class="cluster-body">
+
+      <details class="topic" style="border-color:var(--b)">
+        <summary>
+          <span class="badge-pill" style="color:var(--b)">B1</span>
+          <span class="topic-title">High-level components</span>
+          <span class="topic-count">12 services</span>
+          <span class="chevron-sm"></span>
+        </summary>
+        <div class="topic-body">
+          <div class="para">A Journey Orchestrator sits at the center, coordinating these specialist services:</div>
+          <div class="chipflow">
+            <span class="chip">Customer profile / KYC</span><span class="chip">MF holdings service</span><span class="chip">Scheme eligibility engine</span><span class="chip">Valuation engine</span><span class="chip">Loan policy engine</span><span class="chip">Pledge orchestration</span><span class="chip">Loan management system</span><span class="chip">Agreement / eSign</span><span class="chip">Disbursement</span><span class="chip">Risk &amp; margin monitoring</span><span class="chip">Notification</span><span class="chip">Collections / liquidation</span>
+          </div>
+        </div>
+      </details>
+
+      <details class="topic" style="border-color:var(--b)">
+        <summary>
+          <span class="badge-pill" style="color:var(--b)">B2</span>
+          <span class="topic-title">End-to-end flow</span>
+          <span class="topic-count">request path</span>
+          <span class="chevron-sm"></span>
+        </summary>
+        <div class="topic-body">
+          <div class="chipflow">
+            <span class="chip">Customer app</span><span class="arrow">→</span>
+            <span class="chip">Journey orchestrator</span><span class="arrow">→</span>
+            <span class="chip">KYC / Holdings / Valuation / Policy / eSign / Agreement</span><span class="arrow">→</span>
+            <span class="chip">Pledge orchestrator</span><span class="arrow">→</span>
+            <span class="chip">External pledge partner</span><span class="arrow">→</span>
+            <span class="chip">Loan origination system</span><span class="arrow">→</span>
+            <span class="chip">Loan management system</span><span class="arrow">→</span>
+            <span class="chip">Disbursement / Margin engine / Collections</span>
+          </div>
+        </div>
+      </details>
+
+    </div>
+  </details>
+
+  <!-- ================= CLUSTER C ================= -->
+  <details class="cluster" id="cluster-c" style="--accent:var(--c)">
+    <summary>
+      <div class="badge-diamond" style="background:var(--c-tint);color:var(--c);"><span>C</span></div>
+      <svg class="cluster-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 16c4 0 4-6 8-6s4-6 8-6" stroke-linecap="round"/><circle cx="2" cy="16" r="1.6" fill="currentColor" stroke="none"/><circle cx="18" cy="4" r="1.6" fill="currentColor" stroke="none"/></svg>
+      <span class="cluster-title">Journey &amp; state</span>
+      <span class="cluster-meta">3 topics</span>
+      <span class="chevron-big"></span>
+    </summary>
+    <div class="cluster-body">
+
+      <details class="topic" style="border-color:var(--c)">
+        <summary>
+          <span class="badge-pill" style="color:var(--c)">C1</span>
+          <span class="topic-title">Customer journey</span>
+          <span class="topic-count">12 steps</span>
+          <span class="chevron-sm"></span>
+        </summary>
+        <div class="topic-body">
+          <ol class="steps">
+            <li>Customer opens loan against MF</li>
+            <li>Fetch customer's MF holdings</li>
+            <li>Show eligible schemes and drawing power</li>
+            <li>Customer selects schemes / folios to pledge</li>
+            <li>Run eligibility, valuation, and policy checks</li>
+            <li>Generate sanction offer</li>
+            <li>Customer accepts terms and eSigns</li>
+            <li>Create pledge / lien request</li>
+            <li>Receive pledge confirmation</li>
+            <li>Create loan account / line</li>
+            <li>Disburse money</li>
+            <li>Ongoing NAV monitoring and margin management</li>
+          </ol>
+        </div>
+      </details>
+
+      <details class="topic" style="border-color:var(--c)">
+        <summary>
+          <span class="badge-pill" style="color:var(--c)">C2</span>
+          <span class="topic-title">Sync vs async split</span>
+          <span class="topic-count">design splitter</span>
+          <span class="chevron-sm"></span>
+        </summary>
+        <div class="topic-body">
+          <details class="leafd"><summary><span class="chevron-xs"></span>Synchronous — for user-facing speed</summary>
+            <div class="leafd-body">Fetch holdings, estimate eligibility, show the offer instantly. The customer wants a fast response here.</div></details>
+          <details class="leafd"><summary><span class="chevron-xs"></span>Asynchronous — for resilience</summary>
+            <div class="leafd-body">Pledge request, partner confirmation, loan activation. External systems are slow and failure-prone, so these steps run outside the request/response cycle.</div></details>
+          <ul class="leaflist">
+            <li>Design principle: build the journey as a <b>state machine</b>, not one long API chain.</li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="topic" style="border-color:var(--c)">
+        <summary>
+          <span class="badge-pill" style="color:var(--c)">C3</span>
+          <span class="topic-title">Journey state machine</span>
+          <span class="topic-count">13 states</span>
+          <span class="chevron-sm"></span>
+        </summary>
+        <div class="topic-body">
+          <div class="chipflow">
+            <span class="chip">INITIATED</span><span class="arrow">→</span><span class="chip">HOLDINGS_FETCHED</span><span class="arrow">→</span><span class="chip">ELIGIBILITY_COMPUTED</span><span class="arrow">→</span><span class="chip">OFFER_ACCEPTED</span><span class="arrow">→</span><span class="chip">AGREEMENT_SIGNED</span><span class="arrow">→</span><span class="chip">PLEDGE_REQUESTED</span><span class="arrow">→</span><span class="chip">PLEDGE_CONFIRMED</span><span class="arrow">→</span><span class="chip">LOAN_ACCOUNT_CREATED</span><span class="arrow">→</span><span class="chip">DISBURSED</span><span class="arrow">→</span><span class="chip">ACTIVE</span><span class="arrow">→</span><span class="chip">MARGIN_SHORTFALL</span><span class="arrow">→</span><span class="chip">LIQUIDATION_IN_PROGRESS</span><span class="arrow">→</span><span class="chip">CLOSED / FAILED</span>
+          </div>
+          <details class="leafd" style="margin-top:10px;"><summary><span class="chevron-xs"></span>Questions a state model has to answer</summary>
+            <div class="leafd-body">
+              <ul class="leaflist">
+                <li>If pledge succeeds but disbursement fails, what happens?</li>
+                <li>If the agreement is signed but the pledge is rejected — restart, or roll back?</li>
+                <li>If the customer exits the app midway, where do they resume?</li>
+                <li>Can the support team replay the journey safely?</li>
+              </ul>
+            </div></details>
+        </div>
+      </details>
+
+    </div>
+  </details>
+
+  <!-- ================= CLUSTER D ================= -->
+  <details class="cluster" id="cluster-d" style="--accent:var(--d)">
+    <summary>
+      <div class="badge-diamond" style="background:var(--d-tint);color:var(--d);"><span>D</span></div>
+      <svg class="cluster-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="10,2 17,6 17,14 10,18 3,14 3,6"/><circle cx="10" cy="10" r="3"/></svg>
+      <span class="cluster-title">Core subsystems</span>
+      <span class="cluster-meta">8 topics</span>
+      <span class="chevron-big"></span>
+    </summary>
+    <div class="cluster-body">
+
+      <details class="topic" style="border-color:var(--d)">
+        <summary><span class="badge-pill" style="color:var(--d)">D1</span><span class="topic-title">Holdings data model</span><span class="topic-count">problem 1</span><span class="chevron-sm"></span></summary>
+        <div class="topic-body">
+          <div class="para">Hierarchy: <b>Customer</b> → <b>Investment account</b> → <b>Folio / demat account</b> → <b>Scheme holding</b></div>
+          <div class="chipflow">
+            <span class="chip">scheme_id</span><span class="chip">folio_no</span><span class="chip">units_total</span><span class="chip">units_available</span><span class="chip">units_pledged</span><span class="chip">latest_nav</span><span class="chip">market_value</span><span class="chip">last_sync_time</span>
+          </div>
+          <div class="quote"><div class="line">Don't model collateral only in rupee amount.</div><div class="why">Always preserve units, the NAV used, the valuation timestamp, and the haircut/LTV rule applied — disputes like "why was my loan only this much?" need full explainability.</div></div>
+        </div>
+      </details>
+
+      <details class="topic" style="border-color:var(--d)">
+        <summary><span class="badge-pill" style="color:var(--d)">D2</span><span class="topic-title">Eligibility engine</span><span class="topic-count">problem 2</span><span class="chevron-sm"></span></summary>
+        <div class="topic-body">
+          <div class="para">Excludes ELSS (lock-in), closed-ended schemes, low-liquidity / high-volatility funds, and non-approved AMC + scheme combinations.</div>
+          <div class="kv"><div class="k">input</div><div class="v">scheme_id, amc_id, fund_type, lock_in_flag, volatility_bucket, regulatory_status, ops_support_flag</div></div>
+          <div class="kv"><div class="k">output</div><div class="v">eligible / ineligible, max_ltv, risk_bucket, reason_code</div></div>
+          <div class="quote"><div class="line">Never hardcode <span class="chip" style="margin:0">if scheme_type == EQUITY then 50%</span></div><div class="why">This logic changes often — build a policy table or rule engine instead.</div></div>
+        </div>
+      </details>
+
+      <details class="topic" style="border-color:var(--d)">
+        <summary><span class="badge-pill" style="color:var(--d)">D3</span><span class="topic-title">Valuation &amp; drawing power</span><span class="topic-count">problem 3</span><span class="chevron-sm"></span></summary>
+        <div class="topic-body">
+          <div class="kv"><div class="k">formula</div><div class="v">Collateral value = units × latest eligible NAV. Drawing power = Σ(collateral value × allowed LTV)</div></div>
+          <details class="leafd"><summary><span class="chevron-xs"></span>Open questions</summary>
+            <div class="leafd-body"><ul class="leaflist"><li>Which NAV do we use, and what if it's stale or not yet published?</li><li>Do we apply a buffer haircut beyond LTV?</li><li>Compute at scheme level or portfolio level?</li><li>Recompute on every page load, or use a cached result?</li></ul></div></details>
+          <div class="para" style="margin-top:8px;">Pipeline: <b>NAV ingestion</b> → <b>valuation service</b> → <b>loan policy engine</b> → <b>offer engine</b> — kept separate because NAV and policy change at different speeds.</div>
+        </div>
+      </details>
+
+      <details class="topic" style="border-color:var(--d)">
+        <summary><span class="badge-pill" style="color:var(--d)">D4</span><span class="topic-title">Pledge orchestration</span><span class="topic-count">problem 6</span><span class="chevron-sm"></span></summary>
+        <div class="topic-body">
+          <div class="chipflow">
+            <span class="chip">Select holdings</span><span class="arrow">→</span><span class="chip">Pledge orchestrator creates request</span><span class="arrow">→</span><span class="chip">RTA / exchange / depository</span><span class="arrow">→</span><span class="chip">Customer OTP / consent</span><span class="arrow">→</span><span class="chip">External confirmation</span><span class="arrow">→</span><span class="chip">Internal ledger update</span>
+          </div>
+          <details class="leafd"><summary><span class="chevron-xs"></span>Hard questions</summary>
+            <div class="leafd-body"><ul class="leaflist"><li>Is pledge creation idempotent on retry?</li><li>What if the partner says "accepted" but the callback never arrives?</li><li>What if the callback arrives twice?</li><li>What if the internal DB update fails after external success?</li></ul></div></details>
+          <div class="quote"><div class="line">Needs: idempotency key, external reference mapping, callback event store, reconciliation job, compensation workflow.</div></div>
+        </div>
+      </details>
+
+      <details class="topic" style="border-color:var(--d)">
+        <summary><span class="badge-pill" style="color:var(--d)">D5</span><span class="topic-title">Collateral ledger</span><span class="topic-count">problem 7</span><span class="chevron-sm"></span></summary>
+        <div class="topic-body">
+          <div class="para">Kept fully separate from the loan ledger:</div>
+          <div class="chipflow">
+            <span class="chip">customer_id</span><span class="chip">loan_account_id</span><span class="chip">scheme_id</span><span class="chip">folio_no</span><span class="chip">pledged_units</span><span class="chip">pledge_reference</span><span class="chip">valuation_at_pledge</span><span class="chip">current_valuation</span><span class="chip">lien_status</span><span class="chip">liquidation_status</span>
+          </div>
+          <div class="quote"><div class="line">Why separate?</div><div class="why">Audit needs answers to: what units are locked, which pledge created this lien, which units were released, which were liquidated, and what they were worth at grant. Without this ledger, audit becomes painful.</div></div>
+        </div>
+      </details>
+
+      <details class="topic" style="border-color:var(--d)">
+        <summary><span class="badge-pill" style="color:var(--d)">D6</span><span class="topic-title">Risk &amp; margin monitoring</span><span class="topic-count">problem 8</span><span class="chevron-sm"></span></summary>
+        <div class="topic-body">
+          <div class="chipflow">
+            <span class="chip">Periodic NAV refresh</span><span class="arrow">→</span><span class="chip">Recompute collateral value</span><span class="arrow">→</span><span class="chip">Compare to outstanding loan</span><span class="arrow">→</span><span class="chip">Zone classification</span>
+          </div>
+          <div style="margin-top:10px;">
+            <div class="zone-row"><span class="zone-tag" style="background:var(--g-tint);color:var(--g);">≤ 70%</span><span class="zone-desc">Healthy</span></div>
+            <div class="zone-row"><span class="zone-tag" style="background:var(--e-tint);color:var(--e);">70–75%</span><span class="zone-desc">Warning</span></div>
+            <div class="zone-row"><span class="zone-tag" style="background:var(--e-tint);color:var(--e);">75–80%</span><span class="zone-desc">Freeze further drawdown</span></div>
+            <div class="zone-row"><span class="zone-tag" style="background:var(--f-tint);color:var(--f);">&gt; 80%</span><span class="zone-desc">Liquidation trigger</span></div>
+          </div>
+          <div class="quote" style="margin-top:10px;"><div class="line">Risk is not a cron job.</div><div class="why">It needs valuation freshness, threshold rules, alerting, an action workflow, an audit trail, and a link into collections.</div></div>
+        </div>
+      </details>
+
+      <details class="topic" style="border-color:var(--d)">
+        <summary><span class="badge-pill" style="color:var(--d)">D7</span><span class="topic-title">Liquidation engine</span><span class="topic-count">problem 9</span><span class="chevron-sm"></span></summary>
+        <div class="topic-body">
+          <details class="leafd"><summary><span class="chevron-xs"></span>Sensitive questions</summary>
+            <div class="leafd-body"><ul class="leaflist"><li>Can liquidation be fully automatic, or does it need human sign-off?</li><li>Is partial liquidation allowed?</li><li>Sell cheapest units first, or most liquid first?</li><li>What if the market is closed, or the partner rejects the redemption?</li></ul></div></details>
+          <div class="para" style="margin-top:8px;"><b>Liquidation strategy engine</b> — input: shortfall amount, eligible pledged schemes, liquidity priority, tax/fairness rules, ops constraints → output: a redemption plan.</div>
+          <div class="chipflow">
+            <span class="chip">Risk breach</span><span class="arrow">→</span><span class="chip">Compute shortfall</span><span class="arrow">→</span><span class="chip">Choose units to redeem</span><span class="arrow">→</span><span class="chip">Send redemption / enforce</span><span class="arrow">→</span><span class="chip">Receive proceeds</span><span class="arrow">→</span><span class="chip">Adjust outstanding</span>
+          </div>
+          <div class="quote"><div class="line">Liquidation strategy is a business policy, not just technical logic.</div><div class="why">Keep it configurable.</div></div>
+        </div>
+      </details>
+
+      <details class="topic" style="border-color:var(--d)">
+        <summary><span class="badge-pill" style="color:var(--d)">D8</span><span class="topic-title">LOS vs LMS split</span><span class="topic-count">problem 10</span><span class="chevron-sm"></span></summary>
+        <div class="topic-body">
+          <div class="kv"><div class="k">LOS</div><div class="v">Loan origination — before disbursal: application, eligibility, offer, documents, pledge initiation, sanction decision.</div></div>
+          <div class="kv"><div class="k">LMS</div><div class="v">Loan management — after activation: account creation, interest accrual, statements, repayment, overdue, foreclosure, collections.</div></div>
+          <div class="para">Why split: origination and servicing evolve at different speeds, and LMS is often an external enterprise platform.</div>
+        </div>
+      </details>
+
+    </div>
+  </details>
+
+  <!-- ================= CLUSTER E ================= -->
+  <details class="cluster" id="cluster-e" style="--accent:var(--e)">
+    <summary>
+      <div class="badge-diamond" style="background:var(--e-tint);color:var(--e);"><span>E</span></div>
+      <svg class="cluster-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2v6M13 2v6M5 8h10v4a5 5 0 0 1-10 0V8z"/><path d="M10 16v2.5"/></svg>
+      <span class="cluster-title">Interfaces &amp; events</span>
+      <span class="cluster-meta">2 topics</span>
+      <span class="chevron-big"></span>
+    </summary>
+    <div class="cluster-body">
+
+      <details class="topic" style="border-color:var(--e)">
+        <summary><span class="badge-pill" style="color:var(--e)">E1</span><span class="topic-title">API design</span><span class="topic-count">grouped by journey</span><span class="chevron-sm"></span></summary>
+        <div class="topic-body">
+          <div class="para">Think in journey APIs, not raw database CRUD.</div>
+          <details class="leafd"><summary><span class="chevron-xs"></span>Discovery</summary><div class="leafd-body"><span class="chip">getEligibleHoldings(customerId)</span><span class="chip">getLoanEstimate(customerId)</span></div></details>
+          <details class="leafd"><summary><span class="chevron-xs"></span>Offer</summary><div class="leafd-body"><span class="chip">createLoanApplication()</span><span class="chip">recomputeOffer()</span><span class="chip">acceptOffer()</span></div></details>
+          <details class="leafd"><summary><span class="chevron-xs"></span>Pledge</summary><div class="leafd-body"><span class="chip">initiatePledge()</span><span class="chip">getPledgeStatus()</span></div></details>
+          <details class="leafd"><summary><span class="chevron-xs"></span>Loan</summary><div class="leafd-body"><span class="chip">getLoanAccount()</span><span class="chip">drawdown()</span><span class="chip">repay()</span><span class="chip">getMarginStatus()</span></div></details>
+          <details class="leafd"><summary><span class="chevron-xs"></span>Risk</summary><div class="leafd-body"><span class="chip">getCollateralSnapshot()</span><span class="chip">getShortfallAlerts()</span></div></details>
+        </div>
+      </details>
+
+      <details class="topic" style="border-color:var(--e)">
+        <summary><span class="badge-pill" style="color:var(--e)">E2</span><span class="topic-title">Domain events</span><span class="topic-count">15 events</span><span class="chevron-sm"></span></summary>
+        <div class="topic-body">
+          <div class="chipflow">
+            <span class="chip">HoldingsSynced</span><span class="chip">NAVUpdated</span><span class="chip">EligibilityComputed</span><span class="chip">LoanOfferGenerated</span><span class="chip">OfferAccepted</span><span class="chip">AgreementSigned</span><span class="chip">PledgeRequested</span><span class="chip">PledgeConfirmed</span><span class="chip">LoanCreated</span><span class="chip">DisbursementCompleted</span><span class="chip">MarginShortfallDetected</span><span class="chip">TopUpCollateralAdded</span><span class="chip">LiquidationTriggered</span><span class="chip">LiquidationCompleted</span><span class="chip">LoanClosed</span>
+          </div>
+          <div class="para">Consumers: notifications, audit, CRM, collections, analytics, risk dashboards, reconciliation.</div>
+        </div>
+      </details>
+
+    </div>
+  </details>
+
+  <!-- ================= CLUSTER F ================= -->
+  <details class="cluster" id="cluster-f" style="--accent:var(--f)">
+    <summary>
+      <div class="badge-diamond" style="background:var(--f-tint);color:var(--f);"><span>F</span></div>
+      <svg class="cluster-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M10 2l7 3v5c0 5-3.5 7.5-7 8-3.5-.5-7-3-7-8V5l7-3z"/></svg>
+      <span class="cluster-title">Resilience &amp; consistency</span>
+      <span class="cluster-meta">3 topics</span>
+      <span class="chevron-big"></span>
+    </summary>
+    <div class="cluster-body">
+
+      <details class="topic" style="border-color:var(--f)">
+        <summary><span class="badge-pill" style="color:var(--f)">F1</span><span class="topic-title">Failure scenarios to hunt for</span><span class="topic-count">5 cases</span><span class="chevron-sm"></span></summary>
+        <div class="topic-body">
+          <details class="leafd"><summary><span class="chevron-xs"></span>Stale holdings shown to the customer</summary><div class="leafd-body">A pledge request uses old units while the customer was shown more drawing power than is actually possible.</div></details>
+          <details class="leafd"><summary><span class="chevron-xs"></span>Pledge confirmed externally, internal state stuck</summary><div class="leafd-body">The collateral is locked externally but the internal record stays pending — the loan is wrongly blocked.</div></details>
+          <details class="leafd"><summary><span class="chevron-xs"></span>Race condition: disbursed before pledge confirmed</summary><div class="leafd-body">A major control failure — money leaves before the collateral is actually secured.</div></details>
+          <details class="leafd"><summary><span class="chevron-xs"></span>NAV crashes, margin job runs late</summary><div class="leafd-body">The risk window goes unaddressed for the gap between the crash and the next risk run.</div></details>
+          <details class="leafd"><summary><span class="chevron-xs"></span>Full repayment, delayed lien release</summary><div class="leafd-body">A terrible customer experience — the debt is gone but the collateral is still legally locked.</div></details>
+        </div>
+      </details>
+
+      <details class="topic" style="border-color:var(--f)">
+        <summary><span class="badge-pill" style="color:var(--f)">F2</span><span class="topic-title">Consistency model</span><span class="topic-count">strong vs eventual</span><span class="chevron-sm"></span></summary>
+        <div class="topic-body">
+          <div class="kv"><div class="k">strong</div><div class="v">Pledge confirmation before activation, disbursal control, outstanding balance, locked collateral units, repayment posting.</div></div>
+          <div class="kv"><div class="k">eventual</div><div class="v">Dashboards, reporting, notifications, analytics, recommendation widgets, historical aggregation.</div></div>
+        </div>
+      </details>
+
+      <details class="topic" style="border-color:var(--f)">
+        <summary><span class="badge-pill" style="color:var(--f)">F3</span><span class="topic-title">Data stores</span><span class="topic-count">4 categories</span><span class="chevron-sm"></span></summary>
+        <div class="topic-body">
+          <div class="kv"><div class="k">OLTP</div><div class="v">Applications, journey states, loan accounts, collateral ledger, repayment ledger, audit references.</div></div>
+          <div class="kv"><div class="k">cache</div><div class="v">Latest NAV lookup, eligibility rule snapshot, active offer summary.</div></div>
+          <div class="kv"><div class="k">event bus</div><div class="v">Callbacks, risk triggers, notifications, reconciliation workflows.</div></div>
+          <div class="kv"><div class="k">search</div><div class="v">Ops dashboard, customer support search, portfolio risk monitoring.</div></div>
+        </div>
+      </details>
+
+    </div>
+  </details>
+
+  <!-- ================= CLUSTER G ================= -->
+  <details class="cluster" id="cluster-g" style="--accent:var(--g)">
+    <summary>
+      <div class="badge-diamond" style="background:var(--g-tint);color:var(--g);"><span>G</span></div>
+      <svg class="cluster-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M10 2l2.2 4.8 5.3.5-4 3.6 1.2 5.2L10 13.6 5.3 16.1l1.2-5.2-4-3.6 5.3-.5L10 2z"/></svg>
+      <span class="cluster-title">Mastery layer</span>
+      <span class="cluster-meta">4 topics</span>
+      <span class="chevron-big"></span>
+    </summary>
+    <div class="cluster-body">
+
+      <details class="topic" style="border-color:var(--g)">
+        <summary><span class="badge-pill" style="color:var(--g)">G1</span><span class="topic-title">Architect-level talking points</span><span class="topic-count">6 points</span><span class="chevron-sm"></span></summary>
+        <div class="topic-body">
+          <div class="quote"><div class="line">Collateral is units, not money.</div><div class="why">The system must preserve unit-level traceability.</div></div>
+          <div class="quote"><div class="line">Offer generation and pledge confirmation are separated.</div><div class="why">Displayed eligibility is preliminary; enforceable eligibility comes only after a successful pledge.</div></div>
+          <div class="quote"><div class="line">This must be state-machine driven.</div><div class="why">External partner calls make the journey long-running and failure-prone.</div></div>
+          <div class="quote"><div class="line">Risk monitoring is a first-class subsystem.</div><div class="why">Not a support job bolted on afterward.</div></div>
+          <div class="quote"><div class="line">The collateral ledger is not the loan ledger.</div><div class="why">Related lifecycles, but not identical ones.</div></div>
+          <div class="quote"><div class="line">A policy engine controls eligibility, LTV, and liquidation thresholds.</div><div class="why">Because these business rules change often, and code deploys shouldn't gate them.</div></div>
+        </div>
+      </details>
+
+      <details class="topic" style="border-color:var(--g)">
+        <summary><span class="badge-pill" style="color:var(--g)">G2</span><span class="topic-title">Deep-mastery questions</span><span class="topic-count">4 lenses</span><span class="chevron-sm"></span></summary>
+        <div class="topic-body">
+          <details class="leafd"><summary><span class="chevron-xs"></span>Product / business</summary>
+            <div class="leafd-body"><ul class="leaflist">
+              <li>Why would a customer choose this over simply redeeming units?</li>
+              <li>Which customer segments fit this product best?</li>
+              <li>Which schemes create high operational risk but low revenue value?</li>
+              <li>How do we avoid lending against volatile assets at the wrong time?</li>
+              <li>Show only approved holdings, or all holdings with reasons for ineligibility?</li>
+            </ul></div></details>
+          <details class="leafd"><summary><span class="chevron-xs"></span>Risk</summary>
+            <div class="leafd-body"><ul class="leaflist">
+              <li>Should LTV depend only on scheme type, or also the customer's credit profile?</li>
+              <li>One uniform margin rule, or dynamic risk buckets?</li>
+              <li>What happens if NAV is stale for two days?</li>
+              <li>Can drawdown continue while the warning threshold is breached?</li>
+              <li>Should liquidation be rule-based or maker-checker approved?</li>
+            </ul></div></details>
+          <details class="leafd"><summary><span class="chevron-xs"></span>Operations</summary>
+            <div class="leafd-body"><ul class="leaflist">
+              <li>How does support see where a journey is stuck?</li>
+              <li>How do we safely replay failed callback-driven steps?</li>
+              <li>What's the reconciliation process with the RTA / pledge partner?</li>
+              <li>How do we safely release the lien after full repayment?</li>
+              <li>Which SLAs matter most — offer generation, pledge marking, disbursal, or lien release?</li>
+            </ul></div></details>
+          <details class="leafd"><summary><span class="chevron-xs"></span>Architecture</summary>
+            <div class="leafd-body"><ul class="leaflist">
+              <li>Which parts must be synchronous for UX, and which must be async for resilience?</li>
+              <li>What idempotency keys exist across the loan app, pledge request, disbursement, and callbacks?</li>
+              <li>Where do we need transactional guarantees, and where is eventual consistency fine?</li>
+              <li>How do we design auditability for a regulator, dispute, or ops inquiry?</li>
+              <li>Which domain events are contract-worthy and stable enough for other systems to consume?</li>
+            </ul></div></details>
+        </div>
+      </details>
+
+      <details class="topic" style="border-color:var(--g)">
+        <summary><span class="badge-pill" style="color:var(--g)">G3</span><span class="topic-title">Interview-ready answer</span><span class="topic-count">one paragraph</span><span class="chevron-sm"></span></summary>
+        <div class="topic-body">
+          <div class="para">I'd design loan against mutual fund as a collateralized lending platform with five core capabilities: holdings discovery, eligibility and valuation, pledge orchestration, loan servicing, and continuous risk monitoring. The key architectural principle is that mutual fund units are the real collateral, so I'd maintain a separate collateral ledger and a state-machine-driven journey. Because external pledge partners and valuation feeds are involved, I'd keep customer-facing eligibility synchronous where possible, but push pledge confirmation, callbacks, reconciliation, and margin workflows into asynchronous orchestration. The hardest part isn't disbursal — it's ongoing collateral risk management and safe liquidation.</div>
+        </div>
+      </details>
+
+      <details class="topic" style="border-color:var(--g)">
+        <summary><span class="badge-pill" style="color:var(--g)">G4</span><span class="topic-title">Ultra-short summary</span><span class="topic-count">the whole system, in one line</span><span class="chevron-sm"></span></summary>
+        <div class="topic-body">
+          <div class="chipflow">
+            <span class="chip">Holdings system</span><span class="arrow">+</span><span class="chip">Policy engine</span><span class="arrow">+</span><span class="chip">Valuation engine</span><span class="arrow">+</span><span class="chip">Pledge workflow</span><span class="arrow">+</span><span class="chip">Loan system</span><span class="arrow">+</span><span class="chip">Risk monitoring</span><span class="arrow">+</span><span class="chip">Liquidation control</span>
+          </div>
+          <div class="quote" style="margin-top:10px;"><div class="line">Don't design it as "loan journey only."</div><div class="why">Design it as collateral lifecycle + loan lifecycle + risk lifecycle.</div></div>
+        </div>
+      </details>
+
+    </div>
+  </details>
+
+  <footer>Click any row to expand or collapse it · search auto-opens matching branches</footer>
+</div>
+
+<script>
+function expandAll(){
+  document.querySelectorAll('details').forEach(d => d.open = true);
+}
+function collapseAll(){
+  document.querySelectorAll('details').forEach(d => d.open = false);
+}
+function resetView(){
+  document.querySelectorAll('details.cluster').forEach(d => d.open = true);
+  document.querySelectorAll('details.topic, details.leafd').forEach(d => d.open = false);
+  document.getElementById('search').value = '';
+  runSearch();
+}
+
+/* ---------- reading navigator: colors, rail, breadcrumb, focus mode ---------- */
+var CLUSTER_INFO = {
+  'cluster-a': {hex:'#b9862a', name:'Understand the business'},
+  'cluster-b': {hex:'#2f6fba', name:'Architecture overview'},
+  'cluster-c': {hex:'#1f8f78', name:'Journey & state'},
+  'cluster-d': {hex:'#7456c2', name:'Core subsystems'},
+  'cluster-e': {hex:'#c2701f', name:'Interfaces & events'},
+  'cluster-f': {hex:'#c2453c', name:'Resilience & consistency'},
+  'cluster-g': {hex:'#2f8f5c', name:'Mastery layer'}
+};
+var clusterIds = Object.keys(CLUSTER_INFO);
+var clusterEls = clusterIds.map(id => document.getElementById(id));
+var railSegs = {};
+document.querySelectorAll('.rail-seg').forEach(seg => { railSegs[seg.dataset.target] = seg; });
+var legendLinks = {};
+document.querySelectorAll('.legend a').forEach(a => { legendLinks[a.dataset.target] = a; });
+var ambientEl = document.getElementById('ambient');
+var nrDot = document.getElementById('nrDot');
+var nrLabel = document.getElementById('nrLabel');
+var focusBtn = document.getElementById('focusBtn');
+var currentActive = null;
+
+function hexToRgb(hex){
+  var v = parseInt(hex.slice(1),16);
+  return [(v>>16)&255,(v>>8)&255,v&255];
+}
+
+function setActive(id){
+  if(id === currentActive) return;
+  currentActive = id;
+  var info = CLUSTER_INFO[id];
+  if(!info) return;
+
+  clusterEls.forEach(el => el.classList.toggle('is-active-cluster', el.id === id));
+  Object.keys(railSegs).forEach(k => railSegs[k].classList.toggle('is-active', k === id));
+  Object.keys(legendLinks).forEach(k => legendLinks[k].classList.toggle('is-active', k === id));
+
+  nrDot.style.background = info.hex;
+  nrDot.style.color = info.hex;
+  nrLabel.textContent = info.name;
+
+  var rgb = hexToRgb(info.hex);
+  ambientEl.style.backgroundColor = 'rgba(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ',.045)';
+}
+
+var ticking = false;
+function updateProgress(){
+  var refY = window.innerHeight * 0.3;
+  var activeId = clusterIds[0];
+  for(var i=0;i<clusterEls.length;i++){
+    var rect = clusterEls[i].getBoundingClientRect();
+    var frac = Math.min(1, Math.max(0, (refY - rect.top) / rect.height));
+    var seg = railSegs[clusterIds[i]];
+    if(seg){ seg.querySelector('.rail-fill').style.width = (frac*100) + '%'; }
+    if(rect.top <= refY) activeId = clusterIds[i];
+  }
+  setActive(activeId);
+  ticking = false;
+}
+window.addEventListener('scroll', function(){
+  if(!ticking){ requestAnimationFrame(updateProgress); ticking = true; }
+}, {passive:true});
+window.addEventListener('resize', updateProgress);
+
+document.querySelectorAll('.cluster > summary').forEach(s => {
+  s.addEventListener('click', function(){
+    setActive(s.parentElement.id);
+  });
+});
+document.querySelectorAll('.rail-seg').forEach(seg => {
+  seg.addEventListener('click', function(){
+    document.getElementById(seg.dataset.target).scrollIntoView({behavior:'smooth', block:'start'});
+  });
+});
+
+function toggleFocus(){
+  var on = document.body.classList.toggle('focus-mode');
+  focusBtn.textContent = 'Focus mode: ' + (on ? 'on' : 'off');
+  focusBtn.classList.toggle('is-on', on);
+}
+
+window.addEventListener('load', updateProgress);
+updateProgress();
+
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function collectTextNodes(){
+  var nodes = [];
+  document.querySelectorAll('.leafd-body, .topic-body .para, ul.leaflist li, .quote .line, .quote .why, .kv .v, .leafd > summary').forEach(function(el){
+    if(!el.dataset.original){
+      el.dataset.original = el.innerHTML;
+    }
+    nodes.push(el);
+  });
+  return nodes;
+}
+var textNodes = null;
+
+function runSearch(){
+  if(!textNodes){ textNodes = collectTextNodes(); }
+  var q = document.getElementById('search').value.trim().toLowerCase();
+  var matchCountEl = document.getElementById('matchCount');
+  var count = 0;
+
+  textNodes.forEach(function(el){
+    var original = el.dataset.original;
+    if(q === ''){
+      el.innerHTML = original;
+      return;
+    }
+    var plain = el.textContent.toLowerCase();
+    if(plain.indexOf(q) > -1){
+      count++;
+      var re = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')','gi');
+      el.innerHTML = original.replace(/(<([^>]+)>)/gi, '\u0001$1\u0001').split('\u0001').map(function(part, idx){
+        if(part.indexOf('<') === 0) return part;
+        return part.replace(re, '<mark>$1</mark>');
+      }).join('');
+      var d = el.closest('details');
+      while(d){ d.open = true; d = d.parentElement ? d.parentElement.closest('details') : null; }
+    } else {
+      el.innerHTML = original;
+    }
+  });
+
+  if(q === ''){
+    matchCountEl.textContent = '';
+  } else {
+    matchCountEl.textContent = count + (count === 1 ? ' match' : ' matches');
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Art of Asking Questions — Notes</title>
+<style>
+  :root{
+    --bg: #eceae4;
+    --bg-panel: #f6f5f0;
+    --bg-block: #e2dfd6;
+    --ink: #2b2a26;
+    --ink-soft: #57554c;
+    --yellow: #e8b400;
+    --yellow-deep: #b8860b;
+    --yellow-pale: #fff3c4;
+    --line: #cfccc0;
+    --mono-bg: #23221e;
+    --mono-ink: #f2e6b8;
+    --nav-w: 260px;
+  }
+
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family: 'Iowan Old Style','Georgia', 'Times New Roman', serif;
+    line-height:1.6;
+  }
+
+  /* ---------- Course banner ---------- */
+  .course-banner{
+    background: var(--ink);
+    color: var(--yellow-pale);
+    text-align:center;
+    padding:0.7rem 1rem;
+    font-family:'Courier New', monospace;
+    font-size:0.85rem;
+    letter-spacing:0.02em;
+  }
+  .course-banner a{
+    color: var(--yellow);
+    font-weight:700;
+    text-decoration:none;
+    border-bottom:1px dashed var(--yellow);
+  }
+  .course-banner a:hover{
+    color: var(--yellow-pale);
+    border-bottom-color: var(--yellow-pale);
+  }
+
+  header.hero{
+    background: linear-gradient(135deg, var(--yellow-pale) 0%, var(--bg-panel) 60%);
+    border-bottom: 4px solid var(--yellow);
+    padding: 3rem 1.5rem 2.2rem;
+    text-align:center;
+  }
+
+  header.hero .eyebrow{
+    font-family:'Courier New', monospace;
+    letter-spacing:0.25em;
+    text-transform:uppercase;
+    font-size:0.75rem;
+    color:var(--yellow-deep);
+    font-weight:700;
+  }
+
+  header.hero h1{
+    font-size:2.6rem;
+    margin:0.6rem 0 0.3rem;
+    color:var(--ink);
+  }
+
+  header.hero .subtitle{
+    font-style:italic;
+    color:var(--ink-soft);
+    font-size:1.1rem;
+  }
+
+  /* ---------- Layout: sidebar nav + content ---------- */
+  .layout{
+    display:flex;
+    max-width: 1180px;
+    margin: 0 auto;
+    align-items:flex-start;
+  }
+
+  nav.toc{
+    width: var(--nav-w);
+    flex-shrink:0;
+    position: sticky;
+    top: 0;
+    max-height: 100vh;
+    overflow-y:auto;
+    padding: 2rem 1.2rem 2rem 1.5rem;
+    border-right: 1px solid var(--line);
+  }
+
+  nav.toc .toc-title{
+    font-family:'Courier New', monospace;
+    text-transform:uppercase;
+    letter-spacing:0.12em;
+    font-size:0.72rem;
+    color:var(--yellow-deep);
+    font-weight:700;
+    margin-bottom:0.8rem;
+  }
+
+  nav.toc ul{
+    list-style:none;
+    padding:0;
+    margin:0 0 1.2rem 0;
+  }
+
+  nav.toc li{
+    margin-bottom:0.35rem;
+  }
+
+  nav.toc a{
+    display:block;
+    color: var(--ink-soft);
+    text-decoration:none;
+    font-size:0.9rem;
+    padding:0.35rem 0.5rem;
+    border-radius:5px;
+    border-left:3px solid transparent;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+
+  nav.toc a:hover, nav.toc a.active{
+    background: var(--yellow-pale);
+    color: var(--ink);
+    border-left-color: var(--yellow);
+  }
+
+  .toc-controls{
+    display:flex;
+    flex-direction:column;
+    gap:0.5rem;
+  }
+
+  .toc-controls button{
+    font-family:'Courier New', monospace;
+    font-size:0.78rem;
+    letter-spacing:0.03em;
+    background: var(--bg-panel);
+    border:1px solid var(--line);
+    color: var(--ink);
+    padding:0.5rem 0.7rem;
+    border-radius:6px;
+    cursor:pointer;
+    text-align:left;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+
+  .toc-controls button:hover{
+    background: var(--yellow-pale);
+    border-color: var(--yellow);
+  }
+
+  /* Mobile nav toggle */
+  .nav-toggle{
+    display:none;
+    position: fixed;
+    bottom: 1.4rem;
+    right: 1.4rem;
+    z-index: 50;
+    background: var(--yellow);
+    color: var(--ink);
+    border:none;
+    width:52px;
+    height:52px;
+    border-radius:50%;
+    font-size:1.3rem;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+    cursor:pointer;
+  }
+
+  .wrap{
+    flex: 1;
+    min-width:0;
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 6rem;
+  }
+
+  /* ---------- Collapsible sections ---------- */
+  section.topic{
+    margin-top: 2rem;
+    scroll-margin-top: 1.5rem;
+  }
+
+  button.topic-header{
+    all: unset;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    width:100%;
+    cursor:pointer;
+    padding-bottom:0.4rem;
+    border-bottom: 3px solid var(--yellow);
+    gap: 0.8rem;
+  }
+
+  button.topic-header h2{
+    margin: 1.4rem 0 0;
+    font-size:1.45rem;
+    color:var(--ink);
+    font-family:'Iowan Old Style', Georgia, serif;
+  }
+
+  .chevron{
+    flex-shrink:0;
+    width: 28px;
+    height: 28px;
+    border-radius:50%;
+    background: var(--yellow-pale);
+    color: var(--yellow-deep);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:1rem;
+    font-weight:700;
+    transition: transform 0.25s ease, background 0.2s ease;
+    margin-top:1.2rem;
+  }
+
+  section.topic.collapsed .chevron{
+    transform: rotate(-90deg);
+  }
+
+  button.topic-header:hover .chevron{
+    background: var(--yellow);
+    color: var(--ink);
+  }
+
+  .topic-body{
+    overflow:hidden;
+    max-height: 4000px;
+    opacity:1;
+    transition: max-height 0.35s ease, opacity 0.25s ease, margin 0.25s ease;
+  }
+
+  section.topic.collapsed .topic-body{
+    max-height:0;
+    opacity:0;
+    margin:0;
+  }
+
+  h3{
+    color:var(--yellow-deep);
+    font-size:1.15rem;
+    margin-top:1.8rem;
+  }
+
+  p{ color:var(--ink); }
+
+  pre{
+    background: var(--mono-bg);
+    color: var(--mono-ink);
+    font-family:'Courier New', Courier, monospace;
+    font-size:0.85rem;
+    padding:1.2rem 1.4rem;
+    border-radius:6px;
+    border-left:5px solid var(--yellow);
+    overflow-x:auto;
+    line-height:1.5;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+
+  strong{
+    color:var(--ink);
+    background: linear-gradient(180deg, transparent 60%, var(--yellow-pale) 60%);
+  }
+
+  em{ color:var(--ink-soft); }
+
+  blockquote{
+    margin: 1rem 0;
+    padding: 0.8rem 1.2rem;
+    background: var(--bg-panel);
+    border-left: 4px solid var(--yellow);
+    font-style: italic;
+    color: var(--ink-soft);
+  }
+
+  ul{ padding-left:1.4rem; }
+  li{ margin-bottom:0.4rem; }
+
+  .panel{
+    background: var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding: 1.5rem 1.8rem;
+    margin: 1.2rem 0;
+  }
+
+  code{
+    background: var(--yellow-pale);
+    color:#5a4600;
+    padding:0.1rem 0.35rem;
+    border-radius:3px;
+    font-family:'Courier New', monospace;
+    font-size:0.9em;
+  }
+
+  .final-thought{
+    margin-top:1rem;
+    text-align:center;
+    padding: 2.5rem 1.5rem;
+    background: var(--yellow-pale);
+    border-radius: 10px;
+    border: 1px dashed var(--yellow-deep);
+  }
+
+  .final-thought pre{
+    background:var(--mono-bg);
+    display:inline-block;
+    text-align:left;
+  }
+
+  footer.closing{
+    text-align:center;
+    margin-top:2.5rem;
+    font-style:italic;
+    color:var(--ink-soft);
+  }
+
+  @media (max-width: 900px){
+    :root{ --nav-w: 220px; }
+  }
+
+  @media (max-width: 720px){
+    .layout{ display:block; }
+    nav.toc{
+      position: fixed;
+      top:0; left:0;
+      width: min(280px, 82vw);
+      height: 100vh;
+      background: var(--bg-panel);
+      z-index: 60;
+      transform: translateX(-105%);
+      transition: transform 0.25s ease;
+      box-shadow: 3px 0 14px rgba(0,0,0,0.15);
+    }
+    nav.toc.open{ transform: translateX(0); }
+    .nav-toggle{ display:flex; align-items:center; justify-content:center; }
+    header.hero h1{font-size:1.9rem;}
+    pre{font-size:0.72rem; padding:1rem;}
+  }
+
+  .nav-scrim{
+    display:none;
+    position:fixed;
+    inset:0;
+    background: rgba(0,0,0,0.35);
+    z-index:55;
+  }
+  .nav-scrim.show{ display:block; }
+</style>
+</head>
+<body>
+
+<div class="course-banner">
+  🎓 Use my course — <a href="https://www.udemy.com/course/build-better-relationships/" target="_blank" rel="noopener">Build Better Relationships (Udemy)</a>
+</div>
+
+<header class="hero">
+  <div class="eyebrow">Creative Notes from Richard Lock's Course</div>
+  <h1>🎨 The Art of Asking Questions</h1>
+</header>
+
+<button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">☰</button>
+<div class="nav-scrim" id="navScrim"></div>
+
+<div class="layout">
+
+  <nav class="toc" id="tocNav">
+    <div class="toc-title">Jump to</div>
+    <ul id="tocList">
+      <li><a href="#sec-why">🧭 Why Questions Matter</a></li>
+      <li><a href="#sec-intention">🎯 What's Your Intention?</a></li>
+      <li><a href="#sec-listening">👂 The 5 Levels of Listening</a></li>
+      <li><a href="#sec-types">🗝️ Two Fundamental Question Types</a></li>
+      <li><a href="#sec-autopilot">🧠 Your Brain on Autopilot</a></li>
+      <li><a href="#sec-disguised">🦊 The Disguised Question Trap</a></li>
+      <li><a href="#sec-exercises">🏋️ Exercises to Build Your Muscle</a></li>
+      <li><a href="#sec-pause">⏸️ The Power of the Pause</a></li>
+      <li><a href="#sec-toolbox">🧰 The Question Toolbox</a></li>
+      <li><a href="#sec-why-danger">⚔️ The "Why" Danger</a></li>
+      <li><a href="#sec-roadmap">🧭 Summary Roadmap</a></li>
+      <li><a href="#sec-final">💡 Final Thought</a></li>
+    </ul>
+    <div class="toc-title">Sections</div>
+    <div class="toc-controls">
+      <button id="expandAll">＋ Expand all</button>
+      <button id="collapseAll">－ Collapse all</button>
+    </div>
+  </nav>
+
+  <div class="wrap">
+
+    <section class="topic" id="sec-why">
+      <button class="topic-header">
+        <h2>🧭 Why Questions Matter</h2>
+        <span class="chevron">▾</span>
+      </button>
+      <div class="topic-body">
+        <pre>    ┌──────────────────────────────┐
+    │   SEEK FIRST TO UNDERSTAND  │
+    │     (Stephen Covey)         │
+    └──────────────┬───────────────┘
+                   │
+         ┌─────────▼─────────┐
+         │   QUESTIONS ARE   │
+         │   THE BRIDGE     │
+         │   TO CONNECTION  │
+         └──────────────────┘</pre>
+
+        <p><strong>Questions are everywhere:</strong></p>
+        <ul>
+          <li>💬 Daily chats with friends &amp; family</li>
+          <li>👔 Professional life – meetings, coaching, managing</li>
+          <li>🧠 Even your inner thoughts (thinking = asking + answering yourself)</li>
+        </ul>
+
+        <p><strong>But the real question is:</strong></p>
+        <blockquote>"How EFFECTIVE are my questions?"</blockquote>
+
+        <p>We get lazy. We assume we're good at it.<br>
+        Spoiler: we're usually not.</p>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-intention">
+      <button class="topic-header">
+        <h2>🎯 What's Your Intention?</h2>
+        <span class="chevron">▾</span>
+      </button>
+      <div class="topic-body">
+        <pre>   WE JUDGE OURSELVES      |    OTHERS JUDGE US
+   BY OUR INTENTIONS       |    BY OUR BEHAVIOUR
+        😇                |         👀</pre>
+
+        <p>Ask yourself honestly:</p>
+        <pre>     ┌─────────────────────────────────┐
+     │  Do I genuinely want to         │
+     │  UNDERSTAND the other person?   │
+     │                                 │
+     │  OR                             │
+     │                                 │
+     │  Am I trying to CONTROL,        │
+     │  MANIPULATE, or FORCE my view? │
+     └─────────────────────────────────┘</pre>
+
+        <div class="panel">
+          <p><strong>Golden rule:</strong><br>
+          If your true intention is <em>understanding</em>, the techniques you learn will build trust.<br>
+          If it's manipulation, people will smell it a mile away.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-listening">
+      <button class="topic-header">
+        <h2>👂 The 5 Levels of Listening</h2>
+        <span class="chevron">▾</span>
+      </button>
+      <div class="topic-body">
+        <pre>   (Worst)                               (Best)
+  ┌──────┐   ┌──────────┐   ┌─────────┐   ┌──────────┐   ┌─────────────┐
+  │IGNORE│ → │PRETENDING│ → │SELECTIVE│ → │ATTENTIVE │ → │EMPATHETIC   │
+  └──┬───┘   └────┬─────┘   └────┬────┘   └────┬─────┘   └──────┬──────┘
+     │            │              │              │                 │
+  "I don't    "I'm nodding  "I hear what   "I'm really      "I'm fully
+   care."      but thinking  I want to      tracking,        with you,
+               about lunch."  hear."        summarising."    no judgement."</pre>
+
+        <p><strong>The Acid Test:</strong><br>
+        In your next conversations, afterwards ask:<br>
+        <em>"What level was I listening at?"</em><br>
+        Chances are, tricky relationships = stuck in levels 1-3.</p>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-types">
+      <button class="topic-header">
+        <h2>🗝️ Two Fundamental Question Types</h2>
+        <span class="chevron">▾</span>
+      </button>
+      <div class="topic-body">
+        <pre>   CLOSED QUESTIONS          OPEN QUESTIONS
+   ════════════════          ══════════════
+   Answer: YES/NO           Start with:
+   "Did you see...?"        WHAT, HOW, WHY,
+   "Do you think...?"       WHERE, WHEN, WHO, WHICH
+        │                         │
+        ▼                         ▼
+   CLOSE conversation         OPEN conversation
+   You LOSE control           You GAIN insight</pre>
+
+        <p><strong>The Hidden Trap:</strong><br>
+        In casual chats, people often <em>answer</em> closed questions as if they're open — they ramble on.<br>
+        But when there's any <strong>formality</strong> or <strong>tension</strong> (manager/staff, conflict, dating), people <strong>shut down</strong> and give just "Yes/No".<br>
+        → That's when bad questioning habits bite.</p>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-autopilot">
+      <button class="topic-header">
+        <h2>🧠 Your Brain on Autopilot</h2>
+        <span class="chevron">▾</span>
+      </button>
+      <div class="topic-body">
+        <pre>  ┌──────────────────────────────────────────┐
+  │  MOST OF OUR COMMUNICATION IS            │
+  │  SUBCONSCIOUS. LIKE READING THIS:        │
+  │                                          │
+  │   RED    BLUE   GREEN  YELLOW            │
+  │   ^^^    ^^^^   ^^^^^  ^^^^^^            │
+  │  (word ≠ colour)                         │
+  │                                          │
+  │  Try saying the INK COLOUR aloud.        │
+  │  Hard, right? That's your brain on auto. │
+  └──────────────────────────────────────────┘</pre>
+
+        <p><strong>Lesson:</strong><br>
+        Conscious questioning feels <em>clunky</em> at first. That's good. It means you're rewiring old habits.</p>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-disguised">
+      <button class="topic-header">
+        <h2>🦊 The Disguised Question Trap</h2>
+        <span class="chevron">▾</span>
+      </button>
+      <div class="topic-body">
+        <pre>   LEGITIMATE QUESTION:         DISGUISED QUESTION:
+   "I seek to understand"       "I'm telling you something
+                                wrapped in a question mark"
+   
+   Example:
+   "Why didn't you talk        → Translation:
+    to them sooner?"             "You should have talked sooner."
+   
+   "Don't you think you        → "You're wrong to challenge them."
+    should ask first?"</pre>
+
+        <p><strong>Dr. Phil says:</strong> Up to 80% of our questions are disguised statements. 😱</p>
+
+        <p><strong>Test yourself:</strong><br>
+        Ask a friend to be your "spotter" in a meeting. They note:</p>
+        <ul>
+          <li>Genuine question → ✅</li>
+          <li>Statement in disguise → ❌</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-exercises">
+      <button class="topic-header">
+        <h2>🏋️ Exercises to Build Your Muscle</h2>
+        <span class="chevron">▾</span>
+      </button>
+      <div class="topic-body">
+        <h3>1. The "10 Open Questions" Challenge</h3>
+        <pre>   Partner answers YES/NO if you slip.
+   
+   You: "What's your favourite trip?"
+   Partner: "Oh, I loved Bali..."
+   You: "How did it feel stepping off the plane?"
+   Partner: "Humid and magical!"
+   You: "Tell me more about that first day..."
+   ... keep going for 10 ...
+   
+   If you ask "Was it hot?" → Partner just says "Yes."  
+   ➜ You go BACK TO ZERO.
+   
+   Frustrating? Yes. Revealing? Absolutely.</pre>
+
+        <h3>2. The "Find the Object" Game</h3>
+        <pre>   Back to back. Partner writes down ANYTHING.
+   You ask questions to figure it out.
+   
+   BAD:  "Is it a tree?"         (test question)
+         "Is it food?"            (closed)
+   GOOD: "How would I recognise it?"
+         "What's it used for?"
+         "Where might I find it?"
+   
+   GOAL: Fewest questions wins!
+   This trains you to ask OPEN, INFORMATION-GATHERING questions.</pre>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-pause">
+      <button class="topic-header">
+        <h2>⏸️ The Power of the Pause</h2>
+        <span class="chevron">▾</span>
+      </button>
+      <div class="topic-body">
+        <pre>   You ask a great question.
+   
+   ┌─────────────────────────────┐
+   │ SILENCE...                  │
+   │ (2-4 seconds)               │
+   │                             │
+   │ What's happening:           │
+   │ 🧠 They're thinking         │
+   │ 🤫 You're not interrupting  │
+   │ 🕳️ They often go DEEPER     │
+   │    to fill the space        │
+   └─────────────────────────────┘</pre>
+
+        <p><strong>Why it's magic:</strong></p>
+        <ul>
+          <li>No need to ask another question yet</li>
+          <li>Shows you're comfortable, attentive</li>
+          <li>They reveal more than they planned</li>
+        </ul>
+
+        <p><em>Don't overdo it — no one likes an awkward stare contest. Keep it warm.</em></p>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-toolbox">
+      <button class="topic-header">
+        <h2>🧰 The Question Toolbox</h2>
+        <span class="chevron">▾</span>
+      </button>
+      <div class="topic-body">
+        <h3>🔹 1. SPECIFIC Questions (Facts)</h3>
+        <pre>   "When did you join?"
+   "How many in your team?"</pre>
+        <p>Great for data. BUT: too many in a row → feels like interrogation, people shut down.</p>
+
+        <h3>🔸 2. LEADING Questions (Manipulation in disguise)</h3>
+        <pre>   "Online learning is amazing, isn't it?"
+   
+   ⚠️ Use carefully. In interviews, you'll just hire a mirror.</pre>
+
+        <h3>🔹 3. HYPOTHETICAL Questions (Fantasy land)</h3>
+        <pre>   "What would you do if a customer attacked you?"
+   
+   They answer: "What does the textbook say?"
+   Not what they'd actually do.
+   Gets hypothetical answers.</pre>
+
+        <h3>🔸 4. PROBE / CLARIFYING Questions (The engine room)</h3>
+        <pre>   "Tell me more..."
+   "What do you mean by 'difficult'?"
+   "In what way?"
+   "What makes you say that?"
+   
+   ✨ SHORT IS POWERFUL. No leading, just digging deeper.</pre>
+
+        <h3>🔹 5. REFLECTIVE Questions (The Jedi move)</h3>
+        <pre>   They say: "I'm struggling with the pot."
+   You: "The pot?"
+   They: "Yeah, the sequence of potting colours in snooker..."
+   
+   Just bounce a key word back with a question mark in your voice.
+   ⚡ Keeps them in their own frame of mind.
+   ❗ Don't chain too many → feels like a cross-examination.</pre>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-why-danger">
+      <button class="topic-header">
+        <h2>⚔️ The "Why" Danger</h2>
+        <span class="chevron">▾</span>
+      </button>
+      <div class="topic-body">
+        <pre>   "WHY did you do that?"
+          │
+          ▼
+   ┌──────────────────┐
+   │ FEELS LIKE:      │
+   │ • Accusation     │
+   │ • Judgement      │
+   │ • Threat         │
+   │ TRIGGERS:        │
+   │ • Defensiveness  │
+   │ • Justification  │
+   └──────────────────┘</pre>
+
+        <p><strong>Instead of "Why did you decide that?", try:</strong></p>
+        <ul>
+          <li><em>What attracted you to this option?</em></li>
+          <li><em>How did you arrive at that decision?</em></li>
+          <li><em>What makes now the right time?</em></li>
+          <li><em>What other options did you consider?</em></li>
+        </ul>
+
+        <p>These open the exploration instead of poking the defenses.</p>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-roadmap">
+      <button class="topic-header">
+        <h2>🧭 Summary Roadmap</h2>
+        <span class="chevron">▾</span>
+      </button>
+      <div class="topic-body">
+        <pre>   INTENTION → Genuinely understand
+        │
+        ▼
+   LISTENING → At least "Attentive", aim for "Empathetic"
+        │
+        ▼
+   QUESTION TYPES → Mostly OPEN, probes & reflectives
+        │
+        ▼
+   AVOID TRAPS → Disguised statements, leading, over-using "why"
+        │
+        ▼
+   USE SILENCE → Pause after answers, let them go deeper
+        │
+        ▼
+   PRACTICE → Spotter, 10-open-Qs game, Find-the-object
+        │
+        ▼
+   🏆 STRONGER RELATIONSHIPS, LESS CONFLICT, REAL UNDERSTANDING</pre>
+      </div>
+    </section>
+
+    <section class="topic" id="sec-final">
+      <button class="topic-header">
+        <h2>💡 Final Thought</h2>
+        <span class="chevron">▾</span>
+      </button>
+      <div class="topic-body">
+        <div class="final-thought">
+          <pre>   "QUEST" is inside "QUESTION".
+   It means: a search, a journey.
+
+   So every real question is an adventure
+   into another person's world.
+   
+   Pack light.
+   Leave your assumptions at home.
+   And let the pause do some walking.</pre>
+        </div>
+        <footer class="closing">Now go crack on, questioner. 🎤</footer>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+  const topics = Array.from(document.querySelectorAll('section.topic'));
+
+  topics.forEach(sec => {
+    const btn = sec.querySelector('.topic-header');
+    btn.addEventListener('click', () => {
+      sec.classList.toggle('collapsed');
+    });
+  });
+
+  document.getElementById('expandAll').addEventListener('click', () => {
+    topics.forEach(sec => sec.classList.remove('collapsed'));
+  });
+
+  document.getElementById('collapseAll').addEventListener('click', () => {
+    topics.forEach(sec => sec.classList.add('collapsed'));
+  });
+
+  // Mobile nav toggle
+  const nav = document.getElementById('tocNav');
+  const navToggle = document.getElementById('navToggle');
+  const navScrim = document.getElementById('navScrim');
+
+  function closeNav(){
+    nav.classList.remove('open');
+    navScrim.classList.remove('show');
+  }
+
+  navToggle.addEventListener('click', () => {
+    nav.classList.toggle('open');
+    navScrim.classList.toggle('show');
+  });
+  navScrim.addEventListener('click', closeNav);
+
+  // Clicking a TOC link: expand that section, scroll, close mobile nav
+  document.querySelectorAll('#tocList a').forEach(link => {
+    link.addEventListener('click', (e) => {
+      const id = link.getAttribute('href').slice(1);
+      const target = document.getElementById(id);
+      if (target) target.classList.remove('collapsed');
+      closeNav();
+    });
+  });
+
+  // Highlight active TOC link on scroll
+  const tocLinks = Array.from(document.querySelectorAll('#tocList a'));
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const id = entry.target.getAttribute('id');
+      const link = tocLinks.find(l => l.getAttribute('href') === '#' + id);
+      if (link){
+        if (entry.isIntersecting){
+          tocLinks.forEach(l => l.classList.remove('active'));
+          link.classList.add('active');
+        }
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+
+  topics.forEach(sec => observer.observe(sec));
+</script>
+
+</body>
+</html>
