@@ -107,7 +107,8 @@ const SECTIONS=[
  {id:"s02",label:"MATCH KEY+PRECISION+NWAY",c:"gold"},
  {id:"s03",label:"STATE+TIMING+IDEMPOTENCY",c:"violet"},
  {id:"s04",label:"EXCEPTION+SCALE+CONSISTENCY",c:"rose"},
- {id:"s05",label:"AUDIT+SPLIT+REDESIGN",c:"amber"}
+ {id:"s05",label:"AUDIT+SPLIT+REDESIGN",c:"amber"},
+ {id:"ascii",label:"ASCII DIAGRAMS",c:"amber"}
 ];
 const S=[
 
@@ -477,7 +478,337 @@ cto:[`The most consequential reconciliation decisions look like technical choice
 {sec:"s05",c:"amber",eyebrow:"Final Recall",t:"r",h:"Final: reconciliation system design compressed",qs:[
 {q:`The entire conversation compressed into one chain.`,a:`Correctness over speed → normalized canonical schema → correlation key designed at initiation, not matching time → false matches forbidden, missed matches tolerated → n-way status per key, not pairwise → explicit states with SLA-driven timeouts → arrival-time windows, not naive joins → idempotency at ingestion → typed, owned exception queue → partition by business semantics → consistency over availability → append corrections, never mutate → every "feature" was a forced move, not a choice made in a vacuum.`},
 {q:`Why must split matching constrain the candidate set before comparing amounts?`,a:`Allowing "any combination whose amounts sum to the target" is a fraud risk — unrelated transactions could be grouped to satisfy an amount match. Only transactions sharing the same correlation key (or an explicit parent-child reference) are eligible to be aggregated.`},
-{q:`Why must matched recon records be immutable, with corrections appended rather than fields updated?`,a:`A mutated record destroys the ability to reconstruct "what did the system believe on a given date" — exactly what audit and compliance require. Append-only corrections preserve both the original match and the correction in the same event log.`}]}
+{q:`Why must matched recon records be immutable, with corrections appended rather than fields updated?`,a:`A mutated record destroys the ability to reconstruct "what did the system believe on a given date" — exactly what audit and compliance require. Append-only corrections preserve both the original match and the correction in the same event log.`}]},
+
+/* ASCII DIAGRAMS */
+{sec:"ascii",c:"amber",eyebrow:"Big Picture",t:"a",h:"The Entire Reconciliation System",body:`
+<div class="ascii">              SOURCE A                         SOURCE B
+          ┌──────────────┐                 ┌──────────────┐
+          │ Bank / Core  │                 │ Payment      │
+          │ Banking      │                 │ Gateway      │
+          └──────┬───────┘                 └──────┬───────┘
+                 │                                  │
+                 │ Transactions                     │ Transactions
+                 ▼                                  ▼
+          ┌──────────────┐                 ┌──────────────┐
+          │ Transaction  │                 │ Transaction  │
+          │ Ingestion    │                 │ Ingestion    │
+          └──────┬───────┘                 └──────┬───────┘
+                 │                                  │
+                 └──────────────┬───────────────────┘
+                                ▼
+                       ┌─────────────────┐
+                       │ RECONCILIATION  │
+                       │     ENGINE      │
+                       └────────┬────────┘
+                                │
+                    ┌───────────┼───────────┐
+                    ▼           ▼           ▼
+                 MATCHED     MISMATCH     MISSING
+                    │           │           │
+                    ▼           ▼           ▼
+                 SUCCESS      EXCEPTION   EXCEPTION</div>
+<div class="note"><b>The reconciliation engine compares transactions from two sources and classifies them as matched, mismatched, or missing.</b></div>`},
+
+{sec:"ascii",c:"amber",eyebrow:"Comparison Logic",t:"a",h:"What Are We Actually Comparing?",body:`
+<div class="ascii">SOURCE A                         SOURCE B
+────────                         ────────
+
+Transaction ID                   Transaction ID
+Amount                           Amount
+Date                             Date
+Currency                         Currency
+Status                           Status
+
+   │                                │
+   │                                │
+   └──────────── COMPARE ───────────┘
+                    │
+                    ▼
+
+          ┌───────────────────┐
+          │ Same transaction? │
+          │ Same amount?      │
+          │ Same status?      │
+          └─────────┬─────────┘
+                    │
+              ┌─────┴─────┐
+              ▼           ▼
+             YES          NO
+              │           │
+              ▼           ▼
+           MATCHED     MISMATCH</div>`},
+
+{sec:"ascii",c:"amber",eyebrow:"End-to-End Flow",t:"a",h:"Complete Reconciliation Flow",body:`
+<div class="ascii">        FILE / API / EVENT
+               │
+               ▼
+      ┌──────────────────┐
+      │  Ingestion Layer │
+      └────────┬─────────┘
+               │
+               ▼
+      ┌──────────────────┐
+      │ Validate Records │
+      └────────┬─────────┘
+               │
+               ▼
+      ┌──────────────────┐
+      │ Normalize Data   │
+      │                  │
+      │ ID → standard ID │
+      │ ₹ → decimal      │
+      │ Date → UTC       │
+      └────────┬─────────┘
+               │
+               ▼
+      ┌──────────────────┐
+      │ Reconciliation   │
+      │ Engine           │
+      └────────┬─────────┘
+               │
+          ┌────┴─────┐
+          ▼          ▼
+       MATCH       EXCEPTION
+          │          │
+          ▼          ▼
+       SUCCESS    INVESTIGATE</div>`},
+
+{sec:"ascii",c:"amber",eyebrow:"Matching Logic",t:"a",h:"How the Matching Decision Works",body:`
+<div class="ascii">                 TRANSACTION
+                      │
+                      ▼
+              ┌───────────────┐
+              │ Find matching │
+              │ transaction   │
+              └───────┬───────┘
+                      │
+                      ▼
+              ┌───────────────┐
+              │ transactionId │
+              │      ?        │
+              └───────┬───────┘
+                      │
+               ┌──────┴──────┐
+               │             │
+              YES            NO
+               │             │
+               ▼             ▼
+        Compare fields    MISSING
+               │
+          ┌────┴─────┐
+          ▼          ▼
+       ALL SAME    DIFFERENT
+          │          │
+          ▼          ▼
+       MATCHED     MISMATCH</div>`},
+
+{sec:"ascii",c:"amber",eyebrow:"Three Key Cases",t:"a",h:"Case 1 — Matched Transaction",body:`
+<div class="ascii">CASE 1 — MATCH
+
+Bank                         Gateway
+────                         ───────
+
+TXN1001  ₹500  SUCCESS       TXN1001  ₹500  SUCCESS
+
+             │
+             ▼
+          MATCHED ✓</div>
+<div class="ascii">CASE 2 — AMOUNT MISMATCH
+
+Bank                         Gateway
+────                         ───────
+
+TXN1002  ₹500  SUCCESS       TXN1002  ₹450  SUCCESS
+
+             │
+             ▼
+        AMOUNT MISMATCH
+             │
+             ▼
+          EXCEPTION</div>
+<div class="ascii">CASE 3 — MISSING
+
+Bank                         Gateway
+────                         ───────
+
+TXN1003  ₹500  SUCCESS       ❌ Not Found
+
+             │
+             ▼
+       MISSING TRANSACTION
+             │
+             ▼
+          EXCEPTION</div>`},
+
+{sec:"ascii",c:"amber",eyebrow:"System Components",t:"a",h:"Core Components of the System",body:`
+<div class="ascii">                    RECONCILIATION SYSTEM
+                            │
+       ┌────────────────────┼────────────────────┐
+       │                    │                    │
+       ▼                    ▼                    ▼
+┌─────────────┐      ┌──────────────┐     ┌──────────────┐
+│ Ingestion   │      │ Recon Engine │     │ Exception    │
+│             │      │              │     │ Management   │
+└──────┬──────┘      └──────┬───────┘     └──────┬───────┘
+       │                    │                    │
+       ▼                    ▼                    ▼
+┌─────────────┐      ┌──────────────┐     ┌──────────────┐
+│ Raw         │      │ Matching     │     │ Investigation│
+│ Transactions│      │ Rules        │     │ & Resolution │
+└─────────────┘      └──────────────┘     └──────────────┘
+                            │
+                            ▼
+                     ┌──────────────┐
+                     │ Recon DB     │
+                     └──────────────┘</div>`},
+
+{sec:"ascii",c:"amber",eyebrow:"Exception Handling",t:"a",h:"Managing Mismatches and Exceptions",body:`
+<div class="ascii">                 MISMATCH
+                    │
+                    ▼
+            ┌───────────────┐
+            │ Create        │
+            │ Exception     │
+            └───────┬───────┘
+                    │
+                    ▼
+            ┌───────────────┐
+            │ Assign        │
+            │ Operations    │
+            └───────┬───────┘
+                    │
+                    ▼
+              INVESTIGATE
+                    │
+        ┌───────────┼───────────┐
+        ▼           ▼           ▼
+     Retry       Adjust      Escalate
+        │           │           │
+        └───────────┼───────────┘
+                    ▼
+             ┌─────────────┐
+             │ RESOLVED    │
+             └─────────────┘</div>`},
+
+{sec:"ascii",c:"amber",eyebrow:"Batch Reconciliation",t:"a",h:"Periodic Reconciliation Process",body:`
+<div class="ascii">       12:00 AM
+           │
+           ▼
+   ┌─────────────────┐
+   │ Start Recon Job │
+   └────────┬────────┘
+            │
+            ▼
+   ┌─────────────────┐
+   │ Load yesterday's│
+   │ transactions    │
+   └────────┬────────┘
+            │
+            ▼
+   ┌─────────────────┐
+   │ Match millions  │
+   │ of transactions │
+   └────────┬────────┘
+            │
+       ┌────┴─────┐
+       ▼          ▼
+    MATCHED    EXCEPTIONS
+       │          │
+       ▼          ▼
+    SUCCESS     QUEUE
+       │          │
+       └────┬─────┘
+            ▼
+     ┌──────────────┐
+     │ Recon Report │
+     └──────────────┘</div>`},
+
+{sec:"ascii",c:"amber",eyebrow:"Scalable Architecture",t:"a",h:"Handling Millions/Billions of Transactions",body:`
+<div class="ascii">                 SOURCE A
+                    │
+                    ▼
+               ┌─────────┐
+               │ Kafka   │
+               └────┬────┘
+                    │
+                 SOURCE B
+                    │
+                    ▼
+               ┌─────────┐
+               │ Kafka   │
+               └────┬────┘
+                    │
+                    ▼
+        ┌──────────────────────┐
+        │ Reconciliation       │
+        │ Workers              │
+        │                      │
+        │ W1  W2  W3  W4 ...  │
+        └──────────┬───────────┘
+                   │
+                   ▼
+             ┌───────────┐
+             │ Matching  │
+             │ Store     │
+             └─────┬─────┘
+                   │
+          ┌────────┴─────────┐
+          ▼                  ▼
+   ┌──────────────┐   ┌──────────────┐
+   │ Matched      │   │ Exceptions   │
+   │ Transactions │   │              │
+   └──────────────┘   └──────────────┘</div>`},
+
+{sec:"ascii",c:"amber",eyebrow:"Final Mental Model",t:"a",h:"The Complete Mental Model",body:`
+<div class="ascii">              ┌─────────────────────┐
+              │     SOURCE A        │
+              │   "What I think"    │
+              └──────────┬──────────┘
+                         │
+                         │
+                         ▼
+                  ┌──────────────┐
+                  │              │
+                  │ RECONCILE    │
+                  │              │
+                  └──────┬───────┘
+                         ▲
+                         │
+                         │
+              ┌──────────┴──────────┐
+              │     SOURCE B       │
+              │   "What they say"  │
+              └────────────────────┘
+
+                         │
+                         ▼
+                ┌────────────────┐
+                │     RESULT     │
+                └───────┬────────┘
+                        │
+          ┌─────────────┼──────────────┐
+          ▼             ▼              ▼
+       MATCHED       MISMATCH        MISSING
+          │             │              │
+          ▼             ▼              ▼
+          ✓          EXCEPTION      EXCEPTION</div>
+<div class="ascii"><span class="hl">RECONCILIATION</span>
+       =
+┌─────────────────────┐
+│ Ingest              │
+│      ↓              │
+│ Normalize           │
+│      ↓              │
+│ Match               │
+│      ↓              │
+│ Compare             │
+│      ↓              │
+│ Matched / Exception │
+│      ↓              │
+│ Resolve             │
+└─────────────────────┘</div>
+<div class="note"><b>The hardest parts:</b> idempotency, duplicate detection, late-arriving transactions, partial matches, retry handling, large-volume processing, auditability, and exception resolution.</div>`}
 ];
 
 let i=0;

@@ -106,7 +106,8 @@ const SECTIONS=[
  {id:"core",label:"CORE IDEA+FLOW",c:"teal"},
  {id:"build",label:"BUILD IT: 4 ENDPOINTS",c:"gold"},
  {id:"think",label:"ARCHITECT THINKING",c:"violet"},
- {id:"final",label:"FAILURE MODES+RECALL",c:"rose"}
+ {id:"final",label:"FAILURE MODES+RECALL",c:"rose"},
+ {id:"ascii",label:"ASCII DIAGRAMS",c:"amber"}
 ];
 const S=[
 
@@ -402,7 +403,170 @@ Damage window without detection:
 {sec:"final",c:"rose",eyebrow:"Final Recall",t:"r",h:"Final: OAuth 2.0 compressed",qs:[
 {q:`OAuth 2.0 in one sentence.`,a:`Let users authenticate at a trusted identity provider, receive a scoped, time-limited, revocable token (not their password), and present that token to resource servers — so no app ever needs to hold or know the user's actual credential.`},
 {q:`The authorization code flow has two round trips. Why not one?`,a:`A single redirect delivering the token directly puts it in the browser URL, history, and any JS on the page. The code is worthless without the client_secret — the backend-to-backend exchange keeps the token out of the browser entirely.`},
-{q:`Why is "use HTTPS" insufficient for OAuth security?`,a:`HTTPS protects the transport. It doesn't prevent: redirect_uri manipulation (code to wrong destination), CSRF on the callback (missing state), client_secret leakage in public clients (use PKCE), or XSS stealing tokens from localStorage. Each is a structural vulnerability, not a transport issue.`}]}
+{q:`Why is "use HTTPS" insufficient for OAuth security?`,a:`HTTPS protects the transport. It doesn't prevent: redirect_uri manipulation (code to wrong destination), CSRF on the callback (missing state), client_secret leakage in public clients (use PKCE), or XSS stealing tokens from localStorage. Each is a structural vulnerability, not a transport issue.`}]},
+
+/* ASCII DIAGRAMS */
+{sec:"ascii",c:"amber",eyebrow:"The Basic Idea",t:"a",h:"Think of OAuth like giving a valet a limited key",body:`
+<div class="ascii">                 YOU
+                  │
+                  │ "Allow this app"
+                  ▼
+        ┌──────────────────┐
+        │ Authorization    │
+        │ Server           │
+        └────────┬─────────┘
+                 │
+                 │ Access Token
+                 ▼
+        ┌──────────────────┐
+        │      APP         │
+        └────────┬─────────┘
+                 │
+                 │ Token
+                 ▼
+        ┌──────────────────┐
+        │   Your Data/API  │
+        └──────────────────┘</div>
+<div class="ascii">Password ❌
+    ↓
+Access Token ✅
+    ↓
+Limited access to your data</div>
+<div class="note"><b>Key idea:</b> Instead of sharing your password, you give the app a limited token that can be revoked at any time.</div>`},
+
+{sec:"ascii",c:"amber",eyebrow:"Real OAuth Flow",t:"a",h:"The authorization and token exchange dance",body:`
+<div class="ascii">YOU             APP             AUTH SERVER
+ │                │                   │
+ │ Open App       │                   │
+ ├───────────────>│                   │
+ │                │                   │
+ │                │ "Please authorize"│
+ │                ├──────────────────>│
+ │                │                   │
+ │                │              Login
+ │                │                   │
+ │                │              Consent
+ │                │                   │
+ │                │<─────── CODE ─────┤
+ │                │                   │
+ │                │──── CODE ────────>│
+ │                │                   │
+ │                │<── ACCESS TOKEN ───┤
+ │                │                   │</div>
+<div class="ascii">Login
+  ↓
+Consent
+  ↓
+Authorization Code
+  ↓
+Access Token</div>`},
+
+{sec:"ascii",c:"amber",eyebrow:"Accessing the API",t:"a",h:"How the app uses the token to get your data",body:`
+<div class="ascii">             APP
+              │
+              │  Authorization:
+              │  Bearer ABC123
+              ▼
+       ┌───────────────┐
+       │  Resource API │
+       └───────┬───────┘
+               │
+               ▼
+        Check Access Token
+               │
+          ┌────┴────┐
+          │         │
+       Invalid     Valid
+          │         │
+        401 ❌      ▼
+                Return Data
+                   ✅</div>
+<div class="ascii">Access Token
+     ↓
+API
+     ↓
+"Is this token allowed?"
+     ↓
+YES → Data
+NO  → 401/403</div>
+<div class="note">The app sends the token, not your password, to every API call.</div>`},
+
+{sec:"ascii",c:"amber",eyebrow:"Token Lifecycle",t:"a",h:"Access tokens expire; refresh tokens get new ones",body:`
+<div class="ascii">              APP
+               │
+               │ Access Token
+               ▼
+          ┌───────────┐
+          │    API    │
+          └───────────┘
+
+Access Token expires
+          │
+          ▼
+      Refresh Token
+          │
+          ▼
+   Authorization Server
+          │
+          ▼
+   NEW Access Token</div>
+<div class="ascii">Access Token
+     │
+     └── Short life
+         → used for APIs
+
+Refresh Token
+     │
+     └── Longer life
+         → used to get new Access Token</div>`},
+
+{sec:"ascii",c:"amber",eyebrow:"Complete Picture",t:"a",h:"The full OAuth 2.0 flow from start to finish",body:`
+<div class="ascii">                    ┌─────────┐
+                    │  USER   │
+                    └────┬────┘
+                         │
+                      Login
+                         │
+                         ▼
+              ┌────────────────────┐
+              │ Authorization      │
+              │ Server             │
+              └─────────┬──────────┘
+                        │
+                  Auth Code
+                        │
+                        ▼
+                  ┌─────────┐
+                  │   APP   │
+                  └────┬────┘
+                       │
+                 Exchange Code
+                       │
+                       ▼
+              ┌────────────────────┐
+              │ Access Token       │
+              │ Refresh Token      │
+              └─────────┬──────────┘
+                        │
+                   Access Token
+                        │
+                        ▼
+                 ┌─────────────┐
+                 │ Resource API│
+                 └──────┬──────┘
+                        │
+                        ▼
+                    YOUR DATA</div>
+<div class="ascii"><span class="hl">USER</span>
+ ↓
+<span class="hl">LOGIN + CONSENT</span>
+ ↓
+<span class="hl">AUTHORIZATION CODE</span>
+ ↓
+<span class="hl">ACCESS TOKEN</span>
+ ↓
+<span class="hl">API ACCESS</span></div>
+<div class="note"><b>Remember OAuth 2.0 in one line:</b> Don't give the app your password; give it a limited token.</div>`}
 ];
 
 let i=0;
