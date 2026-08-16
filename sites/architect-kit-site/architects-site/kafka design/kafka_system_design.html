@@ -240,7 +240,6 @@
   }
   .eng-philosophy p{margin:0;font-style:italic;line-height:1.65;color:#F0A8C8;}
 </style>
-<link rel="stylesheet" href="../audio-sync.css">
 </head>
 <body>
 <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☾&nbsp; Dark mode</button>
@@ -280,7 +279,6 @@
   <!-- SEGMENT 1 : AMBER -->
   <section class="segment" id="s1" style="--seg:#C9871F">
     <div class="segment-head"><span class="segment-offset">offset 00</span><h2>The mental model shift</h2></div>
-    <div class="audio-panel" id="audio-panel-s1"></div>
     <p class="segment-note">SQS: <code>Producer → Queue → Consumer → Delete</code>. Kafka: <code>Producer → Append to Log → Consumers read by offset</code>. Everything below falls out of this one sentence.</p>
     <pre class="sketch">Partition 0 log:  [0][1][2][3][4][5]
 Consumer A -> currently at offset 3
@@ -301,7 +299,6 @@ Consumer B -> currently at offset 1
   <!-- SEGMENT 2 : TEAL -->
   <section class="segment" id="s2" style="--seg:#2E8B82">
     <div class="segment-head"><span class="segment-offset">offset 01</span><h2>Log & partition fundamentals</h2></div>
-    <div class="audio-panel" id="audio-panel-s2"></div>
     <p class="segment-note">The primary object isn't "a queue with messages" — it's <code>Topic → Partitions → ordered append-only logs</code>. Ordering is a per-partition guarantee, not a per-topic one.</p>
     <pre class="sketch">Topic: orders
 Partition 0: [0][1][2][3][4]
@@ -322,7 +319,6 @@ Partition 2: [0][1][2][3][4][5]
   <!-- SEGMENT 3 : CORAL -->
   <section class="segment" id="s3" style="--seg:#C1543A">
     <div class="segment-head"><span class="segment-offset">offset 02</span><h2>No visibility timeout — offsets replace receipt handles</h2></div>
-    <div class="audio-panel" id="audio-panel-s3"></div>
     <p class="segment-note">SQS hides an in-flight message and reveals it again on timeout. Kafka has no such concept — a consumer just reads and, separately, commits a position.</p>
     <pre class="sketch">Consumer fetches offsets 100..104
 processes 100..102
@@ -343,7 +339,6 @@ commits offset = 103   // means "next time, start at 103"
   <!-- SEGMENT 4 : VIOLET -->
   <section class="segment" id="s4" style="--seg:#7A63B8">
     <div class="segment-head"><span class="segment-offset">offset 03</span><h2>Replay as a first-class feature, retention as the lifecycle owner</h2></div>
-    <div class="audio-panel" id="audio-panel-s4"></div>
     <p class="segment-note">SQS lifecycle: <code>enqueue → receive → ack/delete → gone</code>. Kafka lifecycle: <code>append → retained by policy → eventually removed</code>. Consumer ack never removes anything.</p>
     <pre class="sketch">Topic log: [0][1][2][3][4][5][6][7][8]
 Consumer A starts at 0
@@ -363,7 +358,6 @@ Consumer C replays all of it next week -- all valid, all independent</pre>
   <!-- SEGMENT 5 : SKY -->
   <section class="segment" id="s5" style="--seg:#3480B0">
     <div class="segment-head"><span class="segment-offset">offset 04</span><h2>Consumer groups & rebalancing</h2></div>
-    <div class="audio-panel" id="audio-panel-s5"></div>
     <p class="segment-note">Parallelism inside a consumer group is <b>bounded by partition count</b> — this single constraint drives most of Kafka's capacity planning.</p>
     <pre class="sketch">Topic: 3 partitions -- Group G1: C1->P0, C2->P1, C3->P2
 C2 dies -> rebalance -> C1->P0,P1   C3->P2</pre>
@@ -381,7 +375,6 @@ C2 dies -> rebalance -> C1->P0,P1   C3->P2</pre>
   <!-- SEGMENT 6 : LIME -->
   <section class="segment" id="s6" style="--seg:#6B9A44">
     <div class="segment-head"><span class="segment-offset">offset 05</span><h2>Producer semantics & the replicated log</h2></div>
-    <div class="audio-panel" id="audio-panel-s6"></div>
     <p class="segment-note">A producer doesn't send "to a queue" — it sends to a <b>topic-partition leader</b>, which replicates to followers. Leader election is what makes the ordering guarantee trustworthy.</p>
     <pre class="sketch">Producer -> choose partition by key -> batch -> send to Leader(P0) -> Follower A, Follower B replicate</pre>
 
@@ -396,7 +389,6 @@ C2 dies -> rebalance -> C1->P0,P1   C3->P2</pre>
   <!-- SEGMENT 7 : ROSE -->
   <section class="segment" id="s7" style="--seg:#C1547A">
     <div class="segment-head"><span class="segment-offset">offset 06</span><h2>Ordering guarantees & stream-native fit</h2></div>
-    <div class="audio-panel" id="audio-panel-s7"></div>
     <p class="segment-note">Strong order exists <b>within</b> a partition. Kafka's real superpower is that one event stream can independently feed many downstream systems.</p>
     <pre class="sketch">Topic -> Consumer A builds a search index
       -> Consumer B updates analytics
@@ -415,7 +407,6 @@ C2 dies -> rebalance -> C1->P0,P1   C3->P2</pre>
   <!-- SEGMENT 8 : GOLD -->
   <section class="segment" id="s8" style="--seg:#B9971F">
     <div class="segment-head"><span class="segment-offset">offset 07</span><h2>Compaction & the hardest correctness questions</h2></div>
-    <div class="audio-panel" id="audio-panel-s8"></div>
     <p class="segment-note">Compaction retains only the <b>latest value per key</b> while staying log-shaped. Since the broker doesn't manage delete/visibility for you, correctness lives in how you sequence business logic against offset commits.</p>
     <pre class="sketch">Key A->v1, Key B->v1, Key A->v2, Key A->v3, Key B->v2
 compacted view tends toward:  A->v3   B->v2</pre>
@@ -433,7 +424,6 @@ compacted view tends toward:  A->v3   B->v2</pre>
   <!-- SEGMENT 9 : CYAN -->
   <section class="segment" id="s9" style="--seg:#279090">
     <div class="segment-head"><span class="segment-offset">offset 08</span><h2>When Kafka is the wrong tool</h2></div>
-    <div class="audio-panel" id="audio-panel-s9"></div>
     <p class="segment-note">The most senior answer isn't "Kafka is better" — it's knowing exactly where it costs more than it gives.</p>
     <table class="diff-table">
       <tr><th>Reach for SQS-style queue when</th><th>Reach for Kafka when</th></tr>
@@ -453,7 +443,6 @@ compacted view tends toward:  A->v3   B->v2</pre>
   <!-- SEGMENT 10 : PURPLE -->
   <section class="segment" id="s10" style="--seg:#9A62D6">
     <div class="segment-head"><span class="segment-offset">offset 09</span><h2>Our deployment — Wealth / Mutual Fund Platform</h2></div>
-    <div class="audio-panel" id="audio-panel-s10"></div>
     <p class="segment-note">This is the shape of the Kafka footprint behind mutual fund order flow, NSDL/MOFSL reconciliation, and demat holdings sync — the numbers to have ready when asked "have you actually run this in production?"</p>
 
     <div class="stat-grid">
@@ -495,7 +484,6 @@ compacted view tends toward:  A->v3   B->v2</pre>
   <!-- SEGMENT 11 : RAPID FIRE -->
   <section class="segment" id="s11" style="--seg:#C9871F">
     <div class="segment-head"><span class="segment-offset">offset 10</span><h2>Rapid fire — say the "why" out loud, then move on</h2></div>
-    <div class="audio-panel" id="audio-panel-s11"></div>
     <p class="segment-note">No hidden answers here — if you can answer each in one breath, you're ready. If you stall on one, that's your revision signal.</p>
     <ol class="rapid-list">
       <li>Why does Kafka not need a visibility timeout?</li>
@@ -514,7 +502,6 @@ compacted view tends toward:  A->v3   B->v2</pre>
   <!-- SEGMENT 12 : LEADERSHIP PERSPECTIVES -->
   <section class="segment" id="s12" style="--seg:#4A5FBF">
     <div class="segment-head"><span class="segment-offset">offset 11</span><h2>Leadership perspectives — same incident, four minds</h2></div>
-    <div class="audio-panel" id="audio-panel-s12"></div>
     <p class="segment-note">Seven situations. Each one is read differently by a <b style="color:#2E8B82;">developer</b>, an <b style="color:#7A63B8;">architect</b>, a <b style="color:#C1543A;">CTO</b>, and a <b style="color:#A9861E;">director</b>. Click to reveal how the same incident produces four different decisions — and the one "invisible question" that separates leading the system from just fixing it.</p>
 
     <!-- Q1 -->
@@ -638,15 +625,5 @@ function toggle(headEl){
   }
 }
 </script>
-<script src="../audio-module.js"></script>
-<script>
-window.ALAB_PAGE_CONFIG = {
-  storageKey: 'alab_audio_data_kafka_system_design_v1',
-  metaKey:    'alab_audio_meta_kafka_system_design_v1',
-  topicIds:   ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12"],
-  ghPath:     'audio-data/kafka_system_design.json'
-};
-</script>
-<script src="../audio-sync.js"></script>
 </body>
 </html>

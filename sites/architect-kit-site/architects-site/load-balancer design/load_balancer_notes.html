@@ -241,7 +241,6 @@
   }
   .eng-philosophy p{margin:0;font-style:italic;line-height:1.65;color:#F0A8C8;}
 </style>
-<link rel="stylesheet" href="../audio-sync.css">
 </head>
 <body>
 <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☾&nbsp; Dark mode</button>
@@ -284,7 +283,6 @@
   <!-- SEGMENT 1 -->
   <section class="segment" id="s1" style="--seg:#C9871F">
     <div class="segment-head"><span class="segment-offset">offset 00</span><h2>The first decision — what level does the LB operate at</h2></div>
-    <div class="audio-panel" id="audio-panel-s1"></div>
     <p class="segment-note">Most people jump straight to <code>"round robin or least connections?"</code> That's the wrong first question. The real first question is: <code>does this load balancer understand TCP/UDP only, or does it understand HTTP?</code> That single choice decides almost everything downstream — what it can route on, what fairness even means, and what it's allowed to inspect.</p>
     <pre class="sketch">Layer 4 LB                                Layer 7 LB
 -----------                                -----------
@@ -316,7 +314,6 @@ Client --TCP conn--> LB --TCP conn--> Backend      Client --HTTP req--> LB (read
   <!-- SEGMENT 2 -->
   <section class="segment" id="s2" style="--seg:#2E8B82">
     <div class="segment-head"><span class="segment-offset">offset 01</span><h2>Traffic entry — the first availability problem</h2></div>
-    <div class="audio-panel" id="audio-panel-s2"></div>
     <p class="segment-note">Before any backend is ever chosen, the client has to reach a <em>live</em> load balancer endpoint. That's a distinct problem from backend load balancing — it's <b>load balancer availability itself</b>, and it's usually solved with a completely different toolset: DNS, Anycast, VIP, or ECMP.</p>
     <pre class="sketch">Client -> DNS resolves service.com -> LB address -> one LB node accepts traffic
 
@@ -339,7 +336,6 @@ Models:
   <!-- SEGMENT 3 -->
   <section class="segment" id="s3" style="--seg:#C1543A">
     <div class="segment-head"><span class="segment-offset">offset 02</span><h2>Backend discovery — who is the source of truth?</h2></div>
-    <div class="audio-panel" id="audio-panel-s3"></div>
     <p class="segment-note">A load balancer needs a live, accurate backend pool. The interesting question isn't "does it have a list" — it's <code>who owns that list, how fresh is it, and what happens when it's wrong?</code></p>
     <pre class="sketch">Static config: easy, but stale the moment a server is added/removed
 Dynamic discovery: harder, but reflects reality
@@ -363,7 +359,6 @@ Dynamic discovery: harder, but reflects reality
   <!-- SEGMENT 4 -->
   <section class="segment" id="s4" style="--seg:#7A63B8">
     <div class="segment-head"><span class="segment-offset">offset 03</span><h2>Backend selection — what are we actually balancing?</h2></div>
-    <div class="audio-panel" id="audio-panel-s4"></div>
     <p class="segment-note">Picking "the next server" sounds simple. The deeper question is: what quantity are we trying to keep even — request count, active connections, latency, CPU, or in-flight work? Different answers produce different algorithms, and each algorithm is only fair under certain assumptions.</p>
     <pre class="sketch">Round robin:            R1->S1  R2->S2  R3->S3  R4->S1  R5->S2
 Least connections:       S1=200  S2=50  S3=120  -> new request goes to S2
@@ -384,7 +379,6 @@ Hash-based (sticky-ish): hash(client_id) -> backend   (A->S2, B->S1, C->S2)</pre
   <!-- SEGMENT 5 -->
   <section class="segment" id="s5" style="--seg:#3480B0">
     <div class="segment-head"><span class="segment-offset">offset 04</span><h2>Health checking — the real heart, and the part that lies</h2></div>
-    <div class="audio-panel" id="audio-panel-s5"></div>
     <p class="segment-note">Without health checks, an LB is blind. But the harder truth is: <b>health checks can lie</b> — a "200 OK" from <code>/health</code> and a real user request failing are two different questions, answered by two different code paths.</p>
     <pre class="sketch">LB health checker
  +--> S1 : /health -> 200 OK      (healthy)
@@ -409,7 +403,6 @@ Types:  1. TCP check (can a connection even open?)
   <!-- SEGMENT 6 -->
   <section class="segment" id="s6" style="--seg:#6B9A44">
     <div class="segment-head"><span class="segment-offset">offset 05</span><h2>Connection handling — the LB is managing connections, not just routing requests</h2></div>
-    <div class="audio-panel" id="audio-panel-s6"></div>
     <p class="segment-note">An LB is rarely "stateless plumbing." It usually terminates the client's connection and opens its own to the backend — which raises questions about TLS, connection reuse, and, at HTTP/2 and gRPC, whether balancing should happen per <em>connection</em> or per <em>stream</em>.</p>
     <pre class="sketch">Proxy model:      Client <--conn1--> LB <--conn2--> Backend
 Pass-through:      LB forwards at a lower layer, less application awareness
@@ -430,7 +423,6 @@ balancing per-connection can silently become "balancing per multiplexed bundle o
   <!-- SEGMENT 7 -->
   <section class="segment" id="s7" style="--seg:#C1547A">
     <div class="segment-head"><span class="segment-offset">offset 06</span><h2>L7 content-based routing — richer power, richer risk</h2></div>
-    <div class="audio-panel" id="audio-panel-s7"></div>
     <p class="segment-note">Once the LB understands HTTP, it can route on host, path, headers, and method — turning one edge entry point into a traffic router across many service pools. That power comes with a real architectural boundary question.</p>
     <pre class="sketch">Host: api.shop.com  Path: /checkout       -> Checkout service pool
 Host: static.shop.com  Path: /images/*     -> Static service pool
@@ -449,7 +441,6 @@ if host=api.shop.com and path starts /orders -> order service</pre>
   <!-- SEGMENT 8 -->
   <section class="segment" id="s8" style="--seg:#B9971F">
     <div class="segment-head"><span class="segment-offset">offset 07</span><h2>Session stickiness — useful, but it's fairness you're trading away</h2></div>
-    <div class="audio-panel" id="audio-panel-s8"></div>
     <p class="segment-note">Stickiness sends the same user to the same backend repeatedly — good for local cache, in-memory session, or warm context. But every sticky rule is a small, deliberate sacrifice of load fairness, and that trade needs to be scoped, not assumed.</p>
     <pre class="sketch">User A --> S2
 User A --> S2 (again)
@@ -469,7 +460,6 @@ hash(cookie=session123) -> S3</pre>
   <!-- SEGMENT 9 -->
   <section class="segment" id="s9" style="--seg:#279090">
     <div class="segment-head"><span class="segment-offset">offset 08</span><h2>Failure handling — where the LB stops being a splitter and becomes a resilience component</h2></div>
-    <div class="audio-panel" id="audio-panel-s9"></div>
     <p class="segment-note">Failures can happen at six different points in the path — client-to-LB, the LB node itself, LB-to-backend, the backend app, a backend dependency, or the control plane. Each demands a different answer, and "just retry" is not automatically the right one.</p>
     <pre class="sketch">Case 1 — backend dies suddenly:  LB thought S2 healthy, sends request, S2 crashes -> request fails. Retry elsewhere?
 Case 2 — backend is slow, not dead:  S2 responds in 15s, health check still says "alive." Keep sending traffic?
@@ -490,7 +480,6 @@ Case 4 — partial overload:  S1 CPU 95%, S2 40%, S3 35% — react before S1 ful
   <!-- SEGMENT 10 -->
   <section class="segment" id="s10" style="--seg:#9A62D6">
     <div class="segment-head"><span class="segment-offset">offset 09</span><h2>Draining, scaling the LB itself, and overload protection</h2></div>
-    <div class="audio-panel" id="audio-panel-s10"></div>
     <p class="segment-note">Three problems that all show up during real operations: removing a server without dropping active work, scaling the LB layer without turning it into a bottleneck, and protecting the backend when incoming demand simply exceeds capacity.</p>
     <pre class="sketch">Draining:  ACTIVE -> DRAINING (no new traffic, old traffic finishes) -> REMOVED
 
@@ -516,7 +505,6 @@ LB must not blindly forward all 100k -> queue briefly / shed load / rate limit /
   <!-- SEGMENT 11 -->
   <section class="segment" id="s11" style="--seg:#C9871F">
     <div class="segment-head"><span class="segment-offset">offset 10</span><h2>Observability, and rethinking "healthy vs unhealthy" as real states</h2></div>
-    <div class="audio-panel" id="audio-panel-s11"></div>
     <p class="segment-note">A binary healthy/unhealthy view is often too simplistic. And without observability, an LB is a black box — health status alone can hide real performance degradation.</p>
     <pre class="sketch">HEALTHY -> (problem detected) -> DEGRADED -> (too many failures) -> UNHEALTHY -> (recovers consistently) -> HEALTHY
 Add draining:  HEALTHY -> DRAINING -> REMOVED
@@ -535,7 +523,6 @@ Key metrics: selection counts | error counts | tail latency (p95/p99) |
   <!-- SEGMENT 12 -->
   <section class="segment" id="s12" style="--seg:#2E8B82">
     <div class="segment-head"><span class="segment-offset">offset 11</span><h2>Security and the trust boundary</h2></div>
-    <div class="audio-panel" id="audio-panel-s12"></div>
     <p class="segment-note">A real LB often sits at the exact seam between the public internet and the private backend network — which means every decision it makes about what to trust and forward becomes a decision the entire backend inherits.</p>
     <pre class="sketch">Internet -> Load Balancer -> private backend network
 
@@ -553,7 +540,6 @@ LB may do: TLS termination | header injection (client IP, identity) |
   <!-- SEGMENT 13 -->
   <section class="segment" id="s13" style="--seg:#C1543A">
     <div class="segment-head"><span class="segment-offset">offset 12</span><h2>Our deployment — Wealth / Demat Platform load-balancing footprint</h2></div>
-    <div class="audio-panel" id="audio-panel-s13"></div>
     <p class="segment-note">The shape of load balancing behind mutual fund orders, IPO allotment, NSDL demat sync, PolicyBazaar insurance journeys, and LAMF — the numbers to have ready when asked "have you actually thought about this in production?"</p>
 
     <div class="stat-grid">
@@ -585,7 +571,6 @@ LB may do: TLS termination | header injection (client IP, identity) |
   <!-- SEGMENT 14 -->
   <section class="segment" id="s14" style="--seg:#7A63B8">
     <div class="segment-head"><span class="segment-offset">offset 13</span><h2>Rapid fire — say the "why" out loud, then move on</h2></div>
-    <div class="audio-panel" id="audio-panel-s14"></div>
     <p class="segment-note">No hidden answers here — if you can answer each in one breath, you're ready. If you stall on one, that's your revision signal.</p>
     <ol class="rapid-list">
       <li>Why does Layer 4 fairness break down when one connection carries thousands of requests?</li>
@@ -607,7 +592,6 @@ LB may do: TLS termination | header injection (client IP, identity) |
   <!-- SEGMENT 15 -->
   <section class="segment" id="s15" style="--seg:#4A5FBF">
     <div class="segment-head"><span class="segment-offset">offset 14</span><h2>Leadership perspectives — same incident, four minds</h2></div>
-    <div class="audio-panel" id="audio-panel-s15"></div>
     <p class="segment-note">Seven situations. Each one is read differently by a <b style="color:#2E8B82;">developer</b>, an <b style="color:#7A63B8;">architect</b>, a <b style="color:#C1543A;">CTO</b>, and a <b style="color:#A9861E;">director</b>. Click to reveal how the same incident produces four different decisions — and the one "invisible question" that separates leading the system from just fixing it.</p>
 
     <!-- L1 -->
@@ -734,15 +718,5 @@ function toggle(headEl){
   }
 }
 </script>
-<script src="../audio-module.js"></script>
-<script>
-window.ALAB_PAGE_CONFIG = {
-  storageKey: 'alab_audio_data_load_balancer_notes_v1',
-  metaKey:    'alab_audio_meta_load_balancer_notes_v1',
-  topicIds:   ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12", "s13", "s14", "s15"],
-  ghPath:     'audio-data/load_balancer_notes.json'
-};
-</script>
-<script src="../audio-sync.js"></script>
 </body>
 </html>
