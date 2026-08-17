@@ -2,434 +2,1330 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Architects Lab · AI Resume &amp; Cover Letter Assistant</title>
+<title>AI Resume Assistant — Interactive Recall Learning Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0d0f14; --panel:#151823; --panel2:#1b1f2e;
-    --ink:#e8e6df; --dim:#8b8fa3;
-    --gold:#d4af5a; --gold-soft:#b8964a;
-    --teal:#5ad4c8; --rose:#d47a8a; --violet:#9a8ad4; --amber:#d4915a;
-    --line:#2a2f42;
-    --mono:'Courier New', ui-monospace, monospace;
+    --paper:#FAF9F5;
+    --panel:#FFFFFF;
+    --panel-2:#F2F0E8;
+    --border:#DEDACC;
+    --text:#242420;
+    --muted:#75736A;
   }
-  *{margin:0;padding:0;box-sizing:border-box}
-  html,body{height:100%}
-  body{background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif;display:flex;flex-direction:column;min-height:100vh}
-  header{padding:16px 26px 12px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
-  header .k{font-family:var(--mono);font-size:.68rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase}
-  header h1{font-size:1rem;font-weight:normal}
-  header .count{margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--dim)}
-  .tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
-  .tab{flex:1;min-width:110px;padding:9px 10px;text-align:center;font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;color:var(--dim);border-right:1px solid var(--line);cursor:pointer;white-space:nowrap;transition:.2s;background:transparent;border-top:none;border-bottom:none;border-left:none}
-  .tab:last-child{border-right:none}
-  .tab.active{color:var(--bg);font-weight:bold}
-  .tab[data-c="gold"].active{background:var(--gold)}
-  .tab[data-c="teal"].active{background:var(--teal)}
-  .tab[data-c="rose"].active{background:var(--rose)}
-  .tab[data-c="violet"].active{background:var(--violet)}
-  .tab[data-c="amber"].active{background:var(--amber)}
-  .tab[data-c="ink"].active{background:var(--ink)}
-  main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px 96px;overflow-y:auto}
-  .slide{max-width:780px;width:100%;animation:fadeUp .4s ease both}
-  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-  @media (prefers-reduced-motion: reduce){.slide{animation:none}}
-  .eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px}
-  .eyebrow.gold{color:var(--gold)} .eyebrow.teal{color:var(--teal)} .eyebrow.rose{color:var(--rose)}
-  .eyebrow.violet{color:var(--violet)} .eyebrow.amber{color:var(--amber)} .eyebrow.ink{color:var(--dim)}
-  .slide h2{font-size:1.55rem;font-weight:normal;line-height:1.3;margin-bottom:14px}
-  .slide h2 em{font-style:italic;color:var(--gold)}
-  .slide p{color:#c9c7bf;line-height:1.75;font-size:1rem;margin-bottom:13px}
-  .slide p strong, .slide li strong{color:var(--ink)}
-  .slide code{font-family:var(--mono);font-size:.85em;background:var(--panel2);padding:2px 6px;border-radius:3px;color:var(--gold)}
-  .ascii{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:6px;padding:14px 16px;margin:14px 0;font-family:var(--mono);font-size:.74rem;line-height:1.5;color:#b9c2d8;overflow-x:auto;white-space:pre}
-  .ascii .hl{color:var(--gold)} .ascii .tl{color:var(--teal)} .ascii .rs{color:var(--rose)}
-  .note{border:1px dashed var(--gold-soft);border-radius:6px;padding:11px 15px;margin:14px 0;font-size:.9rem;color:#cfc9ae;line-height:1.65}
-  .note b{color:var(--gold)}
-  ul.pts{margin:10px 0 13px 2px;list-style:none}
-  ul.pts li{padding:6px 0 6px 21px;position:relative;color:#c9c7bf;line-height:1.6;font-size:.95rem}
-  ul.pts li::before{content:"\203A";position:absolute;left:4px;color:var(--gold);font-family:var(--mono)}
-  /* ---- Think First (question) slides ---- */
-  .qcard{border:2px solid var(--gold);border-radius:10px;background:linear-gradient(160deg,#1a1608,#151823);padding:30px 28px;margin:6px 0 18px;position:relative}
-  .qcard::before{content:"?";position:absolute;top:-20px;left:22px;width:38px;height:38px;border-radius:50%;background:var(--gold);color:var(--bg);font-family:var(--mono);font-weight:bold;font-size:1.3rem;display:flex;align-items:center;justify-content:center}
-  .qcard .qlabel{font-family:var(--mono);font-size:.64rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;margin-bottom:12px}
-  .qcard .qtext{font-size:1.25rem;line-height:1.55;color:var(--ink);font-style:italic}
-  .qcard .qsub{margin-top:14px;font-size:.86rem;color:var(--dim);font-style:normal;font-family:var(--mono)}
-  /* ---- lenses (CTO / Director) ---- */
-  details.lens{margin:10px 0;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
-  details.lens summary{cursor:pointer;padding:10px 14px;font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;color:var(--teal);list-style:none}
-  details.lens summary::before{content:"+ ";color:var(--gold)}
-  details.lens[open] summary::before{content:"\2212 "}
-  details.lens.dir summary{color:var(--rose)}
-  details.lens .body{padding:2px 16px 13px}
-  details.lens .body li{font-size:.9rem}
-  /* ---- recall quiz slides ---- */
-  .recall-item{border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:6px;background:var(--panel);margin:12px 0;overflow:hidden}
-  .recall-item summary{cursor:pointer;padding:13px 16px;font-size:.98rem;color:var(--ink);list-style:none;line-height:1.55}
-  .recall-item summary::before{content:"Q  ";font-family:var(--mono);color:var(--teal);font-weight:bold}
-  .recall-item .ans{padding:0 16px 13px;color:#b9c2b0;font-size:.92rem;line-height:1.65;border-top:1px dashed var(--line);padding-top:11px;margin:0 16px 13px;padding-left:0;padding-right:0}
-  .recall-item .ans b{color:var(--teal)}
-  .recall-hint{font-family:var(--mono);font-size:.7rem;color:var(--dim);margin-top:6px}
-  footer{position:fixed;left:0;right:0;bottom:0;background:rgba(13,15,20,.93);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:11px 20px;display:flex;align-items:center;gap:14px}
-  .dots{display:flex;gap:4px;flex:1;justify-content:center;flex-wrap:wrap}
-  .dot{width:6px;height:6px;border-radius:50%;background:var(--line);cursor:pointer;transition:.2s}
-  .dot.on{background:var(--gold);transform:scale(1.45)}
-  .dot.q{border:1px solid var(--gold);background:transparent}
-  .dot.q.on{background:var(--gold)}
-  button.nav{font-family:var(--mono);font-size:.78rem;letter-spacing:.1em;background:transparent;color:var(--ink);border:1px solid var(--line);padding:9px 18px;border-radius:5px;cursor:pointer;transition:.2s}
-  button.nav:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
-  button.nav.primary{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:bold}
-  button.nav.primary:hover{background:#e2c070}
-  button.nav:disabled{opacity:.25;cursor:default}
-  button.nav:focus-visible,.tab:focus-visible,.dot:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-  .hint{position:fixed;bottom:62px;right:18px;font-family:var(--mono);font-size:.6rem;color:var(--dim);letter-spacing:.1em}
-  @media(max-width:600px){.slide h2{font-size:1.28rem}.ascii{font-size:.58rem;padding:11px}.hint{display:none}.qcard .qtext{font-size:1.08rem}}
+  body.dark-theme{
+    --paper:#0F1115;
+    --panel:#161A20;
+    --panel-2:#1C2027;
+    --border:#2A2E37;
+    --text:#E7E3D8;
+    --muted:#8B8F98;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;background:var(--paper);color:var(--text);
+    font-family:'IBM Plex Sans',sans-serif;line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    transition:background .25s ease,color .25s ease;
+  }
+  .theme-toggle{
+    position:fixed;top:18px;right:18px;z-index:50;
+    display:flex;align-items:center;gap:8px;
+    background:var(--panel);border:1px solid var(--border);
+    color:var(--text);
+    font-family:'IBM Plex Mono',monospace;font-size:.75rem;font-weight:600;
+    padding:8px 14px;border-radius:20px;cursor:pointer;
+    box-shadow:0 2px 8px rgba(0,0,0,0.12);
+    transition:background .25s ease,color .25s ease;
+  }
+  .theme-toggle:hover{border-color:#9A62D6;}
+  body.dark-theme .q-answer-inner{color:#C7C2B4;}
+  body.dark-theme .role-block p{color:#C7C2B4;}
+  body.dark-theme pre.sketch{color:#B7BAC2;}
+  body.dark-theme .situation-ext{color:var(--muted);}
+  body.dark-theme .invisible-q{background:#26240F;border-color:#4A431E;color:#E7E3D8;}
+  body.dark-theme .invisible-q b{color:#E8B84F;}
+  body.dark-theme .q-tag{color:#0F1115;}
+  @media(max-width:600px){
+    .theme-toggle{top:auto;bottom:18px;right:18px;}
+  }
+  .wrap{max-width:1040px;margin:0 auto;padding:48px 32px 120px;}
+
+  .ledger-strip{
+    display:flex;height:10px;border-radius:3px;overflow:hidden;
+    margin-bottom:28px;border:1px solid var(--border);
+  }
+  .ledger-strip span{flex:1;border-right:1px solid var(--paper);}
+  .ledger-strip span:nth-child(1),.ledger-strip span:nth-child(11){background:#C9871F;}
+  .ledger-strip span:nth-child(2),.ledger-strip span:nth-child(12){background:#2E8B82;}
+  .ledger-strip span:nth-child(3),.ledger-strip span:nth-child(13){background:#C1543A;}
+  .ledger-strip span:nth-child(4),.ledger-strip span:nth-child(14){background:#7A63B8;}
+  .ledger-strip span:nth-child(5),.ledger-strip span:nth-child(15){background:#3480B0;}
+  .ledger-strip span:nth-child(6),.ledger-strip span:nth-child(16){background:#6B9A44;}
+  .ledger-strip span:nth-child(7),.ledger-strip span:nth-child(17){background:#C1547A;}
+  .ledger-strip span:nth-child(8),.ledger-strip span:nth-child(18){background:#B9971F;}
+  .ledger-strip span:nth-child(9),.ledger-strip span:nth-child(19){background:#279090;}
+  .ledger-strip span:nth-child(10),.ledger-strip span:nth-child(20){background:#9A62D6;}
+
+  header h1{
+    font-family:'Fraunces',serif;font-weight:600;
+    font-size:2.5rem;letter-spacing:-0.5px;margin:0 0 6px;color:var(--text);
+  }
+  header h1 em{color:#C9871F;font-style:normal;}
+  header p.sub{color:var(--muted);font-size:1rem;margin:0 0 28px;max-width:68ch;}
+
+  .meta-bar{
+    display:flex;gap:14px;flex-wrap:wrap;
+    font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:var(--muted);
+    border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+    padding:12px 0;margin-bottom:36px;
+  }
+  .meta-bar b{color:#2E8B82;}
+
+  nav{
+    position:sticky;top:0;background:rgba(250,249,245,0.94);backdrop-filter:blur(6px);
+    padding:14px 0;margin:0 0 40px;border-bottom:1px solid var(--border);
+    display:flex;flex-wrap:wrap;gap:8px 16px;z-index:10;
+  }
+  body.dark-theme nav{background:rgba(15,17,21,0.94);}
+  nav a{
+    font-family:'IBM Plex Mono',monospace;font-size:.72rem;
+    text-decoration:none;padding:4px 8px;border-radius:4px;
+    border:1px solid transparent;font-weight:600;
+  }
+
+  section.segment{
+    margin-bottom:56px;scroll-margin-top:70px;
+    border-left:3px solid var(--seg,#2E8B82);padding-left:22px;
+  }
+  .segment-head{display:flex;align-items:baseline;gap:14px;margin-bottom:6px;}
+  .segment-offset{
+    font-family:'IBM Plex Mono',monospace;font-size:.85rem;
+    background:var(--panel-2);border:1px solid var(--border);
+    padding:2px 8px;border-radius:4px;color:var(--seg,#2E8B82);font-weight:600;
+  }
+  .segment-head h2{font-family:'Fraunces',serif;font-weight:600;font-size:1.55rem;margin:0;color:var(--text);}
+  .segment-note{color:var(--muted);font-size:.93rem;margin:8px 0 20px;max-width:70ch;}
+  .segment-note code, p code{
+    font-family:'IBM Plex Mono',monospace;background:var(--panel-2);
+    padding:1px 6px;border-radius:3px;color:var(--seg,#C9871F);font-size:.88em;
+  }
+
+  pre.sketch{
+    background:var(--panel-2);border:1px solid var(--border);
+    border-left:3px solid var(--seg,#2E8B82);padding:14px 16px;
+    font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:#4A4A44;
+    overflow-x:auto;border-radius:4px;margin:0 0 14px;white-space:pre;
+  }
+  body.dark-theme pre.sketch{color:#B7BAC2;}
+
+  .q-card{
+    background:var(--panel);border:1px solid var(--border);
+    border-radius:6px;margin-bottom:12px;overflow:hidden;
+    box-shadow:0 1px 2px rgba(0,0,0,0.03);
+  }
+  .q-head{display:flex;align-items:flex-start;gap:12px;padding:16px 18px;cursor:pointer;user-select:none;}
+  .q-tag{
+    font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:#fff;
+    background:var(--seg,#C9871F);padding:2px 7px;border-radius:3px;
+    flex-shrink:0;margin-top:3px;font-weight:600;
+  }
+  .q-text{font-size:1rem;color:var(--text);flex:1;}
+  .q-toggle{
+    font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--muted);
+    flex-shrink:0;white-space:nowrap;border:1px solid var(--border);
+    padding:3px 9px;border-radius:20px;margin-top:1px;
+  }
+  .q-card.open .q-toggle{color:var(--seg,#2E8B82);border-color:var(--seg,#2E8B82);}
+  .q-answer{max-height:0;overflow:hidden;transition:max-height .3s ease;background:var(--panel-2);}
+  .q-card.open .q-answer{border-top:1px solid var(--border);}
+  .q-answer-inner{padding:16px 18px 18px 46px;font-size:.94rem;color:#3A3934;}
+  .q-answer-inner b{color:var(--seg,#C9871F);}
+  .q-answer-inner p{margin:0 0 10px;}
+  .q-answer-inner p:last-child{margin-bottom:0;}
+
+  .learning{
+    margin-top:10px;padding:12px 16px;border-radius:4px;
+    background:#EAF2ED;border:1px solid #C7DDD0;
+    font-size:.9rem;color:#2E4A3A;
+  }
+  .learning b{color:#2E8B62;}
+  body.dark-theme .learning{background:#16261E;border-color:#2A4536;color:#C7E0D2;}
+  body.dark-theme .learning b{color:#5FC28E;}
+
+  .eng-philosophy{
+    margin-top:20px;padding:13px 17px;border-radius:6px;
+    background:rgba(194,24,91,0.1);border:1px solid rgba(194,24,91,0.28);
+    border-left:3px solid #C2185B;font-size:.86rem;
+  }
+  .eng-philosophy .ep-label{
+    display:block;font-family:'IBM Plex Mono',monospace;font-size:.67rem;font-weight:600;
+    letter-spacing:.9px;text-transform:uppercase;color:#D94580;opacity:.9;margin-bottom:7px;
+  }
+  .eng-philosophy p{margin:0;font-style:italic;line-height:1.65;color:#F0A8C8;}
+
+  footer{
+    margin-top:60px;padding-top:24px;border-top:1px solid var(--border);
+    color:var(--muted);font-size:.85rem;font-family:'IBM Plex Mono',monospace;
+  }
+
+  @media(max-width:600px){
+    header h1{font-size:1.9rem;}
+    .q-answer-inner{padding-left:18px;}
+    section.segment{padding-left:14px;}
+  }
 </style>
 </head>
 <body>
-<header>
-  <span class="k">Architects Lab</span>
-  <h1>AI Resume &amp; Cover Letter Assistant · Pydantic + OpenAI/Gemini</h1>
-  <span class="count" id="counter"></span>
-</header>
-<div class="tabs" id="tabs"></div>
-<main><div id="stage"></div></main>
-<div class="hint">&larr; &rarr; keys work too</div>
-<footer>
-  <button class="nav" id="prevBtn">&larr; Prev</button>
-  <div class="dots" id="dots"></div>
-  <button class="nav primary" id="nextBtn">Next &rarr;</button>
-</footer>
+<button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☾&nbsp; Dark mode</button>
+<div class="wrap">
+
+  <div class="ledger-strip">
+    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span>
+  </div>
+
+  <header>
+    <h1>AI Resume Assistant — <em>writes the words, not the facts</em></h1>
+    <p class="sub">A revision session on building an AI-assisted resume/cover-letter pipeline — gap analysis, structured output with Pydantic, multi-provider generation, and why every step needs a human gate. Click a question to think first — reveal only when you're ready to check yourself.</p>
+    <div class="meta-bar">
+      <span><b>12 segments</b></span>
+      <span>35 questions</span>
+      <span>Format: think → answer aloud → reveal</span>
+      <span>Goal: reasoning, not recall</span>
+    </div>
+  </header>
+
+  <nav>
+    <a href="#s1" style="color:#C9871F;">01 The Big Picture</a>
+    <a href="#s2" style="color:#2E8B82;">02 The Golden Rule</a>
+    <a href="#s3" style="color:#C1543A;">03 LLMs & Numbers</a>
+    <a href="#s4" style="color:#7A63B8;">04 Pydantic Fundamentals</a>
+    <a href="#s5" style="color:#3480B0;">05 Validate After vs Enforce During</a>
+    <a href="#s6" style="color:#6B9A44;">06 Function Design</a>
+    <a href="#s7" style="color:#C1547A;">07 Multi-Provider & Determinism</a>
+    <a href="#s8" style="color:#B9971F;">08 Gap Analysis</a>
+    <a href="#s9" style="color:#279090;">09 Resume Rewrite & The Diff</a>
+    <a href="#s10" style="color:#9A62D6;">10 Cover Letter Tone</a>
+    <a href="#s11" style="color:#C9871F;">11 Human-in-the-Loop</a>
+    <a href="#s12" style="color:#2E8B82;">12 Schema vs Truth</a>
+  </nav>
+
+  <!-- SEGMENT 1 -->
+  <section class="segment" id="s1" style="--seg:#C9871F">
+    <div class="segment-head"><span class="segment-offset">offset 00</span><h2>The big picture</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q1</span><span class="q-text">Before looking at the system diagram: what are ALL the steps you'd need to go from a raw resume + job description to a complete application package? What happens in between?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">                  ┌──────────────────────┐
+                  │   OLD RESUME         │
+                  └──────────┬───────────┘
+                             │
+                             │
+                  ┌──────────▼───────────┐
+                  │   JOB DESCRIPTION    │
+                  └──────────┬───────────┘
+                             │
+                             ▼
+                 ┌─────────────────────────┐
+                 │     GAP ANALYSIS        │
+                 │                         │
+                 │ Requirements            │
+                 │ Matches                 │
+                 │ Gaps                    │
+                 │ Hidden Strengths        │
+                 └────────────┬────────────┘
+                              │
+                              ▼
+                 ┌─────────────────────────┐
+                 │    RESUME REWRITE       │
+                 └────────────┬────────────┘
+                              │
+                    ┌─────────┴─────────┐
+                    │                   │
+                    ▼                   ▼
+             ┌──────────────┐    ┌──────────────┐
+             │ Updated      │    │ DIFF         │
+             │ Resume       │    │ What changed │
+             └──────┬───────┘    └──────────────┘
+                    │
+                    ▼
+             ┌─────────────────┐
+             │  COVER LETTER   │
+             │ tone=...        │
+             └────────┬────────┘
+                      │
+                      ▼
+              ┌─────────────────┐
+              │ HUMAN REVIEW    │
+              │                 │
+              │ "Is this TRUE?" │
+              └────────┬────────┘
+                       │
+                       ▼
+                  APPLICATION</pre>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 2 -->
+  <section class="segment" id="s2" style="--seg:#2E8B82">
+    <div class="segment-head"><span class="segment-offset">offset 01</span><h2>The most important rule</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q2</span><span class="q-text">If an AI can write "increased revenue by 30%" in one second, but you never told it that number — what does this reveal about the nature of LLM output? What's the SINGLE most important rule you must follow?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">             LLM
+              │
+              │ generates
+              ▼
+       ┌─────────────────┐
+       │ Fluent text     │
+       │                 │
+       │ Sounds real     │
+       │ Sounds confident│
+       │ Sounds factual  │
+       └────────┬────────┘
+                │
+                │ BUT
+                ▼
+       ┌─────────────────┐
+       │ Is it TRUE?     │
+       └────────┬────────┘
+                │
+           HUMAN CHECK
+                │
+          ┌─────┴─────┐
+          │           │
+         YES          NO
+          │           │
+          ▼           ▼
+       KEEP IT      REMOVE IT</pre>
+        <p><b>The Golden Rule:</b></p>
+<pre class="sketch">AI = Writes the WORDS
+YOU = Verify the FACTS</pre>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q3</span><span class="q-text">The AI says "Revenue increased 30%." You're the one submitting this resume. If an interviewer asks "How exactly did you achieve that 30%?" — can you answer? What should you do before including any AI-generated number?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">"Revenue increased 30%"
+         │
+         ▼
+     WHO SAID 30%?
+         │
+         ▼
+       AI ?
+         │
+         ▼
+       STOP ✋
+         │
+         ▼
+Can YOU prove 30%?
+      /       \
+    YES        NO
+     │          │
+     ▼          ▼
+   Keep       Delete</pre>
+        <p><b>The test is simple:</b> If you can't personally defend it in an interview, it doesn't belong on your resume.</p>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 3 -->
+  <section class="segment" id="s3" style="--seg:#C1543A">
+    <div class="segment-head"><span class="segment-offset">offset 02</span><h2>Why LLMs are dangerous with numbers</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q4</span><span class="q-text">You ask the LLM to improve "My team improved performance." Without any actual data, it returns "Improved performance by 37%." Where did 37% come from? What is the LLM ACTUALLY doing when it generates specific numbers?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">Input:
+"My team improved performance."
+
+              │
+              ▼
+
+             LLM
+              │
+       tries to make it
+          impressive
+              │
+              ▼
+"Improved performance
+by 37%"
+
+              │
+              ▼
+       Sounds impressive
+              │
+              ▼
+       BUT WHERE FROM?
+              │
+              ▼
+       No real source</pre>
+        <p>The LLM isn't necessarily saying:</p>
+<pre class="sketch">37% = verified measurement</pre>
+        <p>It may effectively be doing:</p>
+<pre class="sketch">generic statement
+       +
+learned language patterns
+       +
+plausibility
+       =
+confident number</pre>
+        <p><b>Key insight:</b> LLMs are trained to produce text that SOUNDS right, not text that IS right.</p>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 4 -->
+  <section class="segment" id="s4" style="--seg:#7A63B8">
+    <div class="segment-head"><span class="segment-offset">offset 03</span><h2>Pydantic fundamentals</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q5</span><span class="q-text">Imagine asking an LLM for JSON with name, age, and email. The model returns age as "forty" instead of 40. Your application expected an integer. Before reading the solution — what problems could this cause, and WHEN would they surface?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">"Give me JSON containing:
+
+name
+age
+email
+"</pre>
+        <p>The model might return:</p>
+<pre class="sketch">{
+  "name": "Ankur",
+  "age": "forty",
+  "email": "abc@example.com"
+}</pre>
+        <p>Your application expected:</p>
+<pre class="sketch">age = INTEGER</pre>
+        <p>but received:</p>
+<pre class="sketch">age = STRING</pre>
+        <p><b>The problem:</b> The error doesn't happen immediately — it surfaces later when your code tries to do math with "forty" or store it in a database column expecting integers.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q6</span><span class="q-text">If you don't validate LLM output structure, what's the debugging experience like when something breaks? When would you discover the error — and how hard would it be to trace back to the source?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">       LLM
+        │
+        ▼
+ ┌───────────────┐
+ │ Generated JSON│
+ └───────┬───────┘
+         │
+         ▼
+    Your program
+         │
+         ▼
+      accepts
+         │
+         ▼
+    breaks later
+         │
+         ▼
+   😱 Hard to debug</pre>
+        <p><b>The problem:</b> The error occurs far from where the bad data entered, making it extremely difficult to trace back to the LLM response.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q7</span><span class="q-text">How does validating at the boundary change the debugging experience? When would you discover the error, and what makes this better?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">        LLM
+         │
+         ▼
+ ┌─────────────────┐
+ │ Generated data  │
+ └────────┬────────┘
+          │
+          ▼
+ ┌─────────────────┐
+ │    PYDANTIC     │
+ │                 │
+ │ name : str      │
+ │ age  : int      │
+ │ email: str      │
+ └────────┬────────┘
+          │
+       VALID?
+       /    \
+     YES     NO
+      │       │
+      ▼       ▼
+   Accept    ERROR</pre>
+        <p><b>Core idea:</b></p>
+<pre class="sketch">LLM output
+    │
+    ▼
+UNTRUSTED DATA
+    │
+    ▼
+Pydantic
+    │
+    ▼
+VALIDATED DATA</pre>
+        <p><b>The principle:</b> Validate at the boundary immediately. This is the same architectural pattern as validating HTTP requests before they reach your business logic.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q8</span><span class="q-text">What does a Pydantic model actually represent in terms of the relationship between your code and the LLM? If you think of it as a "contract," who are the two parties, and what does each promise?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">class User(BaseModel):
+    name: str
+    age: int
+    email: str</pre>
+        <p>Think of it as:</p>
+<pre class="sketch">             CONTRACT
+                │
+      ┌─────────┼─────────┐
+      │         │         │
+      ▼         ▼         ▼
+    name       age      email
+     str        int       str</pre>
+        <p>The LLM can generate the data.</p>
+        <p>But the schema defines:</p>
+<pre class="sketch">"What shape is acceptable?"</pre>
+        <p><b>The contract:</b> The LLM promises to provide data matching this shape; your code promises to reject anything that doesn't.</p>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 5 -->
+  <section class="segment" id="s5" style="--seg:#3480B0">
+    <div class="segment-head"><span class="segment-offset">offset 04</span><h2>Validate after vs enforce during</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q9</span><span class="q-text">The project introduces two approaches: "validate after" and "enforce during." What's the difference? Imagine receiving a package vs. telling a factory what to build — which is which?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Old approach (Validate After):</p>
+<pre class="sketch">             LLM
+              │
+              ▼
+       generate anything
+              │
+              ▼
+       malformed JSON?
+              │
+              ▼
+         YOUR CODE
+              │
+              ▼
+          validate</pre>
+        <p>That's:</p>
+<pre class="sketch">GENERATE
+   ↓
+VALIDATE</pre>
+        <p>Structured output approach (Enforce During):</p>
+<pre class="sketch">             Pydantic Schema
+                    │
+                    ▼
+                 OpenAI
+                    │
+             constrained output
+                    │
+                    ▼
+              structured data</pre>
+        <p>That's:</p>
+<pre class="sketch">SCHEMA
+  ↓
+GENERATION
+  ↓
+STRUCTURED OUTPUT</pre>
+        <p><b>Easy memory trick:</b></p>
+<pre class="sketch">Validate after  = "Check the package after delivery"
+Enforce during = "Tell the factory exactly what package to build"</pre>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q10</span><span class="q-text">Visualize both approaches side by side. At what point does each approach detect an error? Which one prevents the error from happening in the first place?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">VALIDATE AFTER
+
+LLM
+ │
+ ▼
+Anything
+ │
+ ▼
+Validate
+ │
+ ├── GOOD ──► Continue
+ │
+ └── BAD ───► Error
+
+
+ENFORCE DURING
+
+Schema
+ │
+ ▼
+LLM generation
+ │
+ ▼
+Schema-shaped output
+ │
+ ▼
+Structured result</pre>
+        <p><b>Key difference:</b> Enforce during prevents bad data from being generated at all. Validate after catches it and rejects it, but it was still generated.</p>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 6 -->
+  <section class="segment" id="s6" style="--seg:#6B9A44">
+    <div class="segment-head"><span class="segment-offset">offset 05</span><h2>Function design choices</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q11</span><span class="q-text">Before reading the solution, think: If you wanted ONE function that could return either plain text OR structured data, how would you design it? What would the parameter look like, and how would the function decide which behavior to use?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Instead of:</p>
+<pre class="sketch">function A → text
+function B → structured data</pre>
+        <p>the design uses:</p>
+<pre class="sketch">              generate()
+                  │
+                  ▼
+        response_format?
+             /       \
+           NO         YES
+           │           │
+           ▼           ▼
+      plain text    structured
+        API call       API
+           │           │
+           ▼           ▼
+         str        Pydantic</pre>
+        <p>So:</p>
+<pre class="sketch">generate(prompt, response_format=None)</pre>
+        <p>means:</p>
+<pre class="sketch">response_format=None
+        ↓
+    normal text
+
+response_format=User
+        ↓
+    structured output</pre>
+        <p><b>Design choice:</b> One function, one call pattern, one place to maintain.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q12</span><span class="q-text">What's wrong with having generate_text() and generate_structured() as separate functions? Think about maintenance, duplication, and what happens when the underlying API changes.</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Without dual mode:</p>
+<pre class="sketch">generate_text()
+generate_structured()</pre>
+        <p>Now you maintain:</p>
+<pre class="sketch">logic A ─────────────┐
+                     │
+                     ├── duplicated
+                     │
+logic B ─────────────┘</pre>
+        <p>With one function:</p>
+<pre class="sketch">                generate()
+                    │
+             ┌──────┴──────┐
+             │             │
+           text        structured</pre>
+        <p>One interface.</p>
+        <p>One place to maintain.</p>
+        <p><b>The problem with two functions:</b> They inevitably drift apart. A bug fix in one doesn't automatically apply to the other. A change to the provider's API needs to be updated in two places.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q13</span><span class="q-text">Where's the line between "one flexible function" and "a function that does way too much"? When does optional parameter convenience become a maintenance nightmare?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Good:</p>
+<pre class="sketch">generate(
+    response_format=None
+)</pre>
+        <p>Dangerous:</p>
+<pre class="sketch">generate(
+    structured=True,
+    retry=True,
+    tone="formal",
+    provider="openai",
+    validate=True,
+    async_mode=False,
+    streaming=True,
+    ...
+)</pre>
+        <p>Eventually:</p>
+<pre class="sketch">             generate()
+                 │
+       ┌─────────┼─────────┐
+       ▼         ▼         ▼
+     flag 1    flag 2    flag 3
+       │         │         │
+       ▼         ▼         ▼
+     branch    branch    branch
+       │         │         │
+       └────┬────┴────┬────┘
+            │         │
+         💥 complexity</pre>
+        <p><b>Rule of thumb:</b> Shallow branching = good. A maze of optional parameters = time to refactor.</p>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 7 -->
+  <section class="segment" id="s7" style="--seg:#C1547A">
+    <div class="segment-head"><span class="segment-offset">offset 06</span><h2>Multi-provider & non-determinism</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q14</span><span class="q-text">If you can swap between OpenAI and Gemini with the same interface, what's the benefit? What would be the risk of hardcoding just one provider?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>The system supports swappable providers:</p>
+<pre class="sketch">                  generate()
+                      │
+                      ▼
+               ┌─────────────┐
+               │   Provider  │
+               └──────┬──────┘
+                      │
+             ┌────────┴────────┐
+             │                 │
+             ▼                 ▼
+          OpenAI             Gemini</pre>
+        <p>Same idea:</p>
+<pre class="sketch">               SAME INPUT
+                   │
+          ┌────────┴────────┐
+          ▼                 ▼
+       OpenAI             Gemini
+          │                 │
+          ▼                 ▼
+      Result A           Result B</pre>
+        <p><b>Why this matters:</b> Different providers perform differently on different tasks. Having the option to swap lets you choose the best tool for the job — and also reveals the non-determinism problem.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q15</span><span class="q-text">If you ask OpenAI and Gemini the same question about your resume, and one says "100 blog posts" while the other says "50 blog posts" — which one is correct? What does this difference tell you about both numbers?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Suppose:</p>
+<pre class="sketch">Same resume
+Same prompt
+Same bullet</pre>
+        <p>OpenAI:</p>
+<pre class="sketch">"Created 100 blog posts"</pre>
+        <p>Gemini:</p>
+<pre class="sketch">"Created 50 blog posts"</pre>
+        <p>Which one is correct?</p>
+<pre class="sketch">             100?
+              │
+              ▼
+            ❓❓❓
+
+             50?
+              │
+              ▼
+            ❓❓❓</pre>
+        <p>Neither has evidence.</p>
+        <p>Therefore:</p>
+<pre class="sketch">Different generated numbers
+            ↓
+No authoritative source
+            ↓
+Don't trust either</pre>
+        <p>The real source should be:</p>
+<pre class="sketch">                 YOUR DATA
+                    │
+                    ▼
+             "Actually 73"
+                    │
+          ┌─────────┴─────────┐
+          ▼                   ▼
+       OpenAI               Gemini
+          │                   │
+          ▼                   ▼
+       rewrite              rewrite
+          │                   │
+          └─────────┬─────────┘
+                    ▼
+                   73</pre>
+        <p><b>Core insight:</b> If both models had access to your actual data, they'd converge. Different confident numbers prove both are invented.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q16</span><span class="q-text">If you run the same prompt with the same model and same settings twice, should you expect the exact same output? What does the project reveal about this assumption?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Even:</p>
+<pre class="sketch">Same prompt
++
+Same model
++
+Same settings</pre>
+        <p>doesn't necessarily mean:</p>
+<pre class="sketch">100% same output</pre>
+        <p>Think:</p>
+<pre class="sketch">             SAME INPUT
+                 │
+        ┌────────┼────────┐
+        ▼        ▼        ▼
+       Run 1    Run 2    Run 3
+        │        │        │
+        ▼        ▼        ▼
+       YES      YES       NO</pre>
+        <p>Therefore:</p>
+<pre class="sketch">Prompt engineering
+        ≠
+Guaranteed compliance</pre>
+        <p><b>The lesson:</b> Even carefully crafted prompts can be followed on one run and dropped on the next. Verification isn't optional — it's mandatory every single time.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q17</span><span class="q-text">"Find potential strengths AND specifically identify AI and prompt-engineering skills." This is more specific than "find potential strengths." Does more specificity guarantee the LLM will comply every time? What does the project show?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Before:</p>
+<pre class="sketch">"Find potential strengths."</pre>
+        <p>After:</p>
+<pre class="sketch">"Find potential strengths AND
+specifically identify AI and
+prompt-engineering skills."</pre>
+        <p>Better?</p>
+<pre class="sketch">Usually YES</pre>
+        <p>Guaranteed?</p>
+<pre class="sketch">NO</pre>
+        <p>Diagram:</p>
+<pre class="sketch">Specificity
+    │
+    ▼
+Higher probability
+    │
+    ▼
+Better result
+    │
+    X
+    │
+NOT
+    │
+    ▼
+Guaranteed result</pre>
+        <p><b>Reality:</b> Gemini caught it every time; OpenAI caught it once and missed it on a re-run. Same prompt, same model, different result. Specificity helps on average but doesn't eliminate non-determinism.</p>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 8 -->
+  <section class="segment" id="s8" style="--seg:#B9971F">
+    <div class="segment-head"><span class="segment-offset">offset 07</span><h2>Gap analysis — the heart of the system</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q18</span><span class="q-text">If you were analyzing a resume against a job description, what categories of comparison would you want? Just "what's missing"? Or are there other valuable categories? Think about what you'd want to know BEFORE deciding what to change.</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">Input:
+
+RESUME + JOB DESCRIPTION
+             │
+             ▼
+       GAP ANALYSIS
+             │
+      ┌──────┼──────┬──────────┐
+      ▼      ▼      ▼          ▼
+ Requirements Matches Gaps Hidden
+                               Strengths</pre>
+        <p>Four outputs.</p>
+        <p><b>Why four categories?</b> Because a resume tool that only looks for gaps is purely defensive. A tool that also finds matches and hidden strengths can help you position your experience proactively.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q19</span><span class="q-text">What do "requirements" mean in this context? How is this different from just copying the job description's "requirements" section?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">JOB DESCRIPTION
+      │
+      ▼
+"What does this company
+actually want?"
+      │
+      ▼
+┌──────────────────────┐
+│ Java                 │
+│ Distributed Systems  │
+│ AI                   │
+│ Leadership           │
+└──────────────────────┘</pre>
+        <p><b>Why this matters:</b> The tool is extracting the underlying requirements, not just quoting the JD. This is the first step in understanding what you're being measured against.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q20</span><span class="q-text">Why would you want to know what your resume ALREADY matches? Isn't that just "good news" — or is there a strategic reason to know your matches?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">JOB REQUIREMENTS
+       │
+       ▼
+   COMPARE
+       ▲
+       │
+      RESUME
+       │
+       ▼
+┌────────────────────┐
+│ Java ✓             │
+│ Leadership ✓       │
+│ Distributed ✓     │
+└────────────────────┘</pre>
+        <p><b>Strategic value:</b> Matches tell you what you can emphasize rather than just what you need to add. This informs your messaging strategy.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q21</span><span class="q-text">What defines a "gap" — is it just something you don't have at all? Or could something you have still be a "gap" if it's not sufficiently evident? Think about the difference between "I have Kubernetes skills" and "My resume clearly shows Kubernetes skills."</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">JOB NEEDS
+   │
+   ├── Java       ✓ Resume
+   │
+   ├── Leadership ✓ Resume
+   │
+   ├── Kubernetes ✗ Missing evidence
+   │
+   └── AI         ✗ Not explicit</pre>
+        <p>Therefore:</p>
+<pre class="sketch">GAP =
+Required
+  +
+Not sufficiently evidenced</pre>
+        <p><b>Key insight:</b> A gap isn't just a skill you lack — it's a required skill that your resume doesn't clearly demonstrate. You might have the skill but still have a gap in how you're presenting it.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q22</span><span class="q-text">This is one of the most valuable concepts. Imagine you led an AI transformation, but the job description just says "engineering leader." Is that a match or something else? What's the strategic value of identifying experience that the job didn't explicitly ask for but that still matters?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">              RESUME
+                 │
+                 ▼
+       ┌───────────────────┐
+       │ Things you did    │
+       └─────────┬─────────┘
+                 │
+          Compare with JD
+                 │
+        ┌────────┴─────────┐
+        │                  │
+        ▼                  ▼
+   Explicitly asked    NOT explicitly
+   by company         asked
+        │                  │
+        ▼                  ▼
+     MATCHES         HIDDEN STRENGTHS</pre>
+        <p>Example:</p>
+<pre class="sketch">Job Description:
+"Looking for engineering leader"
+
+Resume:
+"Led AI adoption across engineering teams"
+
+Job didn't explicitly say:
+"AI transformation"
+
+BUT:
+
+             AI leadership
+                  │
+                  ▼
+          relevant strength
+                  │
+                  ▼
+           HIDDEN STRENGTH</pre>
+        <p><b>Why this matters:</b> A gap-only tool would miss this entirely. Hidden strengths let you proactively position experience the company didn't know to ask for but that makes you a stronger candidate.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q23</span><span class="q-text">What's the difference between a system that only tells you "you need more X" and one that also tells you "you already have Y and Z to emphasize"? How does this change your application strategy from purely defensive to... what?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>A gap-only system thinks:</p>
+<pre class="sketch">             RESUME
+                │
+                ▼
+        What's missing?
+                │
+                ▼
+          "Need more X"</pre>
+        <p>A stronger system thinks:</p>
+<pre class="sketch">             RESUME
+                │
+        ┌───────┼────────┐
+        ▼       ▼        ▼
+     MATCHES   GAPS   STRENGTHS</pre>
+        <p>So:</p>
+<pre class="sketch">Gap-only system
+     =
+defensive (reacting to what's missing)
+
+4-part system
+     =
+defensive + offensive (also knowing what to highlight)</pre>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 9 -->
+  <section class="segment" id="s9" style="--seg:#279090">
+    <div class="segment-head"><span class="segment-offset">offset 08</span><h2>Resume rewrite & the diff</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q24</span><span class="q-text">If the gap analysis identifies what to add and what to emphasize, what should the rewrite step do? What are the inputs and outputs?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">OLD RESUME
+    │
+    +
+JOB DESCRIPTION
+    │
+    +
+GAP ANALYSIS
+    │
+    ▼
+┌────────────────────┐
+│ Resume Rewriter    │
+└─────────┬──────────┘
+          │
+     ┌────┴─────┐
+     ▼          ▼
+ UPDATED       DIFF
+ RESUME       CHANGES</pre>
+        <p><b>The inputs:</b> Old resume + job description + gap analysis. The gap analysis tells it WHAT to change; the rewrite step produces both the new version and a visible diff of what changed.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q25</span><span class="q-text">Imagine you get back a completely rewritten resume. How would you verify it without a diff? What's the risk of having to compare two full documents line by line, especially when you're in a hurry?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Without diff:</p>
+<pre class="sketch">OLD RESUME ──────────┐
+                     │
+                     ▼
+                  COMPARE
+                     ▲
+                     │
+NEW RESUME ──────────┘</pre>
+        <p>You have to manually find:</p>
+<pre class="sketch">"What changed?"</pre>
+        <p>With diff:</p>
+<pre class="sketch">              DIFF
+               │
+      ┌────────┼────────┐
+      ▼        ▼        ▼
+    ADDED    REMOVED   CHANGED
+      │        │        │
+      ▼        ▼        ▼
+    Review   Review    Review</pre>
+        <p><b>Why this matters:</b> When you're tired or in a hurry, you'll skip line-by-line comparison. A diff makes verification as simple as scanning the changes. This is the difference between catching a fabricated metric and letting it slip through.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q26</span><span class="q-text">Why is the diff positioned as a "security boundary" between AI generation and human review? What is it "securing" against?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">                 AI
+                  │
+                  ▼
+             NEW RESUME
+                  │
+                  ▼
+                 DIFF
+                  │
+                  ▼
+            HUMAN REVIEW
+                  │
+          ┌───────┴────────┐
+          ▼                ▼
+       TRUE ✓           FALSE ✗
+          │                │
+          ▼                ▼
+        KEEP             REMOVE</pre>
+        <p><b>The security boundary:</b> The diff is the checkpoint where AI-generated claims are flagged for human verification. Without it, fabricated claims flow directly into the final document. With it, every change is surfaced and reviewable.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q27</span><span class="q-text">A grammar fix changes "I manage teams" to "I lead engineering teams." A resume rewrite changes "I manage teams" to "I led a team of 40 engineers and increased productivity by 35%." Why is the second one fundamentally riskier? What's the difference in the "factual risk" between these two changes?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Grammar:</p>
+<pre class="sketch">"I manage teams."
+       │
+       ▼
+"I lead engineering teams."</pre>
+        <p>Mostly wording.</p>
+        <p>But rewrite:</p>
+<pre class="sketch">"I manage teams."
+       │
+       ▼
+"I led a team of 40 engineers
+and increased productivity by 35%."</pre>
+        <p>Now the AI has potentially introduced:</p>
+<pre class="sketch">40 engineers ❓
+35% ❓</pre>
+        <p>Therefore:</p>
+<pre class="sketch">Grammar correction
+       ↓
+LOW factual risk (word choices, phrasing)
+
+Resume rewriting
+       ↓
+HIGH factual risk (new facts, numbers, metrics)</pre>
+        <p><b>Key insight:</b> A rewrite can introduce entirely new factual claims. A grammar fix only changes how existing facts are expressed.</p>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 10 -->
+  <section class="segment" id="s10" style="--seg:#9A62D6">
+    <div class="segment-head"><span class="segment-offset">offset 09</span><h2>Cover letter tone</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q28</span><span class="q-text">Instead of writing one prompt for a professional cover letter and another for an informal one, how could you design a SINGLE function that handles both? What would the parameter look like?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Instead of:</p>
+<pre class="sketch">Prompt A → Professional
+Prompt B → Informal</pre>
+        <p>use:</p>
+<pre class="sketch">generate_cover_letter(
+    resume,
+    job_description,
+    tone="professional"
+)</pre>
+        <p>Flow:</p>
+<pre class="sketch">             SAME FUNCTION
+                  │
+           ┌──────┴──────┐
+           ▼             ▼
+     tone=professional  tone=informal
+           │             │
+           ▼             ▼
+       Corporate      Startup-style</pre>
+        <p><b>Design principle:</b> Turn the qualitative choice into an explicit parameter rather than a hardcoded assumption.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q29</span><span class="q-text">By making you explicitly choose a tone, what does this force you to do that a generic "write me a cover letter" prompt doesn't? What research does it force you to do before you can even use the tool?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">                 tone
+                  │
+          ┌───────┴────────┐
+          ▼                ▼
+    professional        informal
+          │                │
+          ▼                ▼
+       formal           energetic
+       precise          friendly
+       corporate        startup</pre>
+        <p>But choosing tone forces:</p>
+<pre class="sketch">           YOU
+            │
+            ▼
+      Research company
+            │
+      ┌─────┴─────┐
+      ▼           ▼
+ Careers page   LinkedIn
+      │           │
+      └─────┬─────┘
+            ▼
+        Choose tone</pre>
+        <p><b>Why this matters:</b> You can't choose a tone without knowing the company's culture. The tool forces you to do research you might otherwise skip. The tone parameter isn't just about output — it's about user behavior.</p>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 11 -->
+  <section class="segment" id="s11" style="--seg:#C9871F">
+    <div class="segment-head"><span class="segment-offset">offset 10</span><h2>Human-in-the-loop architecture</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q30</span><span class="q-text">The pipeline chains gap analysis → resume rewrite → cover letter with no pauses for human review. If a fabricated metric appears in the gap analysis, what happens to it as it flows through the pipeline? Where does it end up?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">RESUME
+  │
+  ▼
+GAP ANALYSIS
+  │
+  ▼
+RESUME REWRITE
+  │
+  ▼
+COVER LETTER
+  │
+  ▼
+APPLICATION</pre>
+        <p>Looks convenient.</p>
+        <p>But:</p>
+<pre class="sketch">              GAP ANALYSIS
+                   │
+                   ▼
+            fabricated claim
+                   │
+                   ▼
+             RESUME REWRITE
+                   │
+                   ▼
+            claim preserved
+                   │
+                   ▼
+             COVER LETTER
+                   │
+                   ▼
+             claim repeated
+                   │
+                   ▼
+              APPLICATION
+                   │
+                   ▼
+                  💥</pre>
+        <p><b>The problem:</b> Without human gates, one fabricated claim from the gap analysis flows directly into the rewrite, then into the cover letter, then into the application. Convenience removes the checkpoint that matters most.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q31</span><span class="q-text">The code includes print(gaps), print(updated_resume), print(diff_markdown). If prints are not pauses — if they don't stop execution — then what's the actual flow of the pipeline? What's the difference between printing information and requiring human confirmation?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Bad:</p>
+<pre class="sketch">gaps = analyze(...)
+print(gaps)
+
+resume = generate(...)
+print(resume)
+
+letter = generate(...)</pre>
+        <p>Why?</p>
+<pre class="sketch">print()
+  │
+  ▼
+Displays information
+  │
+  X
+  │
+Does NOT stop execution</pre>
+        <p>Actual flow:</p>
+<pre class="sketch">STEP 1
+  │
+  ▼
+print()
+  │
+  ▼
+STEP 2 immediately
+  │
+  ▼
+STEP 3 immediately</pre>
+        <p><b>Key distinction:</b> A print statement displays output but doesn't require the user to confirm anything. The pipeline keeps running regardless of whether the user has actually reviewed the output. A true human checkpoint would pause execution until approval.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q32</span><span class="q-text">What would a REAL human-in-the-loop architecture look like? At what points would you pause and require human approval? What happens if the human says "no" at any point?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">          GAP ANALYSIS
+                │
+                ▼
+         ┌──────────────┐
+         │ HUMAN REVIEW │
+         └──────┬───────┘
+                │
+          APPROVE?
+          /     \
+        NO       YES
+        │         │
+        ▼         ▼
+      STOP    RESUME REWRITE
+                  │
+                  ▼
+             ┌──────────────┐
+             │ HUMAN REVIEW │
+             └──────┬───────┘
+                    │
+                 APPROVE?
+                 /     \
+               NO       YES
+               │         │
+              STOP       ▼
+                    COVER LETTER</pre>
+        <p><b>Key requirement:</b> Every step that can introduce or propagate factual claims requires a human gate. If any gate says "no," the pipeline stops.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q33</span><span class="q-text">Design the complete architecture with all three human gates. Why three? Where would you place them, and what are you verifying at each one?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">                    USER
+                     │
+                     ▼
+              ┌─────────────┐
+              │ Resume + JD  │
+              └──────┬──────┘
+                     │
+                     ▼
+              ┌─────────────┐
+              │ Gap Analysis│
+              └──────┬──────┘
+                     │
+                     ▼
+              ┌─────────────┐
+              │ HUMAN GATE 1│  ← Verify gap analysis accuracy
+              └──────┬──────┘
+                     │
+                  APPROVE
+                     │
+                     ▼
+              ┌─────────────┐
+              │Resume Rewrite│
+              └──────┬──────┘
+                     │
+                     ▼
+              ┌─────────────┐
+              │    DIFF     │
+              └──────┬──────┘
+                     │
+                     ▼
+              ┌─────────────┐
+              │HUMAN GATE 2 │  ← Verify every changed fact
+              └──────┬──────┘
+                     │
+                  APPROVE
+                     │
+                     ▼
+              ┌─────────────┐
+              │Cover Letter │
+              └──────┬──────┘
+                     │
+                     ▼
+              ┌─────────────┐
+              │HUMAN GATE 3 │  ← Verify final tone and claims
+              └──────┬──────┘
+                     │
+                  APPROVE
+                     │
+                     ▼
+               ┌──────────┐
+               │ SUBMIT   │
+               └──────────┘</pre>
+        <p><b>Why three gates:</b> Gate 1 verifies the analysis is accurate. Gate 2 verifies all changes are factual. Gate 3 verifies the complete package is submission-ready. Each gate catches different types of errors.</p>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 12 -->
+  <section class="segment" id="s12" style="--seg:#2E8B82">
+    <div class="segment-head"><span class="segment-offset">offset 11</span><h2>Schema vs truth</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q34</span><span class="q-text">Pydantic validates that "30%" is a valid number. Does it validate that "30%" actually happened? What's the difference between "structurally valid" and "factually true"?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">                 LLM
+                  │
+                  ▼
+           "Revenue = 30%"
+                  │
+                  ▼
+              Pydantic
+                  │
+            ┌─────┴─────┐
+            │           │
+          FORMAT      TRUTH
+            │           │
+            ▼           ▼
+           YES           ?</pre>
+        <p>Pydantic can tell you:</p>
+<pre class="sketch">30% is a valid number</pre>
+        <p>It cannot tell you:</p>
+<pre class="sketch">30% actually happened</pre>
+        <p><b>This distinction is fundamental:</b></p>
+<pre class="sketch">Pydantic solves: "Is this data shaped correctly?"
+Pydantic does NOT solve: "Is this data actually true?"</pre>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q35</span><span class="q-text">If Pydantic is one validation layer, what's the other? In what order should they be applied? Why does order matter?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">LLM OUTPUT
+    │</pre>
+        <p><i>(source material ends here — this section was cut off in the original notes)</i></p>
+      </div></div></div>
+
+    <p class="segment-note" style="margin-top:20px;"><b style="color:#4A5FBF;">The pattern underneath all of it:</b> AI writes fluent words; only you can verify facts. Structure (Pydantic) can guarantee shape, never truth. Non-determinism means the same prompt can pass once and fail the next time. And every step that can introduce or repeat a claim needs a human gate — a print statement is not a checkpoint.</p>
+  </section>
+
+  <footer>
+    // final compression: AI generates fluent text, not verified facts → structured output (Pydantic) enforces shape during generation, not just after →
+    one flexible generate() function beats duplicated text/structured functions, but too many flags becomes its own complexity →
+    swappable providers expose non-determinism: same prompt, different runs, different results → gap analysis needs four lenses (requirements, matches, gaps, hidden strengths), not just gaps →
+    a diff is the human verification surface between AI generation and a submitted application → print() displays, it does not pause — real human-in-the-loop needs explicit approval gates →
+    and schema validation proves data is shaped correctly, never that it's true.
+  </footer>
+
+</div>
+
 <script>
-const SECTIONS=[
- {id:"intro",label:"START",c:"ink"},
- {id:"pydantic",label:"PYDANTIC",c:"teal"},
- {id:"design",label:"DUAL-MODE+COMPARE",c:"gold"},
- {id:"core",label:"GAP ANALYSIS",c:"violet"},
- {id:"gen",label:"RESUME+LETTER",c:"rose"},
- {id:"end",label:"PIPELINE+RECAP",c:"amber"}
-];
-const S=[
-
-{sec:"intro",c:"ink",eyebrow:"AI Resume Assistant Project",t:"a",h:"AI Resume &amp; Cover Letter Assistant — <em>Pydantic + OpenAI/Gemini</em>",body:`
-<p>A hands-on pipeline that compares a resume against a target job description, identifies gaps, generates a tailored resume with tracked changes, and drafts a matching cover letter — using Pydantic for structured output and both OpenAI and Gemini as swappable backends. This maps directly onto real job applications, not just an abstract exercise.</p>
-<div class="note"><b>How to use:</b> "?" slides ask you to predict first. Press Next to compare. Recall quizzes close each section.</div>`},
-
-/* ---------- FRAMING + PYDANTIC ---------- */
-{sec:"pydantic",c:"teal",eyebrow:"Framing",t:"q",q:`This tool can write "increased revenue by 30%" on your resume in one second. If you never told it that number, <b>where did it come from</b> — and what does that tell you about the one rule you must follow before using any of its output?`},
-
-{sec:"pydantic",c:"teal",eyebrow:"Framing",t:"a",h:"What this tool actually does — and the one rule that matters most",body:`
-<div class="ascii">old resume  +  job description
-        |
-STEP 1: GAP ANALYSIS
-  what's missing? what already matches? what's a hidden strength?
-        |
-STEP 2: REWRITE RESUME (+ a visible diff of every change)
-        |
-STEP 3: WRITE COVER LETTER (tone-matched to the company)
-        |
-output ready ... BUT every number in it is a DRAFT, not a fact
-
-THE RULE, in one line:
-  AI writes the WORDS. YOU verify every NUMBER.
-  never submit a metric you can't personally stand behind</div>
-<div class="note">It made it up. LLMs generate plausible-sounding numbers to sound impressive — not because they know your actual achievements, but because confident, specific-sounding text is what they're good at producing. The one rule: never submit an AI-written metric unless YOU can personally verify it's true and you actually did it. The tool's job is to suggest phrasing and flag gaps — verifying facts is entirely on you.</div>`,
-cto:[`You're actively applying to companies that will absolutely probe any specific claim on your resume. Is this tool SAFER or RISKIER than writing your resume by hand? Neither, automatically — it depends entirely on discipline. Used carelessly it's riskier: it generates a confident, specific-sounding number faster than you can fact-check it, and confident fabrication is exactly what an experienced interviewer will probe hardest. Used deliberately — as a phrasing and gap-finding tool, every number replaced by your own verified data — it's genuinely useful, and the gap analysis surfaces things you might have under-sold. The tool doesn't change the risk; your discipline applying it does.`]},
-
-{sec:"pydantic",c:"teal",eyebrow:"Pydantic 101",t:"q",q:`Before Pydantic, you'd ask the LLM in plain English for "a JSON object with name, age, email." What could go wrong with that approach that a <b>strict schema</b> fixes?`},
-
-{sec:"pydantic",c:"teal",eyebrow:"Pydantic 101",t:"a",h:"Why structured output validation matters",body:`
-<div class="ascii">PLAIN DICTIONARY                  PYDANTIC MODEL
-dict = {"age": "banana"}          User(age="banana")
-    |                                  |
-    v                                  v
-accepted silently                 X VALIDATION ERROR, right away
-(breaks later, somewhere          (breaks HERE, loud and clear,
- else, hard to trace)              exactly where bad data entered)
-
-the blueprint:
-  class User(BaseModel):
-      name: str    <- must be text
-      age: int     <- must be a whole number
-      email: str   <- must be text
-
-wherever untrusted/generated data enters your system
-(an API request, an LLM's reply) -- put a Pydantic
-blueprint right at that boundary</div>
-<div class="note">Plain-English instructions are a request, not a guarantee — the model can still return age as the string "thirty," forget the email field, or wrap the JSON in extra prose. Your code then crashes downstream or silently works with bad data. Pydantic turns "please return this shape" into "return this shape or get an explicit error right now" — catching the problem at the boundary instead of three steps later.</div>`,
-cto:[`You already used Pydantic for FastAPI request validation — checking data coming IN. Here it's checking data coming OUT of an LLM. Is that really the same problem, or a different one wearing the same solution? Genuinely the same problem: untrusted data crossing a boundary into your system. An API request from an unknown caller and an LLM's generated reply are both "data you didn't fully control the shape of." The direction (in vs. out) doesn't change the fix — schema validation at that boundary, not manual parsing or hoping for the best.`]},
-
-{sec:"pydantic",c:"teal",eyebrow:"Framing &amp; Pydantic · Recall",t:"r",h:"Quick recall: framing &amp; Pydantic",qs:[
-{q:`What is the tool's one non-negotiable rule?`,a:`AI writes the words; YOU verify every number. Never submit a generated metric unless you can personally stand behind it — fabrication is both unethical and risky if an interviewer probes it.`},
-{q:`Plain-English JSON request vs. Pydantic schema — what's the core difference?`,a:`A plain-English request is a suggestion the model can loosely follow; Pydantic enforces the shape and raises an explicit error immediately if it's violated, catching bad data at the boundary instead of letting it break something downstream.`}]},
-
-/* ---------- DUAL-MODE + COMPARE ---------- */
-{sec:"design",c:"gold",eyebrow:"Integration",t:"q",q:`Section 2 showed Pydantic catching bad data AFTER it arrives. Here, the same model is handed straight to OpenAI's API call via <code>response_format</code>. What's the difference between <b>"validate after"</b> and <b>"enforce during"</b>?`},
-
-{sec:"design",c:"gold",eyebrow:"Integration",t:"a",h:"Getting structured JSON directly from OpenAI",body:`
-<div class="ascii">class Destination(BaseModel):
-    city: str
-    country: str
-    top_attractions: list[str]
-
-response = client.beta.chat.completions.parse(
-    model="gpt-4o", messages=[...], temperature=0,
-    response_format=Destination      # <- the Pydantic model itself
-)</div>
-<div class="ascii">OLD WAY                              NEW WAY
-prompt: "please return JSON          response_format=Destination
-with city, country,                         |
-top_attractions"                            v
-    |                               OpenAI CONSTRAINS its own
-    v                               output generation to match
-free text back                      that exact schema
-    |                                     |
-    v                                     v
-you PARSE it yourself                guaranteed-structured reply
-and HOPE it matches                  back, every time
-(sometimes it won't)
-
-list[str] field --> tells the model "return a LIST here,
-                     not a single string"</div>
-<div class="note">"Validate after" means the model can still generate malformed JSON, and your code catches it once it lands. "Enforce during" means the API itself constrains generation to match the schema — you get guaranteed-structured output back, not "output you then have to hope parses correctly." Same schema, two very different guarantees: one catches problems, the other prevents them.</div>`},
-
-{sec:"design",c:"gold",eyebrow:"Design",t:"q",q:`One function can return either plain text OR a structured object, depending on one optional argument. Why not just write <b>two separate functions</b> instead of branching inside one?`},
-
-{sec:"design",c:"gold",eyebrow:"Design",t:"a",h:"A dual-purpose generate function — plain text or structured",body:`
-<div class="ascii">def openai_generate(prompt, model="gpt-4o", temperature=0.7,
-    max_tokens=1500, response_format=None) -> str | dict:
-    if not response_format:
-        ... # plain chat.completions.create(...)
-    else:
-        ... # structured .beta.chat.completions.parse(...)</div>
-<div class="ascii">openai_generate(prompt, ...)
-        |
-  response_format given?
-     /            \\
-   NO              YES
-    |                |
-plain text call   structured .parse() call
-returns str        returns dict/object
-
-defaults: model="gpt-4o", temperature=0.7, max_tokens=1500
-caller only overrides what's DIFFERENT from the default</div>
-<div class="note">Two functions means two things to remember, document, and keep in sync whenever the underlying LLM call logic changes — near-duplicate code drifting apart over time. One function with an optional parameter keeps a single, simple call surface: callers who don't need structure just omit the argument; callers who need it pass a schema. Same underlying logic, one place to maintain it.</div>`,
-cto:[`Where would "one function, two behaviors" stop being clean and start being a hidden trap for the next engineer? It stays clean as long as the branch is shallow and the two behaviors are close cousins — same provider, same call shape, just structured vs. not. It becomes a trap the moment someone adds a THIRD behavior via another optional flag, then a fourth — now the function silently does five different things depending on which combination of arguments got passed. Worth lifting the pattern directly, but keep one clear branch, well-documented, and a hard stop before it becomes a maze of optional parameters.`]},
-
-{sec:"design",c:"gold",eyebrow:"Comparison",t:"q",q:`Same prompt, same instruction, sent to both OpenAI and Gemini. If they returned genuinely <b>different numbers</b> for "blog posts written," what does that alone prove about whether either number is real?`},
-
-{sec:"design",c:"gold",eyebrow:"Comparison",t:"a",h:"OpenAI vs. Gemini — same prompt, different providers, different results",body:`
-<div class="ascii">SAME prompt, SAME resume bullet, sent to TWO providers:
-OpenAI --> "increased blog output by 100 posts"
-Gemini --> "increased blog output by 50 posts"
-           different numbers = BOTH invented, not real
-
-extra instruction: "mention AI/prompt-engineering skills"
-  Gemini -----> caught it, every time
-  OpenAI -----> caught it once, missed it on a re-run
-           = NOT fully deterministic, even at fixed settings
-
-temperature dial (OpenAI):
-  0 ----------------------------------------- 2
-  factual, safe                    1.6: drifting into other
-                                    languages, incoherent text
-                                    (confirmed live, not just theory)</div>
-<div class="note">It proves neither number came from real data — if both models had access to your actual achievements, they'd converge on the same figure. Two different confident-sounding numbers for the same vague bullet directly demonstrates both are invented to sound plausible, not recalled facts. This is the fabrication problem from the framing section, caught red-handed by simply asking twice.</div>`,
-cto:[`OpenAI caught the extra instruction once, missed it on an identical re-run. Would picking "the more reliable model" actually solve this problem? No — because the issue isn't that one model is worse, it's that no single LLM call is fully deterministic even at fixed settings. Picking Gemini here might reduce the miss rate, but doesn't eliminate it, and today's "more reliable" model can regress on a future update. The real fix is structural: explicit output validation (did the required field actually appear?) or a retry/self-check step, not trusting any single generation to comply every time.`]},
-
-{sec:"design",c:"gold",eyebrow:"Dual-Mode &amp; Compare · Recall",t:"r",h:"Quick recall: dual-mode function &amp; provider comparison",qs:[
-{q:`Difference between "validate after" and "enforce during"?`,a:`Validate after: the model can still return malformed JSON, caught by your code once it lands. Enforce during (<code>response_format=Model</code>): the API itself constrains generation to match the schema, guaranteeing structured output.`},
-{q:`Why is a single dual-mode function preferred over two separate ones?`,a:`Two functions are near-duplicate code that drifts apart over time. One function with an optional parameter keeps a single call surface and one place to maintain the underlying logic — but only stays clean with one shallow branch, not a maze of flags.`},
-{q:`Two providers give different fabricated numbers for the same bullet. What does that prove?`,a:`Neither number is real — if both had access to actual achievement data, they'd converge on the same figure. Different confident numbers is direct proof both are invented.`}]},
-
-/* ---------- GAP ANALYSIS ---------- */
-{sec:"core",c:"violet",eyebrow:"Core Logic",t:"q",q:`The gap-analysis prompt asks for four sections — requirements, matches, gaps, AND potential strengths. Why not just "gaps"? What does a resume tool <b>miss</b> if it only ever looks for what's missing?`},
-
-{sec:"core",c:"violet",eyebrow:"Core Logic",t:"a",h:"The gap analysis function — the heart of the tool",body:`
-<div class="ascii">resume + job description
-        |
-    ONE prompt, FOUR sections back:
-    1. requirements    -- what the job actually asks for
-    2. matches         -- what the resume ALREADY covers
-    3. gaps            -- required, but NOT evidenced in resume
-    4. hidden strengths -- resume has it, job didn't ask by
-                            name, but it's still valuable
-        |
-    same function, works with EITHER provider:
-      if model == "openai": ...
-      elif model == "gemini": ...
-    (one interface, swappable backend)</div>
-<div class="note">A resume can contain real, relevant experience that isn't literally named in the job posting but still strengthens the application — a "gaps only" tool would never surface it, leaving the candidate to only react defensively rather than proactively highlighting what's already there but under-sold. "Hidden strengths" isn't padding — it's the difference between a defensive tool and one that actively finds your best material.</div>`},
-
-{sec:"core",c:"violet",eyebrow:"Iteration",t:"q",q:`Adding "explicitly flag AI/prompt-engineering skills" made Gemini catch it every time — OpenAI still missed it sometimes. Before reading the result: does a <b>more specific</b> instruction always make an LLM more reliable?`},
-
-{sec:"core",c:"violet",eyebrow:"Iteration",t:"a",h:"Prompt tuning — surfacing AI/prompt-engineering skills as a strength",body:`
-<div class="ascii">prompt BEFORE: "find potential strengths"
-prompt AFTER:  "find potential strengths, AND specifically
-                 flag AI/prompt-engineering skills as valuable"
-
-same resume+job, both providers, prompt AFTER:
-  Gemini -----> caught it, every single run
-  OpenAI -----> caught it once, missed it on a re-run,
-                only reliable after adjusting temperature
-
-takeaway: more specific instruction != guaranteed compliance
-          still needs verification, not just better wording</div>
-<div class="note">Extra specificity helps on average but doesn't guarantee reliability — an instruction is still just one more thing competing for the model's attention inside a long prompt, and non-determinism means it can be followed on one run and dropped on the next with literally identical input. Specific instructions raise the odds; they don't eliminate the need to verify the output actually followed them.</div>`,
-cto:[`This tool's own logic says "AI/prompt-engineering fluency is a real hiring signal, flag it explicitly." Looking at your own resume honestly — is that already called out as its own line, or buried inside a generic "engineering management" bullet? Worth checking directly rather than assuming. Leading AI adoption and designing prompt templates is exactly the kind of evidenced, concrete AI-fluency signal this tool's own gap analysis would flag as a "potential strength" if it weren't already explicit — folded into a generic bullet, it's at real risk of the same kind of miss a reader (human or model) makes when the signal isn't called out by name.`]},
-
-{sec:"core",c:"violet",eyebrow:"Gap Analysis · Recall",t:"r",h:"Quick recall: gap analysis",qs:[
-{q:`Name the four sections of the gap analysis and why "hidden strengths" matters.`,a:`Requirements, matches, gaps, hidden strengths. Without the fourth, a tool only reacts defensively to what's missing — it never surfaces real relevant experience the job posting didn't name but that still strengthens the application.`},
-{q:`Does a more specific instruction guarantee compliance?`,a:`No — it raises the odds but doesn't eliminate the need to verify. The same prompt caught the instruction reliably on Gemini but was missed intermittently by OpenAI on identical re-runs — non-determinism persists even with precise wording.`}]},
-
-/* ---------- RESUME + LETTER ---------- */
-{sec:"gen",c:"rose",eyebrow:"Generation",t:"q",q:`The tool could just hand you the final rewritten resume. Instead it also generates a separate <b>diff</b> showing exactly what changed. Given the fabrication rule from Section 1 — why does that design choice matter more here than for a simple grammar fix?`},
-
-{sec:"gen",c:"rose",eyebrow:"Generation",t:"a",h:"Producing the tailored resume — with tracked changes",body:`
-<div class="ascii">original resume + job description + gap analysis
-        |
-    resume-rewriting prompt
-        |
-   +----+----+
-   v         v
-updated    diff markdown
-resume     (+added, -removed, ~changed, line by line)
-
-WITHOUT the diff:              WITH the diff:
-compare two full docs          scan just the CHANGES
-line by line, easy to               |
-miss something                      v
-     |                        verify each one against
-     v                        what you actually did
-fabricated number slips
-through unnoticed</div>
-<div class="note">A grammar fix doesn't introduce new facts — a rewrite might. Without a diff, verifying the final resume means comparing two full documents line by line, which people skip when tired or in a hurry — exactly when a fabricated metric slips through unnoticed. A diff makes every addition/change visible at a glance, turning "carefully re-read the whole thing" into "scan the changes and verify each one" — the difference between the human-in-the-loop rule being followed and being skipped.</div>`},
-
-{sec:"gen",c:"rose",eyebrow:"Generation",t:"q",q:`"Tone" (professional vs. informal) is a fuzzy, judgment-heavy quality — not a hard fact. Why turn it into an <b>explicit function parameter</b> instead of just writing two separate prompts by hand each time?`},
-
-{sec:"gen",c:"rose",eyebrow:"Generation",t:"a",h:"Cover letter — tone control as a real parameter",body:`
-<div class="ascii">class CoverLetterOutput(BaseModel):
-    cover_letter: str
-
-def generate_cover_letter(job_description_text, updated_resume,
-    model="openai", tone="professional") -> dict: ...</div>
-<div class="ascii">generate_cover_letter(job_desc, resume, tone="professional")
-    --> formal, corporate-appropriate letter
-generate_cover_letter(job_desc, resume, tone="informal")
-    --> enthusiastic, startup-suited letter
-
-SAME resume, SAME job description, SAME function --
-only the tone parameter changes -- two very different-
-sounding letters come out
-
-practical use: read the company's careers page / LinkedIn
-voice FIRST, then set tone to match it</div>
-<div class="note">Turning it into a parameter makes a subjective decision explicit and repeatable instead of buried inside a one-off prompt rewritten from scratch each time. Same function, same underlying logic — just swap the value — rather than maintaining two near-duplicate hand-written prompts that drift apart over time. It's the same "make the qualitative choice an input, not a hardcoded assumption" instinct as any other config value.</div>`,
-cto:[`This tool makes you actively choose a tone before it writes anything. What does that force you to do that a one-size-fits-all "write me a cover letter" prompt wouldn't? It forces you to actually go read the company's culture first — you can't set tone="informal" vs "professional" without deciding which fits, and that decision requires looking at their careers page or LinkedIn voice before you write anything. A generic prompt lets you skip that research entirely. Tone-as-parameter turns a step people often skip into a step you can't avoid.`]},
-
-{sec:"gen",c:"rose",eyebrow:"Resume &amp; Letter · Recall",t:"r",h:"Quick recall: resume rewrite &amp; cover letter",qs:[
-{q:`Why does a diff matter more for a resume rewrite than for a grammar fix?`,a:`A rewrite can introduce new facts (fabricated metrics); a grammar fix doesn't. Without a diff, verification means comparing two full documents line by line — exactly what gets skipped under time pressure, letting a fabrication slip through.`},
-{q:`What does making "tone" an explicit function parameter force the user to do?`,a:`It forces genuine research — you can't pick professional vs. informal without first reading the company's careers page or LinkedIn voice to decide which fits. A generic one-size prompt lets that research get skipped entirely.`}]},
-
-/* ---------- PIPELINE + RECAP ---------- */
-{sec:"end",c:"amber",eyebrow:"Pipeline",t:"q",q:`This unified function chains gap-analysis &rarr; rewrite &rarr; cover letter with zero pauses for human review of the middle steps. Given everything this project taught about fabricated metrics, is chaining all three automatically a <b>convenience</b> — or does it quietly remove the one checkpoint that mattered most?`},
-
-{sec:"end",c:"amber",eyebrow:"Pipeline",t:"a",h:"The unified &quot;Resume Rocket&quot; function",body:`
-<div class="ascii">def run_resume_rocket(resume, job_description):
-    gaps = analyze_resume_against_job_description(resume, job_description, model="openai")
-    print(gaps)
-    updated_resume, diff_markdown = generate_updated_resume(resume, job_description, gaps)
-    print(updated_resume); print(diff_markdown)
-    cover_letter = generate_cover_letter(job_description, updated_resume, model="openai")
-    return updated_resume, cover_letter</div>
-<div class="ascii">resume + job description
-   | analyze_resume_against_job_description()
-gap analysis (requirements/matches/gaps/hidden strengths)
-   | generate_updated_resume()
-updated resume + diff markdown
-   | generate_cover_letter(tone=...)
-cover letter
-   | return (updated_resume, cover_letter)</div>
-<div class="note">As written, it removes the checkpoint — the function prints intermediate output but doesn't actually pause for review before feeding gap analysis into rewrite, or rewrite into cover letter. Fine for a demo; it means a fabricated metric introduced at step 2 flows straight into step 3 unexamined. The convenience of one function call and the human-in-the-loop rule are in direct tension — a production version needs an explicit pause (or return-and-confirm step), not just a print statement.</div>`},
-
-{sec:"end",c:"amber",eyebrow:"Wrap-up",t:"q",q:`Across all 9 build sections, one warning kept resurfacing — fabricated metrics, non-deterministic instruction-following, missed AI-skills flags. What's the <b>ONE underlying property</b> of LLMs all three trace back to?`},
-
-{sec:"end",c:"amber",eyebrow:"Wrap-up",t:"a",h:"Project recap",body:`
-<div class="ascii">resume + job description
-   | Pydantic schema -- structure enforced, not just requested
-   | gap analysis -- 4 parts: requirements, matches, gaps,
-   |                 hidden strengths
-   | resume rewrite + diff -- every change visible
-   | cover letter, tone=company-matched
-   | run_resume_rocket() ties it all together
-
-THE RULE running through every step:
-  AI writes fluent, PLAUSIBLE text.
-  Only YOU can confirm it's TRUE.
-  Verify before it goes anywhere near a real application.</div>
-<div class="note">LLMs generate plausible text, not verified truth — every symptom in this project is a variation of that one fact. Fabricated metrics: plausible-sounding numbers, not recalled ones. Inconsistent instruction-following: plausible compliance most of the time, not guaranteed every time. Missed AI-skills flags: plausible relevance judgment, not a reliable rule. The fixes (Pydantic validation, diffs, human review, tone-as-parameter) are all different ways of putting a human or a schema between "plausible" and "trusted."</div>
-<ol style="color:#c9c7bf;line-height:1.8;padding-left:20px;font-size:.92rem">
-<li>Pydantic: schema-defined, validated structures from type hints — same discipline as FastAPI, applied to LLM output</li>
-<li><code>.beta.chat.completions.parse()</code> enforces a Pydantic schema directly on generation</li>
-<li>One dual-mode generate function per provider (plain text OR structured)</li>
-<li>Same prompts run against OpenAI AND Gemini — results differ in specifics and consistency</li>
-<li>Gap analysis: 4-part structured comparison</li>
-<li>Tailored resume + a separate tracked-changes diff, explicitly to support human verification</li>
-<li>Cover letter generation with a tone parameter for company culture matching</li>
-<li>All steps composed into one unified pipeline function</li>
-<li>THE RULE, repeated throughout: never submit AI-fabricated metrics as fact</li>
-</ol>`},
-
-{sec:"end",c:"amber",eyebrow:"Final Recall",t:"r",h:"Final recall: questions worth carrying forward",qs:[
-{q:`Given you're actively job hunting, would it be worth adapting this exact pipeline with your real resume and a real target job posting?`,a:`Yes, treating it strictly as a phrasing/gap-finding tool: run the real gap analysis for signal on under-sold strengths, but replace every generated metric with your own verified numbers before anything goes near a real application — the discipline from Section 1 applies at full force to real applications.`},
-{q:`If this were wrapped in a more autonomous agentic system, where would you insist on keeping a hard human-in-the-loop checkpoint?`,a:`Before actually submitting an application — drafting (gap analysis, rewrite, cover letter) can become more automated, but the moment a claim leaves your control and reaches an employer, a human confirmation gate is non-negotiable given how easily fabricated specifics can slip through an unreviewed pipeline.`}]}
-];
-
-let i=0;
-const stage=document.getElementById('stage'),dots=document.getElementById('dots'),
-tabs=document.getElementById('tabs'),counter=document.getElementById('counter'),
-prevBtn=document.getElementById('prevBtn'),nextBtn=document.getElementById('nextBtn');
-SECTIONS.forEach(s=>{const b=document.createElement('button');b.className='tab';b.dataset.c=s.c;b.dataset.sec=s.id;b.textContent=s.label;b.onclick=()=>go(S.findIndex(x=>x.sec===s.id));tabs.appendChild(b);});
-S.forEach((sl,k)=>{const d=document.createElement('span');d.className='dot'+(sl.t==='q'?' q':'');d.tabIndex=0;d.setAttribute('role','button');d.setAttribute('aria-label','Slide '+(k+1));d.onclick=()=>go(k);d.onkeydown=e=>{if(e.key==='Enter')go(k)};dots.appendChild(d);});
-function lens(cto,dir){
-  let out='';
-  if(cto&&cto.length) out+='<details class="lens"><summary>CTO LENS</summary><div class="body"><ul class="pts">'+cto.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
-  if(dir&&dir.length) out+='<details class="lens dir"><summary>DIRECTOR LENS</summary><div class="body"><ul class="pts">'+dir.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
-  return out;
-}
-function go(k){
-  i=Math.max(0,Math.min(S.length-1,k));
-  const s=S[i];stage.innerHTML='';
-  const el=document.createElement('div');el.className='slide';
-  try{
-    if(s.t==='q'){
-      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div>'
-        +'<div class="qcard"><div class="qlabel">Think first &middot; predict before you peek</div>'
-        +'<div class="qtext">'+s.q+'</div>'
-        +'<div class="qsub">Form your answer in your head. Then press Next to compare.</div></div>';
-    } else if(s.t==='r'){
-      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'
-        +'<p>Answer from memory first. Tap a question to reveal the answer.</p>'
-        +s.qs.map(x=>'<details class="recall-item"><summary>'+x.q+'</summary><div class="ans">'+x.a+'</div></details>').join('')
-        +'<div class="recall-hint">Struggled on any? Jump back with the tabs above, then return.</div>';
-    } else {
-      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'+s.body+(((s.cto&&s.cto.length)||(s.dir&&s.dir.length))?lens(s.cto,s.dir):'');
-    }
-  }catch(err){
-    el.innerHTML='<div class="eyebrow rose">Render error</div><h2>Slide '+(i+1)+' failed to render</h2><p>'+String(err&&err.message||err)+'</p>';
+function toggleTheme(){
+  const body = document.body;
+  const btn = document.getElementById('themeBtn');
+  body.classList.toggle('dark-theme');
+  if(body.classList.contains('dark-theme')){
+    btn.innerHTML = '☀&nbsp; Light mode';
+  } else {
+    btn.innerHTML = '☾&nbsp; Dark mode';
   }
-  stage.appendChild(el);
-  counter.textContent=(i+1)+' / '+S.length;
-  document.querySelectorAll('.dot').forEach((d,k2)=>d.classList.toggle('on',k2===i));
-  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.sec===s.sec));
-  prevBtn.disabled=(i===0);
-  nextBtn.textContent=(i===S.length-1)?'Done \u2713':'Next \u2192';
-  nextBtn.disabled=(i===S.length-1);
-  document.querySelector('main').scrollTop=0;window.scrollTo(0,0);
 }
-prevBtn.onclick=()=>go(i-1);nextBtn.onclick=()=>go(i+1);
-document.addEventListener('keydown',e=>{if(e.target.closest('details'))return;if(e.key==='ArrowRight')go(i+1);if(e.key==='ArrowLeft')go(i-1);});
-go(0);
+function toggle(headEl){
+  const card = headEl.closest('.q-card');
+  const answer = card.querySelector('.q-answer');
+  const isOpen = card.classList.contains('open');
+  if(isOpen){
+    card.classList.remove('open');
+    answer.style.maxHeight = null;
+    headEl.querySelector('.q-toggle').textContent = 'reveal';
+  } else {
+    card.classList.add('open');
+    answer.style.maxHeight = answer.scrollHeight + 'px';
+    headEl.querySelector('.q-toggle').textContent = 'hide';
+  }
+}
 </script>
 </body>
 </html>

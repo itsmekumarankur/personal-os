@@ -2,411 +2,1500 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Architects Lab · Fine-Tuning LLMs with LoRA &amp; PEFT</title>
+<title>LLM Fine-Tuning, PEFT & LoRA — Interactive Recall Learning Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0d0f14; --panel:#151823; --panel2:#1b1f2e;
-    --ink:#e8e6df; --dim:#8b8fa3;
-    --gold:#d4af5a; --gold-soft:#b8964a;
-    --teal:#5ad4c8; --rose:#d47a8a; --violet:#9a8ad4; --amber:#d4915a;
-    --line:#2a2f42;
-    --mono:'Courier New', ui-monospace, monospace;
+    --paper:#FAF9F5;
+    --panel:#FFFFFF;
+    --panel-2:#F2F0E8;
+    --border:#DEDACC;
+    --text:#242420;
+    --muted:#75736A;
   }
-  *{margin:0;padding:0;box-sizing:border-box}
-  html,body{height:100%}
-  body{background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif;display:flex;flex-direction:column;min-height:100vh}
-  header{padding:16px 26px 12px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
-  header .k{font-family:var(--mono);font-size:.68rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase}
-  header h1{font-size:1rem;font-weight:normal}
-  header .count{margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--dim)}
-  .tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
-  .tab{flex:1;min-width:110px;padding:9px 10px;text-align:center;font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;color:var(--dim);border-right:1px solid var(--line);cursor:pointer;white-space:nowrap;transition:.2s;background:transparent;border-top:none;border-bottom:none;border-left:none}
-  .tab:last-child{border-right:none}
-  .tab.active{color:var(--bg);font-weight:bold}
-  .tab[data-c="gold"].active{background:var(--gold)}
-  .tab[data-c="teal"].active{background:var(--teal)}
-  .tab[data-c="rose"].active{background:var(--rose)}
-  .tab[data-c="violet"].active{background:var(--violet)}
-  .tab[data-c="amber"].active{background:var(--amber)}
-  .tab[data-c="ink"].active{background:var(--ink)}
-  main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px 96px;overflow-y:auto}
-  .slide{max-width:780px;width:100%;animation:fadeUp .4s ease both}
-  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-  @media (prefers-reduced-motion: reduce){.slide{animation:none}}
-  .eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px}
-  .eyebrow.gold{color:var(--gold)} .eyebrow.teal{color:var(--teal)} .eyebrow.rose{color:var(--rose)}
-  .eyebrow.violet{color:var(--violet)} .eyebrow.amber{color:var(--amber)} .eyebrow.ink{color:var(--dim)}
-  .slide h2{font-size:1.55rem;font-weight:normal;line-height:1.3;margin-bottom:14px}
-  .slide h2 em{font-style:italic;color:var(--gold)}
-  .slide p{color:#c9c7bf;line-height:1.75;font-size:1rem;margin-bottom:13px}
-  .slide p strong, .slide li strong{color:var(--ink)}
-  .slide code{font-family:var(--mono);font-size:.85em;background:var(--panel2);padding:2px 6px;border-radius:3px;color:var(--gold)}
-  .ascii{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:6px;padding:14px 16px;margin:14px 0;font-family:var(--mono);font-size:.74rem;line-height:1.5;color:#b9c2d8;overflow-x:auto;white-space:pre}
-  .ascii .hl{color:var(--gold)} .ascii .tl{color:var(--teal)} .ascii .rs{color:var(--rose)}
-  .note{border:1px dashed var(--gold-soft);border-radius:6px;padding:11px 15px;margin:14px 0;font-size:.9rem;color:#cfc9ae;line-height:1.65}
-  .note b{color:var(--gold)}
-  ul.pts{margin:10px 0 13px 2px;list-style:none}
-  ul.pts li{padding:6px 0 6px 21px;position:relative;color:#c9c7bf;line-height:1.6;font-size:.95rem}
-  ul.pts li::before{content:"\203A";position:absolute;left:4px;color:var(--gold);font-family:var(--mono)}
-  /* ---- Think First (question) slides ---- */
-  .qcard{border:2px solid var(--gold);border-radius:10px;background:linear-gradient(160deg,#1a1608,#151823);padding:30px 28px;margin:6px 0 18px;position:relative}
-  .qcard::before{content:"?";position:absolute;top:-20px;left:22px;width:38px;height:38px;border-radius:50%;background:var(--gold);color:var(--bg);font-family:var(--mono);font-weight:bold;font-size:1.3rem;display:flex;align-items:center;justify-content:center}
-  .qcard .qlabel{font-family:var(--mono);font-size:.64rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;margin-bottom:12px}
-  .qcard .qtext{font-size:1.25rem;line-height:1.55;color:var(--ink);font-style:italic}
-  .qcard .qsub{margin-top:14px;font-size:.86rem;color:var(--dim);font-style:normal;font-family:var(--mono)}
-  /* ---- lenses (CTO / Director) ---- */
-  details.lens{margin:10px 0;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
-  details.lens summary{cursor:pointer;padding:10px 14px;font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;color:var(--teal);list-style:none}
-  details.lens summary::before{content:"+ ";color:var(--gold)}
-  details.lens[open] summary::before{content:"\2212 "}
-  details.lens.dir summary{color:var(--rose)}
-  details.lens .body{padding:2px 16px 13px}
-  details.lens .body li{font-size:.9rem}
-  /* ---- recall quiz slides ---- */
-  .recall-item{border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:6px;background:var(--panel);margin:12px 0;overflow:hidden}
-  .recall-item summary{cursor:pointer;padding:13px 16px;font-size:.98rem;color:var(--ink);list-style:none;line-height:1.55}
-  .recall-item summary::before{content:"Q  ";font-family:var(--mono);color:var(--teal);font-weight:bold}
-  .recall-item .ans{padding:0 16px 13px;color:#b9c2b0;font-size:.92rem;line-height:1.65;border-top:1px dashed var(--line);padding-top:11px;margin:0 16px 13px;padding-left:0;padding-right:0}
-  .recall-item .ans b{color:var(--teal)}
-  .recall-hint{font-family:var(--mono);font-size:.7rem;color:var(--dim);margin-top:6px}
-  footer{position:fixed;left:0;right:0;bottom:0;background:rgba(13,15,20,.93);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:11px 20px;display:flex;align-items:center;gap:14px}
-  .dots{display:flex;gap:4px;flex:1;justify-content:center;flex-wrap:wrap}
-  .dot{width:6px;height:6px;border-radius:50%;background:var(--line);cursor:pointer;transition:.2s}
-  .dot.on{background:var(--gold);transform:scale(1.45)}
-  .dot.q{border:1px solid var(--gold);background:transparent}
-  .dot.q.on{background:var(--gold)}
-  button.nav{font-family:var(--mono);font-size:.78rem;letter-spacing:.1em;background:transparent;color:var(--ink);border:1px solid var(--line);padding:9px 18px;border-radius:5px;cursor:pointer;transition:.2s}
-  button.nav:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
-  button.nav.primary{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:bold}
-  button.nav.primary:hover{background:#e2c070}
-  button.nav:disabled{opacity:.25;cursor:default}
-  button.nav:focus-visible,.tab:focus-visible,.dot:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-  .hint{position:fixed;bottom:62px;right:18px;font-family:var(--mono);font-size:.6rem;color:var(--dim);letter-spacing:.1em}
-  @media(max-width:600px){.slide h2{font-size:1.28rem}.ascii{font-size:.58rem;padding:11px}.hint{display:none}.qcard .qtext{font-size:1.08rem}}
+  body.dark-theme{
+    --paper:#0F1115;
+    --panel:#161A20;
+    --panel-2:#1C2027;
+    --border:#2A2E37;
+    --text:#E7E3D8;
+    --muted:#8B8F98;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;background:var(--paper);color:var(--text);
+    font-family:'IBM Plex Sans',sans-serif;line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    transition:background .25s ease,color .25s ease;
+  }
+  .theme-toggle{
+    position:fixed;top:18px;right:18px;z-index:50;
+    display:flex;align-items:center;gap:8px;
+    background:var(--panel);border:1px solid var(--border);
+    color:var(--text);
+    font-family:'IBM Plex Mono',monospace;font-size:.75rem;font-weight:600;
+    padding:8px 14px;border-radius:20px;cursor:pointer;
+    box-shadow:0 2px 8px rgba(0,0,0,0.12);
+    transition:background .25s ease,color .25s ease;
+  }
+  .theme-toggle:hover{border-color:#9A62D6;}
+  body.dark-theme .q-answer-inner{color:#C7C2B4;}
+  body.dark-theme pre.sketch{color:#B7BAC2;}
+  body.dark-theme .q-tag{color:#0F1115;}
+  @media(max-width:600px){
+    .theme-toggle{top:auto;bottom:18px;right:18px;}
+  }
+  .wrap{max-width:1040px;margin:0 auto;padding:48px 32px 120px;}
+
+  .ledger-strip{
+    display:flex;height:10px;border-radius:3px;overflow:hidden;
+    margin-bottom:28px;border:1px solid var(--border);
+  }
+  .ledger-strip span{flex:1;border-right:1px solid var(--paper);}
+  .ledger-strip span:nth-child(1),.ledger-strip span:nth-child(11){background:#C9871F;}
+  .ledger-strip span:nth-child(2),.ledger-strip span:nth-child(12){background:#2E8B82;}
+  .ledger-strip span:nth-child(3),.ledger-strip span:nth-child(13){background:#C1543A;}
+  .ledger-strip span:nth-child(4){background:#7A63B8;}
+  .ledger-strip span:nth-child(5){background:#3480B0;}
+  .ledger-strip span:nth-child(6){background:#6B9A44;}
+  .ledger-strip span:nth-child(7){background:#C1547A;}
+  .ledger-strip span:nth-child(8){background:#B9971F;}
+  .ledger-strip span:nth-child(9){background:#279090;}
+  .ledger-strip span:nth-child(10){background:#9A62D6;}
+
+  header h1{
+    font-family:'Fraunces',serif;font-weight:600;
+    font-size:2.5rem;letter-spacing:-0.5px;margin:0 0 6px;color:var(--text);
+  }
+  header h1 em{color:#3480B0;font-style:normal;}
+  header p.sub{color:var(--muted);font-size:1rem;margin:0 0 28px;max-width:68ch;}
+
+  .meta-bar{
+    display:flex;gap:14px;flex-wrap:wrap;
+    font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:var(--muted);
+    border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+    padding:12px 0;margin-bottom:36px;
+  }
+  .meta-bar b{color:#2E8B82;}
+
+  nav{
+    position:sticky;top:0;background:rgba(250,249,245,0.94);backdrop-filter:blur(6px);
+    padding:14px 0;margin:0 0 40px;border-bottom:1px solid var(--border);
+    display:flex;flex-wrap:wrap;gap:8px 16px;z-index:10;
+  }
+  body.dark-theme nav{background:rgba(15,17,21,0.94);}
+  nav a{
+    font-family:'IBM Plex Mono',monospace;font-size:.72rem;
+    text-decoration:none;padding:4px 8px;border-radius:4px;
+    border:1px solid transparent;font-weight:600;
+  }
+
+  section.segment{
+    margin-bottom:56px;scroll-margin-top:70px;
+    border-left:3px solid var(--seg,#2E8B82);padding-left:22px;
+  }
+  .segment-head{display:flex;align-items:baseline;gap:14px;margin-bottom:6px;}
+  .segment-offset{
+    font-family:'IBM Plex Mono',monospace;font-size:.85rem;
+    background:var(--panel-2);border:1px solid var(--border);
+    padding:2px 8px;border-radius:4px;color:var(--seg,#2E8B82);font-weight:600;
+  }
+  .segment-head h2{font-family:'Fraunces',serif;font-weight:600;font-size:1.55rem;margin:0;color:var(--text);}
+  .segment-note{color:var(--muted);font-size:.93rem;margin:8px 0 20px;max-width:70ch;}
+  .segment-note code, p code, li code{
+    font-family:'IBM Plex Mono',monospace;background:var(--panel-2);
+    padding:1px 6px;border-radius:3px;color:var(--seg,#C9871F);font-size:.88em;
+  }
+
+  pre.sketch{
+    background:var(--panel-2);border:1px solid var(--border);
+    border-left:3px solid var(--seg,#2E8B82);padding:14px 16px;
+    font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:#4A4A44;
+    overflow-x:auto;border-radius:4px;margin:0 0 14px;white-space:pre;
+  }
+  body.dark-theme pre.sketch{color:#B7BAC2;}
+
+  .q-card{
+    background:var(--panel);border:1px solid var(--border);
+    border-radius:6px;margin-bottom:12px;overflow:hidden;
+    box-shadow:0 1px 2px rgba(0,0,0,0.03);
+  }
+  .q-head{display:flex;align-items:flex-start;gap:12px;padding:16px 18px;cursor:pointer;user-select:none;}
+  .q-tag{
+    font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:#fff;
+    background:var(--seg,#C9871F);padding:2px 7px;border-radius:3px;
+    flex-shrink:0;margin-top:3px;font-weight:600;
+  }
+  .q-text{font-size:1rem;color:var(--text);flex:1;}
+  .q-toggle{
+    font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--muted);
+    flex-shrink:0;white-space:nowrap;border:1px solid var(--border);
+    padding:3px 9px;border-radius:20px;margin-top:1px;
+  }
+  .q-card.open .q-toggle{color:var(--seg,#2E8B82);border-color:var(--seg,#2E8B82);}
+  .q-answer{max-height:0;overflow:hidden;transition:max-height .3s ease;background:var(--panel-2);}
+  .q-card.open .q-answer{border-top:1px solid var(--border);}
+  .q-answer-inner{padding:16px 18px 18px 46px;font-size:.94rem;color:#3A3934;}
+  .q-answer-inner b{color:var(--seg,#C9871F);}
+  .q-answer-inner p{margin:0 0 10px;}
+  .q-answer-inner p:last-child{margin-bottom:0;}
+  .q-answer-inner ol,.q-answer-inner ul{margin:0 0 14px;padding-left:20px;}
+  .q-answer-inner li{margin-bottom:6px;}
+  .q-answer-inner h4{
+    font-family:'IBM Plex Mono',monospace;font-size:.78rem;text-transform:uppercase;
+    letter-spacing:.5px;color:var(--seg,#C9871F);margin:16px 0 8px;
+  }
+  .q-answer-inner h4:first-child{margin-top:0;}
+
+  footer{
+    margin-top:60px;padding-top:24px;border-top:1px solid var(--border);
+    color:var(--muted);font-size:.85rem;font-family:'IBM Plex Mono',monospace;
+  }
+
+  @media(max-width:600px){
+    header h1{font-size:1.9rem;}
+    .q-answer-inner{padding-left:18px;}
+    section.segment{padding-left:14px;}
+    pre.sketch{font-size:.68rem;}
+  }
 </style>
 </head>
 <body>
-<header>
-  <span class="k">Architects Lab</span>
-  <h1>Fine-Tuning LLMs · LoRA &amp; PEFT</h1>
-  <span class="count" id="counter"></span>
-</header>
-<div class="tabs" id="tabs"></div>
-<main><div id="stage"></div></main>
-<div class="hint">&larr; &rarr; keys work too</div>
-<footer>
-  <button class="nav" id="prevBtn">&larr; Prev</button>
-  <div class="dots" id="dots"></div>
-  <button class="nav primary" id="nextBtn">Next &rarr;</button>
-</footer>
+<button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☾&nbsp; Dark mode</button>
+<div class="wrap">
+
+  <div class="ledger-strip">
+    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span>
+  </div>
+
+  <header>
+    <h1>LLM Fine-Tuning, PEFT & LoRA — <em>generalist → specialist</em></h1>
+    <p class="sub">A revision session on what fine-tuning actually changes, why training costs so much more than inference, the LoRA low-rank trick, chat templates as a hidden API contract, and why "it looks better" is never a measurement. Click a question to think first — reveal only when you're ready to check yourself.</p>
+    <div class="meta-bar">
+      <span><b>13 segments</b></span>
+      <span>27 questions</span>
+      <span>Format: think → answer aloud → reveal</span>
+      <span>Goal: reasoning, not recall</span>
+    </div>
+  </header>
+
+  <nav>
+    <a href="#s1" style="color:#C9871F;">01 Core Mental Model</a>
+    <a href="#s2" style="color:#2E8B82;">02 Not Configuration</a>
+    <a href="#s3" style="color:#C1543A;">03 Training vs Inference</a>
+    <a href="#s4" style="color:#7A63B8;">04 Quantization</a>
+    <a href="#s5" style="color:#3480B0;">05 LoRA Core Idea</a>
+    <a href="#s6" style="color:#6B9A44;">06 LoRA Architecture</a>
+    <a href="#s7" style="color:#C1547A;">07 Chat Templates</a>
+    <a href="#s8" style="color:#B9971F;">08 Baselines & Metrics</a>
+    <a href="#s9" style="color:#279090;">09 The Experiment Loop</a>
+    <a href="#s10" style="color:#9A62D6;">10 Deployment & Routing</a>
+    <a href="#s11" style="color:#C9871F;">11 Full FT vs LoRA</a>
+    <a href="#s12" style="color:#2E8B82;">12 Decision Tree</a>
+    <a href="#s13" style="color:#C1543A;">13 The 8 Lessons</a>
+  </nav>
+
+  <!-- SEGMENT 1 -->
+  <section class="segment" id="s1" style="--seg:#C9871F">
+    <div class="segment-head"><span class="segment-offset">offset 00</span><h2>The core mental model — what fine-tuning actually does</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q1</span><span class="q-text">Why do companies spend billions training general-purpose LLMs, yet fine-tune them with only a few thousand examples? What does this tell you about the nature of fine-tuning? Are we rebuilding intelligence from scratch, or doing something fundamentally different?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">                    BASE LLM
+              ┌──────────────────┐
+              │ General knowledge│
+              │ Language         │
+              │ Grammar          │
+              │ Reasoning        │
+              │ World knowledge  │
+              └────────┬─────────┘
+                       |
+                  FREEZE IT
+                       |
+                       v
+             +-------------------+
+             | Small task dataset|
+             +---------+---------+
+                       |
+                       v
+               SMALL ADAPTATION
+                       |
+                       v
+             ┌──────────────────┐
+             │ SPECIALIZED LLM │
+             │                  │
+             │ Base capability  │
+             │       +          │
+             │ Task behavior    │
+             └──────────────────┘</pre>
+        <p>The key idea:</p>
+<pre class="sketch">Fine-tuning ≠ teaching the model everything again
+
+Fine-tuning =
+"Take an already capable generalist
+ and nudge its behavior toward my task."</pre>
+        <p>The source describes this as <b>generalist → specialist</b>.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q2</span><span class="q-text">If I have a pre-trained model, and I want to adapt it for a specific task, what am I actually paying for? Is the cost the same as building the original model? What's the economic distinction?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">TRAIN FROM SCRATCH
+
+Random / untrained weights
+          |
+          v
+ Massive training dataset
+          |
+          v
+ Massive GPU compute
+          |
+          v
+      BILLIONS $
+          |
+          v
+     Foundation LLM</pre>
+        <p>Fine-tuning:</p>
+<pre class="sketch">FINE-TUNING
+
+Already-trained LLM
+        |
+        | freeze most knowledge
+        v
++---------------------+
+| Small labeled data  |
++----------+----------+
+           |
+           v
+    Task-specific update
+           |
+           v
+    Specialized model</pre>
+        <p>Think of it as:</p>
+<pre class="sketch">                    GENERALIST
+                        |
+          +-------------+-------------+
+          |             |             |
+       Language       Reasoning     Knowledge
+          |             |             |
+          +-------------+-------------+
+                        |
+                  ALREADY DONE
+                        |
+                        v
+                 Fine-tuning
+                        |
+                        v
+                 Specialist task</pre>
+        <p>You are paying for the <b>adaptation</b>, not rebuilding the foundation.</p>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 2 -->
+  <section class="segment" id="s2" style="--seg:#2E8B82">
+    <div class="segment-head"><span class="segment-offset">offset 01</span><h2>But fine-tuning is NOT configuration</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q3</span><span class="q-text">If I write a business rule—"IF amount > ₹10L THEN require approval"—I know exactly what will happen every time. Is fine-tuning the same? If I train a model with examples of approved/rejected transactions, can I guarantee it will follow these rules exactly? What's the fundamental difference between rules and trained behavior?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>A rules engine:</p>
+<pre class="sketch">RULE:
+IF amount > ₹10L
+THEN require approval</pre>
+        <p>is deterministic.</p>
+        <p>Fine-tuning:</p>
+<pre class="sketch">Training examples
+       |
+       v
+Model weights
+       |
+       v
+"Model tends to behave this way"</pre>
+        <p>So:</p>
+<pre class="sketch">Rules/configuration
+       |
+       v
+Deterministic behavior
+
+
+Fine-tuning
+       |
+       v
+Probabilistic behavior</pre>
+        <p>Therefore:</p>
+        <p>Fine-tuning changes the <b>probability distribution of model behavior</b>; it does not install deterministic business rules.</p>
+        <p>For banking systems, this distinction is critical.</p>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 3 -->
+  <section class="segment" id="s3" style="--seg:#C1543A">
+    <div class="segment-head"><span class="segment-offset">offset 02</span><h2>Inference vs training — why GPU suddenly matters</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q4</span><span class="q-text">When I use ChatGPT, I type a prompt and get a response. When the model was trained, what was different? Is training just "inference but longer"? Or is there something fundamentally different happening under the hood that explains why training requires so much more compute?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <h4>Inference</h4>
+<pre class="sketch">Input
+  |
+  v
++--------+
+| Model  |
+| frozen |
++---+----+
+    |
+    v
+ Output</pre>
+        <p>One direction:</p>
+<pre class="sketch">INPUT
+  |
+  v
+FORWARD PASS
+  |
+  v
+OUTPUT</pre>
+        <h4>Training</h4>
+<pre class="sketch">Input
+  |
+  v
+FORWARD PASS
+  |
+  v
+Prediction
+  |
+  v
+Compare with TRUE LABEL
+  |
+  v
+Loss
+  |
+  v
+BACKPROPAGATION
+  |
+  v
+Gradient
+  |
+  v
+Weight update
+  |
+  v
+Repeat</pre>
+        <p>So:</p>
+<pre class="sketch">Inference:
+
+      INPUT
+        |
+        v
+      MODEL
+        |
+        v
+      OUTPUT
+
+
+Training:
+
+      INPUT
+        |
+        v
+      MODEL
+        |
+        v
+    PREDICTION
+        |
+        v
+      LOSS
+        |
+        v
+    BACKPROP
+        |
+        v
+  UPDATE WEIGHTS
+        |
+        +-----------> repeat</pre>
+        <h4>Architect takeaway</h4>
+        <p>Training isn't simply:</p>
+        <p>"Inference but longer."</p>
+        <p>It's a fundamentally different computational workload because you're calculating gradients and maintaining training state.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q5</span><span class="q-text">I know a 70B parameter model requires ~140GB of memory in FP16 for inference. Why does training the same model require significantly more? What extra data structures must be kept in memory during training that aren't needed during inference?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>During inference:</p>
+<pre class="sketch">Model weights
+     +
+Activations
+     |
+     v
+Prediction</pre>
+        <p>Training adds:</p>
+<pre class="sketch">Model weights
+     +
+Activations
+     +
+Gradients
+     +
+Optimizer state
+     |
+     v
+Much higher memory requirement</pre>
+        <p>Conceptually:</p>
+<pre class="sketch">                 MEMORY
+                   |
+      +------------+------------+
+      |            |            |
+   Weights      Gradients    Optimizer
+      |            |            |
+      +------------+------------+
+                   |
+                   v
+              GPU pressure</pre>
+        <p>This is why:</p>
+<pre class="sketch">CPU inference
+      |
+      v
+Sometimes possible
+
+
+Full fine-tuning
+      |
+      v
+Serious GPU requirement</pre>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 4 -->
+  <section class="segment" id="s4" style="--seg:#7A63B8">
+    <div class="segment-head"><span class="segment-offset">offset 03</span><h2>Quantization — what problem is it solving?</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q6</span><span class="q-text">I have a 70B parameter model. In FP32, each parameter takes 4 bytes. In INT4, each parameter takes 0.5 bytes. That's an 8x reduction. What's the catch? What do we sacrifice for this memory saving, and why does the source specifically mention that "quantization is especially useful for loading the frozen base model, while LoRA parameters being trained need higher precision"?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>The source uses 4-bit quantization.</p>
+        <p>Think:</p>
+<pre class="sketch">FP32 weights
+
+████████████████████████████
+
+        quantize
+
+INT4 weights
+
+██████</pre>
+        <p>The purpose is primarily:</p>
+<pre class="sketch">Large model
+     |
+     v
+Memory too high
+     |
+     v
+Quantization
+     |
+     v
+Smaller representation
+     |
+     v
+Fits GPU</pre>
+        <p>The important trade-off:</p>
+<pre class="sketch">                 Quantization
+                     |
+          +----------+----------+
+          |                     |
+       Benefit                 Cost
+          |                     |
+     less memory          some precision
+     cheaper GPU          / quality loss</pre>
+        <p>And the source makes an important distinction:</p>
+        <p>Quantization is especially useful for loading the frozen base model, while LoRA parameters being trained need higher precision.</p>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 5 -->
+  <section class="segment" id="s5" style="--seg:#3480B0">
+    <div class="segment-head"><span class="segment-offset">offset 04</span><h2>The real innovation — LoRA</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q7</span><span class="q-text">Suppose I have a model with a 10,000 × 20,000 weight matrix (200 million parameters). Full fine-tuning would update all 200 million values. Is there a way to approximate the update using far fewer parameters? What if the update itself has a low "rank"—meaning it can be represented as the product of two much smaller matrices? What would the parameter count be then?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Now we reach the core of the project.</p>
+        <p>Suppose the original model has a huge weight matrix:</p>
+<pre class="sketch">W
+
+10,000 × 20,000
+
+= 200,000,000 parameters</pre>
+        <p>Full fine-tuning says:</p>
+<pre class="sketch">W
+ |
+ v
+Change ALL 200M values</pre>
+        <p>LoRA says:</p>
+        <p><b>Keep W frozen and learn a much smaller approximation of the change.</b></p>
+<pre class="sketch">Original:
+
+W
+|
+| frozen
+|
+v
+
+LoRA:
+
+W + ΔW
+    |
+    v
+Approximate ΔW using A × B</pre>
+        <p>So:</p>
+<pre class="sketch">                 ORIGINAL W
+                 200M params
+                     |
+                  FREEZE
+                     |
+                     v
+              +-------------+
+              |             |
+              |     W       |
+              |             |
+              +------+------+
+                     |
+                     +
+                     |
+                  A × B
+                     |
+                     v
+                ΔW approx
+                     |
+                     v
+                 W + ΔW</pre>
+        <p>This is the central LoRA idea.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q8</span><span class="q-text">Instead of learning a 200 million parameter update, LoRA learns A (10,000 × 8) and B (8 × 20,000). What's the total parameter count? How many times smaller is this than the original update? And importantly—what does the '8' represent, and why is it called the 'rank'?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Instead of learning:</p>
+<pre class="sketch">ΔW = 10,000 × 20,000
+   = 200,000,000 parameters</pre>
+        <p>LoRA decomposes the update approximately as:</p>
+<pre class="sketch">ΔW ≈ A × B</pre>
+        <p>where:</p>
+<pre class="sketch">A = 10,000 × 8
+B = 8 × 20,000</pre>
+        <p>Therefore:</p>
+<pre class="sketch">A
+10,000 × 8
+     |
+     v
+  80,000
+
+
+B
+8 × 20,000
+     |
+     v
+ 160,000</pre>
+        <p>Total:</p>
+<pre class="sketch">80,000 + 160,000
+        |
+        v
+    240,000</pre>
+        <p>Instead of:</p>
+<pre class="sketch">200,000,000</pre>
+        <p>So:</p>
+<pre class="sketch">FULL UPDATE
+████████████████████████████████████
+
+LoRA UPDATE
+█</pre>
+        <p>The source gives an approximately <b>833× reduction</b> in this illustrative matrix.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q9</span><span class="q-text">We're going from 200 million possible parameter changes to just 240 thousand. That's a 99.88% reduction. Intuitively, shouldn't this destroy the model's ability to learn the task? How is it possible that such a drastic reduction still works? What assumption is LoRA making about the nature of task adaptation?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>This is the deeper question.</p>
+        <p>You might think:</p>
+<pre class="sketch">200M possible changes
+       ↓
+240K parameters
+       ↓
+Surely quality collapses?</pre>
+        <p>Not necessarily.</p>
+        <p>The LoRA hypothesis is:</p>
+<pre class="sketch">ALL POSSIBLE MODEL CHANGES
+          |
+          | huge space
+          v
++-----------------------------+
+|                             |
+|      Task-relevant          |
+|      adaptation             |
+|         region              |
+|                             |
++-----------------------------+</pre>
+        <p>Most task adaptation may not require arbitrary modification of every weight.</p>
+        <p>So LoRA effectively says:</p>
+        <p>"Don't search the entire parameter space. Search a constrained low-dimensional adaptation space."</p>
+        <p>Mathematically:</p>
+<pre class="sketch">Full fine-tuning:
+
+W → W + arbitrary ΔW
+
+
+LoRA:
+
+W → W + A×B
+
+where rank(A×B) = r</pre>
+        <p>And <code>r</code> becomes your capacity dial:</p>
+<pre class="sketch">              rank r
+                 |
+       +---------+---------+
+       |                   |
+     LOW r               HIGH r
+       |                   |
+       v                   v
+ cheaper                 expensive
+ smaller adapter         larger adapter
+ less capacity           more capacity</pre>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 6 -->
+  <section class="segment" id="s6" style="--seg:#6B9A44">
+    <div class="segment-head"><span class="segment-offset">offset 05</span><h2>LoRA architecture, PEFT, and where it attaches</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q10</span><span class="q-text">During LoRA training, we have two components: the base model (frozen) and the LoRA adapter (trainable). The input flows through both, and their outputs are combined. Can you sketch what this architecture looks like? Where does the base output go, where does the LoRA output go, and how are they combined to produce the final output?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Put this mental model in your head:</p>
+<pre class="sketch">                   BASE MODEL
+                ┌───────────────┐
+                │               │
+Input ─────────>│ Frozen Weights│──────┐
+                │               │      |
+                └───────────────┘      |
+                                       |
+                                       v
+                                 Base output
+                                       |
+                                       +
+                                       |
+                ┌───────────────┐      |
+Input ─────────>│ LoRA Adapter  │──────┘
+                │ A + B         │
+                │ TRAINABLE     │
+                └───────────────┘
+                                       |
+                                       v
+                                  Final output</pre>
+        <p>During training:</p>
+<pre class="sketch">BASE MODEL
+     |
+     | FROZEN
+     X
+     |
+     v
+LO-RA ADAPTER
+     |
+     | TRAIN
+     v
+A + B matrices</pre>
+        <p>So:</p>
+<pre class="sketch">                 TRAINABLE?
+                     |
+        +------------+------------+
+        |                         |
+    Base model                 LoRA
+        |                         |
+      NO                          YES
+        |                         |
+        v                         v
+    Frozen                    Updated</pre>
+        <p>This is the essence of PEFT.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q11</span><span class="q-text">You've heard of LoRA. You've heard of adapters. What's the family they belong to? What does PEFT stand for, and how does it relate to LoRA? Is PEFT just another name for LoRA, or is there a hierarchy here?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>PEFT:</p>
+        <p><b>Parameter-Efficient Fine-Tuning</b></p>
+        <p>Think of it as a family:</p>
+<pre class="sketch">                 PEFT
+                   |
+       +-----------+-----------+
+       |           |           |
+      LoRA       Adapters     Other
+       |
+       v
+ train tiny parameter subset</pre>
+        <p>So:</p>
+<pre class="sketch">Fine-tuning
+     |
+     +--> Full fine-tuning
+     |
+     +--> PEFT
+             |
+             +--> LoRA
+             +--> other methods</pre>
+        <p>Don't confuse:</p>
+<pre class="sketch">PEFT ≠ LoRA</pre>
+        <p>Rather:</p>
+<pre class="sketch">LoRA ⊂ PEFT</pre>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q12</span><span class="q-text">In a Transformer, there are attention projections: Q, K, V, and O. When applying LoRA, where do you typically attach the adapters? Do you attach them to all layers? Only some? And why would attaching to attention projections be particularly effective for task adaptation?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>The project applies LoRA to attention projections:</p>
+<pre class="sketch">Attention
+
+        Q
+        |
+        v
+      [Q]
+
+        K
+        |
+        v
+      [K]
+
+        V
+        |
+        v
+      [V]
+
+        O
+        |
+        v
+      [O]</pre>
+        <p>Conceptually:</p>
+<pre class="sketch">Transformer Layer
+       |
+       +--> Q projection <-- LoRA
+       |
+       +--> K projection <-- LoRA
+       |
+       +--> V projection <-- LoRA
+       |
+       +--> O projection <-- LoRA</pre>
+        <p>Everything else stays frozen.</p>
+        <p>This is a major source of the memory reduction.</p>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 7 -->
+  <section class="segment" id="s7" style="--seg:#C1547A">
+    <div class="segment-head"><span class="segment-offset">offset 06</span><h2>Chat templates — the hidden contract</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q13</span><span class="q-text">You're using a Gemma model. You format your prompt as "User: ... Assistant: ..." But Gemma was pretrained with a different format, maybe "&lt;start_of_turn&gt;user ... &lt;end_of_turn&gt;". What happens if you use the wrong format? Will the model crash? Or will it silently produce worse outputs, making it hard to debug why your fine-tuning isn't working?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>This is easy to underestimate.</p>
+        <p>Gemma and DeepSeek don't necessarily expect the same structure.</p>
+        <p>Conceptually:</p>
+<pre class="sketch">Application
+     |
+     v
+"Classify this sentiment"
+     |
+     v
+MODEL-SPECIFIC TEMPLATE
+     |
+     +----------+----------+
+     |                     |
+   Gemma                  DeepSeek
+     |                     |
+     v                     v
+format A               format B</pre>
+        <p>Why?</p>
+        <p>Because during pretraining the model learned:</p>
+<pre class="sketch">&lt;special token&gt;
+      |
+      v
+"This means user starts here"
+
+&lt;another token&gt;
+      |
+      v
+"This means assistant starts here"</pre>
+        <p>So:</p>
+<pre class="sketch">Words
+ +
+Structural tokens
+ =
+Model's learned conversation protocol</pre>
+        <p>If you use the wrong format:</p>
+<pre class="sketch">Gemma model
+     |
+     X
+DeepSeek template
+     |
+     v
+No crash necessarily
+     |
+     v
+Bad training signal</pre>
+        <p>That's particularly dangerous because:</p>
+<pre class="sketch">System failure
+     |
+     v
+No exception
+     |
+     v
+Model quality silently degrades</pre>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q14</span><span class="q-text">In a REST API, if the client sends the wrong schema, the server returns a 400 error—clear, observable failure. But with an LLM and the wrong chat template, the model still accepts text and produces output. Is this better or worse from an observability perspective? What makes this "worse" for production systems?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>As an architect, think of chat templates like:</p>
+<pre class="sketch">Client
+  |
+  v
+API contract
+  |
+  v
+Server</pre>
+        <p>If the contract is wrong:</p>
+<pre class="sketch">Client
+  |
+  v
+Wrong schema
+  |
+  v
+Server may reject</pre>
+        <p>But with an LLM:</p>
+<pre class="sketch">Application
+    |
+    v
+Wrong model template
+    |
+    v
+LLM still accepts text
+    |
+    v
+Produces output
+    |
+    v
+Quality silently degrades</pre>
+        <p>That's worse from an observability perspective.</p>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 8 -->
+  <section class="segment" id="s8" style="--seg:#B9971F">
+    <div class="segment-head"><span class="segment-offset">offset 07</span><h2>Baselines & the danger of accuracy</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q15</span><span class="q-text">You've fine-tuned your model. It seems better. But how do you know it's better? What's the single most important measurement you should have taken before fine-tuning? Why can't you just trust that fine-tuning "obviously" improves things?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Before fine-tuning:</p>
+<pre class="sketch">                BASE MODEL
+                    |
+                    v
+              ZERO-SHOT TEST
+                    |
+                    v
+                BASELINE</pre>
+        <p>Only then:</p>
+<pre class="sketch">Baseline
+   |
+   v
+Fine-tune
+   |
+   v
+Evaluate
+   |
+   v
+Compare</pre>
+        <p>The full loop:</p>
+<pre class="sketch">                 BASE MODEL
+                     |
+                     v
+                BASELINE
+                     |
+                     v
+              Fine-tuning
+                     |
+                     v
+              Fine-tuned model
+                     |
+                     v
+               EVALUATION
+                     |
+                     v
+             +-------+-------+
+             |               |
+          BETTER           WORSE
+             |               |
+             v               v
+         consider          debug
+         deploy            training</pre>
+        <p>This is <b>not ML ceremony</b>.</p>
+        <p>It's the equivalent of:</p>
+<pre class="sketch">Performance before optimization
+          |
+          v
+Optimization
+          |
+          v
+Performance after optimization</pre>
+        <p>Without the first measurement, you cannot prove improvement.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q16</span><span class="q-text">Your sentiment classifier achieves 85% accuracy on a 3-class problem (Positive, Negative, Neutral). But the dataset has 1,300 Positive examples, 500 Negative, and only 200 Neutral. If the model always predicts "Positive", what accuracy would it achieve? And more importantly—what would it be missing?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Suppose:</p>
+<pre class="sketch">Positive = 1300
+Negative = 500
+Neutral  = small</pre>
+        <p>A model that always says:</p>
+<pre class="sketch">POSITIVE</pre>
+        <p>can still achieve deceptively good accuracy.</p>
+<pre class="sketch">                    PREDICTION
+
+Actual Positive  ─────> Positive ✓
+
+Actual Negative  ─────> Positive ✗
+
+Actual Neutral   ─────> Positive ✗</pre>
+        <p>So:</p>
+<pre class="sketch">                 Accuracy
+                    |
+                    v
+              "Looks good"
+                    |
+                    X
+             hides minorities</pre>
+        <p>You need:</p>
+<pre class="sketch">                 Evaluation
+                     |
+        +------------+-------------+
+        |            |             |
+     Precision      Recall         F1
+        |            |             |
+        +------------+-------------+
+                     |
+                     v
+              Confusion Matrix</pre>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q17</span><span class="q-text">What specific questions does a confusion matrix answer that a single accuracy number cannot? For a 3-class sentiment problem, what would you want to know about misclassifications that "Accuracy = 70%" hides?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>For 3 classes:</p>
+<pre class="sketch">                 PREDICTED
+              P       N       U
+          +-------+-------+-------+
+Actual P  |  TP   |  FN   |  FN   |
+          +-------+-------+-------+
+Actual N  |  FP   |  TP   |  FN   |
+          +-------+-------+-------+
+Actual U  |  FP   |  FN   |  TP   |
+          +-------+-------+-------+</pre>
+        <p>Now you can ask:</p>
+<pre class="sketch">How often does the model
+miss NEGATIVE news?
+
+How often does it confuse
+NEUTRAL with POSITIVE?
+
+Which class is systematically
+being ignored?</pre>
+        <p>This is far more useful than:</p>
+<pre class="sketch">"Accuracy = 70%"</pre>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q18</span><span class="q-text">Extend the accuracy problem to fraud detection. 1,000,000 transactions, 999,000 legitimate, 1,000 fraudulent. If the model predicts "legitimate" for everything, what's the accuracy? What's the fraud recall? Which metric would you actually care about in production?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>This generalizes directly:</p>
+<pre class="sketch">1,000,000 transactions
+
+999,000 legitimate
+1,000 fraud</pre>
+        <p>Model:</p>
+<pre class="sketch">Predict everything = LEGITIMATE</pre>
+        <p>Accuracy:</p>
+<pre class="sketch">99.9%</pre>
+        <p>But:</p>
+<pre class="sketch">Fraud Recall = 0%</pre>
+        <p>So:</p>
+<pre class="sketch">Accuracy = 99.9%
+       |
+       v
+Looks amazing
+       |
+       X
+Fraud detection = useless</pre>
+        <p>Architectural lesson:</p>
+        <p><b>Choose evaluation metrics according to business failure modes, not convenience.</b></p>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 9 -->
+  <section class="segment" id="s9" style="--seg:#279090">
+    <div class="segment-head"><span class="segment-offset">offset 08</span><h2>Training is an experiment loop</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q19</span><span class="q-text">You run LoRA fine-tuning for 1 epoch on a classification task. The baseline zero-shot accuracy was 45-46%. After fine-tuning, accuracy drops by ~4 percentage points—it's actually WORSE than doing nothing. Does this mean LoRA is bad? Or does it mean something about the training process? What's the distinction between under-training and over-training?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>This is one of the best lessons in the entire material.</p>
+        <p>The experiment:</p>
+<pre class="sketch">ZERO-SHOT
+~45-46%</pre>
+        <p>Then:</p>
+<pre class="sketch">LoRA
++
+1 epoch
+    |
+    v
+~4 percentage points WORSE</pre>
+        <p>That doesn't mean:</p>
+<pre class="sketch">LoRA = bad</pre>
+        <p>It means:</p>
+<pre class="sketch">Training
+   |
+   v
+1 epoch
+   |
+   v
+Insufficient adaptation
+   |
+   v
+Under-training
+   |
+   v
+Regression</pre>
+        <p>The key distinction:</p>
+<pre class="sketch">                 Fine-tuning
+                     |
+          +----------+----------+
+          |                     |
+     Under-training        Over-training
+          |                     |
+          v                     v
+       underfit              overfit
+          |                     |
+          v                     v
+       poor task            poor generalization
+       adaptation</pre>
+        <p>So:</p>
+<pre class="sketch">Fine-tuning ≠ guaranteed improvement</pre>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q20</span><span class="q-text">If fine-tuning doesn't guarantee improvement, then what should the development process look like? Is it more like "configuration" (set parameters and deploy) or more like "experimental engineering" (hypothesis → run → measure → iterate)?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>The correct architecture is:</p>
+<pre class="sketch">                Hypothesis
+                    |
+                    v
+               Training run
+                    |
+                    v
+                Evaluation
+                    |
+                    v
+               Compare baseline
+                    |
+             +------+------+
+             |             |
+          Better          Worse
+             |             |
+             v             v
+        Continue       Diagnose
+             |             |
+             +------+------+
+                    |
+                    v
+                Next run</pre>
+        <p>This is much closer to <b>experimental engineering</b> than configuration.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q21</span><span class="q-text">If 1 epoch underfits (model didn't learn enough) and too many epochs overfit (model memorized training data), what's the relationship between number of epochs and performance? What shape would this curve take—linear, exponential, or something else? Is there a "sweet spot"?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Simplified:</p>
+<pre class="sketch">Training data
+     |
+     v
+ Epoch 1
+     |
+     v
+ Epoch 2
+     |
+     v
+ Epoch 3
+     |
+     v
+ ...</pre>
+        <p>Too little:</p>
+<pre class="sketch">1 epoch
+   |
+   v
+Didn't learn enough</pre>
+        <p>Too much:</p>
+<pre class="sketch">Many epochs
+      |
+      v
+Memorization
+      |
+      v
+Overfitting</pre>
+        <p>So:</p>
+<pre class="sketch">Performance
+   ^
+   |
+   |          *
+   |       *     *
+   |     *         *
+   |   *
+   | *
+   +--------------------> epochs
+      under    sweet    over
+       fit      spot     fit</pre>
+        <p>The exact optimal epoch count is <b>empirical</b>, not a universal number.</p>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 10 -->
+  <section class="segment" id="s10" style="--seg:#9A62D6">
+    <div class="segment-head"><span class="segment-offset">offset 09</span><h2>LoRA adapter deployment & routing</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q22</span><span class="q-text">You have a finance use case, a legal use case, and a customer support use case. For each, you need a specialized model. With full fine-tuning, you'd store three separate copies of the entire model. With LoRA, you store one base model plus three tiny adapters. What are the operational advantages of this approach in terms of storage, deployment, and switching between tasks?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>This is another major benefit.</p>
+        <p>You don't save:</p>
+<pre class="sketch">1B parameter model</pre>
+        <p>again.</p>
+        <p>You save:</p>
+<pre class="sketch">Base model
++
+Tiny LoRA adapter</pre>
+        <p>Think:</p>
+<pre class="sketch">                BASE MODEL
+                   |
+          +--------+--------+
+          |        |        |
+          v        v        v
+       Adapter A Adapter B Adapter C
+       Finance   Legal     Support</pre>
+        <p>At runtime:</p>
+<pre class="sketch">                 Base Model
+                     |
+        +------------+------------+
+        |            |            |
+        v            v            v
+     Finance       Legal       Support
+     Adapter       Adapter      Adapter</pre>
+        <p>This enables:</p>
+<pre class="sketch">ONE BASE MODEL
+      +
+MANY SPECIALISTS</pre>
+        <p>instead of:</p>
+<pre class="sketch">Finance full model
+Legal full model
+Support full model</pre>
+        <p>Huge operational advantage.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q23</span><span class="q-text">Given that you can have one base model and many LoRA adapters, how would you design a production system that routes incoming requests to the right adapter? What component would decide which adapter to use? Can you sketch this architecture?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>For example:</p>
+<pre class="sketch">                    User Request
+                         |
+                         v
+                  Task Classifier
+                         |
+          +--------------+--------------+
+          |              |              |
+          v              v              v
+       Finance          Legal        Customer
+          |              |              |
+          v              v              v
+    Finance LoRA     Legal LoRA    Support LoRA
+          |              |              |
+          +--------------+--------------+
+                         |
+                         v
+                    Base LLM
+                         |
+                         v
+                       Output</pre>
+        <p>This is one of the natural production architectures enabled by LoRA.</p>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 11 -->
+  <section class="segment" id="s11" style="--seg:#C9871F">
+    <div class="segment-head"><span class="segment-offset">offset 10</span><h2>Full fine-tuning vs LoRA architecture</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q24</span><span class="q-text">Summarize the key differences between full fine-tuning and LoRA in terms of: (1) which parameters are updated, (2) memory requirements, (3) storage requirements for the final model artifact. What makes LoRA more efficient at each stage?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Keep this diagram:</p>
+<pre class="sketch">FULL FINE-TUNING
+
+Base Model
+    |
+    v
+Unfreeze everything
+    |
+    v
+Update billions of parameters
+    |
+    v
+Large training memory
+    |
+    v
+Large model artifact</pre>
+        <p>Versus:</p>
+<pre class="sketch">LoRA
+
+Base Model
+    |
+    v
+FREEZE
+    |
+    +----------------------+
+    |                      |
+    |                 LoRA Adapter
+    |                      |
+    |                 A × B matrices
+    |                      |
+    |                   TRAIN
+    |                      |
+    +----------+-----------+
+               |
+               v
+         Specialized model</pre>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 12 -->
+  <section class="segment" id="s12" style="--seg:#2E8B82">
+    <div class="segment-head"><span class="segment-offset">offset 11</span><h2>The production decision tree & complete mental model</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q25</span><span class="q-text">You have a business problem. Someone says "Let's fine-tune an open-source model." What questions should you ask before agreeing? What should you try first before even considering fine-tuning? And if you do fine-tune, what evidence would tell you it was worth the effort?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>When should you fine-tune?</p>
+<pre class="sketch">                 START
+                   |
+                   v
+             Try zero-shot
+                   |
+                   v
+               Measure
+                   |
+                   v
+          Is performance enough?
+             /             \
+           YES              NO
+            |                |
+            v                v
+         STOP         Do you have labeled
+                      training data?
+                         /       \
+                       NO         YES
+                       |           |
+                       v           v
+                  collect data   Fine-tune
+                                   |
+                                   v
+                              Evaluate against
+                                baseline
+                                   |
+                         +---------+---------+
+                         |                   |
+                      BETTER               WORSE
+                         |                   |
+                         v                   v
+                    Production          Diagnose</pre>
+        <p>This is much better than:</p>
+<pre class="sketch">"We have an open-source model,
+let's fine-tune it."</pre>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q26</span><span class="q-text">Now, synthesize everything you've learned. Starting from a business task, walk through the entire journey: zero-shot → baseline → evaluation → decision → (if needed) data collection → LoRA → training → evaluation → comparison → deployment or iteration. What does the complete flow look like?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Put everything together:</p>
+<pre class="sketch">                         BUSINESS TASK
+                              |
+                              v
+                    ┌───────────────────┐
+                    │  ZERO-SHOT FIRST  │
+                    └─────────┬─────────┘
+                              |
+                              v
+                         BASELINE
+                              |
+                              v
+                    Performance sufficient?
+                         /          \
+                       YES           NO
+                        |             |
+                        v             v
+                      DONE      Labeled data?
+                                    /   \
+                                  NO     YES
+                                  |       |
+                                  v       v
+                              collect   LoRA
+                                data      |
+                                          v
+                                  MODEL + ADAPTER
+                                          |
+                                  +-------+-------+
+                                  |               |
+                              Base Model        LoRA
+                              FROZEN          TRAINABLE
+                                  |               |
+                                  +-------+-------+
+                                          |
+                                          v
+                                      TRAINING
+                                          |
+                                          v
+                                      EVALUATE
+                                          |
+                                          v
+                                  Compare baseline
+                                          |
+                              +-----------+-----------+
+                              |                       |
+                           BETTER                    WORSE
+                              |                       |
+                              v                       v
+                         Production              Under/overfit?
+                                                      |
+                                                      v
+                                                   Iterate</pre>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 13 -->
+  <section class="segment" id="s13" style="--seg:#C1543A">
+    <div class="segment-head"><span class="segment-offset">offset 12</span><h2>The 8 lessons to carry forward</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q27</span><span class="q-text">If you had to distill everything you've learned into 8 key takeaways—principles that apply not just to LoRA but to AI engineering generally—what would they be? Think about: the nature of fine-tuning, the purpose of LoRA, evaluation, baselines, and the importance of disciplined experimentation.</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <h4>1. Fine-tuning is specialization, not rebuilding</h4>
+<pre class="sketch">Generalist
+    +
+Small adaptation
+    =
+Specialist</pre>
+
+        <h4>2. LoRA is a constrained update</h4>
+<pre class="sketch">W' = W + ΔW
+
+LoRA:
+ΔW ≈ A × B</pre>
+
+        <h4>3. PEFT and LoRA aren't synonyms</h4>
+<pre class="sketch">PEFT
+ ├── LoRA
+ ├── adapters
+ └── other techniques</pre>
+
+        <h4>4. Training and inference are fundamentally different</h4>
+<pre class="sketch">Inference = forward
+
+Training = forward + loss + backward + update</pre>
+
+        <h4>5. Baseline before optimization</h4>
+<pre class="sketch">Measure
+  ↓
+Change
+  ↓
+Measure again</pre>
+
+        <h4>6. Accuracy alone is dangerous</h4>
+<pre class="sketch">Accuracy
+   +
+Precision
+   +
+Recall
+   +
+F1
+   +
+Confusion Matrix</pre>
+
+        <h4>7. Fine-tuning can make the model worse</h4>
+<pre class="sketch">Fine-tuning
+     |
+     +--> improvement
+     |
+     +--> underfitting
+     |
+     +--> overfitting
+     |
+     +--> regression</pre>
+
+        <h4>8. The most transferable lesson</h4>
+<pre class="sketch">        NEVER TRUST
+        "it looks better"
+
+               |
+               v
+
+        DEFINE BASELINE
+               |
+               v
+        MEASURE CHANGE
+               |
+               v
+        VERIFY BUSINESS
+        RELEVANT METRICS
+               |
+               v
+          THEN DEPLOY</pre>
+        <p>The source's deepest lesson is therefore not really <b>"learn LoRA."</b></p>
+        <p>It is:</p>
+<pre class="sketch">                 AI EXPERIMENT
+                      |
+                      v
+                  HYPOTHESIS
+                      |
+                      v
+                   BASELINE
+                      |
+                      v
+                  CHANGE ONE
+                      |
+                      v
+                  MEASURE
+                      |
+                      v
+                 COMPARE
+                      |
+                      v
+               ACCEPT / REJECT</pre>
+        <p>That discipline applies equally to <b>RAG, fine-tuning, model selection, prompt engineering, agents, and LLM evaluation.</b></p>
+      </div></div></div>
+  </section>
+
+  <footer>
+    // final compression: fine-tuning is a small adaptation on a frozen generalist, not rebuilding intelligence — and unlike a rules engine, it changes a probability distribution, not deterministic logic →
+    training differs from inference by adding loss, backprop, gradients, and optimizer state, which is why GPU memory explodes → quantization shrinks the frozen base model's memory footprint, while trainable LoRA parameters still need higher precision →
+    LoRA freezes W and learns a low-rank ΔW ≈ A×B, cutting a 200M-parameter update to ~240K by searching a constrained adaptation space instead of the full one, typically attached at the attention Q/K/V/O projections →
+    PEFT is the family, LoRA is one member of it → chat templates are a model-specific, learned protocol — get them wrong and the model won't crash, it will just silently degrade, which is worse than a loud API error →
+    always establish a zero-shot baseline before fine-tuning, because accuracy alone hides class imbalance — precision, recall, F1, and the confusion matrix reveal what accuracy conceals, in both sentiment analysis and fraud detection →
+    one epoch can underfit, too many can overfit, and the right count is empirical, found only by running fine-tuning as a genuine experiment loop → LoRA adapters are cheap to store and swap, enabling one frozen base model to serve many routed specialists →
+    and the deepest lesson isn't LoRA itself — it's never trusting "it looks better," and always defining a baseline, measuring the change, and verifying business-relevant metrics before deploying anything.
+  </footer>
+
+</div>
+
 <script>
-const SECTIONS=[
- {id:"intro",label:"START",c:"ink"},
- {id:"why",label:"WHY FINE-TUNE",c:"teal"},
- {id:"data",label:"DATA+FORMAT",c:"gold"},
- {id:"lora",label:"LORA MATH",c:"violet"},
- {id:"result",label:"RESULT",c:"rose"},
- {id:"end",label:"WRAP-UP",c:"amber"}
-];
-const S=[
-
-{sec:"intro",c:"ink",eyebrow:"LLM Fine-Tuning Project",t:"a",h:"Fine-Tuning Open-Source LLMs — <em>PEFT, LoRA &amp; Financial Sentiment</em>",body:`
-<p>A hands-on fine-tuning project — taking a small open-source model (Gemma 1B) from zero-shot baseline to a LoRA-fine-tuned sentiment classifier on financial news, using Hugging Face Transformers, PEFT, and TRL's SFT Trainer. Emphasis: what's reusable production reasoning versus what's ML-research detail.</p>
-<div class="note"><b>How to use:</b> "?" slides ask you to predict first. Press Next to compare. Recall quizzes close each section.</div>`},
-
-/* ---------- WHY FINE-TUNE ---------- */
-{sec:"why",c:"teal",eyebrow:"Framing",t:"q",q:`Training a base LLM from scratch cost the original lab hundreds of millions of dollars. Fine-tuning starts from that same base model. What does it actually mean to <b>&quot;reuse&quot;</b> hundreds of millions of dollars of work with a tiny dataset of your own?`},
-
-{sec:"why",c:"teal",eyebrow:"Framing",t:"a",h:"Why fine-tune instead of training from scratch?",body:`
-<div class="ascii">BASE MODEL (generalist, cost $100M+ to train, frozen)
-   | asked: "joint pain + skin sensitivity?"
-   v
-vague answer: "could be an allergy"
-
-SAME base model + fine-tuned on medical reports/notes
-   | asked the SAME question
-   v
-specific answer: "could be lupus -- see a rheumatologist"
-
-same architecture, same starting weights --
-only the fine-tuning DATA reshapes what it reaches for
-
-TRAINING FROM SCRATCH        FINE-TUNING
-learn ALL weights from       start from an ALREADY-trained
-nothing                      model, adjust a small slice
-massive data + compute       small task-specific dataset
-$100M+ territory             affordable, even free-tier GPU</div>
-<div class="note">It means you're not teaching the model language, grammar, or general world knowledge again — all of that stays exactly as it was, frozen. You're only nudging a small slice of it toward a specific behavior using your much smaller dataset. That's the entire economic case for fine-tuning: you get to stand on hundreds of millions of dollars of prior training for the cost of a much smaller, targeted dataset.</div>`,
-cto:[`You already reason about "generalist platform, specialist configuration" in fintech — a rules engine tuned by config to act like a specialist tool. Where does that analogy break down? It holds structurally — the "engine" stays the same, only a targeted slice gets adjusted. It breaks down on predictability: a config change does exactly what you wrote, every time. A fine-tune reshapes probabilistic behavior — you're nudging what the model tends to reach for, not programming an exact rule, so the same "specialist configuration" can behave differently across similar inputs in a way a rules engine never would.`]},
-
-{sec:"why",c:"teal",eyebrow:"Tech Stack",t:"q",q:`Running a model (inference) worked fine on a free-tier GPU, even a CPU in a pinch. Fine-tuning the <b>SAME</b> model absolutely requires a real GPU. What's actually different about the two workloads?`},
-
-{sec:"why",c:"teal",eyebrow:"Tech Stack",t:"a",h:"The toolchain — PEFT, TRL, quantization, GPU",body:`
-<div class="ascii">Tool                Role
-Transformers        Load pre-trained models and tokenizers
-PEFT                Adapt large models by training only a small
-                     subset of parameters -- affordable on
-                     consumer/free-tier GPUs
-TRL                 Full training toolkit; here its SFT Trainer
-                     (also supports DPO, reward modeling, GRPO)
-bitsandbytes        4-bit quantization -- cuts memory dramatically
-scikit-learn        Evaluation: accuracy/precision/recall/F1/matrix</div>
-<div class="ascii">INFERENCE (running)              FINE-TUNING (training)
-input -> forward pass -> output   input -> forward pass -> output
-(weights frozen, one              compare to TRUE label
- direction, done)                       |
-                                   push error BACKWARD through
-                                   every layer (backpropagation)
-                                         |
-                                   update weights (repeat per
-                                   example, per epoch)
-light enough for a CPU            needs a real GPU (T4 used here)</div>
-<div class="note">Inference is a single forward pass with frozen weights — plug in the input, read off the output, done. Fine-tuning adds backpropagation: compute how wrong the prediction was, then push that error backward through every layer to compute how each weight should change. A massive matrix-multiplication workload running in both directions, repeated over every example and epoch — categorically heavier than a single forward pass.</div>`,
-cto:[`4-bit quantization gives an 8x memory reduction for "surprisingly little" quality loss. If that's such a cheap win, why would anyone ever train or run a model at full 32-bit precision? Because "surprisingly little" isn't zero, and it compounds. A single quantized inference pass loses a little precision that rarely matters. During TRAINING, small precision errors accumulate across millions of gradient updates and can measurably hurt the final model — which is why quantization here is mainly used for loading/inference-time memory, while the LoRA weights being trained are still adjusted at higher precision.`]},
-
-{sec:"why",c:"teal",eyebrow:"Why Fine-Tune · Recall",t:"r",h:"Quick recall: why fine-tune, and the toolchain",qs:[
-{q:`What actually gets reused when you fine-tune instead of training from scratch?`,a:`The base model's language, grammar, and general world knowledge — all frozen and untouched. Fine-tuning data only reshapes a small slice toward a specific behavior, letting you stand on hundreds of millions of dollars of prior training for a much smaller cost.`},
-{q:`Why does fine-tuning need a real GPU while inference can limp along on CPU?`,a:`Inference is one forward pass, frozen weights, done. Fine-tuning adds backpropagation — pushing error backward through every layer to compute weight updates, repeated per example and per epoch — categorically heavier computation in both directions.`}]},
-
-/* ---------- DATA + FORMAT ---------- */
-{sec:"data",c:"gold",eyebrow:"Data",t:"q",q:`A model could hit 70% "accuracy" on this dataset just by always guessing "positive" if positive samples dominate. Does a high accuracy number alone tell you whether the model learned to classify negative and neutral — or could it be <b>hiding total failure</b> on those classes?`},
-
-{sec:"data",c:"gold",eyebrow:"Data",t:"a",h:"The dataset — financial news sentiment, and the imbalance problem",body:`
-<div class="ascii">~4,800 rows: text (news sentence) + sentiment (pos/neg/neutral)
-Split 90/10 train/test, shuffled first, fixed seed
-
-class counts (roughly):
-  positive: ***************************  ~1,300
-  negative: **********                   ~500
-  neutral:  (also underrepresented)
-
-THE TRAP
-model always guesses "positive"
-   | accuracy LOOKS fine (majority class dominates the average)
-   | but negative/neutral predictions are basically worthless
-   v accuracy alone HIDES this -- need per-class numbers to see it
-
-self-driving car analogy: trained on 10M cars, 1,000 bikes
---> looks accurate overall, but badly misses bikes specifically</div>
-<div class="note">It can absolutely hide total failure. Accuracy is a single blended number across all classes — a model that always guesses the majority class scores deceptively high while being useless on the minority classes. This dataset's ~1,300 positive vs ~500 negative is exactly that setup. You only catch it by looking at PER-CLASS numbers — precision, recall, F1, confusion matrix — not one headline figure.</div>`,
-cto:[`Fraud detection has the exact same imbalance shape — fraud is always the minority class. If a fraud model reports "99.9% accurate," what's the FIRST follow-up question before trusting that number? What's the recall on the fraud class specifically — not the accuracy. A model predicting "not fraud" on every transaction scores 99.9%+ accuracy if fraud is rare, while catching zero fraud, worthless despite the impressive headline. The right follow-up isn't "how accurate" but "how many actual fraud cases did it catch, and how many false alarms" — same discipline, real money on the line.`]},
-
-{sec:"data",c:"gold",eyebrow:"Formatting",t:"q",q:`Gemma and DeepSeek each expect their own special-token format. Mismatched, training won't crash — it'll quietly teach the model something slightly wrong. Why would a model even <b>care</b> about matching its own original format?`},
-
-{sec:"data",c:"gold",eyebrow:"Formatting",t:"a",h:"Chat templates — speaking the model's native &quot;language&quot;",body:`
-<div class="ascii">Gemma format:
-&lt;bos&gt;&lt;start_of_turn&gt;user
-Classify the sentiment... [sentence]&lt;end_of_turn&gt;
-&lt;start_of_turn&gt;model
-positive&lt;end_of_turn&gt;
-
-DeepSeek format (different special tokens entirely):
-&lt;special token&gt; beginning-of-sequence marker
-Classify the sentiment... [sentence]
-[model turn marker]
-positive [end-of-sequence marker]</div>
-<div class="ascii">raw pair: text="Stock X jumps", sentiment="positive"
-   | tokenizer.apply_chat_template(...)
-  /                          \\
-Gemma model                DeepSeek model
-&lt;start_of_turn&gt;user...   &lt;special token&gt;...
-&lt;start_of_turn&gt;model         [model turn marker]
-positive&lt;end_of_turn&gt;         positive [eos]
-
-SAME call interface, COMPLETELY different actual output --
-each model only recognizes ITS OWN turn markers</div>
-<div class="note">Because the model didn't just learn language during pretraining — it learned to recognize ITS OWN turn markers as the signal for "this is where I should pay attention / this is where my reply starts." Feed it text formatted for a different model's tokens, and those markers are meaningless noise to it. The words are the same, but the structural cues the model relies on to separate "instruction" from "my answer" are gone or wrong, which degrades training even though nothing crashes.</div>`,
-cto:[`The Vercel course's OpenAI-style client hid every provider's formatting differences behind one consistent interface. Here, apply_chat_template() exists too — does it hide the difference the same way, or does it just relocate where you need to notice it? It relocates the problem. A chat API client hides formatting because the provider handles it server-side. apply_chat_template() does the OPPOSITE — it exposes the model-specific format directly into the text you're about to train on, so you must know which model you're targeting or you'll silently generate the wrong training format.`]},
-
-{sec:"data",c:"gold",eyebrow:"Baseline",t:"q",q:`Before spending GPU time fine-tuning anything, this project first measures the <b>UN-fine-tuned</b> model's performance. If you skipped that step, what specific question would you be unable to answer afterward?`},
-
-{sec:"data",c:"gold",eyebrow:"Baseline",t:"a",h:"Zero-shot evaluation — measuring before you improve",body:`
-<div class="ascii">base Gemma-1B, ZERO fine-tuning, run on test set:
-  accuracy: ~45-46%
-  neutral-class recall: 0.16  (very weak)
-  212 out of ~480 misclassified
-
-this number is the LINE fine-tuning has to beat --
-without it, "fine-tuned = 62% accuracy" means NOTHING
-
-PROMPT SENSITIVITY EXPERIMENT:
-  detailed prompt (lists valid labels explicitly)
-       --> model answers positive/negative/neutral, reliably
-  simplified prompt (label list removed)
-       --> model starts answering "unknown" -- not even one
-           of the three valid classes anymore
-  conclusion: SMALL models are especially sensitive to exact
-  prompt wording -- precise instructions are the difference
-  between reliable and broken output</div>
-<div class="note">You'd have no way to tell whether fine-tuning actually helped. Without a baseline, "the fine-tuned model got 62% accuracy" is a number floating with no reference point. The fine-tuned model in this project actually performed WORSE than baseline — a fact that would be invisible without this exact step. "Measure before you optimize" isn't ML ceremony, it's the only way to know if the optimization worked at all.</div>`,
-cto:[`Dropping ONE detail (an explicit label list) broke a small model's output entirely. If cost pressure ever pushed a tool toward a smaller/cheaper model, would you expect existing prompts (written for a frontier model) to just work? Expect real rework, not a drop-in swap. Tolerance for vague or implicit instructions shrinks with model size — a frontier model can often infer what you meant; a smaller model needs the constraint spelled out explicitly or it drifts into unreliable output. Treat any move to a smaller model as a prompt-engineering project in its own right.`]},
-
-{sec:"data",c:"gold",eyebrow:"Data &amp; Format · Recall",t:"r",h:"Quick recall: data, formatting &amp; baseline",qs:[
-{q:`Why can a high accuracy number hide total failure on minority classes?`,a:`Accuracy is one blended number across all classes — always predicting the majority class scores deceptively high while being useless on minority classes. Only per-class precision/recall/F1 exposes this (same shape as fraud detection).`},
-{q:`Why does a model care about matching its OWN chat template format?`,a:`It learned to recognize its own turn markers as the signal for "pay attention here / my reply starts here" during pretraining. A different model's tokens are meaningless noise to it — training degrades even though nothing crashes.`},
-{q:`What specific question becomes unanswerable if you skip the zero-shot baseline?`,a:`Whether fine-tuning actually helped at all — a post-fine-tuning accuracy number has no reference point without it. This project's own fine-tune came out WORSE than baseline, invisible without this step.`}]},
-
-/* ---------- LORA MATH ---------- */
-{sec:"lora",c:"violet",eyebrow:"Core Concept",t:"q",q:`A weight matrix has 200 million numbers. LoRA claims it can approximate the needed <b>CHANGE</b> to that matrix using two much smaller matrices instead. Before seeing the math — does that sound like it should lose real capability?`},
-
-{sec:"lora",c:"violet",eyebrow:"Core Concept",t:"a",h:"LoRA — the math behind &quot;fine-tune 0.3% of the model&quot;",body:`
-<div class="ascii">FULL FINE-TUNE                   LoRA (rank r=8)
-update ALL 200,000,000           freeze the original matrix
-numbers in the weight            add TWO tiny matrices:
-matrix directly                    A: 10,000 x 8    = 80,000
-                                    B:      8 x 20,000 = 160,000
-                                  train ONLY A and B (240,000)
-                                  A x B approximates the update
-
-200,000,000 ----> 240,000  =  ~833x fewer trainable params
-
-REAL PROJECT RESULT (Gemma-1B, ~1 billion total params):
-  only ~3 million trainable  =  0.29% of the whole model
-  applied to attention layers (Q, K, V, O projections)
-  everything else stays frozen
-
-rank (r) is a DIAL: higher r -> more capacity, more cost
-                     lower r  -> less capacity, cheaper/faster</div>
-<div class="note">It does lose some theoretical capability — a low-rank update genuinely can't represent every possible change the full matrix could. But the bet LoRA makes, and that works in practice, is that the ACTUAL change needed for most fine-tuning tasks doesn't need the full matrix's expressiveness — task adaptation tends to live in a much lower-dimensional space than the full weight matrix. Trading some theoretical capacity for an ~833&times; parameter reduction turns out to be a very good deal for most real tasks.</div>`,
-cto:[`An 833x parameter reduction is the difference between "needs a datacenter" and "runs on a free Colab GPU." If interviewers asked WHY that reduction doesn't just gut model quality, could you explain the mechanism, not just quote the ratio? It's a low-rank approximation — mathematically the same family of idea as dimensionality reduction elsewhere in data engineering: the actual adaptation needed for a specific task lives in a much lower-dimensional space than the full weight matrix, so constraining the update to rank r still captures most of what matters. That's the difference between having memorized a number and understanding why LoRA is a legitimate engineering trade-off.`]},
-
-{sec:"lora",c:"violet",eyebrow:"Training",t:"q",q:`After training, the pipeline saves only the small LoRA matrices (A and B) — <b>NOT</b> a full new copy of the 1-billion-parameter model. What does that imply about what you need on disk to use a fine-tuned model?`},
-
-{sec:"lora",c:"violet",eyebrow:"Training",t:"a",h:"Running the fine-tune — SFT Trainer and hyperparameters",body:`
-<div class="ascii">base model (quantized, frozen)
-   | LoraConfig(rank r, target modules, dropout)
-PEFT model = base model + LoRA adapters attached
-   | SFTTrainer(model, args, train_dataset, peft_config)
-   | trainer.train()
-
-training loss over ONE epoch:
-  3.5 -> 2.0 -> 1.7 -> 1.6 -> 1.4 (bumpy, not smooth --
-                                    expected/noisy for one epoch)
-   | SAVE: only the small adapter (A,B matrices) -- NOT a
-   |       whole new copy of the model
-
-EPOCH COUNT MATTERS:
-  1 epoch  -----> "to keep cost down" -- risk: UNDER-trained,
-                   can come out WORSE than zero-shot baseline
-  4-5+ epochs --> typically needed for real improvement
-  too many, no early stopping --> OVERFITTING risk</div>
-<div class="note">You need the original frozen base model PLUS the tiny adapter — the adapter alone is useless without the base model it was trained against, since it's only a small delta, not the whole capability. This is also why LoRA adapters are so easy to distribute and swap: the saved artifact is megabytes, not gigabytes, so you could keep several task-specific adapters around for one base model without storing multiple full copies.</div>`,
-cto:[`This run used exactly one epoch "to keep cost down," and it came out worse than doing nothing. Is "run fewer epochs" ever actually cheaper once you count the whole picture? Often not. A fine-tune that performs worse than the untouched base model isn't a cheaper result — it's a wasted training run plus the cost of catching that it underperformed (needs the baseline comparison) plus the eventual re-run at 4-5 epochs to actually improve. "Fewer epochs" only saves money if you were always going to check against baseline and stop the moment it's clearly not helping.`]},
-
-{sec:"lora",c:"violet",eyebrow:"LoRA Math · Recall",t:"r",h:"Quick recall: LoRA math &amp; training",qs:[
-{q:`Recite the worked LoRA example: matrix sizes and the reduction factor.`,a:`Original 10,000&times;20,000 = 200,000,000 params. LoRA rank 8: A (10,000&times;8=80,000) + B (8&times;20,000=160,000) = 240,000 trainable — an <b>~833&times;</b> reduction. Real project: 0.29% of Gemma-1B trainable, applied to attention Q/K/V/O.</p>`},
-{q:`Why is LoRA's ~833x parameter reduction not a trick, but a legitimate trade-off?`,a:`It's a low-rank approximation — the bet that the actual adaptation a task needs lives in a much lower-dimensional space than the full weight matrix, so constraining the update to rank r still captures most of what matters, at real (but acceptable) cost to theoretical capacity.`},
-{q:`What do you need on disk to actually USE a saved LoRA adapter?`,a:`The original frozen base model PLUS the tiny adapter — the adapter alone represents only a small delta and is useless without the base model it was trained against.`}]},
-
-/* ---------- RESULT ---------- */
-{sec:"result",c:"rose",eyebrow:"Result",t:"q",q:`Given everything you now know about one-epoch training being risky — do you predict the fine-tuned model beat the zero-shot baseline, matched it, or lost to it? If it lost, does that mean LoRA "doesn't work"?`},
-
-{sec:"result",c:"rose",eyebrow:"Result",t:"a",h:"The fine-tuned model performed slightly WORSE — and that's the real lesson",body:`
-<div class="ascii">zero-shot BASELINE        fine-tuned (1 epoch)
-accuracy:      ~45-46%    ~4% LOWER
-misclassified: 212/~480   258/~480
-precision:     --         up slightly on SOME classes
-recall:        --         down enough to drag accuracy
-                           below baseline overall
-
-WHY? only ONE epoch run ("to keep cost down")
-     --> LoRA adapters never got enough passes over the
-         data to converge on anything useful
-     --> a SEPARATE 4-5 epoch run (not the live demo) DID
-         show real improvement over baseline
-
-THE LESSON:
-  fine-tuning is not automatically an upgrade.
-  it's an EXPERIMENT -- it can make things worse
-  (under-training) just as easily as an over-trained
-  model can memorize and generalize worse (overfitting)
-  ALWAYS compare against baseline before trusting the result</div>
-<div class="note">It lost — accuracy dropped ~0.04, misclassifications rose from 212 to 258. But that does NOT mean fine-tuning doesn't work. It means one epoch wasn't enough training for the LoRA adapters to converge on anything useful — under-training, not a flaw in the approach. A separate longer run did show real improvement. The honest lesson: fine-tuning is an experiment with a real chance of making things worse, not a step that automatically helps just because you did it.</div>`,
-cto:[`This project could have just NOT shown you the failed run and only presented the successful 4-5 epoch version. Why is watching the failure more valuable than seeing only the polished success? Because the failure is the actual production lesson, and the success alone would have hidden it. Seeing only a winning result teaches "fine-tuning improves things" — true often enough to be dangerous, because the one time it's false is exactly when you need to have already internalized that fine-tuning can regress performance. Watching it fail live builds the actual discipline: never assume "we fine-tuned it" means "it's better" — always demand the baseline comparison and a go/no-go decision based on measured results.`]},
-
-{sec:"result",c:"rose",eyebrow:"Result · Recall",t:"r",h:"Quick recall: the result",qs:[
-{q:`State the actual accuracy delta and misclassification counts, baseline vs. fine-tuned.`,a:`Baseline ~45-46% accuracy, 212/~480 misclassified. Fine-tuned (1 epoch): accuracy ~0.04 LOWER, 258/~480 misclassified — a regression, not an improvement.`},
-{q:`Why does the fine-tune losing NOT mean "LoRA doesn't work"?`,a:`Only one epoch was run to keep cost down — the adapters never got enough passes to converge on anything useful. This is under-training, not a flaw in LoRA itself; a separate 4-5 epoch run showed real improvement.`}]},
-
-/* ---------- WRAP-UP ---------- */
-{sec:"end",c:"amber",eyebrow:"Wrap-up",t:"q",q:`Across this whole project — imbalanced data, prompt sensitivity, LoRA's rank trade-off, the under-trained result — one instinct kept showing up in different clothes. What's the <b>ONE habit</b> that would have caught every single one of these issues?`},
-
-{sec:"end",c:"amber",eyebrow:"Wrap-up",t:"a",h:"Project recap — what was actually learned",body:`
-<div class="ascii">base model (generalist, pre-trained, frozen)
-   | load via Transformers, quantize with bitsandbytes
-   | load + split + check class balance
-   | format with apply_chat_template, model-specific
-   | ZERO-SHOT BASELINE measured FIRST -- ~45-46%
-   | LoRA: freeze base, train tiny A/B matrices
-   | SFTTrainer.train(), save the small adapter
-   | re-evaluate, COMPARE to baseline
-   v
-result: WORSE than baseline this run (under-trained, 1 epoch)
--- and that's the point: fine-tuning is an experiment,
-   not an automatic upgrade. Always measure, always compare.</div>
-<div class="note">Measure before you trust. Check per-class numbers instead of trusting accuracy. Test the model's actual behavior before assuming a prompt is "good enough." Compare against a real baseline before assuming fine-tuning helped. Every failure mode in this project is the same root cause wearing a different costume: trusting a plausible-looking result instead of measuring it against a reference point. That's the transferable skill here, more than any specific LoRA math.</div>
-<ol style="color:#c9c7bf;line-height:1.8;padding-left:20px;font-size:.92rem">
-<li>Fine-tuning rationale: generalist &rarr; specialist, small task-specific dataset on a pre-trained base</li>
-<li>Tech stack: Transformers, PEFT, TRL/SFT Trainer, bitsandbytes, scikit-learn</li>
-<li>Data prep: load, inspect, train/test split, check class balance</li>
-<li>Chat-template formatting: model-specific special tokens (Gemma vs. DeepSeek)</li>
-<li>Zero-shot baseline established BEFORE fine-tuning (~45-46% acc)</li>
-<li>LoRA theory: low-rank A/B matrices approximate weight updates (here: 0.29% of the model)</li>
-<li>Training run via SFTTrainer, one epoch (demo-scale)</li>
-<li>Evaluation showed a WORSE result than baseline — an honest lesson in under-training risk</li>
-</ol>`},
-
-{sec:"end",c:"amber",eyebrow:"Final Recall",t:"r",h:"Final recall: questions worth carrying forward",qs:[
-{q:`Would a small, cheaply fine-tuned open-source classifier ever beat a general-purpose frontier-model API call for a narrow, repeated internal classification task?`,a:`Plausibly yes for high-volume, narrow, repeated tasks where the per-call API cost dominates — a correctly-trained (multi-epoch, baseline-validated) small LoRA-adapted model can match or beat a frontier API's classification accuracy at a fraction of the ongoing inference cost. The precondition is doing the fine-tune properly: baseline first, enough epochs, measured comparison — exactly what this project's failed run illustrates skipping.`},
-{q:`What's a practical mental checklist for choosing zero-shot inference vs. fine-tuning for a given internal AI use case?`,a:`Start with zero-shot: it's cheap, immediate, no training needed — measure its baseline first regardless. Only reach for fine-tuning if the baseline genuinely falls short AND you have a labeled dataset AND you can commit to enough epochs plus a real baseline comparison before trusting the result — otherwise you risk exactly this project's under-trained regression.`}]}
-];
-
-let i=0;
-const stage=document.getElementById('stage'),dots=document.getElementById('dots'),
-tabs=document.getElementById('tabs'),counter=document.getElementById('counter'),
-prevBtn=document.getElementById('prevBtn'),nextBtn=document.getElementById('nextBtn');
-SECTIONS.forEach(s=>{const b=document.createElement('button');b.className='tab';b.dataset.c=s.c;b.dataset.sec=s.id;b.textContent=s.label;b.onclick=()=>go(S.findIndex(x=>x.sec===s.id));tabs.appendChild(b);});
-S.forEach((sl,k)=>{const d=document.createElement('span');d.className='dot'+(sl.t==='q'?' q':'');d.tabIndex=0;d.setAttribute('role','button');d.setAttribute('aria-label','Slide '+(k+1));d.onclick=()=>go(k);d.onkeydown=e=>{if(e.key==='Enter')go(k)};dots.appendChild(d);});
-function lens(cto,dir){
-  let out='';
-  if(cto&&cto.length) out+='<details class="lens"><summary>CTO LENS</summary><div class="body"><ul class="pts">'+cto.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
-  if(dir&&dir.length) out+='<details class="lens dir"><summary>DIRECTOR LENS</summary><div class="body"><ul class="pts">'+dir.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
-  return out;
-}
-function go(k){
-  i=Math.max(0,Math.min(S.length-1,k));
-  const s=S[i];stage.innerHTML='';
-  const el=document.createElement('div');el.className='slide';
-  try{
-    if(s.t==='q'){
-      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div>'
-        +'<div class="qcard"><div class="qlabel">Think first &middot; predict before you peek</div>'
-        +'<div class="qtext">'+s.q+'</div>'
-        +'<div class="qsub">Form your answer in your head. Then press Next to compare.</div></div>';
-    } else if(s.t==='r'){
-      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'
-        +'<p>Answer from memory first. Tap a question to reveal the answer.</p>'
-        +s.qs.map(x=>'<details class="recall-item"><summary>'+x.q+'</summary><div class="ans">'+x.a+'</div></details>').join('')
-        +'<div class="recall-hint">Struggled on any? Jump back with the tabs above, then return.</div>';
-    } else {
-      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'+s.body+(((s.cto&&s.cto.length)||(s.dir&&s.dir.length))?lens(s.cto,s.dir):'');
-    }
-  }catch(err){
-    el.innerHTML='<div class="eyebrow rose">Render error</div><h2>Slide '+(i+1)+' failed to render</h2><p>'+String(err&&err.message||err)+'</p>';
+function toggleTheme(){
+  const body = document.body;
+  const btn = document.getElementById('themeBtn');
+  body.classList.toggle('dark-theme');
+  if(body.classList.contains('dark-theme')){
+    btn.innerHTML = '☀&nbsp; Light mode';
+  } else {
+    btn.innerHTML = '☾&nbsp; Dark mode';
   }
-  stage.appendChild(el);
-  counter.textContent=(i+1)+' / '+S.length;
-  document.querySelectorAll('.dot').forEach((d,k2)=>d.classList.toggle('on',k2===i));
-  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.sec===s.sec));
-  prevBtn.disabled=(i===0);
-  nextBtn.textContent=(i===S.length-1)?'Done \u2713':'Next \u2192';
-  nextBtn.disabled=(i===S.length-1);
-  document.querySelector('main').scrollTop=0;window.scrollTo(0,0);
 }
-prevBtn.onclick=()=>go(i-1);nextBtn.onclick=()=>go(i+1);
-document.addEventListener('keydown',e=>{if(e.target.closest('details'))return;if(e.key==='ArrowRight')go(i+1);if(e.key==='ArrowLeft')go(i-1);});
-go(0);
+function toggle(headEl){
+  const card = headEl.closest('.q-card');
+  const answer = card.querySelector('.q-answer');
+  const isOpen = card.classList.contains('open');
+  if(isOpen){
+    card.classList.remove('open');
+    answer.style.maxHeight = null;
+    headEl.querySelector('.q-toggle').textContent = 'reveal';
+  } else {
+    card.classList.add('open');
+    answer.style.maxHeight = answer.scrollHeight + 'px';
+    headEl.querySelector('.q-toggle').textContent = 'hide';
+  }
+}
 </script>
 </body>
 </html>
