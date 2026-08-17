@@ -2,454 +2,1612 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Architects Lab · Reasoning Models &amp; A Framework for Choosing the Right LLM</title>
+<title>Reasoning Models & LLM Selection — Interactive Recall Learning Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0d0f14; --panel:#151823; --panel2:#1b1f2e;
-    --ink:#e8e6df; --dim:#8b8fa3;
-    --gold:#d4af5a; --gold-soft:#b8964a;
-    --teal:#5ad4c8; --rose:#d47a8a; --violet:#9a8ad4; --amber:#d4915a;
-    --line:#2a2f42;
-    --mono:'Courier New', ui-monospace, monospace;
+    --paper:#FAF9F5;
+    --panel:#FFFFFF;
+    --panel-2:#F2F0E8;
+    --border:#DEDACC;
+    --text:#242420;
+    --muted:#75736A;
   }
-  *{margin:0;padding:0;box-sizing:border-box}
-  html,body{height:100%}
-  body{background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif;display:flex;flex-direction:column;min-height:100vh}
-  header{padding:16px 26px 12px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
-  header .k{font-family:var(--mono);font-size:.68rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase}
-  header h1{font-size:1rem;font-weight:normal}
-  header .count{margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--dim)}
-  .tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
-  .tab{flex:1;min-width:110px;padding:9px 10px;text-align:center;font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;color:var(--dim);border-right:1px solid var(--line);cursor:pointer;white-space:nowrap;transition:.2s;background:transparent;border-top:none;border-bottom:none;border-left:none}
-  .tab:last-child{border-right:none}
-  .tab.active{color:var(--bg);font-weight:bold}
-  .tab[data-c="gold"].active{background:var(--gold)}
-  .tab[data-c="teal"].active{background:var(--teal)}
-  .tab[data-c="rose"].active{background:var(--rose)}
-  .tab[data-c="violet"].active{background:var(--violet)}
-  .tab[data-c="amber"].active{background:var(--amber)}
-  .tab[data-c="ink"].active{background:var(--ink)}
-  main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px 96px;overflow-y:auto}
-  .slide{max-width:780px;width:100%;animation:fadeUp .4s ease both}
-  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-  @media (prefers-reduced-motion: reduce){.slide{animation:none}}
-  .eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px}
-  .eyebrow.gold{color:var(--gold)} .eyebrow.teal{color:var(--teal)} .eyebrow.rose{color:var(--rose)}
-  .eyebrow.violet{color:var(--violet)} .eyebrow.amber{color:var(--amber)} .eyebrow.ink{color:var(--dim)}
-  .slide h2{font-size:1.55rem;font-weight:normal;line-height:1.3;margin-bottom:14px}
-  .slide h2 em{font-style:italic;color:var(--gold)}
-  .slide p{color:#c9c7bf;line-height:1.75;font-size:1rem;margin-bottom:13px}
-  .slide p strong, .slide li strong{color:var(--ink)}
-  .slide code{font-family:var(--mono);font-size:.85em;background:var(--panel2);padding:2px 6px;border-radius:3px;color:var(--gold)}
-  .ascii{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:6px;padding:14px 16px;margin:14px 0;font-family:var(--mono);font-size:.74rem;line-height:1.5;color:#b9c2d8;overflow-x:auto;white-space:pre}
-  .ascii .hl{color:var(--gold)} .ascii .tl{color:var(--teal)} .ascii .rs{color:var(--rose)}
-  .note{border:1px dashed var(--gold-soft);border-radius:6px;padding:11px 15px;margin:14px 0;font-size:.9rem;color:#cfc9ae;line-height:1.65}
-  .note b{color:var(--gold)}
-  ul.pts{margin:10px 0 13px 2px;list-style:none}
-  ul.pts li{padding:6px 0 6px 21px;position:relative;color:#c9c7bf;line-height:1.6;font-size:.95rem}
-  ul.pts li::before{content:"\203A";position:absolute;left:4px;color:var(--gold);font-family:var(--mono)}
-  /* ---- Think First (question) slides ---- */
-  .qcard{border:2px solid var(--gold);border-radius:10px;background:linear-gradient(160deg,#1a1608,#151823);padding:30px 28px;margin:6px 0 18px;position:relative}
-  .qcard::before{content:"?";position:absolute;top:-20px;left:22px;width:38px;height:38px;border-radius:50%;background:var(--gold);color:var(--bg);font-family:var(--mono);font-weight:bold;font-size:1.3rem;display:flex;align-items:center;justify-content:center}
-  .qcard .qlabel{font-family:var(--mono);font-size:.64rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;margin-bottom:12px}
-  .qcard .qtext{font-size:1.25rem;line-height:1.55;color:var(--ink);font-style:italic}
-  .qcard .qsub{margin-top:14px;font-size:.86rem;color:var(--dim);font-style:normal;font-family:var(--mono)}
-  /* ---- lenses (CTO / Director) ---- */
-  details.lens{margin:10px 0;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
-  details.lens summary{cursor:pointer;padding:10px 14px;font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;color:var(--teal);list-style:none}
-  details.lens summary::before{content:"+ ";color:var(--gold)}
-  details.lens[open] summary::before{content:"\2212 "}
-  details.lens.dir summary{color:var(--rose)}
-  details.lens .body{padding:2px 16px 13px}
-  details.lens .body li{font-size:.9rem}
-  /* ---- recall quiz slides ---- */
-  .recall-item{border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:6px;background:var(--panel);margin:12px 0;overflow:hidden}
-  .recall-item summary{cursor:pointer;padding:13px 16px;font-size:.98rem;color:var(--ink);list-style:none;line-height:1.55}
-  .recall-item summary::before{content:"Q  ";font-family:var(--mono);color:var(--teal);font-weight:bold}
-  .recall-item .ans{padding:0 16px 13px;color:#b9c2b0;font-size:.92rem;line-height:1.65;border-top:1px dashed var(--line);padding-top:11px;margin:0 16px 13px;padding-left:0;padding-right:0}
-  .recall-item .ans b{color:var(--teal)}
-  .recall-hint{font-family:var(--mono);font-size:.7rem;color:var(--dim);margin-top:6px}
-  footer{position:fixed;left:0;right:0;bottom:0;background:rgba(13,15,20,.93);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:11px 20px;display:flex;align-items:center;gap:14px}
-  .dots{display:flex;gap:4px;flex:1;justify-content:center;flex-wrap:wrap}
-  .dot{width:6px;height:6px;border-radius:50%;background:var(--line);cursor:pointer;transition:.2s}
-  .dot.on{background:var(--gold);transform:scale(1.45)}
-  .dot.q{border:1px solid var(--gold);background:transparent}
-  .dot.q.on{background:var(--gold)}
-  button.nav{font-family:var(--mono);font-size:.78rem;letter-spacing:.1em;background:transparent;color:var(--ink);border:1px solid var(--line);padding:9px 18px;border-radius:5px;cursor:pointer;transition:.2s}
-  button.nav:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
-  button.nav.primary{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:bold}
-  button.nav.primary:hover{background:#e2c070}
-  button.nav:disabled{opacity:.25;cursor:default}
-  button.nav:focus-visible,.tab:focus-visible,.dot:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-  .hint{position:fixed;bottom:62px;right:18px;font-family:var(--mono);font-size:.6rem;color:var(--dim);letter-spacing:.1em}
-  @media(max-width:600px){.slide h2{font-size:1.28rem}.ascii{font-size:.58rem;padding:11px}.hint{display:none}.qcard .qtext{font-size:1.08rem}}
+  body.dark-theme{
+    --paper:#0F1115;
+    --panel:#161A20;
+    --panel-2:#1C2027;
+    --border:#2A2E37;
+    --text:#E7E3D8;
+    --muted:#8B8F98;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;background:var(--paper);color:var(--text);
+    font-family:'IBM Plex Sans',sans-serif;line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    transition:background .25s ease,color .25s ease;
+  }
+  .theme-toggle{
+    position:fixed;top:18px;right:18px;z-index:50;
+    display:flex;align-items:center;gap:8px;
+    background:var(--panel);border:1px solid var(--border);
+    color:var(--text);
+    font-family:'IBM Plex Mono',monospace;font-size:.75rem;font-weight:600;
+    padding:8px 14px;border-radius:20px;cursor:pointer;
+    box-shadow:0 2px 8px rgba(0,0,0,0.12);
+    transition:background .25s ease,color .25s ease;
+  }
+  .theme-toggle:hover{border-color:#9A62D6;}
+  body.dark-theme .q-answer-inner{color:#C7C2B4;}
+  body.dark-theme pre.sketch{color:#B7BAC2;}
+  body.dark-theme .q-tag{color:#0F1115;}
+  @media(max-width:600px){
+    .theme-toggle{top:auto;bottom:18px;right:18px;}
+  }
+  .wrap{max-width:1040px;margin:0 auto;padding:48px 32px 120px;}
+
+  .ledger-strip{
+    display:flex;height:10px;border-radius:3px;overflow:hidden;
+    margin-bottom:28px;border:1px solid var(--border);
+  }
+  .ledger-strip span{flex:1;border-right:1px solid var(--paper);}
+  .ledger-strip span:nth-child(1),.ledger-strip span:nth-child(11){background:#C9871F;}
+  .ledger-strip span:nth-child(2),.ledger-strip span:nth-child(12){background:#2E8B82;}
+  .ledger-strip span:nth-child(3),.ledger-strip span:nth-child(13){background:#C1543A;}
+  .ledger-strip span:nth-child(4){background:#7A63B8;}
+  .ledger-strip span:nth-child(5){background:#3480B0;}
+  .ledger-strip span:nth-child(6){background:#6B9A44;}
+  .ledger-strip span:nth-child(7){background:#C1547A;}
+  .ledger-strip span:nth-child(8){background:#B9971F;}
+  .ledger-strip span:nth-child(9){background:#279090;}
+  .ledger-strip span:nth-child(10){background:#9A62D6;}
+
+  header h1{
+    font-family:'Fraunces',serif;font-weight:600;
+    font-size:2.5rem;letter-spacing:-0.5px;margin:0 0 6px;color:var(--text);
+  }
+  header h1 em{color:#7A63B8;font-style:normal;}
+  header p.sub{color:var(--muted);font-size:1rem;margin:0 0 28px;max-width:68ch;}
+
+  .meta-bar{
+    display:flex;gap:14px;flex-wrap:wrap;
+    font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:var(--muted);
+    border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+    padding:12px 0;margin-bottom:36px;
+  }
+  .meta-bar b{color:#2E8B82;}
+
+  nav{
+    position:sticky;top:0;background:rgba(250,249,245,0.94);backdrop-filter:blur(6px);
+    padding:14px 0;margin:0 0 40px;border-bottom:1px solid var(--border);
+    display:flex;flex-wrap:wrap;gap:8px 16px;z-index:10;
+  }
+  body.dark-theme nav{background:rgba(15,17,21,0.94);}
+  nav a{
+    font-family:'IBM Plex Mono',monospace;font-size:.72rem;
+    text-decoration:none;padding:4px 8px;border-radius:4px;
+    border:1px solid transparent;font-weight:600;
+  }
+
+  section.segment{
+    margin-bottom:56px;scroll-margin-top:70px;
+    border-left:3px solid var(--seg,#2E8B82);padding-left:22px;
+  }
+  .segment-head{display:flex;align-items:baseline;gap:14px;margin-bottom:6px;}
+  .segment-offset{
+    font-family:'IBM Plex Mono',monospace;font-size:.85rem;
+    background:var(--panel-2);border:1px solid var(--border);
+    padding:2px 8px;border-radius:4px;color:var(--seg,#2E8B82);font-weight:600;
+  }
+  .segment-head h2{font-family:'Fraunces',serif;font-weight:600;font-size:1.55rem;margin:0;color:var(--text);}
+  .segment-note{color:var(--muted);font-size:.93rem;margin:8px 0 20px;max-width:70ch;}
+  .segment-note code, p code, li code{
+    font-family:'IBM Plex Mono',monospace;background:var(--panel-2);
+    padding:1px 6px;border-radius:3px;color:var(--seg,#C9871F);font-size:.88em;
+  }
+
+  pre.sketch{
+    background:var(--panel-2);border:1px solid var(--border);
+    border-left:3px solid var(--seg,#2E8B82);padding:14px 16px;
+    font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:#4A4A44;
+    overflow-x:auto;border-radius:4px;margin:0 0 14px;white-space:pre;
+  }
+  body.dark-theme pre.sketch{color:#B7BAC2;}
+
+  .q-card{
+    background:var(--panel);border:1px solid var(--border);
+    border-radius:6px;margin-bottom:12px;overflow:hidden;
+    box-shadow:0 1px 2px rgba(0,0,0,0.03);
+  }
+  .q-head{display:flex;align-items:flex-start;gap:12px;padding:16px 18px;cursor:pointer;user-select:none;}
+  .q-tag{
+    font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:#fff;
+    background:var(--seg,#C9871F);padding:2px 7px;border-radius:3px;
+    flex-shrink:0;margin-top:3px;font-weight:600;
+  }
+  .q-text{font-size:1rem;color:var(--text);flex:1;}
+  .q-toggle{
+    font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--muted);
+    flex-shrink:0;white-space:nowrap;border:1px solid var(--border);
+    padding:3px 9px;border-radius:20px;margin-top:1px;
+  }
+  .q-card.open .q-toggle{color:var(--seg,#2E8B82);border-color:var(--seg,#2E8B82);}
+  .q-answer{max-height:0;overflow:hidden;transition:max-height .3s ease;background:var(--panel-2);}
+  .q-card.open .q-answer{border-top:1px solid var(--border);}
+  .q-answer-inner{padding:16px 18px 18px 46px;font-size:.94rem;color:#3A3934;}
+  .q-answer-inner b{color:var(--seg,#C9871F);}
+  .q-answer-inner p{margin:0 0 10px;}
+  .q-answer-inner p:last-child{margin-bottom:0;}
+  .q-answer-inner ol,.q-answer-inner ul{margin:0 0 14px;padding-left:20px;}
+  .q-answer-inner li{margin-bottom:6px;}
+  .q-answer-inner h4{
+    font-family:'IBM Plex Mono',monospace;font-size:.78rem;text-transform:uppercase;
+    letter-spacing:.5px;color:var(--seg,#C9871F);margin:16px 0 8px;
+  }
+  .q-answer-inner h4:first-child{margin-top:0;}
+
+  footer{
+    margin-top:60px;padding-top:24px;border-top:1px solid var(--border);
+    color:var(--muted);font-size:.85rem;font-family:'IBM Plex Mono',monospace;
+  }
+
+  @media(max-width:600px){
+    header h1{font-size:1.9rem;}
+    .q-answer-inner{padding-left:18px;}
+    section.segment{padding-left:14px;}
+    pre.sketch{font-size:.68rem;}
+  }
 </style>
 </head>
 <body>
-<header>
-  <span class="k">Architects Lab</span>
-  <h1>Reasoning Models &amp; Choosing the Right LLM</h1>
-  <span class="count" id="counter"></span>
-</header>
-<div class="tabs" id="tabs"></div>
-<main><div id="stage"></div></main>
-<div class="hint">&larr; &rarr; keys work too</div>
-<footer>
-  <button class="nav" id="prevBtn">&larr; Prev</button>
-  <div class="dots" id="dots"></div>
-  <button class="nav primary" id="nextBtn">Next &rarr;</button>
-</footer>
-<script>
-const SECTIONS=[
- {id:"intro",label:"START",c:"ink"},
- {id:"demo",label:"REASONING DEMO",c:"teal"},
- {id:"valid",label:"VALIDATE+COMPARE",c:"gold"},
- {id:"framework",label:"5-STEP FRAMEWORK",c:"violet"},
- {id:"bench",label:"BENCHMARKS",c:"rose"},
- {id:"end",label:"WRAP-UP",c:"amber"}
-];
-const S=[
+<button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☾&nbsp; Dark mode</button>
+<div class="wrap">
 
-{sec:"intro",c:"ink",eyebrow:"Reasoning Models Project",t:"a",h:"Reasoning Models &amp; <em>A Framework for Choosing the Right LLM</em>",body:`
-<p>A hands-on project: use DeepSeek's reasoning model to classify financial news, with its thinking shown out loud. Then a simple 5-step framework for picking the right model for any job, plus a tour of Hugging Face's leaderboards.</p>
-<div class="note"><b>How to use:</b> "?" slides ask you to predict first. Press Next to compare. Recall quizzes close each section.</div>`},
+  <div class="ledger-strip">
+    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span>
+  </div>
 
-/* ---------- REASONING DEMO ---------- */
-{sec:"demo",c:"teal",eyebrow:"Framing",t:"q",q:`A reasoning model writes out its thinking before answering. Does that visible "thinking" text <b>prove</b> the model actually reasoned correctly — or could it just be more plausible-sounding text, same as any other LLM output?`},
+  <header>
+    <h1>Reasoning Models & LLM Selection — <em>visible ≠ verified</em></h1>
+    <p class="sub">A revision session on what a "reasoning model" actually is, why a visible chain-of-thought is not proof of correctness, and a 5-step framework for choosing (or not choosing) an LLM in production. Click a question to think first — reveal only when you're ready to check yourself.</p>
+    <div class="meta-bar">
+      <span><b>13 segments</b></span>
+      <span>25 questions</span>
+      <span>Format: think → answer aloud → reveal</span>
+      <span>Goal: reasoning, not recall</span>
+    </div>
+  </header>
 
-{sec:"demo",c:"teal",eyebrow:"Framing",t:"a",h:"What makes a &quot;reasoning model&quot; different",body:`
-<div class="ascii">CHAT MODEL                        REASONING MODEL (DeepSeek)
-headline+desc                     headline+desc
-   |                                  |
-[ LLM ] (black box,               [ LLM ]
- no visible work)                    |
-   |                                 v
-   v                          "thinking..." <- you can
-answer (take it                step 1,2,3...    SEE this
- or leave it)                        |
-                                      v
-                               final answer (sentiment+tag)
+  <nav>
+    <a href="#s1" style="color:#C9871F;">01 What Makes Reasoning</a>
+    <a href="#s2" style="color:#2E8B82;">02 Inference vs Training</a>
+    <a href="#s3" style="color:#C1543A;">03 Serving & Prompting</a>
+    <a href="#s4" style="color:#7A63B8;">04 Sampling & Parsing</a>
+    <a href="#s5" style="color:#3480B0;">05 Structured Output</a>
+    <a href="#s6" style="color:#6B9A44;">06 Selection Framework</a>
+    <a href="#s7" style="color:#C1547A;">07 Define Need / Need LLM?</a>
+    <a href="#s8" style="color:#B9971F;">08 Model Size</a>
+    <a href="#s9" style="color:#279090;">09 Sourcing</a>
+    <a href="#s10" style="color:#9A62D6;">10 Scaling</a>
+    <a href="#s11" style="color:#C9871F;">11 Benchmarks</a>
+    <a href="#s12" style="color:#2E8B82;">12 Evaluation Loop</a>
+    <a href="#s13" style="color:#C1543A;">13 Architecture Lessons</a>
+  </nav>
 
-COST TO TRAIN (reported): GPT-4 ~$100,000,000
-                           DeepSeek ~$5-6,000,000 (cheap, reasons well)</div>
-<div class="note">It doesn't prove correctness by itself — the thinking text is generated the same way as any other LLM output, optimized to look like reasoning, not verified to BE correct. What it gives you is something to check: a step-by-step trace you can inspect and catch an error in, instead of a bare answer you'd have to trust blindly. Visible thinking upgrades "trust me" to "here's my work, verify it" — but the verifying part is still on you.</div>`,
-cto:[`RAG proves its answer with citations you can click and check against a source. A reasoning model proves its answer with a "thinking" trace. These are NOT equally trustworthy. A citation points to an external, independently-checkable fact. A "thinking" trace is still entirely the model's own generated text — plausible-sounding, self-reported, nothing external to check it against. Visible thinking is genuinely useful, but it's a weaker transparency mechanism than citations, not an equivalent one. The strongest systems use both: retrieval for facts, visible reasoning for how facts were combined.`]},
+  <!-- SEGMENT 1 -->
+  <section class="segment" id="s1" style="--seg:#C9871F">
+    <div class="segment-head"><span class="segment-offset">offset 00</span><h2>What actually makes a "reasoning model"?</h2></div>
 
-{sec:"demo",c:"teal",eyebrow:"Data",t:"q",q:`The dataset is deliberately kept small (~1.6MB, ~5,000 rows) so it fits a free GPU. Does keeping the DATASET small also mean the <b>MODEL's understanding</b> is limited to those 5,000 headlines — or is something else going on?`},
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q1</span><span class="q-text">Is a reasoning model fundamentally a different kind of intelligence, or is it an LLM that has been trained/structured to spend more computation on intermediate reasoning? What's the actual architectural difference?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">                 USER QUESTION
+                       |
+          +------------+------------+
+          |                         |
+          v                         v
+     CHAT MODEL              REASONING MODEL
+          |                         |
+          v                         v
+      Answer                 Intermediate work
+                                    |
+                                    v
+                              Final answer</pre>
+        <p>Conceptually:</p>
+<pre class="sketch">CHAT MODEL
 
-{sec:"demo",c:"teal",eyebrow:"Data",t:"a",h:"Loading financial news from Hugging Face",body:`
-<div class="ascii">raw dataset row:
-  id | source (CNBC...) | title | description | created_at
-                    ~5,000 rows, ~1.6MB (small on purpose --
-                    fits free Colab GPU)
-
-title: "Stock X jumps" \\
-                          >-- mapping fn --> full_text
-description: "...after   /                       |
-strong Q2..."                                     v
-                                            [ fed to model ]
-why merge? title alone = weak signal
-           title + description = enough context to reason well
-
-exploration tool: HF Data Studio -- type "filter to CNBC only"
-                   in plain English, no code needed</div>
-<div class="note">Something else entirely — this project isn't training the model on these 5,000 rows, it's running an already-trained model against them (<b>inference, not fine-tuning</b>). DeepSeek's actual knowledge comes from its massive original pretraining; these rows are just the questions being asked of it, not lessons it's learning from. A small dataset here is small because it's a small TEST set, not because understanding is limited to it.</div>`},
-
-{sec:"demo",c:"teal",eyebrow:"Model Loading",t:"q",q:`This project never fine-tunes DeepSeek — it only loads and runs it. So why does the <b>same 4-bit quantization trick</b> from the fine-tuning project show up again here, if there's no training happening?`},
-
-{sec:"demo",c:"teal",eyebrow:"Model Loading",t:"a",h:"Downloading DeepSeek — quantization and pipeline setup",body:`
-<div class="ascii">DeepSeek 1.5B weights (full size)
+Question
    |
-load_in_4bit=True -- squeeze each weight into 4 bits --> much
-   |                                                     smaller
-torch_dtype="auto" -- picks best precision for hardware
-device_map="auto"  -- GPU if available, else CPU
-trust_remote_code  -- allows model's own custom code to run
-   |
-AutoModelForCausalLM + AutoTokenizer
-   |
-pipeline("text-generation", model, tokenizer)
-   |
-runs fine on a FREE-TIER Colab GPU</div>
-<div class="note">Because quantization solves a <b>memory</b> problem that exists whether you're training or just running a model — a 1.5B-parameter model's weights take real memory to hold regardless of whether you're computing gradients against them or just reading through them for inference. The reason (fit a big model on a small/free GPU) is identical in both projects; only the workload on top differs (backprop+updates vs. a single forward pass).</div>`},
-
-{sec:"demo",c:"teal",eyebrow:"Prompting",t:"q",q:`The prompt ends with an <b>unfinished</b> tag, <code>&lt;think&gt;</code>, with nothing after it. Why would leaving the prompt deliberately incomplete — instead of asking "please explain your reasoning" in plain English — be the more reliable trigger?`},
-
-{sec:"demo",c:"teal",eyebrow:"Prompting",t:"a",h:"Speaking DeepSeek's native format — special tokens for reasoning",body:`
-<div class="ascii">prompt string sent to model:
-&lt;IAM_START&gt;user
-[question] &lt;IAM_END&gt;
-&lt;IAM_START&gt;assistant
-&lt;think&gt;        &lt;---- trigger token: "show your reasoning first"
-
-settings that shape the answer:
-  max_new_tokens=4000 -> room for long reasoning
-  do_sample=True       -> add some randomness
-  temperature (0 ---------------------------- 2)
-               deterministic, factual        wild, unpredictable
-  top_p=0.9 (nucleus) -> only the smallest group of words whose
-    combined chance is 90% -- on-topic, still some variety
-    too low = repetitive | no limit = rambling/incoherent</div>
-<div class="note">A plain-English request is a suggestion the model can follow loosely or ignore under other pressures. An unfinished special token isn't a request — it's a <b>structural cue</b> the model was specifically trained to continue in one particular way, because that's literally where "assistant turn, thinking mode" tokens appeared during training. Less "please think," more "here's the exact spot where thinking goes — continue from here."</div>`,
-cto:[`This trigger works because it exploits a structural pattern DeepSeek was trained on. Swap in a completely different model never trained with a "<think>" token, and you'd expect nothing useful — the model would likely treat it as ordinary text, maybe even literally continuing "<think> about it...", rather than as a signal to enter reasoning mode. A structural trigger only works for the model it was trained into. Always check that specific model's documentation for its own trigger — never assume this one transfers.`]},
-
-{sec:"demo",c:"teal",eyebrow:"Parsing",t:"q",q:`The split relies on finding literal <code>&lt;think&gt;</code> and end-of-think markers inside the output string. What happens the day the model forgets to close the tag, or phrases something slightly differently?`},
-
-{sec:"demo",c:"teal",eyebrow:"Parsing",t:"a",h:"Separating &quot;thinking&quot; from the final answer",body:`
-<div class="ascii">raw model output (one blob):
-"...&lt;think&gt; step 1... step 2... &lt;/think&gt; Sentiment: Positive, Tag: Earnings"
-        | output.find('&lt;think&gt;'), output.find(end-marker)
-        v
-  reasoning block          final answer block
-  (thinking text)          (sentiment+tag, clean)
-        |                        |
-   shown in UI              shown in UI
-  (transparency)           (the actual result)
-
-method used: plain string search on hardcoded tokens
-more robust: structured output / JSON schema / function calling</div>
-<div class="note">The split silently breaks — <code>output.find()</code> returns "not found," or worse, finds a spurious match, and the separation comes out wrong or empty with <b>no error raised</b>. That's the core fragility of parsing by string search: it works exactly as long as the format holds, and breaks quietly, not loudly, the moment it doesn't. Raw text is not a contract, and a schema-based approach fails loudly instead of silently.</div>`,
-cto:[`String-search parsing works fine in this demo. Would it survive a model VERSION UPGRADE unchanged? Not a safe bet either way. Even within the same model family, a version upgrade can subtly change tokenization, default formatting, or how consistently the model closes its own tags — none of which show up as a documented breaking change, because the provider isn't promising a stable TEXT contract, only a stable API surface. A schema-based approach holds up across version bumps in a way string search on hardcoded tokens was never designed to.`]},
-
-{sec:"demo",c:"teal",eyebrow:"Reasoning Demo · Recall",t:"r",h:"Quick recall: the reasoning demo",qs:[
-{q:`Does visible chain-of-thought prove the reasoning was correct?`,a:`No — it's generated the same way as any other LLM text, optimized to sound plausible, not verified to be correct. It gives you something to <b>check</b> rather than a bare answer to blindly trust.`},
-{q:`Why does the same 4-bit quantization trick appear in both the fine-tuning project and this inference-only one?`,a:`Because quantization solves a <b>memory</b> problem, not a training problem — weights take real memory to hold whether you're computing gradients against them or just reading through them for inference.`},
-{q:`Why is string-search parsing of &lt;think&gt; tags fragile?`,a:`It breaks silently, not loudly — <code>output.find()</code> quietly returns "not found" or a spurious match with no error raised, exactly when the model's output format drifts even slightly (a version upgrade, an unclosed tag).`}]},
-
-/* ---------- VALIDATE + COMPARE ---------- */
-{sec:"valid",c:"gold",eyebrow:"Validation",t:"q",q:`The model gets the CAPM finance answer right — recalls the formula, substitutes, reaches "undervalued." Does a <b>correct final answer</b> prove the reasoning trace in between was actually correct?`},
-
-{sec:"valid",c:"gold",eyebrow:"Validation",t:"a",h:"Testing reasoning on math and finance problems",body:`
-<div class="ascii">CAPM VALIDATION CHAIN (visible inside the reasoning trace):
-beta 1.2, risk-free 3%, market return 9%
-   | recall CAPM formula: E(R) = Rf + beta*(Rm - Rf)
-   | substitute: 3% + 1.2*(9%-3%) = 3% + 7.2% = 10.2% (CAPM-expected)
-   | compare to actual expected return: 10.5%
    v
-10.5% > 10.2% ==> stock is UNDERVALUED
++-------+
+|  LLM  |
++---+---+
+    |
+    v
+ Answer</pre>
+        <p>versus:</p>
+<pre class="sketch">REASONING MODEL
 
-a wrong FORMULA + a wrong SUBSTITUTION could still, by luck,
-cross the 10.5% line and land on "undervalued" -- the right
-answer alone never proves the middle steps were sound</div>
-<p><strong>Two extra tests, outside news sentiment</strong>, to check the model is really reasoning: simple math (5 apples, gave away 2+2, how many left? &rarr; correctly worked through it, answered "1") and the CAPM problem above.</p>
-<div class="note">They can absolutely coexist — a model could make two errors that cancel out, or get lucky despite a wrong intermediate number, and still land on the right conclusion. A correct final answer is necessary but not sufficient evidence the reasoning was sound. The only way to actually know is to read the trace and check each step independently of whether the conclusion matches. This is exactly why visible thinking matters — it gives you something to check beyond the bottom line.</div>`,
-cto:[`Your wealth/demat background lets you personally check this CAPM trace by eye. What happens the moment the finance concept is one you DON'T already know well enough to check by hand? It breaks down — a visible reasoning trace is only as useful as your ability to actually verify it. For a domain you don't know well, a fluent, confident-looking trace is just as persuasive whether it's right or wrong. The real due-diligence question isn't "does the reasoning trace exist" but "do you, or does some other check, actually have the domain knowledge to validate it" — without that, visible thinking gives a false sense of security.`]},
+Question
+   |
+   v
++-------+
+|  LLM  |
++---+---+
+    |
+    v
+Intermediate reasoning
+    |
+    v
+More computation / reasoning
+    |
+    v
+Final answer</pre>
+        <h4>The critical point</h4>
+        <p><b>Visible reasoning ≠ verified reasoning.</b></p>
+        <p>The model generates the reasoning text too.</p>
+<pre class="sketch">                 Model
+                   |
+          +--------+--------+
+          |                 |
+          v                 v
+     "Thinking"           Answer
+          |
+          v
+   ALSO model-generated
+          |
+          v
+    NOT automatically
+       verified</pre>
+        <p>So:</p>
+<pre class="sketch">Visible reasoning
+       ≠
+Correct reasoning</pre>
+        <p>This is exactly analogous to trusting an application's own log saying: "Transaction validated successfully" without independently validating the transaction.</p>
+      </div></div></div>
 
-{sec:"valid",c:"gold",eyebrow:"Comparison",t:"q",q:`"Reasoning models keep the same structure every time" is called a strength for pipelines. Is that reliability actually coming from the model being a <b>reasoning</b> model, or from something else entirely?`},
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q2</span><span class="q-text">If RAG gives you a citation and a reasoning model gives you a thinking trace, which is more trustworthy? Why? What's the fundamental difference between an external source and a self-reported trace?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <h4>RAG</h4>
+<pre class="sketch">Question
+   |
+   v
+Retriever
+   |
+   v
+External document
+   |
+   v
+LLM
+   |
+   v
+Answer + citation</pre>
+        <p>The citation can be independently checked:</p>
+<pre class="sketch">Answer
+  |
+  v
+Source document
+  |
+  v
+Human verifies</pre>
+        <h4>Reasoning model</h4>
+<pre class="sketch">Question
+   |
+   v
+Reasoning model
+   |
+   +----> generated reasoning
+   |
+   +----> final answer</pre>
+        <p>The reasoning is still coming from the model.</p>
+        <p>Therefore:</p>
+<pre class="sketch">                 TRUST LEVEL
 
-{sec:"valid",c:"gold",eyebrow:"Comparison",t:"a",h:"Reasoning models vs. general chat models",body:`
-<div class="ascii">General chat model:
-  "I think this sounds negative because..."
-  (free-form prose, format changes request to request)
-  result: breaks automated parsing once you scale to thousands
+External source
+      |
+      v
+ independently verifiable
+      |
+      v
+      HIGHER
 
-Reasoning model (with a good prompt):
-  &lt;think&gt;...&lt;/think&gt; Sentiment: X | Tag: Y
-  (same structure, every single time)
-  result: parses reliably, request 1 or request 10,000
 
-rule of thumb: one-off answer for a human -> either works
-               pipeline reading 1,000s of rows -> need the
-               consistent, structured one</div>
-<div class="note">It's actually coming from <b>something else</b> — how the prompt was written and enforced, not from "reasoning" as a category. A reasoning model given a loose, unstructured prompt would drift in format just like a chat model would; a general chat model given a strict prompt (or wrapped in structured output) can hold a consistent format too. Reasoning and structural consistency are two separate properties that happened to get demonstrated together — don't conflate "shows its thinking" with "always outputs a fixed format."</div>`},
+Model's own reasoning trace
+      |
+      v
+ self-reported
+      |
+      v
+      LOWER</pre>
+        <h4>Strong enterprise architecture</h4>
+        <p>You can combine them:</p>
+<pre class="sketch">                 User Question
+                       |
+             +---------+---------+
+             |                   |
+             v                   v
+        RAG Retrieval       Reasoning Model
+             |                   |
+             v                   |
+       Trusted facts ------------+
+                     |
+                     v
+              Final Answer</pre>
+        <p><b>RAG answers:</b> <i>Where did the facts come from?</i></p>
+        <p><b>Reasoning answers:</b> <i>How did the model combine them?</i></p>
+        <p>Neither alone guarantees correctness.</p>
+      </div></div></div>
+  </section>
 
-{sec:"valid",c:"gold",eyebrow:"Validate &amp; Compare · Recall",t:"r",h:"Quick recall: validation &amp; comparison",qs:[
-{q:`Can a wrong reasoning step and a right final answer coexist? Why does this matter?`,a:`Yes — errors can cancel out or a comparison can get lucky despite a wrong intermediate number. A correct final answer is necessary but not sufficient proof the reasoning was sound; you must read and check the trace itself.`},
-{q:`Is structural consistency (same format every time) actually a property of "reasoning models"?`,a:`No — it comes from prompt design and enforcement, not from the reasoning category itself. A loosely-prompted reasoning model drifts in format just like a chat model; a strictly-prompted chat model can hold a consistent format too.`}]},
+  <!-- SEGMENT 2 -->
+  <section class="segment" id="s2" style="--seg:#2E8B82">
+    <div class="segment-head"><span class="segment-offset">offset 01</span><h2>Inference vs training</h2></div>
 
-/* ---------- 5-STEP FRAMEWORK ---------- */
-{sec:"framework",c:"violet",eyebrow:"Framework",t:"q",q:`Step 2 asks "do you even need an LLM?" before any other model question. A real request arrives as "we need an AI/LLM solution for X." Is that framing itself already a <b>warning sign</b>, before you even reach step 3?`},
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q3</span><span class="q-text">The example has 5,000 financial news rows. Is the model learning from these? What's the difference between running inference on a dataset versus training on it? Why does this distinction matter for estimating GPU requirements?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>The example has roughly:</p>
+<pre class="sketch">5,000 financial news rows</pre>
+        <p>It might initially look like:</p>
+<pre class="sketch">5,000 rows
+     |
+     v
+DeepSeek
+     |
+     v
+"Model learned from these"</pre>
+        <p>But that's wrong.</p>
+        <p>The actual architecture is:</p>
+<pre class="sketch">                  Already trained
+                  DeepSeek model
+                       |
+                       |
+                       v
+5,000 rows ---> INFERENCE ---> predictions</pre>
+        <p>There is <b>no weight update</b>.</p>
+        <p>Compare:</p>
+<pre class="sketch">FINE-TUNING
 
-{sec:"framework",c:"violet",eyebrow:"Framework",t:"a",h:"A five-step framework for choosing the right LLM",body:`
-<div class="ascii">[1] DEFINE NEEDS
-     task, I/O, privacy, latency, time-to-market, cost
-[2] CHOOSE MODEL TYPE -- "do you even need an LLM?"
-     classification/NER/retrieval? -> maybe NO LLM needed
-     summarization/generation/translation/chat/reasoning? -> YES
-[3] CHOOSE MODEL SIZE
-     small/medium (&lt;50B) <- boost via fine-tune or RAG
-     large/XL (&gt;50B)     <- more knowledge/reasoning, higher cost
-[4] CHOOSE SOURCING
-     build from scratch (rare, ~$100M)
-     open-source pretrained (low license cost, +50-100% deploy cost)
-     proprietary cloud API (fast, less transparency, usage fees)
-[5] DECIDE HOW IT SCALES
-     data residency, volume vs rate limits, skills needed,
-     end-to-end cost, can you actually operate it?</div>
-<div class="note">Often, yes — a request that names the SOLUTION ("we need an LLM") before establishing the actual NEED (classify these, retrieve that, summarize this) has usually skipped step 1 and step 2 entirely. It's the AI equivalent of a stakeholder saying "we need a bigger server" before anyone's confirmed the current one is the bottleneck. The framework's real value isn't steps 3-5 (model size, sourcing, scaling) — it's that steps 1-2 force the requester to justify needing an LLM at all before any model-selection conversation starts.</div>`,
-cto:[`Step 4 says open-source deployment can run 50-100% MORE expensive in practice once expertise and GPU time are counted, despite "free" licensing. Worth checking against your own lived experience rather than taking the number at face value — every hour spent on IAM permissions, Docker configuration, GPU provisioning, and ongoing maintenance is real engineering cost a proprietary API call skips entirely. Whether that lands at 50%, 100%, or something else depends heavily on how much of that infrastructure work your team already has reusable.`]},
+Dataset
+   |
+   v
+Training
+   |
+   v
+Loss
+   |
+   v
+Backpropagation
+   |
+   v
+Weight update
+   |
+   v
+New model</pre>
+        <p>versus:</p>
+<pre class="sketch">INFERENCE
 
-{sec:"framework",c:"violet",eyebrow:"Sourcing",t:"q",q:`"Open-source" and "free" get used almost interchangeably, but open-source deployment can cost 50-100% <b>more</b> in practice. What is the word "free" actually referring to, if not total cost?`},
+Dataset
+   |
+   v
+Prompt
+   |
+   v
+Existing model
+   |
+   v
+Prediction</pre>
+        <p>This distinction matters enormously when estimating:</p>
+<pre class="sketch">GPU requirement
+Cost
+Latency
+Engineering complexity
+Risk</pre>
+      </div></div></div>
 
-{sec:"framework",c:"violet",eyebrow:"Sourcing",t:"a",h:"Open-source vs. proprietary — the real trade-offs",body:`
-<div class="ascii">OPEN-SOURCE (Hugging Face)         PROPRIETARY (OpenAI/AWS/etc.)
-license cost:  low/free            license cost:  usage fees
-deploy cost:   +50-100% (expertise deploy cost:   bundled in API
-               + GPU)                             price
-time-to-mkt:   slow (build it      time-to-mkt:   fast (pre-built)
-               yourself)
-data lineage:  often unclear       data lineage:  documented/
-                                                   compliant
-support:       community,          support:       professional
-               irregular
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q4</span><span class="q-text">If you're not training a model, just running inference, why would you still need quantization? What problem does it solve that exists regardless of training?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Don't think:</p>
+        <p>"Quantization is a training trick."</p>
+        <p>Think:</p>
+        <p><b>Quantization is primarily a memory representation technique.</b></p>
+<pre class="sketch">Full precision model
+       |
+       v
+Weights consume large memory
+       |
+       v
+GPU memory problem</pre>
+        <p>Quantization:</p>
+<pre class="sketch">FULL PRECISION
+     |
+     | quantization
+     v
+LOWER PRECISION
+     |
+     v
+Smaller memory footprint
+     |
+     v
+Fits smaller GPU</pre>
+        <p>For example:</p>
+<pre class="sketch">             MODEL WEIGHTS
 
-"free" = the LICENSE is free
-it says NOTHING about the deployment/staffing/GPU cost
-sitting underneath it</div>
-<div class="note">"Free" refers only to the <b>license</b> — you don't pay to download or use the model weights. It says nothing about deployment cost: GPU time, integration expertise, ongoing maintenance, infrastructure to serve it reliably at scale. A proprietary API bundles all of that into one usage fee; open-source unbundles it into "free license + everything else you now have to build and staff yourself." "Free" and "cheap" are not the same claim.</div>`},
+FP16
+████████████████████████
 
-{sec:"framework",c:"violet",eyebrow:"5-Step Framework · Recall",t:"r",h:"Quick recall: the 5-step framework",qs:[
-{q:`Recite the five steps in order.`,a:`1. Define needs. 2. Choose model TYPE ("do you even need an LLM?"). 3. Choose model SIZE. 4. Choose SOURCING (build/open-source/proprietary). 5. Decide how it SCALES.`},
-{q:`What warning sign does step 2 catch that most requests skip past?`,a:`A request framed as "we need an LLM for X" (naming the solution) rather than "we need to classify/retrieve/summarize X" (naming the need) has usually skipped steps 1-2 — the equivalent of asking for a bigger server before confirming the current one is the bottleneck.`},
-{q:`What does "free" actually mean for open-source models, and what does it NOT cover?`,a:`It means the <b>license</b> is free — you don't pay to download the weights. It says nothing about deployment cost: GPU time, integration expertise, and ongoing maintenance, which can add 50-100% in practice.`}]},
+INT8
+████████████
 
-/* ---------- BENCHMARKS ---------- */
-{sec:"bench",c:"rose",eyebrow:"Benchmarks",t:"q",q:`If most frontier models now score above 80-85% on the OLD benchmarks, and a leaderboard still ranks by those scores, what would that ranking actually be measuring — genuine ability, or something else?`},
+INT4
+██████</pre>
+        <p>The exact memory savings depend on architecture and overhead, but the principle is:</p>
+<pre class="sketch">Lower precision
+      |
+      +--> less memory
+      +--> potentially faster inference
+      +--> potentially lower quality</pre>
+        <p>So:</p>
+<pre class="sketch">                    Quantization
+                         |
+             +-----------+-----------+
+             |                       |
+          Benefit                   Cost
+             |                       |
+       lower memory             possible quality
+       lower hardware           degradation
+       requirement</pre>
+        <p>This applies to:</p>
+<pre class="sketch">Inference
+AND
+Training</pre>
+        <p>although training has additional memory requirements for:</p>
+<pre class="sketch">gradients
+optimizer states
+activations</pre>
+      </div></div></div>
+  </section>
 
-{sec:"bench",c:"rose",eyebrow:"Benchmarks",t:"a",h:"Old vs. new leaderboards — benchmarks get beaten fast",body:`
-<div class="ascii">score
-100%|                     .-----------------  OLD benchmarks
-    |                 .--'                    (MMLU, HellaSwag,
- 85%|- - - - - - - -.'- - - - - - - - - - -    ARC, DROP, ...)
-    |            .-'                           saturated, most
-    |         .-'                              models &gt;80-85%
-    |      .-'
-    |   .-'                                 NEW benchmarks (Humanity's
- 35%|-------------------------------------.  Last Exam, GPQA, MuSR,
-    |__________________________________.___  BBH, IFEval, MATH)
-      time -->        ~1.5 yrs             best models still ~35%
+  <!-- SEGMENT 3 -->
+  <section class="segment" id="s3" style="--seg:#C1543A">
+    <div class="segment-head"><span class="segment-offset">offset 02</span><h2>Serving & prompting</h2></div>
 
-at the top, 83% vs 85% on an OLD benchmark tells you almost
-nothing real -- everyone's clustered near the ceiling.</div>
-<ul class="pts">
-<li><strong>Humanity's Last Exam</strong> — 2,500 extremely hard hand-crafted questions, best models ~35%.</li>
-<li><strong>GPQA</strong> — PhD-level science, designed to resist lookup.</li>
-<li><strong>MuSR</strong> — multi-step soft reasoning over long text. <strong>BBH</strong> — challenging language/math tasks.</li>
-<li><strong>IFEval</strong> — instruction-following fidelity. <strong>MATH</strong> — competition-level mathematics.</li>
-<li><strong>AgentBench/WebArena/ToolBench</strong> — agentic capability. <strong>CO2 cost</strong> — environmental footprint.</li>
-</ul>
-<div class="note">At that point it's measuring <b>noise, not ability</b> — when everyone clusters near the ceiling, small score differences stop reflecting real capability gaps and start reflecting evaluation quirks or randomness. A saturated benchmark can't tell a genuinely better model from a slightly-differently-tuned one — exactly why Hugging Face had to retire the old set.</div>`,
-cto:[`Today's "hard" benchmarks will likely saturate too, on the same ~1.5 year timeline. Build the process around a re-verification HABIT, not a fixed benchmark list. Any benchmark named today has a documented shelf life of roughly 1-2 years before saturation. Always check the benchmark's publication date, always re-verify scores close to the decision, and always expect today's "hard" test to be tomorrow's saturated one.`]},
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q5</span><span class="q-text">What components are needed to go from model weights to a running inference service? What would you add at production scale that a demo might skip?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>The example effectively builds:</p>
+<pre class="sketch">DeepSeek weights
+       |
+       v
+Tokenizer
+       |
+       v
+Model
+       |
+       v
+Text-generation pipeline
+       |
+       v
+Prompt
+       |
+       v
+Generated tokens</pre>
+        <p>Architecturally:</p>
+<pre class="sketch">                Application
+                     |
+                     v
+              Prompt Builder
+                     |
+                     v
+                 Tokenizer
+                     |
+                     v
+              ┌─────────────┐
+              │ LLM Weights │
+              └──────┬──────┘
+                     |
+                     v
+               Token Generation
+                     |
+                     v
+                 Detokenize
+                     |
+                     v
+                Text Output</pre>
+        <p>At scale, you'd typically add:</p>
+<pre class="sketch">                 API Gateway
+                      |
+                      v
+              Inference Service
+                      |
+          +-----------+-----------+
+          |                       |
+       GPU #1                  GPU #2
+          |                       |
+          v                       v
+       Model                    Model</pre>
+        <p>And then:</p>
+<pre class="sketch">Load Balancer
+      |
+      v
+Inference replicas
+      |
+      v
+GPU pool</pre>
+      </div></div></div>
 
-{sec:"bench",c:"rose",eyebrow:"Practical Use",t:"q",q:`You can filter the leaderboard by whatever score matters to you. What's the <b>risk</b> of picking the model that TOPS your chosen benchmark, versus the model that scores well across several relevant ones?`},
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q6</span><span class="q-text">The prompt uses &lt;think&gt; as a trigger token. Why does this work for DeepSeek? What happens if you try this with a different model? Why shouldn't you make this part of your generic AI abstraction?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>The example deliberately creates:</p>
+<pre class="sketch">&lt;assistant&gt;
+&lt;think&gt;</pre>
+        <p>Why?</p>
+        <p>Because the model was trained around this structural pattern.</p>
+        <p>Think of it as:</p>
+<pre class="sketch">Prompt format
+     |
+     v
++------------------------+
+| Model-specific protocol|
++------------------------+
+     |
+     v
+&lt;think&gt;
+     |
+     v
+Reasoning generation</pre>
+        <p>This is not generic AI magic.</p>
+        <p>It's closer to an <b>application protocol</b>.</p>
+        <p>For example:</p>
+<pre class="sketch">HTTP client
+     |
+     v
+expects HTTP semantics</pre>
+        <p>Similarly:</p>
+<pre class="sketch">DeepSeek prompt
+     |
+     v
+expects model-specific structure</pre>
+        <p>If another model wasn't trained with &lt;think&gt;:</p>
+<pre class="sketch">Different LLM
+     |
+     v
+&lt;think&gt;
+     |
+     X
+Not necessarily reasoning mode</pre>
+        <p>It might simply generate:</p>
+<pre class="sketch">"&lt;think&gt; about this problem..."</pre>
+        <p>as ordinary text.</p>
+        <h4>Architect takeaway</h4>
+        <p><b>Never make a model-specific token part of your generic AI abstraction.</b></p>
+        <p>Instead:</p>
+<pre class="sketch">                 LLM Adapter
+                     |
+        +------------+------------+
+        |            |            |
+     Model A      Model B      Model C
+        |            |            |
+    template A   template B   template C</pre>
+        <p>Your application should call:</p>
+<pre class="sketch">generate(messages)</pre>
+        <p>rather than knowing:</p>
+<pre class="sketch">&lt;think&gt;
+&lt;IAM_START&gt;
+&lt;IAM_END&gt;</pre>
+      </div></div></div>
+  </section>
 
-{sec:"bench",c:"rose",eyebrow:"Practical Use",t:"a",h:"Filtering leaderboards by what actually matters to you",body:`
-<div class="ascii">accuracy
- high|                          * Qwen (large: higher accuracy,
-     |                             but higher latency+cost)
-     |             * Phi-3
-     |            (sweet spot -- good accuracy, still fast)
-     |   *
- low |*
-     +---------------------------------------------- latency
-       fast                                    slow
+  <!-- SEGMENT 4 -->
+  <section class="segment" id="s4" style="--seg:#7A63B8">
+    <div class="segment-head"><span class="segment-offset">offset 03</span><h2>Sampling controls & the parsing problem</h2></div>
 
-filters: parameter count, precision, fine-tuned vs pre-trained,
-domain leaderboard (coding, medical), sort by the ONE score that
-matches your use case (MATH -> finance tool, GPQA -> research)
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q7</span><span class="q-text">What's the difference between temperature and top-p? If someone asks you to "make the model more creative," which parameter would you adjust and why? Are these reasoning controls or token sampling controls?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>A simplified generation pipeline:</p>
+<pre class="sketch">Prompt
+  |
+  v
+LLM
+  |
+  v
+Probability distribution
+  |
+  v
+Sampling controls
+  |
+  +---- temperature
+  |
+  +---- top-p
+  |
+  v
+Next token</pre>
+        <h4>Temperature</h4>
+        <p>Conceptually:</p>
+<pre class="sketch">LOW temperature
+      |
+      v
+More deterministic
+      |
+      v
+Likely token dominates
 
-rule: no single "best" model -- best POINT on the accuracy/
-latency/cost triangle for YOUR job</div>
-<div class="note">Optimizing for a single benchmark risks picking a model tuned (deliberately or incidentally) to that one test's style of question, without the broader competence you'll actually need — real user queries rarely look exactly like benchmark questions. A model that scores well across several related benchmarks is a safer bet than the single highest score on one, the same way you wouldn't hire based on one interview question alone.</div>`,
-cto:[`"Pick the best point on the accuracy/latency/cost triangle for your SLA" sounds clean in theory. Who at IDFC would actually know the real latency tolerance for a given use case — is that even a question engineering can answer alone? Usually not — a quick eligibility check's latency tolerance is as much a product/business decision (how long will a customer wait?) as engineering. Applying the "best point" framing for real requires pulling in whoever owns the actual SLA or UX for that specific use case — not just picking a number engineering finds comfortable.`]},
 
-{sec:"bench",c:"rose",eyebrow:"Benchmarks · Recall",t:"r",h:"Quick recall: benchmarks",qs:[
-{q:`Why did old benchmarks (MMLU, HellaSwag) get retired?`,a:`Within ~1.5 years, most frontier models scored above 80-85% on all of them — they stopped discriminating between models, measuring noise instead of ability.`},
-{q:`Name three of the newer, harder benchmarks and what each tests.`,a:`Humanity's Last Exam (2,500 extremely hard hand-crafted questions, best models ~35%), GPQA (PhD-level science, lookup-resistant), MATH (competition-level maths) — also MuSR, BBH, IFEval, AgentBench.`},
-{q:`Why is topping ONE benchmark riskier than scoring well across several?`,a:`A single-benchmark leader may be tuned to that test's specific style of question without broader real-world competence — real queries rarely match benchmark questions exactly.`}]},
+HIGH temperature
+      |
+      v
+More randomness
+      |
+      v
+Less predictable token selection</pre>
+        <h4>Top-p</h4>
+        <p>Think:</p>
+<pre class="sketch">Possible tokens
 
-/* ---------- WRAP-UP ---------- */
-{sec:"end",c:"amber",eyebrow:"Wrap-up",t:"q",q:`This project covers two very different things — a hands-on DeepSeek demo, and a general 5-step framework. If you could remember only <b>ONE</b> a year from now, which would still be useful, and why?`},
+A = 45%
+B = 25%
+C = 15%
+D = 8%
+E = 4%
+F = 3%</pre>
+        <p>With top-p = 0.90:</p>
+<pre class="sketch">A + B + C + D = 93%
 
-{sec:"end",c:"amber",eyebrow:"Wrap-up",t:"a",h:"Project recap",body:`
-<div class="ascii">HF dataset (title+desc)
         |
-full_text -----------------> [ DeepSeek 1.5B, 4-bit quantized ]
-                                          |
-                             prompt ends in &lt;think&gt; trigger
-                                          |
-                              raw output: reasoning+answer, mixed
-                                          |
-                                parse / split on markers
-                       +------------------+-------------+
-                       v                                v
-               reasoning block                 sentiment + tag
-                       +---------> Gradio UI <-----------+
+        v
 
-validated separately on: math word problem, CAPM finance problem
+Keep approximately:
+A B C D</pre>
+        <p>Instead of allowing the entire long tail.</p>
+        <p>So:</p>
+<pre class="sketch">Temperature
+    |
+    v
+How sharply do we reshape probabilities?
 
-5-STEP SELECTION FRAMEWORK (for choosing ANY LLM):
-  needs -> type ("need an LLM at all?") -> size -> sourcing -> scaling
+Top-p
+    |
+    v
+How much of the probability mass do we allow?</pre>
+        <p>Don't think of these as "reasoning controls."</p>
+        <p>They're <b>token sampling controls</b>.</p>
+      </div></div></div>
 
-WHAT AGES:                    WHAT DOESN'T:
-  DeepSeek's specific tokens    the 5-step decision framework
-  these exact benchmark scores  "measure before you trust" habit
-  "&lt;think&gt;" as THE trigger      "check if you need an LLM at all"</div>
-<div class="note">The 5-step framework ages much better. The DeepSeek specifics — its exact special tokens, its reported training cost, its benchmark scores — will be stale within a year or two, the same way this project's own benchmarks go stale on a ~1.5 year cycle. The framework is a way of THINKING that doesn't expire just because the specific models it's applied to change. The demo teaches mechanics of one moment in time; the framework teaches a durable decision process.</div>
-<ul class="pts">
-<li>Reasoning models (DeepSeek) expose visible chain-of-thought, unlike typical chat models.</li>
-<li>Load quantized model + tokenizer; build a text-generation pipeline.</li>
-<li>Speak the model's native chat-template format, including the explicit <code>&lt;think&gt;</code> trigger.</li>
-<li>Parse raw output into separate reasoning + answer sections.</li>
-<li>Validate reasoning on math and domain-specific (CAPM) problems — not just the target task.</li>
-<li>Five-step framework: needs &rarr; type &rarr; size &rarr; sourcing &rarr; scaling.</li>
-<li>"Do you even need an LLM?" is the cheapest, most important early filter.</li>
-<li>Benchmarks saturate fast — always check recency before trusting a leaderboard position.</li>
-<li>Model selection = optimizing a position on the accuracy/latency/cost frontier for YOUR constraint.</li>
-<li>Wrapped in a Gradio interface for interactive sentiment + reasoning + tag classification.</li>
-</ul>`},
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q8</span><span class="q-text">The demo uses find("&lt;think&gt;") and find("&lt;/think&gt;") to parse the output. What happens when the model doesn't close the tag, or changes its output format? Why is this a mismatch between probabilistic output and deterministic parsing?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>The demo does:</p>
+<pre class="sketch">Raw output
+   |
+   v
+find("&lt;think&gt;")
+   |
+   v
+find("&lt;/think&gt;")
+   |
+   v
+split()</pre>
+        <p>Looks simple.</p>
+        <p>But production architecture:</p>
+<pre class="sketch">LLM
+ |
+ v
+Unstructured text
+ |
+ v
+String parsing
+ |
+ +---- missing marker?
+ |
+ +---- malformed output?
+ |
+ +---- duplicated marker?
+ |
+ +---- model version changed?
+ |
+ v
+Unexpected behavior</pre>
+        <p>This is a classic:</p>
+        <p><b>Untrusted producer + implicit contract</b></p>
+        <p>The LLM output is probabilistic.</p>
+        <p>Your parser expects deterministic syntax.</p>
+        <p>That's a mismatch.</p>
+      </div></div></div>
+  </section>
 
-{sec:"end",c:"amber",eyebrow:"Final Recall",t:"r",h:"Final recall: questions worth carrying forward",qs:[
-{q:`Across fine-tuning, RAG, and reasoning models — how would you decide which technique to reach for first for a new internal tool?`,a:`Start with the 5-step framework's own logic: define the need first (is it fact-grounding, behaviour/style change, or transparency/auditability that's required?). RAG fits frequently-changing facts; fine-tuning fits deep behavioural/stylistic adaptation; reasoning models fit tasks needing an inspectable trace. Layer a second technique only once the first's limitation is concretely observed, not pre-emptively.`},
-{q:`The framework flags data provenance/transparency as an open-source weakness. Does that change the calculus for a model with geopolitically visible training data, in a regulated banking use case?`,a:`It should raise the bar for that specific model's internal risk review — data provenance and training transparency are exactly the kind of compliance-adjacent question a regulated environment can't wave away, regardless of how well the model performs on benchmarks. A domestically-sourced or better-documented alternative may need to clear a materially lower bar to be approved.`}]}
-];
+  <!-- SEGMENT 5 -->
+  <section class="segment" id="s5" style="--seg:#3480B0">
+    <div class="segment-head"><span class="segment-offset">offset 04</span><h2>Structured output & why reasoning must be validated</h2></div>
 
-let i=0;
-const stage=document.getElementById('stage'),dots=document.getElementById('dots'),
-tabs=document.getElementById('tabs'),counter=document.getElementById('counter'),
-prevBtn=document.getElementById('prevBtn'),nextBtn=document.getElementById('nextBtn');
-SECTIONS.forEach(s=>{const b=document.createElement('button');b.className='tab';b.dataset.c=s.c;b.dataset.sec=s.id;b.textContent=s.label;b.onclick=()=>go(S.findIndex(x=>x.sec===s.id));tabs.appendChild(b);});
-S.forEach((sl,k)=>{const d=document.createElement('span');d.className='dot'+(sl.t==='q'?' q':'');d.tabIndex=0;d.setAttribute('role','button');d.setAttribute('aria-label','Slide '+(k+1));d.onclick=()=>go(k);d.onkeydown=e=>{if(e.key==='Enter')go(k)};dots.appendChild(d);});
-function lens(cto,dir){
-  let out='';
-  if(cto&&cto.length) out+='<details class="lens"><summary>CTO LENS</summary><div class="body"><ul class="pts">'+cto.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
-  if(dir&&dir.length) out+='<details class="lens dir"><summary>DIRECTOR LENS</summary><div class="body"><ul class="pts">'+dir.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
-  return out;
-}
-function go(k){
-  i=Math.max(0,Math.min(S.length-1,k));
-  const s=S[i];stage.innerHTML='';
-  const el=document.createElement('div');el.className='slide';
-  try{
-    if(s.t==='q'){
-      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div>'
-        +'<div class="qcard"><div class="qlabel">Think first &middot; predict before you peek</div>'
-        +'<div class="qtext">'+s.q+'</div>'
-        +'<div class="qsub">Form your answer in your head. Then press Next to compare.</div></div>';
-    } else if(s.t==='r'){
-      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'
-        +'<p>Answer from memory first. Tap a question to reveal the answer.</p>'
-        +s.qs.map(x=>'<details class="recall-item"><summary>'+x.q+'</summary><div class="ans">'+x.a+'</div></details>').join('')
-        +'<div class="recall-hint">Struggled on any? Jump back with the tabs above, then return.</div>';
-    } else {
-      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'+s.body+(((s.cto&&s.cto.length)||(s.dir&&s.dir.length))?lens(s.cto,s.dir):'');
-    }
-  }catch(err){
-    el.innerHTML='<div class="eyebrow rose">Render error</div><h2>Slide '+(i+1)+' failed to render</h2><p>'+String(err&&err.message||err)+'</p>';
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q9</span><span class="q-text">Instead of parsing raw text, what would a better architecture look like? How would you create an explicit contract between the LLM and your application?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Instead of:</p>
+<pre class="sketch">LLM
+ |
+ v
+"some text &lt;think&gt; ... &lt;/think&gt; ..."
+ |
+ v
+string parser</pre>
+        <p>Prefer:</p>
+<pre class="sketch">                 LLM
+                  |
+                  v
+          Structured Output
+                  |
+                  v
+       +----------------------+
+       | Schema Validation    |
+       +----------+-----------+
+                  |
+             valid?
+            /      \
+          NO        YES
+          |          |
+          v          v
+       retry /     application
+       reject        logic</pre>
+        <p>For example conceptually:</p>
+<pre class="sketch">{
+   "reasoning": "...",
+   "sentiment": "positive",
+   "tag": "earnings"
+}</pre>
+        <p>Then:</p>
+<pre class="sketch">LLM output
+    |
+    v
+Schema validator
+    |
+    +---- invalid ---> retry/fail
+    |
+    v
+Typed object
+    |
+    +--> reasoning
+    +--> sentiment
+    +--> tag</pre>
+        <p>This creates an explicit contract.</p>
+        <h4>General architecture principle</h4>
+<pre class="sketch">Probabilistic component
+          |
+          v
+      Contract
+          |
+          v
+Deterministic application</pre>
+        <p>This pattern is extremely important when building LLM systems.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q10</span><span class="q-text">The CAPM example shows the model calculating 10.2% and concluding "undervalued." What if it used the wrong formula but still landed on "undervalued"? Why does a correct final answer not prove correct reasoning?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>The CAPM example is excellent for understanding this.</p>
+        <p>Suppose:</p>
+<pre class="sketch">Risk-free = 3%
+Beta = 1.2
+Market = 9%
+Actual expected = 10.5%</pre>
+        <p>Correct reasoning:</p>
+<pre class="sketch">CAPM
+ |
+ v
+3% + 1.2 × (9%-3%)
+ |
+ v
+10.2%
+ |
+ v
+10.5% > 10.2%
+ |
+ v
+UNDERVALUED</pre>
+        <p>But imagine:</p>
+<pre class="sketch">Wrong formula
+     |
+     v
+Wrong calculation
+     |
+     v
+Lucky comparison
+     |
+     v
+UNDERVALUED</pre>
+        <p>You still get:</p>
+<pre class="sketch">CORRECT FINAL ANSWER</pre>
+        <p>Therefore:</p>
+<pre class="sketch">Final answer correctness
+          |
+          X
+does NOT imply
+          |
+          v
+Reasoning correctness</pre>
+        <p>This is exactly the same principle as distributed systems:</p>
+        <p><b>A correct final state doesn't necessarily prove every intermediate state transition was correct.</b></p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q11</span><span class="q-text">If the reasoning trace is also generated by the model, what independent mechanism could you use to verify it? How would this work for finance, SQL generation, or compliance?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">                 LLM reasoning
+                       |
+                       v
+               "Looks reasonable"
+                       |
+                       X
+                Not validation</pre>
+        <p>You need an independent mechanism:</p>
+<pre class="sketch">                  Model Answer
+                       |
+                       v
+               Independent Check
+                       |
+         +-------------+-------------+
+         |                           |
+      verified                    failed
+         |                           |
+         v                           v
+      accept                     reject/retry</pre>
+        <p>For finance:</p>
+<pre class="sketch">LLM
+ |
+ v
+Reasoning
+ |
+ v
+Financial calculator / rules engine
+ |
+ v
+Independent verification</pre>
+        <p>For SQL:</p>
+<pre class="sketch">LLM-generated SQL
+       |
+       v
+SQL parser
+       |
+       v
+Read-only DB
+       |
+       v
+Result validation</pre>
+        <p>For compliance:</p>
+<pre class="sketch">LLM
+ |
+ v
+Policy interpretation
+ |
+ v
+Deterministic rules engine
+ |
+ v
+Compliance decision</pre>
+        <p>This leads to a strong principle:</p>
+        <p><b>Use LLMs for reasoning; use deterministic systems for decisions whenever possible.</b></p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q12</span><span class="q-text">Does a reasoning model always give you consistent, structured output? Is "shows its thinking" the same as "always outputs a fixed format"? What are these as separate dimensions?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>This is one of the most subtle points.</p>
+        <p>People might conclude:</p>
+<pre class="sketch">Reasoning model
+      |
+      v
+Consistent output</pre>
+        <p>Not necessarily.</p>
+        <p>These are separate dimensions:</p>
+<pre class="sketch">                  MODEL CAPABILITIES
+
+              Reasoning
+                  |
+       +----------+----------+
+       |                     |
+    weak                    strong
+
+
+             Output discipline
+                  |
+       +----------+----------+
+       |                     |
+    loose                   strict</pre>
+        <p>You can have:</p>
+<pre class="sketch">Strong reasoning + loose format</pre>
+        <p>or:</p>
+<pre class="sketch">Weak reasoning + strict JSON</pre>
+        <p>or:</p>
+<pre class="sketch">Strong reasoning + strict JSON</pre>
+        <p>Therefore:</p>
+<pre class="sketch">Reasoning capability
+        ≠
+Output contract</pre>
+        <p>You enforce the second separately.</p>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 6 -->
+  <section class="segment" id="s6" style="--seg:#6B9A44">
+    <div class="segment-head"><span class="segment-offset">offset 05</span><h2>The 5-step LLM selection framework</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q13</span><span class="q-text">Before looking at the framework, try to sketch what you think the 5 steps should be. What questions would you ask yourself before picking a model?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Start here:</p>
+<pre class="sketch">               BUSINESS PROBLEM
+                      |
+                      v
+             +----------------+
+             | 1. DEFINE NEED |
+             +-------+--------+
+                     |
+                     v
+             +----------------+
+             | 2. NEED AN LLM?|
+             +-------+--------+
+                     |
+               +-----+-----+
+               |           |
+              NO          YES
+               |           |
+               v           v
+        Traditional     3. MODEL
+        solution           SIZE
+                           |
+                           v
+                       4. SOURCE
+                           |
+                           v
+                       5. SCALE</pre>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 7 -->
+  <section class="segment" id="s7" style="--seg:#C1547A">
+    <div class="segment-head"><span class="segment-offset">offset 06</span><h2>Step 1 & 2 — define the need, do you even need an LLM?</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q14</span><span class="q-text">What's wrong with starting with "We need GPT / DeepSeek / Llama"? What questions should you ask before even mentioning a specific model?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Never start with:</p>
+<pre class="sketch">"We need GPT / DeepSeek / Llama."</pre>
+        <p>Start with:</p>
+<pre class="sketch">What problem are we solving?
+        |
+        +--> Input?
+        +--> Output?
+        +--> Accuracy?
+        +--> Latency?
+        +--> Privacy?
+        +--> Cost?
+        +--> Volume?
+        +--> Availability?</pre>
+        <p>Architecture:</p>
+<pre class="sketch">Business requirement
+       |
+       v
+Functional requirement
+       |
+       v
+AI capability
+       |
+       v
+Model selection</pre>
+        <p>Not:</p>
+<pre class="sketch">Favorite LLM
+     |
+     v
+Find problem for it</pre>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q15</span><span class="q-text">You need to classify fraudulent transactions. Is an LLM your first choice? What alternatives might be better and why? When is "not using an LLM" the right architectural decision?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>This is probably the <b>most important filter</b>.</p>
+        <p>Consider:</p>
+        <p>"Classify whether transaction is fraudulent."</p>
+        <p>You might immediately think:</p>
+<pre class="sketch">LLM
+ |
+ v
+classification</pre>
+        <p>But perhaps:</p>
+<pre class="sketch">Rules
+ +
+ML classifier
+ +
+existing fraud engine</pre>
+        <p>is better.</p>
+        <p>The decision tree:</p>
+<pre class="sketch">                 Problem
+                    |
+                    v
+             Is generation needed?
+               /            \
+             NO              YES
+              |               |
+              v               v
+       Rules / ML /       Consider LLM
+       Search / SQL</pre>
+        <p>Examples:</p>
+<pre class="sketch">Exact lookup       ---> SQL
+Deterministic rule ---> Rules engine
+Entity extraction  ---> Small model / NER
+Semantic search    ---> Embeddings
+Summarization      ---> LLM
+Complex reasoning  ---> Reasoning LLM
+Creative generation---> LLM</pre>
+        <h4>Architect principle</h4>
+        <p><b>LLM should be selected because the problem needs generative reasoning—not because the organization wants an AI solution.</b></p>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 8 -->
+  <section class="segment" id="s8" style="--seg:#B9971F">
+    <div class="segment-head"><span class="segment-offset">offset 07</span><h2>Step 3 — model size</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q16</span><span class="q-text">Is "bigger = better" always true? How could a small model with RAG outperform a large model? What are you optimizing for?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Once you've established that you need an LLM:</p>
+<pre class="sketch">                 LLM
+                  |
+        +---------+---------+
+        |                   |
+      Small                Large
+        |                   |
+        v                   v
+ cheaper/faster        more capability
+ easier to deploy      higher cost</pre>
+        <p>But the interesting part is:</p>
+<pre class="sketch">Small model
+     |
+     +--> RAG
+     +--> Fine-tuning
+     +--> Good prompting
+     |
+     v
+Can sometimes outperform
+a much larger model on
+a narrow domain</pre>
+        <p>So model size isn't simply:</p>
+<pre class="sketch">Bigger = better</pre>
+        <p>It's:</p>
+<pre class="sketch">                 Capability
+                     ^
+                     |
+                     |          Large
+                     |        *
+                     |     *
+                     |   *
+                     | *
+                     |     * Small + RAG
+                     |   *
+                     | *
+                     +-------------------->
+                              Cost</pre>
+        <p>You're looking for the <b>Pareto-efficient point</b>.</p>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 9 -->
+  <section class="segment" id="s9" style="--seg:#279090">
+    <div class="segment-head"><span class="segment-offset">offset 08</span><h2>Step 4 — sourcing</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q17</span><span class="q-text">What are the three sourcing options for models? When would you build from scratch versus use open-source versus use a proprietary API?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>There are essentially three choices:</p>
+<pre class="sketch">                  MODEL
+                    |
+       +------------+------------+
+       |            |            |
+       v            v            v
+    Build        Open-source   Proprietary
+   yourself       weights         API</pre>
+        <h4>Build from scratch</h4>
+<pre class="sketch">Data
+ |
+ v
+Pretraining
+ |
+ v
+Huge GPU cluster
+ |
+ v
+Model</pre>
+        <p>Usually justified only when:</p>
+<pre class="sketch">Unique strategic requirement
++
+Huge scale
++
+Data advantage
++
+ML infrastructure capability</pre>
+        <p>Otherwise:</p>
+<pre class="sketch">$$$$$
++
+long timeline
++
+huge operational complexity</pre>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q18</span><span class="q-text">"Free" open-source models — what does "free" actually mean? What costs are hidden beneath the license? Why might an API be cheaper in total cost of ownership?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">OPEN SOURCE
+
+License
+   |
+   v
+FREE</pre>
+        <p>But:</p>
+<pre class="sketch">Production cost
+    |
+    +--> GPU
+    +--> Kubernetes
+    +--> inference server
+    +--> observability
+    +--> security
+    +--> upgrades
+    +--> model evaluation
+    +--> engineers
+    +--> on-call</pre>
+        <p>Therefore:</p>
+<pre class="sketch">             TCO
+
+License
+   +
+Infrastructure
+   +
+People
+   +
+Operations
+   +
+Risk
+   +
+Opportunity cost</pre>
+        <p>Compare with API:</p>
+<pre class="sketch">Proprietary API
+      |
+      v
+Provider operates
+      |
+      +--> GPU
+      +--> scaling
+      +--> infrastructure
+      +--> model serving
+      |
+      v
+You pay usage fee</pre>
+        <p>So:</p>
+<pre class="sketch">Open source
+LOWER license cost
+HIGHER operational responsibility
+
+API
+HIGHER variable usage cost
+LOWER operational responsibility</pre>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 10 -->
+  <section class="segment" id="s10" style="--seg:#9A62D6">
+    <div class="segment-head"><span class="segment-offset">offset 09</span><h2>Step 5 — scaling is more than TPS</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q19</span><span class="q-text">What does "scaling" mean for LLMs beyond requests per second? What enterprise concerns add complexity beyond raw throughput?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>At architecture level:</p>
+<pre class="sketch">                SCALE
+                  |
+      +-----------+-----------+
+      |           |           |
+    Volume      Latency      Cost
+      |           |           |
+      v           v           v
+ requests/sec   p95/p99     ₹ / request</pre>
+        <p>But enterprise AI adds:</p>
+<pre class="sketch">Data residency
+Model availability
+GPU availability
+Rate limits
+Concurrency
+Token volume
+Context length
+Observability
+Security</pre>
+        <p>A model that wins the benchmark can still lose in production.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q20</span><span class="q-text">Is there one "best" model? Why is model selection really about finding the right point on a trade-off curve rather than finding the absolute best?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">                    Accuracy
+                       ^
+                       |
+                 A   *
+                    / 
+               B  *
+                  /
+             C  *
+                /
+               +--------------------> Cost / Latency</pre>
+        <p>There isn't one universally best model.</p>
+        <p>Instead:</p>
+<pre class="sketch">                YOUR SLA
+                   |
+                   v
+        +------------------------+
+        | Accuracy requirement   |
+        | Latency requirement    |
+        | Cost requirement       |
+        | Privacy requirement    |
+        +-----------+------------+
+                    |
+                    v
+             Select model</pre>
+        <p>For example:</p>
+<pre class="sketch">Fraud alert UI
+    |
+    v
+Latency critical
+    |
+    v
+Small fast model
+
+
+Research assistant
+    |
+    v
+Accuracy critical
+    |
+    v
+Large reasoning model</pre>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 11 -->
+  <section class="segment" id="s11" style="--seg:#C9871F">
+    <div class="segment-head"><span class="segment-offset">offset 10</span><h2>Benchmarks — the trap</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q21</span><span class="q-text">If Model A scores 84%, Model B scores 86%, and Model C scores 85% on a benchmark, what can you really conclude? When does a benchmark stop discriminating between models?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Suppose:</p>
+<pre class="sketch">Benchmark X
+
+Model A = 84%
+Model B = 86%
+Model C = 85%</pre>
+        <p>Looks like:</p>
+<pre class="sketch">C < A < B</pre>
+        <p>But if the benchmark is saturated:</p>
+<pre class="sketch">100% |
+     |
+ 90% |
+     |    A B C
+ 85% |----*--*--*----
+     |
+     +----------------</pre>
+        <p>There isn't much discriminative power left.</p>
+        <p>It's like comparing:</p>
+<pre class="sketch">100m runner A = 9.81 sec
+100m runner B = 9.82 sec</pre>
+        <p>versus:</p>
+<pre class="sketch">A = 15 sec
+B = 30 sec</pre>
+        <p>The benchmark has to separate the candidates meaningfully.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q22</span><span class="q-text">Instead of asking "which model has the highest benchmark score," what should you ask? Why is your internal evaluation set often more valuable than a generic leaderboard?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Don't ask:</p>
+        <p>"Which model has the highest benchmark score?"</p>
+        <p>Ask:</p>
+        <p><b>"Which benchmark predicts my production workload?"</b></p>
+        <p>Architecture:</p>
+<pre class="sketch">Production use case
+       |
+       v
+Required capability
+       |
+       v
+Relevant benchmarks
+       |
+       v
+Internal evaluation set
+       |
+       v
+Production decision</pre>
+        <p>And ideally:</p>
+<pre class="sketch">Public benchmark
+       +
+Internal benchmark
+       +
+Real production samples
+       |
+       v
+Model decision</pre>
+        <p>Your internal benchmark is often more valuable than a generic leaderboard.</p>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 12 -->
+  <section class="segment" id="s12" style="--seg:#2E8B82">
+    <div class="segment-head"><span class="segment-offset">offset 11</span><h2>The real evaluation loop & decision flow</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q23</span><span class="q-text">What does a complete enterprise evaluation loop look like? How do you go from candidate models to production monitoring?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>For an enterprise AI platform:</p>
+<pre class="sketch">                 Candidate Models
+                  /      |      \
+                 v       v       v
+              Model A  Model B  Model C
+                 |       |       |
+                 +-------+-------+
+                         |
+                         v
+                 Internal Dataset
+                         |
+                         v
+                  Evaluation Suite
+                         |
+          +--------------+--------------+
+          |              |              |
+       Accuracy        Latency          Cost
+          |              |              |
+          +--------------+--------------+
+                         |
+                         v
+                  Production Pilot
+                         |
+                         v
+                  Online Monitoring
+                         |
+                         v
+                 Re-evaluate models</pre>
+        <p>This is much stronger than:</p>
+<pre class="sketch">Hugging Face leaderboard
+        |
+        v
+"Model X is #1"
+        |
+        v
+Production</pre>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q24</span><span class="q-text">Now synthesize everything: what would a complete enterprise AI decision flow look like from business problem to production monitoring?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">                    BUSINESS PROBLEM
+                           |
+                           v
+                  +------------------+
+                  | DEFINE THE NEED  |
+                  +--------+---------+
+                           |
+                           v
+                 +---------------------+
+                 | DO WE NEED AN LLM?  |
+                 +----------+----------+
+                            |
+                 +----------+----------+
+                 |                     |
+                NO                    YES
+                 |                     |
+                 v                     v
+        Rules / SQL / ML        What capability?
+                                  |
+                    +-------------+-------------+
+                    |             |             |
+               Retrieval      Generation    Reasoning
+                    |             |             |
+                    +-------------+-------------+
+                                  |
+                                  v
+                           MODEL SIZE
+                                  |
+                                  v
+                         SOURCE / DEPLOYMENT
+                                  |
+                  +---------------+---------------+
+                  |                               |
+             Proprietary                     Open source
+                  |                               |
+                  v                               v
+             API economics                  Infrastructure
+                  |                               |
+                  +---------------+---------------+
+                                  |
+                                  v
+                              EVALUATE
+                                  |
+             +--------------------+--------------------+
+             |                    |                    |
+          Accuracy              Latency               Cost
+             |                    |                    |
+             +--------------------+--------------------+
+                                  |
+                                  v
+                               SCALE
+                                  |
+                                  v
+                       PRODUCTION MONITORING
+                                  |
+                                  v
+                           RE-EVALUATE</pre>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 13 -->
+  <section class="segment" id="s13" style="--seg:#C1543A">
+    <div class="segment-head"><span class="segment-offset">offset 12</span><h2>The most important architecture lessons</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q25</span><span class="q-text">If you could only remember 8 things from this entire material, what would they be? What are the architect-level takeaways that transfer beyond DeepSeek?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <h4>1. Reasoning trace is not proof</h4>
+<pre class="sketch">Visible reasoning
+       ≠
+Correct reasoning</pre>
+        <p>You still need independent validation.</p>
+
+        <h4>2. Model-specific prompting is an adapter concern</h4>
+<pre class="sketch">Application
+     |
+     v
+Generic LLM interface
+     |
+     v
+Model adapter
+     |
+     +--> DeepSeek template
+     +--> OpenAI template
+     +--> Llama template</pre>
+        <p>Don't leak model-specific tokens throughout your application.</p>
+
+        <h4>3. Never treat raw LLM text as a reliable API contract</h4>
+<pre class="sketch">LLM
+ |
+ v
+Unstructured output
+ |
+ v
+Schema validation
+ |
+ v
+Application</pre>
+
+        <h4>4. Separate reasoning from decision-making</h4>
+<pre class="sketch">LLM
+ |
+ | proposes
+ v
+Reasoning
+ |
+ v
+Deterministic validator
+ |
+ v
+Decision</pre>
+        <p>Especially important in <b>finance, compliance, payments and risk</b>.</p>
+
+        <h4>5. "Do we need an LLM?" comes before "Which LLM?"</h4>
+<pre class="sketch">Problem
+  |
+  v
+Need LLM?
+  |
+  +---- NO ---> simpler system
+  |
+  +---- YES
+          |
+          v
+      Which model?</pre>
+
+        <h4>6. Open-source TCO ≠ license cost</h4>
+<pre class="sketch">Free weights
+    +
+GPU
+    +
+Engineering
+    +
+Operations
+    +
+Security
+    +
+Maintenance
+    =
+REAL TCO</pre>
+
+        <h4>7. Benchmark score ≠ production fitness</h4>
+<pre class="sketch">Benchmark
+    |
+    v
+Candidate filter
+    |
+    v
+Internal evaluation
+    |
+    v
+Pilot
+    |
+    v
+Production metrics</pre>
+
+        <h4>8. AI architecture is ultimately an optimization problem</h4>
+<pre class="sketch">                 ACCURACY
+                    ^
+                    |
+                    |       *
+                    |    *
+                    |  *
+                    | *
+                    +------------------>
+                         COST / LATENCY</pre>
+        <p>You aren't looking for <b>the best model</b>.</p>
+        <p>You're looking for:</p>
+        <p><b>the cheapest model that satisfies your business, accuracy, latency, privacy, and operational constraints.</b></p>
+      </div></div></div>
+
+    <p class="segment-note" style="margin-top:8px;"><b style="color:#C1543A;">Quick reference cheat sheet:</b></p>
+<pre class="sketch">┌─────────────────────────────────────────────────────────────┐
+│                 REASONING MODELS & LLM SELECTION            │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│ REASONING MODELS                                            │
+│ • Visible chain-of-thought, not verified reasoning          │
+│ • Reasoning trace = self-reported, not independently        │
+│   verifiable (unlike RAG citations)                         │
+│ • &lt;think&gt; token = model-specific protocol, not generic AI  │
+│                                                             │
+│ MODEL SELECTION FRAMEWORK                                   │
+│ 1. Define the actual need                                  │
+│ 2. "Do you even need an LLM?" ← MOST IMPORTANT FILTER      │
+│ 3. Choose model size (small+fine-tune/RAG can beat large)  │
+│ 4. Choose sourcing (build/open-source/proprietary)         │
+│ 5. Plan for scaling (volume, latency, cost, residency)     │
+│                                                             │
+│ BENCHMARKS                                                  │
+│ • Saturated benchmarks measure noise, not ability          │
+│ • Always check recency before trusting a leaderboard       │
+│ • Internal evaluation set > generic leaderboard             │
+│                                                             │
+│ COSTS                                                       │
+│ • Open-source license = free; open-source TCO ≠ free      │
+│ • Proprietary API = higher variable cost, lower ops cost   │
+│                                                             │
+│ ARCHITECTURE PRINCIPLES                                     │
+│ • Probabilistic component → Contract → Deterministic app   │
+│ • Never leak model-specific tokens into generic code       │
+│ • Validation at the boundary, not after                    │
+│ • LLMs for reasoning; deterministic systems for decisions  │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘</pre>
+  </section>
+
+  <footer>
+    // final compression: a reasoning model spends more computation on intermediate steps, but the trace is model-generated, so visible ≠ verified →
+    running a dataset through an existing model is inference, not training — no weight update happens →
+    quantization is a memory-representation technique, useful with or without training →
+    model-specific trigger tokens like &lt;think&gt; belong in an adapter layer, never in your generic AI abstraction →
+    temperature and top-p are token sampling controls, not reasoning controls → raw string parsing of LLM output is an untrusted-producer / implicit-contract mismatch —
+    prefer structured output validated against a schema → a correct final answer never proves correct reasoning, so decisions need independent, deterministic validation →
+    and picking a model starts with "do we even need an LLM," then size, sourcing, and scale — benchmarks only matter if they predict your actual production workload.
+  </footer>
+
+</div>
+
+<script>
+function toggleTheme(){
+  const body = document.body;
+  const btn = document.getElementById('themeBtn');
+  body.classList.toggle('dark-theme');
+  if(body.classList.contains('dark-theme')){
+    btn.innerHTML = '☀&nbsp; Light mode';
+  } else {
+    btn.innerHTML = '☾&nbsp; Dark mode';
   }
-  stage.appendChild(el);
-  counter.textContent=(i+1)+' / '+S.length;
-  document.querySelectorAll('.dot').forEach((d,k2)=>d.classList.toggle('on',k2===i));
-  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.sec===s.sec));
-  prevBtn.disabled=(i===0);
-  nextBtn.textContent=(i===S.length-1)?'Done \u2713':'Next \u2192';
-  nextBtn.disabled=(i===S.length-1);
-  document.querySelector('main').scrollTop=0;window.scrollTo(0,0);
 }
-prevBtn.onclick=()=>go(i-1);nextBtn.onclick=()=>go(i+1);
-document.addEventListener('keydown',e=>{if(e.target.closest('details'))return;if(e.key==='ArrowRight')go(i+1);if(e.key==='ArrowLeft')go(i-1);});
-go(0);
+function toggle(headEl){
+  const card = headEl.closest('.q-card');
+  const answer = card.querySelector('.q-answer');
+  const isOpen = card.classList.contains('open');
+  if(isOpen){
+    card.classList.remove('open');
+    answer.style.maxHeight = null;
+    headEl.querySelector('.q-toggle').textContent = 'reveal';
+  } else {
+    card.classList.add('open');
+    answer.style.maxHeight = answer.scrollHeight + 'px';
+    headEl.querySelector('.q-toggle').textContent = 'hide';
+  }
+}
 </script>
 </body>
 </html>
