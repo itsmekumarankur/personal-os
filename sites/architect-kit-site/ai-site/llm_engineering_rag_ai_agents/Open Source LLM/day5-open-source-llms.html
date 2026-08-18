@@ -2,566 +2,2145 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Architects Lab · Open-Source LLMs — Hugging Face, Quantization &amp; Document Q&amp;A</title>
+<title>Open-Source LLMs — Interactive Recall Learning Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0d0f14; --panel:#151823; --panel2:#1b1f2e;
-    --ink:#e8e6df; --dim:#8b8fa3;
-    --gold:#d4af5a; --gold-soft:#b8964a;
-    --teal:#5ad4c8; --rose:#d47a8a; --violet:#9a8ad4; --amber:#d4915a;
-    --line:#2a2f42;
-    --mono:'Courier New', ui-monospace, monospace;
+    --paper:#FAF9F5;
+    --panel:#FFFFFF;
+    --panel-2:#F2F0E8;
+    --border:#DEDACC;
+    --text:#242420;
+    --muted:#75736A;
   }
-  *{margin:0;padding:0;box-sizing:border-box}
-  html,body{height:100%}
-  body{background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif;display:flex;flex-direction:column;min-height:100vh}
-  header{padding:16px 26px 12px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
-  header .k{font-family:var(--mono);font-size:.68rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase}
-  header h1{font-size:1rem;font-weight:normal}
-  header .count{margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--dim)}
-  .tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
-  .tab{flex:1;min-width:110px;padding:9px 10px;text-align:center;font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;color:var(--dim);border-right:1px solid var(--line);cursor:pointer;white-space:nowrap;transition:.2s;background:transparent;border-top:none;border-bottom:none;border-left:none}
-  .tab:last-child{border-right:none}
-  .tab.active{color:var(--bg);font-weight:bold}
-  .tab[data-c="gold"].active{background:var(--gold)}
-  .tab[data-c="teal"].active{background:var(--teal)}
-  .tab[data-c="rose"].active{background:var(--rose)}
-  .tab[data-c="violet"].active{background:var(--violet)}
-  .tab[data-c="amber"].active{background:var(--amber)}
-  .tab[data-c="ink"].active{background:var(--ink)}
-  main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px 96px;overflow-y:auto}
-  .slide{max-width:780px;width:100%;animation:fadeUp .4s ease both}
-  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-  @media (prefers-reduced-motion: reduce){.slide{animation:none}}
-  .eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px}
-  .eyebrow.gold{color:var(--gold)} .eyebrow.teal{color:var(--teal)} .eyebrow.rose{color:var(--rose)}
-  .eyebrow.violet{color:var(--violet)} .eyebrow.amber{color:var(--amber)} .eyebrow.ink{color:var(--dim)}
-  .slide h2{font-size:1.55rem;font-weight:normal;line-height:1.3;margin-bottom:14px}
-  .slide h2 em{font-style:italic;color:var(--gold)}
-  .slide p{color:#c9c7bf;line-height:1.75;font-size:1rem;margin-bottom:13px}
-  .slide p strong, .slide li strong{color:var(--ink)}
-  .slide code{font-family:var(--mono);font-size:.85em;background:var(--panel2);padding:2px 6px;border-radius:3px;color:var(--gold)}
-  .ascii{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:6px;padding:14px 16px;margin:14px 0;font-family:var(--mono);font-size:.74rem;line-height:1.5;color:#b9c2d8;overflow-x:auto;white-space:pre}
-  .ascii .hl{color:var(--gold)} .ascii .tl{color:var(--teal)} .ascii .rs{color:var(--rose)}
-  .note{border:1px dashed var(--gold-soft);border-radius:6px;padding:11px 15px;margin:14px 0;font-size:.9rem;color:#cfc9ae;line-height:1.65}
-  .note b{color:var(--gold)}
-  ul.pts{margin:10px 0 13px 2px;list-style:none}
-  ul.pts li{padding:6px 0 6px 21px;position:relative;color:#c9c7bf;line-height:1.6;font-size:.95rem}
-  ul.pts li::before{content:"\203A";position:absolute;left:4px;color:var(--gold);font-family:var(--mono)}
-  /* ---- Think First (question) slides ---- */
-  .qcard{border:2px solid var(--gold);border-radius:10px;background:linear-gradient(160deg,#1a1608,#151823);padding:30px 28px;margin:6px 0 18px;position:relative}
-  .qcard::before{content:"?";position:absolute;top:-20px;left:22px;width:38px;height:38px;border-radius:50%;background:var(--gold);color:var(--bg);font-family:var(--mono);font-weight:bold;font-size:1.3rem;display:flex;align-items:center;justify-content:center}
-  .qcard .qlabel{font-family:var(--mono);font-size:.64rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;margin-bottom:12px}
-  .qcard .qtext{font-size:1.25rem;line-height:1.55;color:var(--ink);font-style:italic}
-  .qcard .qsub{margin-top:14px;font-size:.86rem;color:var(--dim);font-style:normal;font-family:var(--mono)}
-  /* ---- lenses (CTO / Director) ---- */
-  details.lens{margin:10px 0;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
-  details.lens summary{cursor:pointer;padding:10px 14px;font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;color:var(--teal);list-style:none}
-  details.lens summary::before{content:"+ ";color:var(--gold)}
-  details.lens[open] summary::before{content:"\2212 "}
-  details.lens.dir summary{color:var(--rose)}
-  details.lens .body{padding:2px 16px 13px}
-  details.lens .body li{font-size:.9rem}
-  /* ---- recall quiz slides ---- */
-  .recall-item{border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:6px;background:var(--panel);margin:12px 0;overflow:hidden}
-  .recall-item summary{cursor:pointer;padding:13px 16px;font-size:.98rem;color:var(--ink);list-style:none;line-height:1.55}
-  .recall-item summary::before{content:"Q  ";font-family:var(--mono);color:var(--teal);font-weight:bold}
-  .recall-item .ans{padding:0 16px 13px;color:#b9c2b0;font-size:.92rem;line-height:1.65;border-top:1px dashed var(--line);padding-top:11px;margin:0 16px 13px;padding-left:0;padding-right:0}
-  .recall-item .ans b{color:var(--teal)}
-  .recall-hint{font-family:var(--mono);font-size:.7rem;color:var(--dim);margin-top:6px}
-  footer{position:fixed;left:0;right:0;bottom:0;background:rgba(13,15,20,.93);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:11px 20px;display:flex;align-items:center;gap:14px}
-  .dots{display:flex;gap:4px;flex:1;justify-content:center;flex-wrap:wrap}
-  .dot{width:6px;height:6px;border-radius:50%;background:var(--line);cursor:pointer;transition:.2s}
-  .dot.on{background:var(--gold);transform:scale(1.45)}
-  .dot.q{border:1px solid var(--gold);background:transparent}
-  .dot.q.on{background:var(--gold)}
-  button.nav{font-family:var(--mono);font-size:.78rem;letter-spacing:.1em;background:transparent;color:var(--ink);border:1px solid var(--line);padding:9px 18px;border-radius:5px;cursor:pointer;transition:.2s}
-  button.nav:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
-  button.nav.primary{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:bold}
-  button.nav.primary:hover{background:#e2c070}
-  button.nav:disabled{opacity:.25;cursor:default}
-  button.nav:focus-visible,.tab:focus-visible,.dot:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-  .hint{position:fixed;bottom:62px;right:18px;font-family:var(--mono);font-size:.6rem;color:var(--dim);letter-spacing:.1em}
-  @media(max-width:600px){.slide h2{font-size:1.28rem}.ascii{font-size:.58rem;padding:11px}.hint{display:none}.qcard .qtext{font-size:1.08rem}}
+  body.dark-theme{
+    --paper:#0F1115;
+    --panel:#161A20;
+    --panel-2:#1C2027;
+    --border:#2A2E37;
+    --text:#E7E3D8;
+    --muted:#8B8F98;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;background:var(--paper);color:var(--text);
+    font-family:'IBM Plex Sans',sans-serif;line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    transition:background .25s ease,color .25s ease;
+  }
+  .theme-toggle{
+    position:fixed;top:18px;right:18px;z-index:50;
+    display:flex;align-items:center;gap:8px;
+    background:var(--panel);border:1px solid var(--border);
+    color:var(--text);
+    font-family:'IBM Plex Mono',monospace;font-size:.75rem;font-weight:600;
+    padding:8px 14px;border-radius:20px;cursor:pointer;
+    box-shadow:0 2px 8px rgba(0,0,0,0.12);
+    transition:background .25s ease,color .25s ease;
+  }
+  .theme-toggle:hover{border-color:#9A62D6;}
+  body.dark-theme .q-answer-inner{color:#C7C2B4;}
+  body.dark-theme pre.sketch{color:#B7BAC2;}
+  body.dark-theme .q-tag{color:#0F1115;}
+  body.dark-theme .qa-pair{border-color:#2A2E37;}
+  @media(max-width:600px){
+    .theme-toggle{top:auto;bottom:18px;right:18px;}
+  }
+  .wrap{max-width:1040px;margin:0 auto;padding:48px 32px 120px;}
+
+  .ledger-strip{
+    display:flex;height:10px;border-radius:3px;overflow:hidden;
+    margin-bottom:28px;border:1px solid var(--border);
+  }
+  .ledger-strip span{flex:1;border-right:1px solid var(--paper);}
+  .ledger-strip span:nth-child(1),.ledger-strip span:nth-child(11){background:#C9871F;}
+  .ledger-strip span:nth-child(2),.ledger-strip span:nth-child(12){background:#2E8B82;}
+  .ledger-strip span:nth-child(3){background:#C1543A;}
+  .ledger-strip span:nth-child(4){background:#7A63B8;}
+  .ledger-strip span:nth-child(5){background:#3480B0;}
+  .ledger-strip span:nth-child(6){background:#6B9A44;}
+  .ledger-strip span:nth-child(7){background:#C1547A;}
+  .ledger-strip span:nth-child(8){background:#B9971F;}
+  .ledger-strip span:nth-child(9){background:#279090;}
+  .ledger-strip span:nth-child(10){background:#9A62D6;}
+
+  header h1{
+    font-family:'Fraunces',serif;font-weight:600;
+    font-size:2.5rem;letter-spacing:-0.5px;margin:0 0 6px;color:var(--text);
+  }
+  header h1 em{color:#C1543A;font-style:normal;}
+  header p.sub{color:var(--muted);font-size:1rem;margin:0 0 28px;max-width:68ch;}
+
+  .meta-bar{
+    display:flex;gap:14px;flex-wrap:wrap;
+    font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:var(--muted);
+    border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+    padding:12px 0;margin-bottom:36px;
+  }
+  .meta-bar b{color:#2E8B82;}
+
+  nav{
+    position:sticky;top:0;background:rgba(250,249,245,0.94);backdrop-filter:blur(6px);
+    padding:14px 0;margin:0 0 40px;border-bottom:1px solid var(--border);
+    display:flex;flex-wrap:wrap;gap:8px 16px;z-index:10;
+  }
+  body.dark-theme nav{background:rgba(15,17,21,0.94);}
+  nav a{
+    font-family:'IBM Plex Mono',monospace;font-size:.72rem;
+    text-decoration:none;padding:4px 8px;border-radius:4px;
+    border:1px solid transparent;font-weight:600;
+  }
+
+  section.segment{
+    margin-bottom:56px;scroll-margin-top:70px;
+    border-left:3px solid var(--seg,#2E8B82);padding-left:22px;
+  }
+  .segment-head{display:flex;align-items:baseline;gap:14px;margin-bottom:6px;}
+  .segment-offset{
+    font-family:'IBM Plex Mono',monospace;font-size:.85rem;
+    background:var(--panel-2);border:1px solid var(--border);
+    padding:2px 8px;border-radius:4px;color:var(--seg,#2E8B82);font-weight:600;
+  }
+  .segment-head h2{font-family:'Fraunces',serif;font-weight:600;font-size:1.55rem;margin:0;color:var(--text);}
+  .segment-note{color:var(--muted);font-size:.93rem;margin:8px 0 20px;max-width:74ch;}
+  .segment-note code, p code, li code{
+    font-family:'IBM Plex Mono',monospace;background:var(--panel-2);
+    padding:1px 6px;border-radius:3px;color:var(--seg,#C9871F);font-size:.88em;
+  }
+
+  pre.sketch{
+    background:var(--panel-2);border:1px solid var(--border);
+    border-left:3px solid var(--seg,#2E8B82);padding:14px 16px;
+    font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:#4A4A44;
+    overflow-x:auto;border-radius:4px;margin:0 0 14px;white-space:pre;
+  }
+  body.dark-theme pre.sketch{color:#B7BAC2;}
+
+  .q-card{
+    background:var(--panel);border:1px solid var(--border);
+    border-radius:6px;margin-bottom:12px;overflow:hidden;
+    box-shadow:0 1px 2px rgba(0,0,0,0.03);
+  }
+  .q-head{display:flex;align-items:flex-start;gap:12px;padding:16px 18px;cursor:pointer;user-select:none;}
+  .q-tag{
+    font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:#fff;
+    background:var(--seg,#C9871F);padding:2px 7px;border-radius:3px;
+    flex-shrink:0;margin-top:3px;font-weight:600;
+  }
+  .q-text{font-size:1rem;color:var(--text);flex:1;}
+  .q-toggle{
+    font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--muted);
+    flex-shrink:0;white-space:nowrap;border:1px solid var(--border);
+    padding:3px 9px;border-radius:20px;margin-top:1px;
+  }
+  .q-card.open .q-toggle{color:var(--seg,#2E8B82);border-color:var(--seg,#2E8B82);}
+  .q-answer{max-height:0;overflow:hidden;transition:max-height .3s ease;background:var(--panel-2);}
+  .q-card.open .q-answer{border-top:1px solid var(--border);}
+  .q-answer-inner{padding:16px 18px 18px 46px;font-size:.94rem;color:#3A3934;}
+  .q-answer-inner b{color:var(--seg,#C9871F);}
+  .q-answer-inner p{margin:0 0 10px;}
+  .q-answer-inner p:last-child{margin-bottom:0;}
+  .q-answer-inner ol,.q-answer-inner ul{margin:0 0 14px;padding-left:20px;}
+  .q-answer-inner li{margin-bottom:6px;}
+  .q-answer-inner h4{
+    font-family:'IBM Plex Mono',monospace;font-size:.78rem;text-transform:uppercase;
+    letter-spacing:.5px;color:var(--seg,#C9871F);margin:16px 0 8px;
+  }
+  .q-answer-inner h4:first-child{margin-top:0;}
+
+  .static-block{margin:14px 0 24px;}
+  .static-block h3{
+    font-family:'IBM Plex Mono',monospace;font-size:.85rem;text-transform:uppercase;
+    letter-spacing:.5px;color:var(--seg,#C9871F);margin:22px 0 10px;
+    border-bottom:1px solid var(--border);padding-bottom:6px;
+  }
+  .static-block h3:first-child{margin-top:0;}
+  .static-block p{font-size:.94rem;margin:0 0 10px;color:#3A3934;}
+  body.dark-theme .static-block p{color:#C7C2B4;}
+  .static-block b{color:var(--seg,#C9871F);}
+
+  .rag-table{width:100%;border-collapse:collapse;font-size:.85rem;margin:6px 0 16px;}
+  .rag-table th{
+    text-align:left;font-family:'IBM Plex Mono',monospace;font-size:.68rem;color:var(--muted);
+    padding:8px 12px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.5px;
+  }
+  .rag-table td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top;font-size:.85rem;}
+  .rag-table td:first-child{color:var(--seg,#2E8B82);font-weight:600;}
+
+  .qa-pair{border-bottom:1px dashed var(--border);padding:8px 0;margin-bottom:2px;}
+  .qa-q{font-size:.9rem;font-weight:600;margin:0 0 4px;color:var(--text);}
+  .qa-a{font-size:.88rem;margin:0;color:var(--muted);}
+  .qa-a code{font-family:'IBM Plex Mono',monospace;background:var(--panel-2);padding:1px 5px;border-radius:3px;color:var(--seg,#C9871F);}
+
+  footer{
+    margin-top:60px;padding-top:24px;border-top:1px solid var(--border);
+    color:var(--muted);font-size:.85rem;font-family:'IBM Plex Mono',monospace;
+  }
+
+  @media(max-width:600px){
+    header h1{font-size:1.9rem;}
+    .q-answer-inner{padding-left:18px;}
+    section.segment{padding-left:14px;}
+    pre.sketch{font-size:.66rem;}
+    .rag-table{font-size:.76rem;}
+    .rag-table th,.rag-table td{padding:6px 8px;}
+  }
 </style>
 </head>
 <body>
-<header>
-  <span class="k">Architects Lab</span>
-  <h1>Open-Source LLMs · Hugging Face, Quantization &amp; Document Q&amp;A</h1>
-  <span class="count" id="counter"></span>
-</header>
-<div class="tabs" id="tabs"></div>
-<main><div id="stage"></div></main>
-<div class="hint">&larr; &rarr; keys work too</div>
-<footer>
-  <button class="nav" id="prevBtn">&larr; Prev</button>
-  <div class="dots" id="dots"></div>
-  <button class="nav primary" id="nextBtn">Next &rarr;</button>
-</footer>
+<button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☾&nbsp; Dark mode</button>
+<div class="wrap">
+
+  <div class="ledger-strip">
+    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span>
+  </div>
+
+  <header>
+    <h1>Open-Source LLMs — <em>you bought responsibilities, not just a model</em></h1>
+    <p class="sub">A revision session covering self-hosted LLMs end to end: Hugging Face model selection, supply-chain security, GPUs, VRAM, quantization, KV cache, tokenizers, generation parameters, PDF ingestion, chat templates, grounding, and the "RAG hole" of naive truncation. Click a question to think first — reveal only when you're ready to check yourself.</p>
+    <div class="meta-bar">
+      <span><b>12 segments</b></span>
+      <span>38 recall questions + interview recall sheet</span>
+      <span>Format: think → answer aloud → reveal</span>
+      <span>Goal: reasoning, not recall</span>
+    </div>
+  </header>
+
+  <nav>
+    <a href="#s1" style="color:#C9871F;">01 Owning the Weights</a>
+    <a href="#s2" style="color:#2E8B82;">02 Hugging Face Hub</a>
+    <a href="#s3" style="color:#C1543A;">03 Supply-Chain & Naming</a>
+    <a href="#s4" style="color:#7A63B8;">04 Size, Context & GPUs</a>
+    <a href="#s5" style="color:#3480B0;">05 VRAM & Quantization</a>
+    <a href="#s6" style="color:#6B9A44;">06 KV Cache & pipeline()</a>
+    <a href="#s7" style="color:#C1547A;">07 Tokenizer & Loading</a>
+    <a href="#s8" style="color:#B9971F;">08 Generation Parameters</a>
+    <a href="#s9" style="color:#279090;">09 PDFs — Hidden RAG Problem</a>
+    <a href="#s10" style="color:#9A62D6;">10 Chat Templates & Grounding</a>
+    <a href="#s11" style="color:#C9871F;">11 The RAG Hole</a>
+    <a href="#s12" style="color:#2E8B82;">12 Recall Sheet & Summary</a>
+  </nav>
+
+  <!-- SEGMENT 1 -->
+  <section class="segment" id="s1" style="--seg:#C9871F">
+    <div class="segment-head"><span class="segment-offset">offset 00</span><h2>Owning the model weights</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q1</span><span class="q-text">If I move from GPT/Claude/Gemini API to an open-weight model, what exactly becomes my responsibility?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>With an API:</p>
+<pre class="sketch">YOU
+ |
+ | prompt
+ v
++-----------------------+
+|     MODEL PROVIDER    |
+|                       |
+| Tokenizer             |
+| Model weights         |
+| GPU infrastructure    |
+| Serving               |
+| Scaling               |
+| Batching              |
+| Availability           |
+| Versioning             |
++-----------------------+
+ |
+ v
+Answer</pre>
+        <p>With an open-weight model:</p>
+<pre class="sketch">YOU
+ |
+ | prompt
+ v
++---------------------------+
+|       YOUR SYSTEM         |
+|                           |
+| Tokenizer                 |
+| Model weights             |
+| GPU                       |
+| Serving                   |
+| Scaling                   |
+| Batching                  |
+| Availability              |
+| Versioning                |
+| Monitoring                |
+| Security                  |
++---------------------------+
+ |
+ v
+Answer</pre>
+        <h4>Core idea</h4>
+        <p>You haven't simply bought a cheaper model.</p>
+        <p>You've bought <b>a different set of responsibilities</b>.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q2</span><span class="q-text">What is the one reason for self-hosting that no improvement in API price or model quality can eliminate?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p><b>Data residency / legal restrictions.</b></p>
+        <p>If regulations or contracts say:</p>
+        <p>"Data must not leave your network."</p>
+        <p>then even a perfect, cheap API cannot be used.</p>
+<pre class="sketch">Customer/KYC data
+       |
+       X
+   INTERNET
+       |
+       X
+External API
+
+Instead:
+
+Customer data
+     |
+     v
++------------------+
+| Internal Network |
+|                  |
+| Self-hosted LLM  |
++------------------+</pre>
+        <p>Other reasons can change.</p>
+        <table class="rag-table">
+          <tr><th>Reason</th><th>Can change over time?</th></tr>
+          <tr><td>Cost</td><td>Yes</td></tr>
+          <tr><td>Model quality</td><td>Yes</td></tr>
+          <tr><td>Customization</td><td>Yes</td></tr>
+          <tr><td>Stability</td><td>Yes</td></tr>
+          <tr><td>Data residency</td><td><b>No, if legally mandated</b></td></tr>
+          <tr><td>Offline/edge</td><td>Sometimes</td></tr>
+          <tr><td>Volume economics</td><td>Yes</td></tr>
+        </table>
+      </div></div></div>
+
+    <div class="static-block">
+      <h3>Main reasons for self-hosting</h3>
+      <p><b>1. Data residency</b> — Data remains inside your infrastructure.</p>
+      <p><b>2. Unit economics</b> — At sufficiently high utilization:</p>
+<pre class="sketch">API
+Cost ∝ tokens × requests
+
+Self-host
+Cost ≈ GPU + infrastructure + engineering</pre>
+      <p>But this only works when GPUs are busy enough.</p>
+      <p><b>3. Customization</b> — You can fine-tune on your own data.</p>
+      <p><b>4. Version stability</b> — You control exactly which model version runs.</p>
+      <p><b>5. Offline / edge</b> — Useful where internet/API access isn't available.</p>
+      <p><b>6. Transparency</b> — You can inspect more of the model stack.</p>
+    </div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q3</span><span class="q-text">Why isn't "self-host because it's cheaper" automatically a good argument?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Because <b>GPU utilization matters</b>.</p>
+        <p>Imagine:</p>
+<pre class="sketch">GPU rented 24 hours
+       |
+       v
+Actual usage = 6%
+       |
+       v
+96% capacity idle
+       |
+       v
+Very expensive answer</pre>
+        <p>An API charges mainly when you use it.</p>
+        <p>Also consider retries:</p>
+<pre class="sketch">API:
+1 request → good answer
+
+Self-hosted:
+3 attempts → equivalent answer
+
+Actual cost ≠ simple token calculation</pre>
+        <h4>CFO formula</h4>
+<pre class="sketch">API cost
+=
+tokens/request
+× requests/month
+× price/token</pre>
+        <p>versus:</p>
+<pre class="sketch">Self-host cost
+=
+GPU hours
++ storage
++ networking
++ engineering
++ operations
++ maintenance</pre>
+        <p>The decision point is where:</p>
+<pre class="sketch">API cost = Self-host cost</pre>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q4</span><span class="q-text">Why can "frozen model = stable model" actually become a problem? (CTO Lens)</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Because the model stays exactly as downloaded.</p>
+        <p>That means:</p>
+<pre class="sketch">Model v1
+ |
+ +-- Bias
+ +-- Security issue
+ +-- Factual errors
+ +-- Weaknesses
+ |
+ v
+Still there</pre>
+        <p>Hosted providers may improve their models automatically.</p>
+        <p>With self-hosting:</p>
+<pre class="sketch">Production
+    |
+    v
+Model v1
+    |
+    | quarterly evaluation
+    v
+Test Model v2
+    |
+    v
+Regression tests
+    |
+    v
+Production upgrade</pre>
+        <p>So the mature approach is:</p>
+        <p><b>Frozen production version + planned upgrade cycle.</b></p>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 2 -->
+  <section class="segment" id="s2" style="--seg:#2E8B82">
+    <div class="segment-head"><span class="segment-offset">offset 01</span><h2>Hugging Face Hub</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q5</span><span class="q-text">Hugging Face has around 1.6M models. Is that purely an advantage?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Both.</p>
+<pre class="sketch">                 Hugging Face
+                     |
+        +------------+------------+
+        |            |            |
+      Models       Datasets      Spaces
+       ~1.6M       ~370K        Demo apps</pre>
+        <p>Huge choice is useful.</p>
+        <p>But:</p>
+<pre class="sketch">1.6M models
+     |
+     v
+No automatic quality guarantee
+     |
+     v
+Random model
+     |
+     v
+Production risk</pre>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q6</span><span class="q-text">What should you check FIRST when evaluating a model? Parameter count or licence?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p><b>Licence.</b></p>
+        <p>Correct order:</p>
+<pre class="sketch">1. Licence
+      ↓
+2. Gated?
+      ↓
+3. Parameter count
+      ↓
+4. Base or Instruct?
+      ↓
+5. Context length
+      ↓
+6. Chat template
+      ↓
+7. Training data
+      ↓
+8. Downloads / likes</pre>
+        <h4>Why licence first?</h4>
+        <p>Because:</p>
+        <p>A brilliant model that you cannot legally use is useless for your production system.</p>
+      </div></div></div>
+
+    <div class="static-block">
+      <h3>Model-selection thinking</h3>
+      <p>Instead of:</p>
+<pre class="sketch">1.6M models
+   ↓
+"Which is best?"</pre>
+      <p>do:</p>
+<pre class="sketch">Task
+ ↓
+Trusted organisation
+ ↓
+Licence
+ ↓
+Model size
+ ↓
+Base/Instruct
+ ↓
+Context
+ ↓
+Hardware fit
+ ↓
+Evaluation
+ ↓
+Production candidate</pre>
+      <p>Trusted organizations might include established model publishers such as Meta, Google, Mistral, DeepSeek, etc., but the source emphasizes <b>trusting the publisher rather than blindly trusting download counts</b>.</p>
+    </div>
+  </section>
+
+  <!-- SEGMENT 3 -->
+  <section class="segment" id="s3" style="--seg:#C1543A">
+    <div class="segment-head"><span class="segment-offset">offset 02</span><h2>Model supply-chain security & understanding model names</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q7</span><span class="q-text">You download a 7 GB model from Hugging Face. What security risk exists beyond ordinary malware scanning?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>The <b>model weights themselves can potentially be poisoned</b>.</p>
+        <p>A malicious model could theoretically behave normally except when it encounters a specific trigger.</p>
+<pre class="sketch">Model weights
++-----------------------------+
+| Normal behavior             |
+| Normal behavior             |
+| Normal behavior             |
+| Hidden trigger behavior  <---+
++-----------------------------+</pre>
+        <p>This is fundamentally different from ordinary source-code security.</p>
+      </div></div></div>
+
+    <div class="static-block">
+      <h3>Four things to check</h3>
+      <p><b>1. File format</b> — Prefer <code>safetensors</code> over legacy pickle-based formats where possible.</p>
+      <p><b>2. trust_remote_code=True</b> — This should immediately make you think:</p>
+<pre class="sketch">"Am I allowing repository Python
+ code to execute on my machine?"</pre>
+      <p><b>3. Publisher</b> — Check:</p>
+<pre class="sketch">official publisher?
+        vs
+copycat?</pre>
+      <p><b>4. Version</b> — Don't blindly use <code>latest</code>. Prefer a fixed revision/commit for production reproducibility.</p>
+
+      <h3>Production model supply chain</h3>
+<pre class="sketch">Hugging Face
+     |
+     v
+Download ONCE
+     |
+     v
+Security scan
+     |
+     v
+Internal model registry
+     |
+     v
+Production</pre>
+      <p>Don't make every production container download directly from the internet.</p>
+    </div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q8</span><span class="q-text">What does this mean: microsoft/Phi-3-mini-4k-instruct</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">microsoft
+   |
+   +---- publisher
+
+Phi-3
+   |
+   +---- model family
+
+mini
+   |
+   +---- model size/class
+
+4k
+   |
+   +---- context length
+
+instruct
+   |
+   +---- instruction tuned</pre>
+        <p>Think:</p>
+<pre class="sketch">WHO
+ ↓
+WHICH FAMILY
+ ↓
+HOW BIG
+ ↓
+HOW MUCH CONTEXT
+ ↓
+DOES IT FOLLOW INSTRUCTIONS?</pre>
+      </div></div></div>
+
+    <div class="static-block">
+      <h3>Examples</h3>
+      <p><code>Qwen/Qwen2.5-3B-Instruct</code> means roughly:</p>
+<pre class="sketch">Qwen
+  ↓
+Qwen2.5
+  ↓
+3B parameters
+  ↓
+Instruction tuned</pre>
+      <p><code>meta-llama/Llama-3.2-3B-Instruct</code> — potentially gated/licensed depending on the specific model.</p>
+      <p><code>google/gemma-3-4b-it</code> — <code>it</code> = instruction tuned.</p>
+      <p><code>deepseek-ai/DeepSeek-R1-...</code> — <code>R</code> identifies the reasoning-oriented family.</p>
+      <p><code>...-GGUF</code>, <code>...-AWQ</code>, <code>...-GPTQ</code> — usually indicates an already-quantized variant.</p>
+      <p><code>...-base</code> — usually means completion/base model rather than chat/instruction model.</p>
+    </div>
+  </section>
+
+  <!-- SEGMENT 4 -->
+  <section class="segment" id="s4" style="--seg:#7A63B8">
+    <div class="segment-head"><span class="segment-offset">offset 03</span><h2>Model size vs context, and GPUs</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q9</span><span class="q-text">Why might Phi-3-mini-4k be better than Phi-3-mini-128k?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>If your input is genuinely short.</p>
+        <p>Longer context is not free.</p>
+<pre class="sketch">4K context
+ ↓
+less memory
+ ↓
+potentially faster
+ ↓
+good for short input</pre>
+        <p>versus:</p>
+<pre class="sketch">128K context
+ ↓
+more memory
+ ↓
+more computation
+ ↓
+useful when the document can't
+be meaningfully split</pre>
+        <h4>Rule</h4>
+        <p>Don't buy a warehouse when you only need to store one envelope.</p>
+      </div></div></div>
+
+    <div class="static-block">
+      <h3>Rough model-size intuition</h3>
+<pre class="sketch">0.5B - 3B
+    ↓
+Laptop / small GPU
+    ↓
+Extraction / sorting / simple Q&A
+
+7B - 14B
+    ↓
+Sweet spot
+    ↓
+Many practical self-hosted applications
+
+30B+
+    ↓
+Serious hardware
+    ↓
+More capable narrow-task performance</pre>
+    </div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q10</span><span class="q-text">Why does a GPU beat a CPU for LLM inference even though individual CPU cores are faster?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Because LLM computation is massively parallel.</p>
+<pre class="sketch">CPU
+
+[CORE] [CORE] [CORE] [CORE]
+   \      |      |      /
+        work</pre>
+        <p>versus:</p>
+<pre class="sketch">GPU
+
+[→][→][→][→][→][→][→][→]
+[→][→][→][→][→][→][→][→]
+[→][→][→][→][→][→][→][→]
+[→][→][→][→][→][→][→][→]
+        thousands
+        of lanes</pre>
+        <p>A token requires operations involving billions of weights.</p>
+        <p>Those operations can be performed in parallel.</p>
+        <h4>CPU vs GPU</h4>
+        <table class="rag-table">
+          <tr><th></th><th>CPU</th><th>GPU</th></tr>
+          <tr><td>Core count</td><td>Few</td><td>Thousands</td></tr>
+          <tr><td>Individual core</td><td>Powerful</td><td>Simpler</td></tr>
+          <tr><td>Parallel computation</td><td>Limited</td><td>Excellent</td></tr>
+          <tr><td>LLM inference</td><td>Poorer</td><td>Better</td></tr>
+        </table>
+        <h4>Rough GPU ladder from the source</h4>
+<pre class="sketch">CPU
+ |
+ | baseline
+ v
+T4
+ |
+ | ~5-10x
+ v
+A100
+ |
+ | ~20-50x</pre>
+        <p>Approximate VRAM:</p>
+<pre class="sketch">T4  ≈ 15 GB
+A100 ≈ 40-80 GB</pre>
+        <p>These are rough figures, not guarantees of end-to-end application speed.</p>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 5 -->
+  <section class="segment" id="s5" style="--seg:#3480B0">
+    <div class="segment-head"><span class="segment-offset">offset 04</span><h2>VRAM & quantization</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q11</span><span class="q-text">Would you rather have a very fast GPU with insufficient VRAM or a slower GPU with enough VRAM?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Usually:</p>
+        <p><b>Enough VRAM wins.</b></p>
+        <p>Because:</p>
+<pre class="sketch">Fast GPU
+   +
+Model doesn't fit
+   =
+CUDA OOM
+   =
+System doesn't run</pre>
+        <p>Whereas:</p>
+<pre class="sketch">Slower GPU
+   +
+Model fits
+   =
+System runs</pre>
+        <h4>Production GPU question</h4>
+        <p>Don't ask:</p>
+        <p>"Which GPU is fastest?"</p>
+        <p>Ask:</p>
+        <p><b>"What does 1,000 successful answers cost at real traffic?"</b></p>
+        <p>Because utilization matters.</p>
+<pre class="sketch">GPU A
+expensive
+8% utilization
+      |
+      v
+Bad economics
+
+GPU B
+cheap
+70% utilization
+      |
+      v
+Potentially better economics</pre>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q12</span><span class="q-text">A 7B model in FP16 requires roughly how much memory?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Approximately:</p>
+<pre class="sketch">7B × 2 bytes
+=
+14 GB</pre>
+        <p>So on a 15 GB T4:</p>
+<pre class="sketch">15 GB VRAM
++----------------------+
+|       14 GB          |
+|      weights         |
+|                      |
+| almost no room       |
+| for everything else  |
++----------------------+</pre>
+        <p>This is risky.</p>
+        <h4>Quantization formula — memorize this</h4>
+<pre class="sketch">VRAM for weights (GB)
+≈
+Parameters(B) × Bytes per weight</pre>
+        <p>FP32: 32 bits = 4 bytes → 7B × 4 ≈ 28 GB (source gives ~26 GB, reflecting approximate model/storage assumptions)</p>
+        <p>FP16: 16 bits = 2 bytes → 7B × 2 ≈ 14 GB</p>
+        <p>INT8: 8 bits = 1 byte → 7B × 1 ≈ 7 GB (source approximation: ≈ 6.5 GB)</p>
+        <p>INT4: 4 bits = 0.5 byte → 7B × 0.5 ≈ 3.5 GB</p>
+        <table class="rag-table">
+          <tr><th>Format</th><th>Bits</th><th>Bytes/weight</th><th>7B approx</th></tr>
+          <tr><td>FP32</td><td>32</td><td>4</td><td>~26–28 GB</td></tr>
+          <tr><td>FP16/BF16</td><td>16</td><td>2</td><td>~13–14 GB</td></tr>
+          <tr><td>INT8</td><td>8</td><td>1</td><td>~6.5–7 GB</td></tr>
+          <tr><td>INT4</td><td>4</td><td>0.5</td><td>~3.5 GB</td></tr>
+        </table>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q13</span><span class="q-text">If INT4 stores weights using 4 bits, does the GPU perform all model mathematics using 4-bit numbers?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>No.</p>
+        <p>The important distinction is:</p>
+<pre class="sketch">                 STORAGE
+                    |
+              4-bit weights
+                    |
+                    v
+             Expand/convert
+                    |
+                    v
+              16-bit compute
+                    |
+                    v
+                GPU math</pre>
+        <p>Therefore:</p>
+        <p>Quantization primarily reduces <b>memory footprint</b>, not necessarily inference computation.</p>
+        <h4>Why is quantization lossy?</h4>
+        <p>Imagine:</p>
+<pre class="sketch">Original:
+
+1.237891
+1.238421
+1.239812
+1.240193</pre>
+        <p>Quantization rounds values onto a coarser grid:</p>
+<pre class="sketch">1.24
+1.24
+1.24
+1.24</pre>
+        <p>Some information is lost.</p>
+        <p>But neural networks have enormous redundancy.</p>
+<pre class="sketch">Billions of weights
+       |
+       v
+Distributed representation
+       |
+       v
+Small rounding errors
+       |
+       v
+Often tolerable</pre>
+        <p>A spreadsheet is different:</p>
+<pre class="sketch">Spreadsheet
+
+Cell A1 = 1000001
+Cell A2 = 1000002
+       |
+       v
+One wrong digit
+       |
+       v
+Potentially wrong answer</pre>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q14</span><span class="q-text">A 4-bit model sounds excellent in casual conversation. Is that enough to approve it for financial document extraction?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>No.</p>
+        <p>The damage may appear first in: rare facts, precise arithmetic, obscure knowledge, less common languages, exact numeric extraction.</p>
+        <p>For financial systems:</p>
+<pre class="sketch">Financial document
+       |
+       v
+4-bit model
+       |
+       v
+"₹1,284,000"
+       |
+       v
+Actually ₹1,824,000
+       |
+       v
+Fluent + confident + WRONG</pre>
+        <p>That's much worse than an obvious failure.</p>
+        <h4>Correct test</h4>
+        <p>Don't ask: "Does the model sound good?"</p>
+        <p>Ask: <b>"Does it produce the correct answers on my known-answer evaluation set?"</b></p>
+        <h4>Quantization troubleshooting ladder</h4>
+<pre class="sketch">INT4
+ |
+ | quality insufficient
+ v
+INT8
+ |
+ | still insufficient
+ v
+Better quantization
+(NF4 / AWQ / GPTQ)
+ |
+ v
+Smaller model at higher precision
+ |
+ v
+Larger GPU</pre>
+        <p>Interesting tradeoff:</p>
+<pre class="sketch">3B FP16
+     can sometimes outperform
+7B INT4</pre>
+        <p>depending on the task.</p>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 6 -->
+  <section class="segment" id="s6" style="--seg:#6B9A44">
+    <div class="segment-head"><span class="segment-offset">offset 05</span><h2>KV cache & pipeline() — the easy door</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q15</span><span class="q-text">Your model weights occupy only 4 GB of a 15 GB GPU. A 500-token prompt works. Then a user submits a 50-page contract. What changed?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>The <b>KV cache</b>.</p>
+        <p>Model weights:</p>
+<pre class="sketch">FIXED</pre>
+        <p>KV cache:</p>
+<pre class="sketch">GROWS WITH
+    |
+    +-- input/context length
+    |
+    +-- concurrent users</pre>
+        <h4>Memory picture</h4>
+<pre class="sketch">+--------------------------------------+
+|             15 GB VRAM               |
++--------------------------------------+
+| Activations / framework overhead     |
++--------------------------------------+
+| KV CACHE                             |
+| ↑ grows with context + batch         |
++--------------------------------------+
+| MODEL WEIGHTS                        |
+| fixed after loading                  |
++--------------------------------------+</pre>
+        <h4>Why KV cache exists</h4>
+        <p>During generation:</p>
+<pre class="sketch">Token 1
+  ↓
+Token 2
+  ↓
+Token 3
+  ↓
+Token 4</pre>
+        <p>Each new token needs information about previous tokens.</p>
+        <p>Instead of recomputing everything repeatedly, the model caches key/value information.</p>
+<pre class="sketch">Previous tokens
+      |
+      v
++-------------+
+| K / V cache |
++-------------+
+      |
+      v
+New token generation</pre>
+        <h4>Critical production lesson</h4>
+        <p>Your memory requirement isn't determined by <code>average request</code>. It is determined by something closer to:</p>
+<pre class="sketch">worst-case request
++
+concurrency</pre>
+        <p>Therefore:</p>
+<pre class="sketch">Client
+  |
+  v
+Input size limit
+  |
+  +---- huge request → reject politely
+  |
+  v
+LLM server</pre>
+        <p>Better to reject a 50-page request than crash the GPU serving 50 users.</p>
+        <h4>Serving 50 concurrent users</h4>
+<pre class="sketch">50 users
+   |
+   +--> input-size cap
+   |
+   +--> proper model server
+   |      (vLLM / TGI)
+   |
+   +--> batching
+   |
+   +--> GQA model
+   |
+   +--> KV-cache compression
+   |
+   +--> queue
+   |
+   v
+stable serving</pre>
+        <p>The source specifically emphasizes that concurrency is a <b>serving architecture decision</b>, not merely a setting you switch on later.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q16</span><span class="q-text">What does this — pipeline(...) — actually hide?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Conceptually:</p>
+<pre class="sketch">TEXT
+ |
+ v
+Tokenizer
+ |
+ v
+Input IDs
+ |
+ v
+Model
+ |
+ v
+Logits
+ |
+ v
+Softmax / Argmax
+ |
+ v
+Decode
+ |
+ v
+Output</pre>
+        <p><code>pipeline()</code> compresses this into:</p>
+<pre class="sketch">TEXT
+ |
+ v
+[pipeline]
+ |
+ v
+OUTPUT</pre>
+        <p>Convenient—but less control.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q17</span><span class="q-text">What failure modes can pipeline() hide? Name four.</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <h4>1. Silent truncation</h4>
+        <p>Input exceeds model limit.</p>
+<pre class="sketch">Long input
+   |
+   v
+Tokenizer
+   |
+   v
+TRUNCATED
+   |
+   v
+Model</pre>
+        <p>Potentially without an obvious warning.</p>
+        <h4>2. Hidden default model</h4>
+<pre class="sketch">pipeline("sentiment-analysis")</pre>
+        <p>may select a default model you didn't explicitly choose.</p>
+        <h4>3. Label mismatch</h4>
+        <p>One model: <code>POSITIVE</code>. Another: <code>positive</code>. Another: <code>LABEL_1</code>. Your code can break.</p>
+        <h4>4. Device placement</h4>
+        <p>You think: <code>GPU</code>. But the pipeline may actually execute on: <code>CPU</code>.</p>
+      </div></div></div>
+
+    <div class="static-block">
+      <h3>Why specialist models matter</h3>
+      <p>The source uses FinBERT:</p>
+<pre class="sketch">pipeline(
+    "text-classification",
+    model="ProsusAI/finbert"
+)</pre>
+      <p>Example:</p>
+<pre class="sketch">"Tesla stock surges after record earnings"
+       ↓
+positive
+
+"Microsoft is scheduled to release
+its earnings report"
+       ↓
+neutral</pre>
+      <p>A keyword system might see <code>"earnings"</code> and incorrectly classify it as positive. A domain-trained model understands financial language better.</p>
+      <h3>Important architectural principle</h3>
+      <p>A smaller specialist model can outperform a much larger general model on a narrow task.</p>
+    </div>
+  </section>
+
+  <!-- SEGMENT 7 -->
+  <section class="segment" id="s7" style="--seg:#C1547A">
+    <div class="segment-head"><span class="segment-offset">offset 06</span><h2>Tokenizer & loading models</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q18</span><span class="q-text">What happens if you use BERT's tokenizer with a GPT model? Will it fail with an error?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p><b>Not necessarily.</b></p>
+        <p>It can produce <b>fluent nonsense</b>.</p>
+        <p>This is one of the most important concepts.</p>
+        <h4>Why?</h4>
+        <p>Different models have different vocabularies.</p>
+        <p>Example — Text: "AI is transforming industries"</p>
+<pre class="sketch">BERT tokenizer:
+
+AI → ID 9932
+is → ID 2003
+...
+
+GPT tokenizer:
+
+AI → ID 20185
+is → ID 318
+...</pre>
+        <p>Same text. Different token IDs.</p>
+<pre class="sketch">TEXT
+ |
+ +----------------+
+ |                |
+ v                v
+BERT tokenizer   GPT tokenizer
+ |                |
+IDs A             IDs B</pre>
+        <p>If you feed BERT IDs to GPT:</p>
+<pre class="sketch">BERT tokenizer
+     |
+     v
+[9932, 2003, ...]
+     |
+     v
+GPT model
+     |
+     v
+Valid integers!
+     |
+     v
+Wrong meanings
+     |
+     v
+Fluent nonsense</pre>
+        <p>The model has no idea the numbers came from the wrong vocabulary.</p>
+        <h4>Golden rule</h4>
+<pre class="sketch">MODEL
+  ↕
+TOKENIZER</pre>
+        <p>They must correspond. Use:</p>
+<pre class="sketch">AutoTokenizer.from_pretrained(model_id)</pre>
+        <p>with the same model ID.</p>
+        <h4>Tokens are important beyond inference</h4>
+        <p>Tokens affect:</p>
+<pre class="sketch">Token count
+   |
+   +--> API billing
+   |
+   +--> context limits
+   |
+   +--> document chunking
+   |
+   +--> latency
+   |
+   +--> multilingual cost</pre>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q19</span><span class="q-text">Why might the same chatbot conversation cost 2.5× more in Hindi than English?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Because tokenization efficiency differs by language.</p>
+<pre class="sketch">English sentence
+      ↓
+Fewer tokens
+
+Hindi/Tamil/etc.
+      ↓
+Potentially more tokens
+      ↓
+Higher cost
+      ↓
+Less context fits</pre>
+        <p>The source notes that many tokenizers are historically optimized heavily around English, so Indian scripts can require substantially more tokens for equivalent content.</p>
+        <h4>Practical solution</h4>
+        <p>Measure <code>tokens/message</code> using your actual production traffic. Don't assume.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q20</span><span class="q-text">What does causal language model mean?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>It predicts the next token from everything before it.</p>
+<pre class="sketch">"The capital of France is"
+                 |
+                 v
+           Model predicts
+                 |
+                 v
+              "Paris"
+                 |
+                 v
+"The capital of France is Paris"
+                 |
+                 v
+        Predict next token</pre>
+        <h4>Generation loop</h4>
+<pre class="sketch">                +------------------+
+                |                  |
+Prompt --------> Model             |
+                |                  |
+                +--------+---------+
+                         |
+                         v
+                  Next-token probs
+                         |
+                         v
+                  Choose token
+                         |
+                         v
+                 Append to text
+                         |
+                         +----------+
+                                    |
+                                    v
+                                  Model</pre>
+        <p>This repeats until:</p>
+<pre class="sketch">max_new_tokens
+       OR
+stop token</pre>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q21</span><span class="q-text">Why does output length affect latency? And why can errors compound?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <h4>Consequence #1: Sequential generation</h4>
+        <p>Because output tokens are generated sequentially.</p>
+<pre class="sketch">Token 1
+   ↓
+Token 2
+   ↓
+Token 3
+   ↓
+Token 4
+   ↓
+...
+Token 500</pre>
+        <p>You cannot generate one response's tokens completely independently.</p>
+        <p>Therefore:</p>
+<pre class="sketch">Longer output
+      ↓
+More forward passes
+      ↓
+Higher latency</pre>
+        <h4>Consequence #2: Error compounding</h4>
+        <p>If token 3 is wrong:</p>
+<pre class="sketch">Token 1 → correct
+Token 2 → correct
+Token 3 → WRONG
+             |
+             v
+Token 4 uses wrong context
+             |
+             v
+Token 5 uses accumulated context
+             |
+             v
+Error compounds forward</pre>
+        <p>The model doesn't naturally go back and say: "Wait, token 3 was wrong."</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q22</span><span class="q-text">The model loads successfully with device_map="auto", but generation takes 90 seconds. What could be happening?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Part of the model may have been offloaded to CPU or disk.</p>
+<pre class="sketch">GPU
++-------------------+
+| Some model layers |
++-------------------+
+        ↕
+     PCIe / RAM
+        ↕
++-------------------+
+| CPU / disk layers |
++-------------------+</pre>
+        <p>Moving data between CPU and GPU repeatedly is extremely expensive.</p>
+        <p>So:</p>
+<pre class="sketch">"It loaded"
+       ≠
+"It is fully on GPU"</pre>
+        <p>Check:</p>
+<pre class="sketch">print(model.hf_device_map)</pre>
+        <h4>Production reproducibility</h4>
+        <p>Important model-loading controls:</p>
+<pre class="sketch">model ID
+   +
+revision/commit
+   +
+quantization config
+   +
+device placement
+   +
+tokenizer version</pre>
+        <p>Pin the revision in production rather than blindly using the latest model.</p>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 8 -->
+  <section class="segment" id="s8" style="--seg:#B9971F">
+    <div class="segment-head"><span class="segment-offset">offset 07</span><h2>Generation parameters</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q23</span><span class="q-text">For document Q&A, do we want a creative answer or the answer that is actually in the document?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>The second one.</p>
+        <p>Therefore:</p>
+<pre class="sketch">Document Q&A
+     |
+     v
+Deterministic behavior preferred</pre>
+        <p>Typical settings from the source:</p>
+        <table class="rag-table">
+          <tr><th>Parameter</th><th>Purpose</th><th>Document Q&A</th></tr>
+          <tr><td>max_new_tokens</td><td>Output limit</td><td>300–500</td></tr>
+          <tr><td>do_sample</td><td>Random sampling</td><td>False</td></tr>
+          <tr><td>temperature</td><td>Randomness</td><td>0.1–0.2</td></tr>
+          <tr><td>top_p</td><td>Nucleus sampling</td><td>0.9</td></tr>
+          <tr><td>repetition_penalty</td><td>Reduce loops</td><td>~1.1 if needed</td></tr>
+        </table>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q24</span><span class="q-text">Does high temperature make document Q&A better?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Usually no.</p>
+        <p>Higher temperature:</p>
+<pre class="sketch">More randomness
+     ↓
+More variation
+     ↓
+Potentially more hallucination</pre>
+        <p>For document Q&A:</p>
+<pre class="sketch">Source document
+      ↓
+Retrieve evidence
+      ↓
+Answer faithfully</pre>
+        <p>not:</p>
+<pre class="sketch">Source document
+      ↓
+Be creative
+      ↓
+Invent plausible answer</pre>
+        <h4>do_sample=False</h4>
+        <p>If <code>do_sample=False</code> you get near-deterministic generation.</p>
+        <p>But: near-deterministic ≠ mathematically guaranteed identical text every time.</p>
+        <p>For audit-grade exact reproducibility:</p>
+<pre class="sketch">Generate answer
+      ↓
+Save answer
+      ↓
+Audit saved answer</pre>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q25</span><span class="q-text">Why should a chatbot stream its answer instead of making the user wait for the entire answer?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Because generation is sequential.</p>
+<pre class="sketch">User
+ |
+ v
+Request
+ |
+ v
+Model
+ |
+ +--> token
+ +--> token
+ +--> token
+ +--> token
+      ...</pre>
+        <p>Instead of:</p>
+<pre class="sketch">[wait.................]
+             ↓
+       entire answer</pre>
+        <p>stream:</p>
+<pre class="sketch">Answer...
+Answer is...
+Answer is available...</pre>
+        <p>The user perceives: <b>time to first token</b> rather than <b>time to complete answer</b>.</p>
+        <p>Also:</p>
+<pre class="sketch">max_new_tokens
+      ↓
+Shorter answer
+      ↓
+Lower latency</pre>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 9 -->
+  <section class="segment" id="s9" style="--seg:#279090">
+    <div class="segment-head"><span class="segment-offset">offset 08</span><h2>PDFs — the hidden RAG problem</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q26</span><span class="q-text">If pypdf.extract_text() works on a PDF, does that mean you've correctly understood the document?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p><b>Absolutely not.</b></p>
+        <p>A PDF is fundamentally a description of <b>marks positioned on a page</b>, not necessarily a structured document.</p>
+        <h4>Two-column example</h4>
+        <p>What humans see:</p>
+<pre class="sketch">Column A             Column B
+---------            ---------
+Revenue rose         Costs rose
+12%                  8%</pre>
+        <p>Extraction may produce:</p>
+<pre class="sketch">Revenue rose
+Costs also rose
+12% in the quarter
+8% in the quarter</pre>
+        <p>The semantic relationship can be lost.</p>
+        <h4>Tables</h4>
+        <p>Human sees:</p>
+<pre class="sketch">        Q1    Q2    Q3
+Revenue 12.4  13.1  14.0</pre>
+        <p>Extraction:</p>
+<pre class="sketch">Q1 Q2 Q3 12.4 13.1 14.0</pre>
+        <p>Now: "Which number belongs to which column?" is no longer explicit.</p>
+        <h4>Scanned PDF</h4>
+        <p>Human sees:</p>
+<pre class="sketch">+----------------------+
+| Revenue Report       |
+| Revenue = ₹100 Cr    |
++----------------------+</pre>
+        <p>But the PDF is actually an image. <code>extract_text()</code> may return: <code>""</code> because:</p>
+<pre class="sketch">Image
+  |
+  X
+Text extraction</pre>
+        <p>OCR is required.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q27</span><span class="q-text">Before sending extracted PDF text to an LLM, what basic checks should you perform?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>At least:</p>
+<pre class="sketch">PDF
+ |
+ v
+Extract
+ |
+ +--> Enough text per page?
+ |
+ +--> Any empty middle pages?
+ |
+ +--> Text looks sane?
+ |
+ +--> Expected headings present?
+ |
+ +--> Important totals present?
+ |
+ v
+Clean document</pre>
+        <p>Specifically:</p>
+        <ol>
+          <li>Check text volume per page.</li>
+          <li>Check page counts.</li>
+          <li>Detect suspiciously empty pages.</li>
+          <li>Check whether extracted text looks like real text.</li>
+          <li>For numerical documents, verify expected headings/totals.</li>
+        </ol>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q28</span><span class="q-text">Which is more important: A) Better LLM, or B) Clean document ingestion?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Often <b>clean document ingestion</b>.</p>
+        <p>Because:</p>
+<pre class="sketch">BAD PDF EXTRACTION
+       ↓
+BAD TEXT
+       ↓
+BAD CHUNKS
+       ↓
+BAD RETRIEVAL
+       ↓
+BAD CONTEXT
+       ↓
+BAD ANSWER</pre>
+        <p>No prompt can magically reconstruct information that ingestion destroyed.</p>
+        <h4>Correct effort order</h4>
+<pre class="sketch">1. Clean input
+      ↓
+2. Retrieval
+      ↓
+3. Prompt
+      ↓
+4. Model</pre>
+        <p>Teams often reverse this:</p>
+<pre class="sketch">Try Model A
+Try Model B
+Try Model C
+Try Prompt A
+Try Prompt B
+       ↓
+"Why is RAG still bad?"</pre>
+        <p>while the PDF parser is producing garbage.</p>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 10 -->
+  <section class="segment" id="s10" style="--seg:#9A62D6">
+    <div class="segment-head"><span class="segment-offset">offset 09</span><h2>Chat templates & grounding</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q29</span><span class="q-text">Why can't we simply send "System instruction / User question / Assistant answer" as ordinary text to every open-weight model?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Because different models expect different <b>chat protocols/templates</b>.</p>
+        <p>The model sees a flat sequence of tokens.</p>
+        <p>Conceptually:</p>
+<pre class="sketch">&lt;|system|&gt;
+Instructions
+&lt;|end|&gt;
+
+&lt;|user|&gt;
+Question
+&lt;|end|&gt;
+
+&lt;|assistant|&gt;
+Answer</pre>
+        <p>These special tokens tell the model:</p>
+<pre class="sketch">WHO IS SPEAKING?
+        |
+        +---- system
+        +---- user
+        +---- assistant</pre>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q30</span><span class="q-text">What happens if special tokens are wrong?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>The model may:</p>
+<pre class="sketch">+-----------------------------+
+| Ignore system instruction   |
+| Answer incorrectly          |
+| Continue user's message     |
+| Invent another user turn    |
+| Produce poor quality        |
++-----------------------------+</pre>
+        <p>And you may incorrectly conclude: "This model is bad." when the actual problem is: <b>Wrong chat formatting.</b></p>
+        <h4>Correct approach</h4>
+        <p>Don't manually reinvent the template. Use the tokenizer's supplied template:</p>
+<pre class="sketch">tokenizer.apply_chat_template(...)</pre>
+        <p>Architecture:</p>
+<pre class="sketch">Model
+  ↕
+Tokenizer
+  |
+  +--> Chat template</pre>
+        <p>This makes model switching much easier.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q31</span><span class="q-text">Suppose the model answers your question correctly, but the answer is not present in the uploaded document. Is that a success?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p><b>No.</b></p>
+        <p>For document Q&A:</p>
+<pre class="sketch">Model knowledge
+       X
+       |
+       X
+       |
+Document
+       |
+       v
+Answer</pre>
+        <p>The answer should be grounded in the supplied document.</p>
+        <h4>Grounding instruction</h4>
+        <p>Conceptually:</p>
+<pre class="sketch">Answer ONLY from document
+          +
+If answer isn't present:
+return fixed refusal
+          +
+Do not use prior knowledge</pre>
+        <p>Each part serves a purpose.</p>
+        <table class="rag-table">
+          <tr><th>Instruction</th><th>Purpose</th></tr>
+          <tr><td>Answer only from document</td><td>Prevent outside knowledge</td></tr>
+          <tr><td>If absent, say X</td><td>Gives model an exit</td></tr>
+          <tr><td>Fixed refusal</td><td>Code can detect "no answer"</td></tr>
+          <tr><td>Don't use prior knowledge</td><td>Prevent plausible but unverifiable answers</td></tr>
+        </table>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q32</span><span class="q-text">Why is "Don't hallucinate" weaker than "If the answer isn't present, say: Not found in the document."?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Because the first tells the model what <b>not</b> to do. But it doesn't tell the model what <b>to do instead</b>.</p>
+<pre class="sketch">Question
+   |
+   v
+Model must produce something
+   |
+   +--> Answer
+   |
+   +--> Invent</pre>
+        <p>Give it a specific alternative:</p>
+<pre class="sketch">Question
+   |
+   v
+Is answer in document?
+    |
+  +--+--+
+ YES    NO
+  |      |
+  v      v
+Answer  "Not found"</pre>
+        <p>That's much easier for the model to follow.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q33</span><span class="q-text">If my prompt says "Answer only from the document," does that guarantee the model will obey?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>No.</p>
+        <p>An instruction is a <b>request</b>, not a hard constraint.</p>
+        <p>For production:</p>
+<pre class="sketch">Prompt instruction
+       +
+Programmatic validation
+       +
+Citations
+       +
+Evaluation</pre>
+        <p>For example:</p>
+<pre class="sketch">Retrieved context
+       |
+       v
+LLM answer
+       |
+       v
+Validation
+       |
+       +--> Evidence found?
+       |
+       +--> Source/page?
+       |
+       v
+Final answer</pre>
+      </div></div></div>
+  </section>
+
+  <!-- SEGMENT 11 -->
+  <section class="segment" id="s11" style="--seg:#C9871F">
+    <div class="segment-head"><span class="segment-offset">offset 10</span><h2>The RAG hole, characters vs tokens, and what's missing</h2></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q34</span><span class="q-text">Suppose your document contains 64,000 characters, but your code does context = document_text[:6000]. How much of the document is the model actually seeing?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Only approximately:</p>
+<pre class="sketch">6,000 / 64,000
+≈ 9%</pre>
+        <p>So roughly:</p>
+<pre class="sketch">DOCUMENT
+[############################################]
+             64,000 chars
+
+MODEL SEES
+[#####]
+6,000 chars
+
+MODEL DOES NOT SEE
+[####################################]
+58,000 chars</pre>
+        <p>Therefore: a question about page 12 may be <b>unanswerable by design</b>.</p>
+        <h4>This is NOT RAG</h4>
+        <p>The simplistic architecture is:</p>
+<pre class="sketch">PDF
+ |
+ v
+Extract text
+ |
+ v
+Take first 6000 chars
+ |
+ v
+LLM
+ |
+ v
+Answer</pre>
+        <p>That's truncation.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q35</span><span class="q-text">How would you make the entire 64,000-character document searchable without sending all 64,000 characters to the model?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Use <b>Retrieval-Augmented Generation</b>.</p>
+<pre class="sketch">                 DOCUMENT
+                    |
+                    v
+              Chunking
+                    |
+        +-----------+-----------+
+        |           |           |
+      Chunk 1     Chunk 2     Chunk 3 ...
+        |           |           |
+        v           v           v
+     Embedding   Embedding   Embedding
+        |           |           |
+        +-----------+-----------+
+                    |
+                    v
+              Vector DB</pre>
+        <p>At query time:</p>
+<pre class="sketch">User Question
+      |
+      v
+Question Embedding
+      |
+      v
+Vector Search
+      |
+      v
+Top relevant chunks
+      |
+      v
++-----------------------+
+| System instruction    |
+| Relevant chunks       |
+| User question         |
++-----------------------+
+      |
+      v
+     LLM
+      |
+      v
+Answer + Citations</pre>
+        <h4>Full RAG architecture</h4>
+<pre class="sketch">                 INGESTION TIME
+                 ==============
+
+PDFs
+ |
+ v
+PDF Loader
+ |
+ v
+Text Extraction
+ |
+ v
+Cleaning / Validation
+ |
+ v
+Chunking
+ |
+ v
+Embedding Model
+ |
+ v
+Vector Database
+ |
+ +-----------------------------------+
+                                     |
+                                     |
+                 QUERY TIME          |
+                 =========            |
+                                     |
+User Question                        |
+       |                             |
+       v                             |
+Question Embedding                   |
+       |                             |
+       v                             |
+Vector Search -----------------------+
+       |
+       v
+Top-K Relevant Chunks
+       |
+       v
+Prompt Construction
+       |
+       v
+LLM
+       |
+       v
+Answer
+       |
+       v
+Citations / Sources</pre>
+        <h4>Chunking</h4>
+        <p>The source suggests approximately <b>500–1000 tokens</b> with overlap. Why overlap?</p>
+<pre class="sketch">Chunk 1
+[-----------]
+       [-----------]
+       Chunk 2</pre>
+        <p>Important information near the boundary isn't lost.</p>
+        <h4>Why retrieval changes everything</h4>
+        <p>Without RAG:</p>
+<pre class="sketch">64,000 chars
+     |
+     v
+6,000 chars
+     |
+     v
+91% invisible</pre>
+        <p>With RAG:</p>
+<pre class="sketch">64,000 chars
+     |
+     v
+Many chunks
+     |
+     v
+Search
+     |
+     v
+Top 3 relevant chunks
+     |
+     v
+LLM</pre>
+        <p>Same: <code>Model / GPU / LLM</code>. Different: <b>Architecture.</b></p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q36</span><span class="q-text">Why is MAX_CONTEXT_CHARS = 6000 a second problem beyond simply truncating the document?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>Because the model's context limit is expressed in <b>tokens</b>, not characters.</p>
+        <p>And: Characters ≠ Tokens. Conversion varies.</p>
+        <p>Example — the source gives an approximate illustration:</p>
+<pre class="sketch">6,000 English characters
+        ↓
+~1,500 tokens</pre>
+        <p>But:</p>
+<pre class="sketch">6,000 chars of Hindi
+        ↓
+potentially much more
+
+6,000 chars of code
+        ↓
+different again
+
+6,000 chars of tables
+        ↓
+different again</pre>
+        <p>So:</p>
+<pre class="sketch">CHARACTER LIMIT
+      ↓
+looks safe
+      ↓
+TOKENIZER
+      ↓
+actual token count
+      ↓
+could exceed model limit</pre>
+        <h4>Golden rule</h4>
+        <p>Always measure in the unit the system actually enforces. For LLM context: <code>TOKEN</code>, not <code>character</code>.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q37</span><span class="q-text">Your team wants document Q&A over 10,000 internal PDFs, but the notebook only has an answering step. What major components are missing?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+        <p>At minimum, the real system needs:</p>
+<pre class="sketch">                 10,000 PDFs
+                      |
+                      v
+               +-------------+
+               | PDF Loading |
+               +-------------+
+                      |
+                      v
+               Text Extraction
+                      |
+                      v
+             Validation / OCR
+                      |
+                      v
+                  Chunking
+                      |
+                      v
+                 Embeddings
+                      |
+                      v
+                Vector Store
+                      |
+                      v
+              Retrieval Layer
+                      |
+                      v
+                Prompt Builder
+                      |
+                      v
+                    LLM
+                      |
+                      v
+             Answer + Citations</pre>
+        <p>The notebook demonstrates the <b>answering/model-running layer</b>, not a complete enterprise RAG platform.</p>
+      </div></div></div>
+
+    <div class="q-card"><div class="q-head" onclick="toggle(this)"><span class="q-tag">Q38</span><span class="q-text">If you were asked in an architecture interview: "Design a production document Q&A system using an open-source LLM." What would your architecture look like?</span><span class="q-toggle">reveal</span></div>
+      <div class="q-answer"><div class="q-answer-inner">
+<pre class="sketch">                    ┌─────────────────────┐
+                    │    USER / CLIENT    │
+                    └──────────┬──────────┘
+                               │
+                               v
+                    ┌─────────────────────┐
+                    │ API / Auth / WAF    │
+                    └──────────┬──────────┘
+                               │
+                               v
+                    ┌─────────────────────┐
+                    │ Query Validation    │
+                    │ Input-size limit    │
+                    └──────────┬──────────┘
+                               │
+                               v
+                    ┌─────────────────────┐
+                    │ Query Embedding     │
+                    └──────────┬──────────┘
+                               │
+                               v
+                    ┌─────────────────────┐
+                    │ Vector DB           │
+                    │ Top-K retrieval     │
+                    └──────────┬──────────┘
+                               │
+                               v
+             ┌─────────────────────────────────┐
+             │ Relevant document chunks        │
+             │ + grounding instruction         │
+             └────────────────┬────────────────┘
+                              │
+                              v
+                 ┌─────────────────────────┐
+                 │ Open-Source LLM         │
+                 │                         │
+                 │ Quantized weights       │
+                 │ GPU inference            │
+                 │ KV cache                │
+                 └────────────┬────────────┘
+                              │
+                              v
+                 ┌─────────────────────────┐
+                 │ Grounding validation    │
+                 │ Citations               │
+                 └────────────┬────────────┘
+                              │
+                              v
+                         Final Answer</pre>
+      </div></div></div>
+
+    <div class="static-block">
+      <h3>The complete mental model</h3>
+<pre class="sketch">                 OPEN-SOURCE LLM
+                        |
+        +---------------+---------------+
+        |                               |
+        v                               v
+   MODEL WEIGHTS                    TOKENIZER
+        |                               |
+        |                               |
+        +---------------+---------------+
+                        |
+                        v
+                    GPU / VRAM
+                        |
+             +----------+----------+
+             |                     |
+             v                     v
+         Weights                KV Cache
+         fixed                 grows with
+                               context/users
+             |                     |
+             +----------+----------+
+                        |
+                        v
+                   Generation
+                        |
+                        v
+                Next token loop
+                        |
+                        v
+                   Final answer</pre>
+      <p>For document Q&A:</p>
+<pre class="sketch">PDF
+ |
+ v
+Extraction
+ |
+ v
+Validation
+ |
+ v
+Chunking
+ |
+ v
+Embedding
+ |
+ v
+Vector DB
+ |
+ v
+Retrieval
+ |
+ v
+Relevant Context
+ |
+ v
+Chat Template
+ |
+ v
+Open LLM
+ |
+ v
+Grounded Answer
+ |
+ v
+Citation</pre>
+    </div>
+  </section>
+
+  <!-- SEGMENT 12 -->
+  <section class="segment" id="s12" style="--seg:#2E8B82">
+    <div class="segment-head"><span class="segment-offset">offset 11</span><h2>Interview recall sheet & one-minute architecture recall</h2></div>
+
+    <div class="static-block">
+      <h3>Open-source models</h3>
+      <div class="qa-pair"><p class="qa-q">Q: Biggest non-negotiable reason to self-host?</p><p class="qa-a">A: Data residency when law/contract prohibits external transfer.</p></div>
+      <div class="qa-pair"><p class="qa-q">Q: Biggest common mistake in self-host economics?</p><p class="qa-a">A: Ignoring GPU idle time and operational/engineering cost.</p></div>
+      <div class="qa-pair"><p class="qa-q">Q: Why aren't frozen weights automatically safer?</p><p class="qa-a">A: Biases, vulnerabilities and factual errors remain until you upgrade.</p></div>
+
+      <h3>Hugging Face</h3>
+      <div class="qa-pair"><p class="qa-q">Q: What comes first when evaluating a model?</p><p class="qa-a">A: Licence.</p></div>
+      <div class="qa-pair"><p class="qa-q">Q: Why shouldn't downloads determine model quality?</p><p class="qa-a">A: Downloads measure popularity/accessibility, not capability.</p></div>
+      <div class="qa-pair"><p class="qa-q">Q: Why prefer safetensors?</p><p class="qa-a">A: Safer model serialization than executable pickle-style formats.</p></div>
+      <div class="qa-pair"><p class="qa-q">Q: What does trust_remote_code=True imply?</p><p class="qa-a">A: You're allowing repository code to execute locally.</p></div>
+
+      <h3>Model names</h3>
+      <div class="qa-pair"><p class="qa-q">Q: Decode Phi-3-mini-4k-instruct.</p><p class="qa-a">A: <code>publisher / family / size / context / instruction tuning</code></p></div>
+      <div class="qa-pair"><p class="qa-q">Q: When can 4K beat 128K?</p><p class="qa-a">A: Short inputs where huge context isn't required.</p></div>
+
+      <h3>GPU</h3>
+      <div class="qa-pair"><p class="qa-q">Q: Why GPU?</p><p class="qa-a">A: Massive parallelism.</p></div>
+      <div class="qa-pair"><p class="qa-q">Q: What matters before GPU speed?</p><p class="qa-a">A: Whether the model fits in VRAM.</p></div>
+      <div class="qa-pair"><p class="qa-q">Q: What is the real production GPU metric?</p><p class="qa-a">A: Cost per useful answer at actual utilization.</p></div>
+
+      <h3>Quantization</h3>
+      <div class="qa-pair"><p class="qa-q">Q: Formula?</p><p class="qa-a">A: <code>VRAM ≈ Parameters(B) × Bytes/weight</code></p></div>
+      <div class="qa-pair"><p class="qa-q">Q: 7B FP16?</p><p class="qa-a">A: <code>≈ 14 GB</code></p></div>
+      <div class="qa-pair"><p class="qa-q">Q: 7B INT4?</p><p class="qa-a">A: <code>≈ 3.5 GB</code></p></div>
+      <div class="qa-pair"><p class="qa-q">Q: Does INT4 mean computation happens in INT4?</p><p class="qa-a">A: Not necessarily; weights can be stored at 4-bit and expanded for higher-precision computation.</p></div>
+      <div class="qa-pair"><p class="qa-q">Q: Main benefit?</p><p class="qa-a">A: Memory reduction.</p></div>
+      <div class="qa-pair"><p class="qa-q">Q: Biggest risk?</p><p class="qa-a">A: Silent quality degradation on precise/rare tasks.</p></div>
+
+      <h3>KV cache</h3>
+      <div class="qa-pair"><p class="qa-q">Q: What grows with context?</p><p class="qa-a">A: KV cache.</p></div>
+      <div class="qa-pair"><p class="qa-q">Q: What grows with concurrent users?</p><p class="qa-a">A: KV-cache/memory requirements.</p></div>
+      <div class="qa-pair"><p class="qa-q">Q: Why test with 500 tokens isn't enough?</p><p class="qa-a">A: Production may receive much longer contexts.</p></div>
+
+      <h3>Pipeline</h3>
+      <div class="qa-pair"><p class="qa-q">Q: What does pipeline hide?</p><p class="qa-a">A: <code>Tokenizer → Model → Logits → Decode → Output</code></p></div>
+      <div class="qa-pair"><p class="qa-q">Q: Four hidden risks?</p><p class="qa-a">A: silent truncation, hidden model, label mismatch, device placement</p></div>
+
+      <h3>Tokenizer</h3>
+      <div class="qa-pair"><p class="qa-q">Q: Can wrong tokenizer cause an obvious error?</p><p class="qa-a">A: No. It can produce fluent nonsense.</p></div>
+      <div class="qa-pair"><p class="qa-q">Q: Golden rule?</p><p class="qa-a">A: <code>Tokenizer ↔ Model must match</code></p></div>
+      <div class="qa-pair"><p class="qa-q">Q: Why does language affect cost?</p><p class="qa-a">A: Different languages can require different token counts.</p></div>
+
+      <h3>Causal LM</h3>
+      <div class="qa-pair"><p class="qa-q">Q: What does causal mean?</p><p class="qa-a">A: Predict next token using preceding context.</p></div>
+      <div class="qa-pair"><p class="qa-q">Q: Why does output length affect latency?</p><p class="qa-a">A: Each output token requires another sequential generation step.</p></div>
+      <div class="qa-pair"><p class="qa-q">Q: Why can errors compound?</p><p class="qa-a">A: Generated tokens become context for subsequent predictions.</p></div>
+
+      <h3>Generation</h3>
+      <div class="qa-pair"><p class="qa-q">Q: Document Q&A: high or low temperature?</p><p class="qa-a">A: Generally low.</p></div>
+      <div class="qa-pair"><p class="qa-q">Q: do_sample=False?</p><p class="qa-a">A: Near-deterministic decoding.</p></div>
+      <div class="qa-pair"><p class="qa-q">Q: Exact same text guaranteed?</p><p class="qa-a">A: No; save the generated result if exact audit reproduction is required.</p></div>
+
+      <h3>PDFs</h3>
+      <div class="qa-pair"><p class="qa-q">Q: Does successful extract_text() mean correct extraction?</p><p class="qa-a">A: No.</p></div>
+      <div class="qa-pair"><p class="qa-q">Q: What happens to tables?</p><p class="qa-a">A: Structure can be lost.</p></div>
+      <div class="qa-pair"><p class="qa-q">Q: Scanned PDF?</p><p class="qa-a">A: OCR is required.</p></div>
+      <div class="qa-pair"><p class="qa-q">Q: Biggest RAG quality lever?</p><p class="qa-a">A: Clean document ingestion.</p></div>
+
+      <h3>Chat templates</h3>
+      <div class="qa-pair"><p class="qa-q">Q: Why are special tokens important?</p><p class="qa-a">A: They define the conversation protocol.</p></div>
+      <div class="qa-pair"><p class="qa-q">Q: What should you use?</p><p class="qa-a">A: <code>tokenizer.apply_chat_template(...)</code></p></div>
+
+      <h3>Grounding</h3>
+      <div class="qa-pair"><p class="qa-q">Q: Is "don't hallucinate" enough?</p><p class="qa-a">A: No.</p></div>
+      <div class="qa-pair"><p class="qa-q">Q: Better approach?</p><p class="qa-a">A: If answer exists → answer. If answer doesn't exist → fixed refusal.</p></div>
+      <div class="qa-pair"><p class="qa-q">Q: Does prompt enforcement guarantee grounding?</p><p class="qa-a">A: No. Validate programmatically where grounding matters.</p></div>
+
+      <h3>RAG</h3>
+      <div class="qa-pair"><p class="qa-q">Q: What is wrong with document[:6000]?</p><p class="qa-a">A: It makes most of the document invisible.</p></div>
+      <div class="qa-pair"><p class="qa-q">Q: What replaces truncation?</p><p class="qa-a">A: <code>Chunk → Embed → Store → Retrieve → Generate</code></p></div>
+      <div class="qa-pair"><p class="qa-q">Q: Why tokens instead of characters?</p><p class="qa-a">A: LLM context limits are token-based.</p></div>
+    </div>
+
+    <div class="static-block">
+      <h3>One-minute architecture recall</h3>
+      <p>If you remember only one thing, remember this:</p>
+<pre class="sketch">             OPEN-SOURCE LLM
+                    |
+       +------------+-------------+
+       |                          |
+       v                          v
+   Weights                     Tokenizer
+       |                          |
+       +------------+-------------+
+                    |
+                    v
+                  GPU
+                    |
+          +---------+---------+
+          |                   |
+          v                   v
+       VRAM               KV Cache
+     weights              context
+       fixed                grows
+          |                   |
+          +---------+---------+
+                    |
+                    v
+               Generation
+                    |
+                    v
+              Next-token loop</pre>
+      <p>And for RAG:</p>
+<pre class="sketch">                 DOCUMENT
+                    |
+                    v
+              PDF extraction
+                    |
+                    v
+                Validation
+                    |
+                    v
+                 Chunking
+                    |
+                    v
+                Embedding
+                    |
+                    v
+                Vector DB
+                    |
+                    |
+USER QUESTION ------+
+                    |
+                    v
+                Retrieval
+                    |
+                    v
+              Relevant chunks
+                    |
+                    v
+              Chat template
+                    |
+                    v
+               Open LLM
+                    |
+                    v
+          Grounded answer
+                    |
+                    v
+               Citation</pre>
+      <h3>The deepest architectural lesson</h3>
+      <p><b>The LLM is only one component of an AI system.</b></p>
+      <p>A production system depends on:</p>
+<pre class="sketch">Data quality
+     +
+Tokenization
+     +
+Model selection
+     +
+VRAM
+     +
+Quantization
+     +
+KV cache
+     +
+Serving
+     +
+Retrieval
+     +
+Prompt/template
+     +
+Grounding
+     +
+Validation
+     =
+Reliable AI system</pre>
+      <p>That is the core idea running through the entire source material.</p>
+    </div>
+  </section>
+
+  <footer>
+    // final compression: an open-weight model trades API convenience for full-stack ownership — tokenizer, weights, GPU, serving, scaling, monitoring, security →
+    the only non-negotiable reason to self-host is legally mandated data residency; everything else (cost, quality, customization) can shift over time →
+    licence comes before parameter count when evaluating a model, and model weights themselves can be a supply-chain risk, not just malware in the repo →
+    GPUs win on parallelism, but VRAM capacity beats raw speed — a model that doesn't fit crashes regardless of how fast the chip is →
+    quantization mainly saves memory, not compute, and its damage shows up first in rare facts and exact numbers, not casual fluency →
+    KV cache — not model weights — is what grows with context length and concurrent users, making worst-case sizing a serving-architecture decision →
+    pipeline() hides truncation, default models, label mismatches, and device placement → tokenizer and model must always match, or you get fluent nonsense, not an error →
+    generation is sequential, so output length drives latency and early errors compound forward → for document Q&A, low temperature and deterministic sampling beat creativity →
+    a PDF is marks on a page, not structured text — tables and columns can silently lose their meaning, and clean ingestion matters more than a better model →
+    chat templates are a model-specific protocol, not free-form text, and grounding needs an explicit fallback plus programmatic validation, not just a prompt request →
+    and document[:6000] is truncation, not RAG — real retrieval chunks, embeds, stores, and searches the whole document, measured in tokens, not characters.
+  </footer>
+
+</div>
+
 <script>
-const SECTIONS=[
- {id:"intro",label:"START",c:"ink"},
- {id:"decide",label:"OPEN-WEIGHT DECISION",c:"teal"},
- {id:"hub",label:"HUB+NAMES",c:"gold"},
- {id:"hw",label:"HARDWARE",c:"rose"},
- {id:"ctrl",label:"3 LEVELS OF CONTROL",c:"violet"},
- {id:"docqa",label:"DOCUMENT Q&A",c:"amber"}
-];
-const S=[
-
-{sec:"intro",c:"ink",eyebrow:"Open-Source LLMs",t:"a",h:"Open-Source LLMs — Hugging Face, Quantization &amp; <em>Document Q&amp;A</em>",body:`
-<p>You can own the brain. Now you own the problems too. In an API you rented a model over the wire. Here you download it — billions of numbers — and run it yourself. That one change moves the hard part from writing prompts to memory, tokenizers, quantization and serving.</p>
-<div class="ascii">3 abstraction levels (pipeline · auto · raw) · 14 ASCII sketches
-30+ thinking prompts · 3 live tools (VRAM calc, templates, quiz)</div>
-<div class="note"><b>How to use:</b> "?" slides ask you to predict first. Press Next to compare. Recall quizzes close each section.</div>`},
-
-/* ---------- THE OPEN-WEIGHT DECISION ---------- */
-{sec:"decide",c:"teal",eyebrow:"01 · Owning Weights",t:"q",q:`In Section 5 you called GPT-4o, Gemini, Claude over an API. Here you download the model itself and run it on your own hardware. Sketch it out: <b>what exactly moves from "their problem" to "your problem"?</b>`},
-
-{sec:"decide",c:"teal",eyebrow:"01 · Owning Weights",t:"a",h:"What changes when you own the weights",body:`
-<div class="ascii">CLOSED API                        OPEN WEIGHTS
-[ your prompt ]                   [ your prompt ]
------- vendor boundary ------            |
-tokenizer  they own               tokenizer  you own
-weights    they own               weights    you own
-GPU/serving they own               GPU/serving you own
-batching   they own                batching   you own
-scaling    they own                 scaling   you own
-uptime     they own                 uptime    you own
-versioning they own                 versioning you own
-[ answer ] + invoice              [ answer ] + a GPU bill
-                                              + an on-call rota</div>
-<div class="note">You did not buy a cheaper model. You bought a <b>different set of responsibilities.</b></div>
-<ul class="pts">
-<li><strong>Data residency</strong> — nothing leaves the perimeter. If KYC docs can't leave your network, it's the only legal option.</li>
-<li><strong>Unit economics at volume</strong> — fixed cost beats per-token above a certain traffic line.</li>
-<li><strong>Customisation</strong> — fine-tuning on your own data is only possible here.</li>
-<li><strong>Version stability</strong> — the model you downloaded never changes under you.</li>
-<li><strong>Offline &amp; edge</strong> — isolated networks, factories, phones — an API simply cannot work here.</li>
-<li><strong>Bonus: Transparency</strong> — you can inspect how it's built.</li>
-</ul>
-<div class="note"><b>The honest counter-argument:</b> a top API is usually cheaper and better until you hit a legal wall or very high volume. "Let's self-host to save money" is the most common wrong reason.</div>`},
-
-{sec:"decide",c:"teal",eyebrow:"01 · Owning Weights",t:"q",q:`Name the <b>one</b> reason to self-host that no amount of API improvement can ever overturn.`},
-
-{sec:"decide",c:"teal",eyebrow:"01 · Owning Weights",t:"a",h:"The one reason that never moves",body:`
-<p>The legal one — <strong>data cannot leave your network.</strong> Arguments about cost, quality and speed all change as vendors improve and prices drop. But if the law or your contract says the data must stay inside, no API becomes allowed, however cheap or good it gets. Every other reason moves. This one does not.</p>
-<div class="note">Your CFO asks: "at what point does self-hosting actually become cheaper?" Give them a number, not an opinion. <b>API cost</b> = tokens/request &times; requests/month &times; price/token. <b>Self-host cost</b> = GPU hours/month + engineering time + storage. Find where they're equal.</div>
-<div class="ascii">TWO THINGS PEOPLE FORGET
-Idle time: a GPU rented all day but used 6% of the time makes
-  your real cost per answer huge. An API only charges when used.
-Retries: if the open model needs 3 attempts to match one answer
-  from a top model, your token count is wrong.
-Honest answer: "cheaper above roughly X million tokens/month if
-  the GPU stays busy, and today we're at 5% of X."</div>`,
-cto:[`Frozen weights are listed as an advantage — but the moment everyone else's model gets better and yours doesn't, it's a liability. A frozen model keeps every bias, security hole and factual error it shipped with, forever. "Stable version" is not free — it moves a job the vendor used to do onto your team. The grown-up version is a planned upgrade rhythm: fixed version in production, reviewed every quarter against your own test set.`]},
-
-{sec:"decide",c:"teal",eyebrow:"Decision · Recall",t:"r",h:"Quick recall: the open-weight decision",qs:[
-{q:`Which of the five self-hosting reasons never gets overturned by API improvements, and why?`,a:`<b>Data residency</b> — if the law or contract says data can't leave the network, no API becomes allowed however cheap or good it gets. All other reasons (cost, customisation, stability) shift as vendors improve.`},
-{q:`Why is a "stable, frozen model" not automatically a safe choice?`,a:`It keeps every bias, security hole, and factual error it shipped with — forever. Hosted models get fixed for you; yours doesn't unless you download and re-test a new version. Stability requires a planned quarterly upgrade rhythm, or it's just slow decay.`}]},
-
-/* ---------- HUB + NAMES ---------- */
-{sec:"hub",c:"gold",eyebrow:"02 · The Hub",t:"q",q:`Hugging Face lists ~1.6 million models. Is that number a <b>feature</b>, a <b>problem</b>, or both — and why?`},
-
-{sec:"hub",c:"gold",eyebrow:"02 · The Hub",t:"a",h:"The Hugging Face Hub, read like an engineer",body:`
-<div class="ascii">THE THREE FLOORS OF THE HUB
-MODELS   ~1.6M pre-trained checkpoints, grouped by TASK not vendor
-DATASETS ~370,000 training/eval corpora, filter by modality/licence
-SPACES   hosted demo apps (mostly Gradio) — try before you download</div>
-<p><strong>How to read a model card in 90 seconds — in order:</strong> Licence (legal gate, not a footnote) &rarr; Gated? (needs a token) &rarr; Parameter count (sets VRAM) &rarr; Base or Instruct? (base models don't follow instructions) &rarr; Context length &rarr; Chat template &rarr; Training data notes &rarr; Downloads/likes (a weak, lagging signal).</p>
-<div class="note">Both — huge choice, no quality signal at all. Anyone can upload; most are half-finished experiments. <b>The fix:</b> filter by task, then by an organisation you trust to still exist next year (Meta, Google, Mistral, DeepSeek), then licence, then size. That turns 1.6 million into about a dozen. Pick models the way you pick libraries — you wouldn't drop a random 4-star package into a payments system.</div>`,
-cto:[`Downloads are a lagging, biased metric — the most-downloaded text model in the course had 35M downloads, vs Llama 3.1's 5.4M, and that does NOT mean the small one is better. Downloads go up when a model is small enough to be re-downloaded constantly by build servers, or is the tutorial default. Downloads measure how easy a model is to grab, not how good it is.`]},
-
-{sec:"hub",c:"gold",eyebrow:"02 · The Hub",t:"q",q:`You are downloading files from a public site and loading them into a program that touches your GPU and disk. What's the <b>supply-chain security question</b> nobody in most tutorials asks?`},
-
-{sec:"hub",c:"gold",eyebrow:"02 · The Hub",t:"a",h:"The supply-chain security question",body:`
-<ul class="pts">
-<li><strong>File format</strong> — safetensors or the old pickle format? Pickle files can run code when opened. Always prefer safetensors.</li>
-<li><strong>Custom code</strong> — does it need <code>trust_remote_code=True</code>? That means "run this repo's Python on my machine."</li>
-<li><strong>Who published it</strong> — the official account, or a copycat with a similar name?</li>
-<li><strong>Version</strong> — latest, or a fixed commit? If unfixed, the file can change under you.</li>
-<li><strong>Copy it once</strong> — in a regulated company, download once, scan it, serve from your own internal store — never pull from the internet every container start.</li>
-</ul>
-<div class="note">A model is a much bigger act of trust than a pip package — you can read a package's code; a model is gigabytes of numbers you cannot read, plus sometimes code you can. <b>Risk packages don't have:</b> the weights themselves can be poisoned, trained to behave normally except when they see a secret trigger phrase. No file scan will ever find that.</div>`,
-cto:[`You load a model and it rambles instead of answering. First thing to check: did you download the base model instead of instruct? Base models only continue text. Second: did you apply the model's chat template? Right model, wrong formatting produces the exact same symptom.`]},
-
-{sec:"hub",c:"gold",eyebrow:"03 · Model Names",t:"q",q:`<code>microsoft/Phi-3-mini-4k-instruct</code> vs <code>Phi-3-mini-128k-instruct</code> — same family, same size. When does the <b>smaller-context</b> 4k version still win?`},
-
-{sec:"hub",c:"gold",eyebrow:"03 · Model Names",t:"a",h:"Decoding a model name",body:`
-<div class="ascii">microsoft / Phi-3-mini-4k-instruct
-   org      family size ctx  instruction-tuned
-
-MORE EXAMPLES
-Qwen/Qwen2.5-3B-Instruct         3B params, instruct
-meta-llama/Llama-3.2-3B-Instruct gated: must accept licence
-google/gemma-3-4b-it             "it" = instruction tuned
-deepseek-ai/DeepSeek-R1-...      R = reasoning model, thinks first
-...-GGUF / -AWQ / -GPTQ          already quantized by someone else
-...-base (or no suffix)          completion only, NOT chat
-
-READ IT AS: who made it / what family / how big / how much
-            context / has it been taught to obey</div>
-<ul class="pts">
-<li><strong>0.5-3B</strong> — laptop or free Colab GPU, extraction/sorting/simple Q&amp;A.</li>
-<li><strong>7-14B</strong> — sweet spot for most real self-hosted work.</li>
-<li><strong>30B+</strong> — serious hardware, feels like a top model on narrow tasks.</li>
-</ul>
-<div class="note">The 4k version wins when your inputs are short. A longer context isn't free — more GPU memory, slower, and long-context versions are sometimes slightly weaker on short inputs. Renting a warehouse to store one envelope. The 128k version wins the moment a document genuinely can't be split without losing meaning.</div>`,
-cto:[`You see -GGUF and -AWQ variants of a model you like. Their existence tells you real people run it on small hardware — a healthy community signal: tools that support it, bugs already found and written down. It also saves you work: a good compressed version already tested often loads faster and is better tuned than compressing it yourself.`]},
-
-{sec:"hub",c:"gold",eyebrow:"Hub &amp; Names · Recall",t:"r",h:"Quick recall: the Hub &amp; model names",qs:[
-{q:`What's the correct order to read a model card, and why licence first?`,a:`Licence &rarr; gated? &rarr; parameter count &rarr; base/instruct &rarr; context length &rarr; chat template &rarr; training data &rarr; downloads. Licence is a <b>legal gate</b>, not a footnote — it can block commercial use entirely regardless of how good the model is.`},
-{q:`What risk does a model carry that a pip package doesn't?`,a:`The weights themselves can be <b>poisoned</b> — trained to behave normally except when triggered by a secret phrase. No file scan can find that; it's intent hidden inside a pile of numbers.`},
-{q:`When does the smaller-context model variant (e.g. 4k) beat the larger one (128k)?`,a:`When inputs are genuinely short — longer context isn't free (more VRAM, slower, sometimes weaker on short inputs). Use the big-context version only when a document can't be split without losing meaning.`}]},
-
-/* ---------- HARDWARE ---------- */
-{sec:"hw",c:"rose",eyebrow:"04 · GPUs",t:"q",q:`A GPU has thousands of narrow, slower cores. A CPU has a handful of very fast ones. For running an LLM, <b>why does the wide, slower machine win by a mile</b>?`},
-
-{sec:"hw",c:"rose",eyebrow:"04 · GPUs",t:"a",h:"Why a GPU, and which one",body:`
-<div class="ascii">CPU (a few very fast lanes)      GPU (thousands of narrow lanes)
-[====>]                          [=>][=>][=>][=>][=>][=>][=>][=>]
-~8-64 cores                      ~thousands of CUDA cores
-
-One token = multiply a vector through BILLIONS of weights.
-That work is embarrassingly parallel -> the wide machine wins.
-
-Rough Colab ladder:
-  CPU     1x     baseline. Fine for tokenizers, hopeless for 3B+
-  T4 GPU  5-10x  free/Pro tier, ~15GB VRAM, the workhorse here
-  A100    20-50x Pro+/enterprise, 40-80GB, what frontier models
-                 were trained on</div>
-<div class="note"><b>VRAM matters more than speed.</b> A slow GPU with enough memory runs your model. A fast GPU without enough memory throws <code>CUDA out of memory</code> and runs nothing at all. Check that the model fits first. Worry about speed second. Always verify the GPU from code, not the menu — <code>torch.cuda.get_device_name(0)</code> and <code>total_memory</code>.</div>`,
-cto:[`Your notebook idles 20 minutes, then every cell fails with "torch is not defined." Colab took your machine back — everything is gone, run from the top again. The lesson: a notebook is not real infrastructure. Anything that takes five minutes to rebuild and only lives in memory is a demo, not a system. Real deployments load the model once into a long-running service exactly to avoid this.`]},
-
-{sec:"hw",c:"rose",eyebrow:"04 · GPUs",t:"q",q:`Why would a production team ever accept a <b>slower</b> GPU than the one their benchmark says is fastest?`},
-
-{sec:"hw",c:"rose",eyebrow:"04 · GPUs",t:"a",h:"The real question is never &quot;which GPU is fastest&quot;",body:`
-<p>What drives cost is how <strong>busy</strong> the GPU is, not how fast it is. A cheap GPU busy 70% of the time beats an expensive one busy 8% of the time, every time. The best GPUs are also often simply unavailable in your region, and a bigger card only helps if your model actually fills it.</p>
-<div class="note">The real question is never "which GPU is fastest?" It's <b>"what does a thousand answers cost me at real traffic, counting idle time?"</b> Asked that way, the answer is usually a smaller card, better batching, scaling down to zero when idle — or, honestly, going back to the API.</div>`},
-
-{sec:"hw",c:"rose",eyebrow:"05 · Quantization",t:"q",q:`Every weight is a number, and you choose how many bits to store it in. A 7B model at fp16 needs ~14GB — won't fit a 15GB T4 with room for anything else. Predict: what happens to that number at <b>int4</b>?`},
-
-{sec:"hw",c:"rose",eyebrow:"05 · Quantization",t:"a",h:"Precision and quantization",body:`
-<div class="ascii">FORMAT   BITS  BYTES/WEIGHT  7B MODEL   WHAT YOU GIVE UP
-fp32       32      4.0         ~26 GB    nothing (training default)
-fp16/bf16  16      2.0         ~13 GB    almost nothing for inference
-int8        8      1.0         ~6.5 GB   very little
-int4        4      0.5         ~3.5 GB   a little; usually acceptable
-
-THE FORMULA TO MEMORISE
-  VRAM for weights (GB) ~= params(B) x bytes-per-weight
-  7B x 2 bytes (fp16) = 14 GB -> will NOT fit a 15GB T4 with room
-  7B x 0.5 (int4)     = 3.5 GB -> fits comfortably</div>
-<div class="note">Quantization is lossy compression for weights — you round billions of numbers to a coarser grid. The remarkable empirical finding is how little that costs you at 8 and even 4 bits. Always leave 10-15% spare — a GPU at 99% crashes on the first unusual request.</div>
-<div class="ascii">4-bit via bitsandbytes:
-bnb = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
-  bnb_4bit_compute_dtype=torch.float16, bnb_4bit_use_double_quant=True)</div>
-<div class="note">The subtlety: weights sit in memory at 4 bits, but are expanded back to 16 bits to do the actual maths — that's what <code>compute_dtype</code> is for. This is why 4-bit saves huge memory but doesn't make the model much faster. You shrank what you store, not the work you do. Quantization buys the ability to run the model at all — not speed.</div>`},
-
-{sec:"hw",c:"rose",eyebrow:"05 · Quantization",t:"q",q:`Quantization is lossy — like compressing a spreadsheet. Why doesn't it <b>destroy</b> the model the way lossy compression destroys a spreadsheet?`},
-
-{sec:"hw",c:"rose",eyebrow:"05 · Quantization",t:"a",h:"Why models survive squashing (and where they don't)",body:`
-<p>A neural network has enormous overlap built in and is used to noise. No single weight decides anything — behaviour comes from patterns across billions of them. Tiny rounding errors mostly cancel out. A spreadsheet is the opposite: every cell matters on its own, one wrong digit is one wrong answer. That overlap is what makes squashing survivable — and why the same trick fails anywhere each value stands alone.</p>
-<div class="note"><b>Worth sitting with:</b> the damage isn't spread evenly. It shows up first in the rarest, most exact skills — long arithmetic, obscure facts, less common languages — while normal conversation still sounds fine. A squashed model can pass casual testing and fail exactly on the cases you care about.</div>
-<ul class="pts">
-<li><strong>Quality drops noticeably? Options in order of cost:</strong> move to 8-bit (2&times; memory, most quality back) &rarr; better compression method (NF4 + double quant, tuned AWQ/GPTQ) &rarr; smaller model at higher precision (3B fp16 often beats 7B at int4) &rarr; rent a bigger GPU (honest last resort).</li>
-</ul>
-<div class="note"><b>When is quantization actively the wrong call, even though it fits?</b> When failures are silent and stakes are high. In a system reading numbers from financial filings, a 4-bit model that swaps two digits gives a fluent, confident, wrong answer that no error check catches. The test is not "does it still sound good" — it's "does it still get the numbers right on my own list of known answers."</div>`},
-
-{sec:"hw",c:"rose",eyebrow:"06 · KV Cache",t:"q",q:`Model weights fit in 4GB of a 15GB GPU. You test with a 500-token prompt — everything fits, ship it. A user pastes a 50-page contract. <b>Predict what happens.</b>`},
-
-{sec:"hw",c:"rose",eyebrow:"06 · KV Cache",t:"a",h:"The memory budget nobody warns you about",body:`
-<div class="ascii">+--------------------------------------------------+  15 GB (T4)
-| ACTIVATIONS + framework overhead      <- varies    |
-| KV CACHE  <- grows with CONTEXT LENGTH and BATCH   |
-|    every token attends to every previous token,    |
-|    so K/V for the whole sequence gets cached        |
-| MODEL WEIGHTS <- fixed once loaded                 |
-+--------------------------------------------------+
-
-THE TRAP
-You test with a 500-token prompt.  Everything fits. Ship it.
-A user pastes a 50-page contract.  KV cache explodes. OOM.
-The weights are constant. The cache is a function of your INPUT,
-which means your memory ceiling is set by your WORST request,
-not your average one.</div>
-<div class="note">Memory grows with input length and concurrent users. A self-hosted service must <b>cap the input size at the front door</b>, before it reaches the model. Politely rejecting a huge request beats accepting it and crashing the server for everyone else — same rule as a max file upload size.</div>`,
-cto:[`Q&A service must serve 50 concurrent users on one GPU. Levers: cap input size at the door (biggest single win); use a proper model server (vLLM, TGI) instead of pipeline() in a loop, which packs requests together; pick a model with grouped-query attention (smaller cache, same quality); compress the cache too, not just the weights; add a queue so the 51st person waits instead of everyone failing. Handling many users isn't a setting turned on later — it comes from the serving layer picked at the start.`]},
-
-{sec:"hw",c:"rose",eyebrow:"Hardware · Recall",t:"r",h:"Quick recall: hardware",qs:[
-{q:`State the VRAM formula and compute 7B at int4.`,a:`VRAM(GB) &asymp; params(B) &times; bytes-per-weight. 7B &times; 0.5 bytes (int4) = <b>3.5 GB</b> — fits comfortably on a 15GB T4.`},
-{q:`Why doesn't 4-bit quantization make inference faster, only smaller?`,a:`Weights are stored at 4 bits but expanded back to 16 bits (<code>compute_dtype</code>) to actually do the maths. You shrank what you store, not the computation itself — quantization buys the ability to run at all, not speed.`},
-{q:`Why is your memory ceiling set by your WORST request, not your average one?`,a:`Model weights are fixed once loaded, but the <b>KV cache</b> grows with input length and concurrent users. A 500-token test prompt fits fine; a 50-page contract explodes the cache and triggers OOM in production.`}]},
-
-/* ---------- 3 LEVELS OF CONTROL ---------- */
-{sec:"ctrl",c:"violet",eyebrow:"07 · Pipeline",t:"q",q:`<code>pipeline()</code> hides five steps: tokenize, model, softmax/argmax, decode, output. Abstractions that hide five steps also hide <b>five failure modes</b>. Name some before peeking.`},
-
-{sec:"ctrl",c:"violet",eyebrow:"07 · Pipeline",t:"a",h:"Pipeline — the easy door, and what it hides",body:`
-<div class="ascii">WITHOUT pipeline                 WITH pipeline
-text -> tokenizer -> input IDs   text -> [pipeline] -> output
-     -> model -> logits
-     -> softmax/argmax/decode
-     -> output
-Five steps you write and can get wrong, versus one you cannot.</div>
-<div class="ascii">clf = pipeline("text-classification", model="ProsusAI/finbert")
-clf("Tesla stock surges after record earnings")
-  -> [{'label':'positive','score':0.94}]
-clf("Microsoft is scheduled to release its earnings report")
-  -> [{'label':'neutral','score':0.88}]  <- correctly NOT positive</div>
-<div class="note">A keyword checker sees "earnings report" and guesses positive. FinBERT correctly sees announcing a date carries no opinion. Telling event from opinion is exactly what training on one domain buys — why a tiny specialist model can beat a giant general one on a narrow job at a thousandth the cost.</div>
-<ul class="pts">
-<li><strong>Quiet cutting</strong> — input past the limit gets chopped, usually with no warning.</li>
-<li><strong>Hidden default model</strong> — <code>pipeline("sentiment-analysis")</code> with no model named quietly picks a small English one.</li>
-<li><strong>Label names</strong> — one model says "POSITIVE", another "LABEL_1", another "positive". Code checking one breaks on the next.</li>
-<li><strong>Where it runs</strong> — chosen for you, which is how you end up on CPU without noticing.</li>
-</ul>
-<div class="note">Shortcuts make the working path shorter and the broken path harder to understand. Use them, but know what you'd have written by hand. This module's actual approach: load tokenizer and model yourself with full control, <em>then</em> wrap in a pipeline — settings you need, convenience you want.</div>`},
-
-{sec:"ctrl",c:"violet",eyebrow:"08 · Tokenizer",t:"q",q:`Feed BERT's token IDs into a GPT model. Both are just "a list of numbers" — will you get an error, or something worse?`},
-
-{sec:"ctrl",c:"violet",eyebrow:"08 · Tokenizer",t:"a",h:"AutoTokenizer — the model's private language",body:`
-<div class="ascii">TEXT: "AI is transforming industries and the future of work."
-BERT (WordPiece, uncased)         GPT-2 (byte-level BPE)
-lowercases everything             PRESERVES case
-['ai','is','transforming',...]    ['AI','Ġis','Ġtransforming',...]
-IDs: [9932, 2003, 17903, ...]     IDs: [20185, 318, 25449, ...]
-        THE SAME WORDS -> COMPLETELY DIFFERENT NUMBERS
-
-Feed BERT's IDs to a GPT model and you get NO ERROR AT ALL.
-ID 9932 is valid in both vocabularies - it just means something
-entirely different. You get FLUENT NONSENSE.</div>
-<div class="note">The rule you must not break: <b>the tokenizer must come from the same model as the weights.</b> Always <code>AutoTokenizer.from_pretrained(model_id)</code> with the exact same ID given to the model. Mixing them doesn't crash — it quietly produces nonsense, which just looks like a bad model.</div>
-<ul class="pts">
-<li><strong>It's your billing unit</strong> — API pricing and context limits are in tokens, not words.</li>
-<li><strong>It's unfair across languages</strong> — most tokenizers are built mainly from English text. Hindi/Tamil/Arabic often use 2-3&times; more tokens for the same sentence.</li>
-<li><strong>It explains silly failures</strong> — counting letters, spelling, maths go wrong because the model never sees letters.</li>
-<li><strong>It shapes document splitting</strong> — chunk sizes are measured in tokens.</li>
-</ul>`},
-
-{sec:"ctrl",c:"violet",eyebrow:"08 · Tokenizer",t:"q",q:`Your Hindi-language support bot costs 2.5&times; more per conversation than the English one, <b>on the same model</b>. Explain it to your finance team.`},
-
-{sec:"ctrl",c:"violet",eyebrow:"08 · Tokenizer",t:"a",h:"The Hindi cost problem",body:`
-<p>You pay per token, and the tokenizer was built from the text it was trained on. A dictionary learned mostly from English stores common English words as one token each, but breaks Devanagari into many small pieces. Same meaning, more tokens, higher bill — and less conversation fits before it gets cut off.</p>
-<div class="note"><b>Fixes, in order:</b> choose a model whose tokenizer was trained on many languages (several Qwen and Gemma versions handle Indian scripts far better); measure tokens per message on real traffic, not guesses; shorten your system prompt (you pay for it every turn); summarise old conversation instead of resending all of it.</div>
-<div class="note">If you build for Indian users: how efficiently a tokenizer handles your language is a real selection criterion — and it never shows up on any leaderboard.</div>`},
-
-{sec:"ctrl",c:"violet",eyebrow:"09 · Loading Models",t:"q",q:`Causal just means left-to-right — the model predicts the next word from everything before it and can never look ahead. What <b>consequence</b> follows directly from that loop structure — for latency, and for errors?`},
-
-{sec:"ctrl",c:"violet",eyebrow:"09 · Loading Models",t:"a",h:"AutoModelForCausalLM — loading the brain",body:`
-<div class="ascii">prompt: "The capital of France is"
-  -> forward pass -> next-token probs: Paris 0.91, the 0.03...
-  -> pick one (temperature/top_p) -> "...is Paris"
-  -> feed the WHOLE thing back in, predict again
-  -> repeat until max_new_tokens or a stop token
-
-Consequences that follow directly:
-* generation is SEQUENTIAL -> can't parallelise one response,
-  latency scales with output length
-* the model never revises. A wrong 3rd token becomes "evidence"
-  for token 4. Errors compound forwards.
-* the KV cache exists so you don't recompute the whole prefix
-  every step</div>
-<div class="ascii">bnb = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.float16)
-model = AutoModelForCausalLM.from_pretrained(model_id,
-  quantization_config=bnb, device_map="auto")</div>
-<ul class="pts">
-<li><strong>device_map="auto"</strong> — can silently offload to CPU or disk when VRAM is short. "Works" but 50&times; slower.</li>
-<li><strong>trust_remote_code</strong> — downloads and runs Python from the repo. A security decision, not a convenience flag.</li>
-<li><strong>revision</strong> — pin a specific commit. Not in most tutorials, essential for production reproducibility.</li>
-</ul>`,
-cto:[`Loading succeeded, GPU barely used, but generation takes 90 seconds per answer. device_map="auto" almost certainly pushed part of the model onto CPU or disk because it didn't fit in GPU memory — any layer in normal RAM is shuttled back and forth every pass, hundreds of times slower. Check print(model.hf_device_map). "It loaded" and "it is on the GPU" are two different statements, and only one of them is fast.`]},
-
-{sec:"ctrl",c:"violet",eyebrow:"10 · Generation",t:"q",q:`Same prompt, same model, temperature 0.2 in a document Q&amp;A system. Would you expect the answer to change run to run — and is that a bug?`},
-
-{sec:"ctrl",c:"violet",eyebrow:"10 · Generation",t:"a",h:"Generating text: the knobs that matter",body:`
-<div class="ascii">Parameter          What it controls              Doc Q&amp;A setting
-max_new_tokens      length cap on the answer       300-500
-do_sample            random sampling on/off         False for max determinism
-temperature          flatten/sharpen distribution    0.1-0.2
-top_p                 nucleus sampling                0.9
-repetition_penalty     discourage loops               1.1 if it loops</div>
-<div class="note">In Section 5 you wanted variety. Here you want the opposite: the answer that is actually in the document, the same way every time. A high temperature doesn't make document Q&amp;A creative — it makes it <b>wrong more often</b>. A made-up number written with confidence is the most dangerous thing your system can produce.</div>
-<div class="note">Not a bug by itself — that's <code>do_sample=True</code> doing exactly what you asked. Set <code>do_sample=False</code> for near-determinism. Note "near" — small GPU maths differences can still shift results slightly. If you need the exact same text every time for an audit trail, the model alone cannot give you that; save the answer and audit the saved copy.</div>`},
-
-{sec:"ctrl",c:"violet",eyebrow:"10 · Generation",t:"q",q:`Latency is proportional to output length, not input length. <b>Why</b> — and what does that imply for your UX design?`},
-
-{sec:"ctrl",c:"violet",eyebrow:"10 · Generation",t:"a",h:"Why latency scales with output, not input",body:`
-<p>The whole prompt is read in one go. But every word of the answer needs its own separate pass through the model. 500 words out means 500 sequential passes.</p>
-<div class="note"><b>Implications:</b> stream the words as they appear, so the wait feels like "time until it starts" not "time until it finishes." Ask for short answers in the prompt — brevity is a speed setting, not just style. Set <code>max_new_tokens</code> to what you'll actually show. It also explains something surprising: feeding in a much longer document usually adds <em>less</em> time than asking for a slightly longer answer.</div>`},
-
-{sec:"ctrl",c:"violet",eyebrow:"3 Levels of Control · Recall",t:"r",h:"Quick recall: the three levels of control",qs:[
-{q:`Name the four failure modes pipeline() hides.`,a:`Quiet cutting (silent truncation), hidden default model, inconsistent label names across models, and where it runs (silently landing on CPU).`},
-{q:`Why does mismatching a tokenizer produce fluent nonsense instead of an error?`,a:`Both vocabularies use valid integer ranges — the model has no way to know the IDs came from a different dictionary. It does what it always does: predicts a sensible continuation of the numbers it was given.`},
-{q:`Why does latency scale with output length rather than input length?`,a:`The prompt is read in one parallel pass, but each output word needs its own sequential forward pass through the model — 500 words out means 500 passes, one after another.`}]},
-
-/* ---------- DOCUMENT Q&A ---------- */
-{sec:"docqa",c:"amber",eyebrow:"11 · PDFs",t:"q",q:`Reading a PDF with <code>pypdf</code> takes four lines. What does <code>extract_text()</code> throw away on a two-column layout, and on a scanned image page?`},
-
-{sec:"docqa",c:"amber",eyebrow:"11 · PDFs",t:"a",h:"PDFs: extraction is lossy",body:`
-<div class="ascii">WHAT YOU SEE                  WHAT extract_text() RETURNS
-Column A | Column B       ->  "Revenue rose Costs also rose 12%
-Revenue rose | Costs rose      in the 8% in the quarter quarter"
-12%       | 8%                (columns interleaved!)
-Q1 Q2 Q3 table             ->  "Q1 Q2 Q3 12.4 13.1 14.0"
-12.4 13.1 14.0                 (structure gone; which number
-                                 belongs to which?)
-scanned image of text      ->  "" (empty. no OCR happened.)
-
-THE RULE: a PDF is a description of MARKS ON A PAGE, not a
-document with structure. Text extraction guesses reading order.
-For tables and multi-column layouts, it guesses badly.</div>
-<div class="note"><b>Three automated checks every ingestion step should run:</b> (1) is there enough text per page? Very few characters usually means a scan — flag for OCR. (2) do page counts match, with no silently-empty middle page? (3) does the text look like text — a sensible share of letters, not scrambled symbols? A fourth if numbers matter: check that something you know should be there (a heading, a total) actually appears.</div>`,
-cto:[`Document ingestion, not the model, is usually the biggest quality lever in a real RAG system — because everything after it is limited by it. The best model reading scrambled text gives confident wrong answers; a modest model reading clean text gives good ones. No prompt rescues broken input. Teams get this backwards: weeks comparing models, one afternoon on the PDF reader, then confusion about why accuracy stalls. Effort order: clean input first, then retrieval, then the prompt, then the model.`]},
-
-{sec:"docqa",c:"amber",eyebrow:"12 · Chat Templates",t:"q",q:`With OpenAI/Anthropic you pass <code>messages=[...]</code> and they format it for you. With open weights, <b>you're the one doing that job.</b> What happens if you get the special tokens wrong?`},
-
-{sec:"docqa",c:"amber",eyebrow:"12 · Chat Templates",t:"a",h:"Chat templates and special tokens",body:`
-<div class="ascii">The model only ever sees one flat stream of tokens. Special
-tokens are the punctuation that tells it WHO IS SPEAKING:
-  &lt;|system|&gt;   here are your instructions       &lt;|end|&gt;
-  &lt;|user|&gt;     here is the human's question      &lt;|end|&gt;
-  &lt;|assistant|&gt;  &lt;-- and now it is YOUR TURN
-
-These strings appeared millions of times in fine-tuning data.
-They are not decoration - they are the PROTOCOL.
-
-GET THEM WRONG AND:
-  * the model doesn't know where its turn starts
-  * it may answer, then invent the next user question too
-  * it may ignore the system instruction entirely
-  * quality drops in a way that looks like "this model is bad"</div>
-<div class="note">Every instruct model on the Hub carries its own template inside the tokenizer. Use it — <code>tokenizer.apply_chat_template()</code> — and switching models becomes a one-line change instead of rewriting your formatting code. Do not hand-write these; the general rule: when a vendor ships instructions for how to talk to their thing, use their instructions instead of writing your own copy.</div>`},
-
-{sec:"docqa",c:"amber",eyebrow:"12 · Chat Templates",t:"q",q:`Your model answers a question <b>correctly</b>, but the answer is nowhere in the uploaded document. Bug or feature?`},
-
-{sec:"docqa",c:"amber",eyebrow:"12 · Chat Templates",t:"a",h:"The grounding instruction, dissected",body:`
-<div class="ascii">Clause                              What it defends against
-"Answer ONLY from the document      stops answering from what it
- text"                                already knows instead of yours
-"If not in the document, reply      gives it permission to say no;
- exactly: ..."                        without an exit, models invent
-A fixed refusal string              lets code spot "no answer"
-                                       reliably instead of parsing prose
-"Do not use prior knowledge"        blocks the sneakiest failure: a
-                                       right-sounding, unverifiable answer</div>
-<div class="note">A bug — and a dangerous one, because being right hides it. An answer from training data can't be checked, can't be cited, may be out of date, and will be confidently wrong the day your document disagrees. Worse, it makes testing lie to you: test on Google's earnings call (already memorised) — everything looks great. Point it at internal documents it's never seen — accuracy collapses. <b>Always include documents the model cannot possibly have memorised in your test set.</b></div>
-<div class="note">An instruction is a request, not a constraint — none of this is enforced. If it matters that answers come from the document, check it in code: confirm the key facts actually appear in the supplied text, and show page references so a person can verify.</div>`},
-
-{sec:"docqa",c:"amber",eyebrow:"12 · Chat Templates",t:"q",q:`Why does giving the model an explicit way to say <b>"I don't know"</b> improve accuracy more than just telling it "don't hallucinate"?`},
-
-{sec:"docqa",c:"amber",eyebrow:"12 · Chat Templates",t:"a",h:"Say what to do instead, not just what not to do",body:`
-<p>The model's whole job is to produce a believable next word. "Don't make things up" tells it what not to do but gives it nothing to do instead. It still has to write something, and something believable is exactly what making things up looks like. Giving it one specific sentence to use when the answer is missing gives it a real alternative to compete with invention — a vague ban becomes a simple choice between two paths.</p>
-<div class="note">This holds far beyond AI: <b>saying what to do instead works better than saying what not to do.</b> Same reason proper error handling beats telling a program "don't crash."</div>`},
-
-{sec:"docqa",c:"amber",eyebrow:"13 · The RAG Hole",t:"q",q:`The transcript is ~64,000 characters. The code truncates to <code>[:6000]</code> — the first 9% of the document. This is the <b>most important line in the entire project.</b> What does it actually decide?`},
-
-{sec:"docqa",c:"amber",eyebrow:"13 · The RAG Hole",t:"a",h:"The 6,000-character truncation — and the RAG-shaped hole",body:`
-<div class="ascii">MAX_CONTEXT_CHARS = 6000
-if len(document_text) > MAX_CONTEXT_CHARS:
-    context = document_text[:MAX_CONTEXT_CHARS]
-# <-- the first 6,000 chars. the other 58,000 are GONE.</div>
-<div class="ascii">WHAT THIS PROJECT DOES (truncation)
-[############################################]  64,000 chars
-[#####]                                          send first 6,000
- ^^^^^ 91% invisible. Questions about page 12 are UNANSWERABLE
-       BY DESIGN.
-
-WHAT A REAL SYSTEM DOES (retrieval / RAG)
-[############################################]  64,000 chars
-  1. CHUNK (~500-1000 tokens, overlap)
-  2. EMBED each chunk -> vector, store in a vector DB
-  3. question -> embed -> find nearest chunks (top 3)
-  4. send ONLY those chunks as context + system: answer only
-     from this context
-  5. answer + CITATIONS back to source chunks
-
-Same model. Same GPU. Entire document now answerable.
-The difference is ARCHITECTURE, not compute.</div>
-<div class="note">Adding search and a vector database would triple the module's length and bury the actual lesson (how to load and run an open model) — cutting the document is a fair <b>teaching shortcut</b>. The mistake is not taking the shortcut — it's <b>not noticing you took it</b>, and carrying the same pattern into something real. Seeing <code>[:6000]</code> as a placeholder for a search step is the most valuable thing in this section.</div>
-<div class="note"><b>Even without a vector database, you can do better:</b> split into ~1,000-char pieces, rank by shared words with the question, send the best 5. Cut from the middle, not the end (documents set the scene at the start, conclusions at the end). Summarise in two passes. Tell the user what you did — "Answering from pages 1-3 of 21" is honest; silent truncation is not.</div>`},
-
-{sec:"docqa",c:"amber",eyebrow:"13 · The RAG Hole",t:"q",q:`Why is truncating by <b>characters</b> rather than tokens a second, separate bug — on top of the truncation itself?`},
-
-{sec:"docqa",c:"amber",eyebrow:"13 · The RAG Hole",t:"a",h:"Characters vs tokens — the wrong unit",body:`
-<p>The model's limit is counted in tokens, and characters convert to tokens at different rates depending on content and language. 6,000 characters of English prose is about 1,500 tokens. The same 6,000 characters of tables, code or Hindi can be two or three times that. <strong>You have set your limit in the wrong unit.</strong></p>
-<div class="note">The result: your safety margin is fake. It holds for the document you tested and quietly bursts through the limit on a different one — which then gets cut again, invisibly, inside the tokenizer. <b>Always measure in the unit the system actually enforces.</b></div>`},
-
-{sec:"docqa",c:"amber",eyebrow:"13 · The RAG Hole",t:"q",q:`Your team wants document Q&amp;A over 10,000 internal PDFs. This notebook has only the <b>answering</b> step. Sketch the parts it doesn't have.`},
-
-{sec:"docqa",c:"amber",eyebrow:"13 · The RAG Hole",t:"a",h:"The real architecture: what this notebook doesn't have",body:`
-<ul class="pts">
-<li><strong>Loading</strong> — a pipeline that reads each PDF (falling back to OCR for scans), checks quality, records provenance (file, page, date, who may see it), splits with overlap, and can be re-run when your reader improves.</li>
-<li><strong>Indexing</strong> — a model turning text into vectors, a place to store them, and keyword search alongside it, because vector search is poor at exact things like invoice numbers and ticker symbols.</li>
-<li><strong>Search</strong> — fetch the best few pieces, re-rank, and <strong>filter by what this user is allowed to see, at search time</strong>. Most prototypes get this badly wrong — an unfiltered search happily summarises documents the user was never allowed to open.</li>
-<li><strong>Answering</strong> — the model, with page references it must include.</li>
-<li><strong>Testing</strong> — questions with known answers, measuring two things separately: did search find the right piece, and did the answer stick to it.</li>
-<li><strong>Running it</strong> — re-indexing new documents, cost per question, a speed budget, a log of who asked what.</li>
-</ul>
-<div class="note">This notebook has the answering step and nothing else. That is not a criticism — it is a map of the work ahead.</div>`},
-
-{sec:"docqa",c:"amber",eyebrow:"13 · The RAG Hole",t:"q",q:`RAG adds retrieval failure modes on top of generation failure modes. Name two, and how you'd <b>detect</b> each one.`},
-
-{sec:"docqa",c:"amber",eyebrow:"13 · The RAG Hole",t:"a",h:"Two retrieval failure modes RAG adds",body:`
-<ul class="pts">
-<li><strong>Search missed it</strong> — the right piece is in the document but wasn't found, so the model correctly says "not in the document." The output looks polite and well-behaved, and is wrong. Catch it by checking search on its own: for each test question, was the correct piece in the results?</li>
-<li><strong>Search found a lookalike</strong> — pieces that read similarly but are about a different quarter/company/year get pulled in, and the model faithfully answers from the wrong one. Worse than a miss, because it's confident and specific. Catch it by requiring page references and checking the cited page really says what's claimed.</li>
-</ul>
-<div class="note">The general lesson: when a system has several steps, an overall score tells you something broke and never which step. <b>Measure each step.</b></div>`},
-
-{sec:"docqa",c:"amber",eyebrow:"Final Recall",t:"r",h:"Final recall: the document Q&amp;A system",qs:[
-{q:`Name three automated checks a document ingestion step should always run.`,a:`Enough text per page (few chars &rarr; likely a scan, flag for OCR); page counts match with no silently-empty pages; text looks like text (sensible share of letters, not scrambled symbols). Optionally: a known heading/date/total actually appears.`},
-{q:`Recite the RAG pipeline in order.`,a:`Chunk (with overlap) &rarr; embed each chunk into a vector &rarr; store in a vector DB &rarr; embed the question, find nearest chunks &rarr; send only those chunks as context with a grounding instruction &rarr; generate the answer with citations.`},
-{q:`Why is "answer ONLY from the document, and here's exactly what to say if it's missing" better than "don't hallucinate"?`,a:`It gives the model a concrete alternative sentence to produce instead of inventing one — the model always has to write <i>something</i>; a fixed refusal string competes directly with invention, where a vague ban gives it nothing to do instead.`},
-{q:`Name the two RAG-specific failure modes and how to catch each.`,a:`<b>Search missed it</b> — correct piece exists but wasn't retrieved; catch by checking search results against known-correct pieces per test question. <b>Search found a lookalike</b> — wrong-but-similar chunk retrieved confidently; catch by requiring page citations and verifying the cited page actually supports the claim.`}]}
-];
-
-let i=0;
-const stage=document.getElementById('stage'),dots=document.getElementById('dots'),
-tabs=document.getElementById('tabs'),counter=document.getElementById('counter'),
-prevBtn=document.getElementById('prevBtn'),nextBtn=document.getElementById('nextBtn');
-SECTIONS.forEach(s=>{const b=document.createElement('button');b.className='tab';b.dataset.c=s.c;b.dataset.sec=s.id;b.textContent=s.label;b.onclick=()=>go(S.findIndex(x=>x.sec===s.id));tabs.appendChild(b);});
-S.forEach((sl,k)=>{const d=document.createElement('span');d.className='dot'+(sl.t==='q'?' q':'');d.tabIndex=0;d.setAttribute('role','button');d.setAttribute('aria-label','Slide '+(k+1));d.onclick=()=>go(k);d.onkeydown=e=>{if(e.key==='Enter')go(k)};dots.appendChild(d);});
-function lens(cto,dir){
-  let out='';
-  if(cto&&cto.length) out+='<details class="lens"><summary>CTO LENS</summary><div class="body"><ul class="pts">'+cto.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
-  if(dir&&dir.length) out+='<details class="lens dir"><summary>DIRECTOR LENS</summary><div class="body"><ul class="pts">'+dir.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
-  return out;
-}
-function go(k){
-  i=Math.max(0,Math.min(S.length-1,k));
-  const s=S[i];stage.innerHTML='';
-  const el=document.createElement('div');el.className='slide';
-  try{
-    if(s.t==='q'){
-      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div>'
-        +'<div class="qcard"><div class="qlabel">Think first &middot; predict before you peek</div>'
-        +'<div class="qtext">'+s.q+'</div>'
-        +'<div class="qsub">Form your answer in your head. Then press Next to compare.</div></div>';
-    } else if(s.t==='r'){
-      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'
-        +'<p>Answer from memory first. Tap a question to reveal the answer.</p>'
-        +s.qs.map(x=>'<details class="recall-item"><summary>'+x.q+'</summary><div class="ans">'+x.a+'</div></details>').join('')
-        +'<div class="recall-hint">Struggled on any? Jump back with the tabs above, then return.</div>';
-    } else {
-      el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'+s.body+(((s.cto&&s.cto.length)||(s.dir&&s.dir.length))?lens(s.cto,s.dir):'');
-    }
-  }catch(err){
-    el.innerHTML='<div class="eyebrow rose">Render error</div><h2>Slide '+(i+1)+' failed to render</h2><p>'+String(err&&err.message||err)+'</p>';
+function toggleTheme(){
+  const body = document.body;
+  const btn = document.getElementById('themeBtn');
+  body.classList.toggle('dark-theme');
+  if(body.classList.contains('dark-theme')){
+    btn.innerHTML = '☀&nbsp; Light mode';
+  } else {
+    btn.innerHTML = '☾&nbsp; Dark mode';
   }
-  stage.appendChild(el);
-  counter.textContent=(i+1)+' / '+S.length;
-  document.querySelectorAll('.dot').forEach((d,k2)=>d.classList.toggle('on',k2===i));
-  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.sec===s.sec));
-  prevBtn.disabled=(i===0);
-  nextBtn.textContent=(i===S.length-1)?'Done \u2713':'Next \u2192';
-  nextBtn.disabled=(i===S.length-1);
-  document.querySelector('main').scrollTop=0;window.scrollTo(0,0);
 }
-prevBtn.onclick=()=>go(i-1);nextBtn.onclick=()=>go(i+1);
-document.addEventListener('keydown',e=>{if(e.target.closest('details'))return;if(e.key==='ArrowRight')go(i+1);if(e.key==='ArrowLeft')go(i-1);});
-go(0);
+function toggle(headEl){
+  const card = headEl.closest('.q-card');
+  const answer = card.querySelector('.q-answer');
+  const isOpen = card.classList.contains('open');
+  if(isOpen){
+    card.classList.remove('open');
+    answer.style.maxHeight = null;
+    headEl.querySelector('.q-toggle').textContent = 'reveal';
+  } else {
+    card.classList.add('open');
+    answer.style.maxHeight = answer.scrollHeight + 'px';
+    headEl.querySelector('.q-toggle').textContent = 'hide';
+  }
+}
 </script>
 </body>
 </html>

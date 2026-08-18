@@ -267,6 +267,48 @@ a{color:var(--cyan);}
   margin-bottom:6px;
 }
 
+/* ============ ASCII DIAGRAM BLOCK ============ */
+.ascii-diagram{
+  background:#070a0e;
+  border:1px solid var(--line);
+  border-left:2px solid var(--amber);
+  border-radius:var(--radius);
+  padding:20px 22px;
+  overflow-x:auto;
+  margin:20px 0;
+}
+.ascii-diagram-label{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:10.5px;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--amber);
+  margin-bottom:10px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.ascii-diagram-label::before{content:"◆"; font-size:9px;}
+.ascii-diagram pre{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12.6px;
+  line-height:1.6;
+  color:#cfe8e2;
+  white-space:pre;
+  margin:0;
+}
+.ascii-diagram .recall{
+  margin-top:12px;
+  padding-top:12px;
+  border-top:1px dashed var(--line);
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12.6px;
+  color:var(--cyan);
+  white-space:pre;
+  line-height:1.6;
+}
+.ascii-diagram + .ascii-diagram{margin-top:14px;}
+
 /* ============ TABS (component explorer) ============ */
 .tabs{display:flex; gap:2px; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; margin-bottom:0; flex-wrap:wrap;}
 .tab-btn{
@@ -533,6 +575,7 @@ footer{
     <a href="#transport">Transport</a>
     <a href="#sketches">Sketches</a>
     <a href="#architect">Architect Lens</a>
+    <a href="#memorize">7 Diagrams</a>
   </nav>
 </div>
 
@@ -601,6 +644,27 @@ footer{
       <text x="780" y="274" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="#8b97a4">Files / Systems</text>
     </svg>
     <div class="port-caption">FIG. 1 — one connector, three capability channels, unlimited endpoints</div>
+  </div>
+
+  <div class="ascii-diagram" style="max-width:640px; margin:34px auto 0; text-align:left;">
+    <div class="ascii-diagram-label">ASCII diagram — the core MCP mental model</div>
+    <pre>                 AI APPLICATION
+                      |
+                      v
+                +-----------+
+                | MCP       |
+                | Interface |
+                +-----------+
+                  /    |    \
+                 /     |     \
+                v      v      v
+           RESOURCES  TOOLS  PROMPTS
+              |        |        |
+              v        v        v
+             DATA    ACTIONS  TEMPLATES</pre>
+    <div class="recall">Resources = READ
+Tools     = ACT
+Prompts   = GUIDE</div>
   </div>
 </section>
 
@@ -677,6 +741,34 @@ footer{
 // every tool: a unique interface</span></div>
   </div>
 
+  <div class="ascii-diagram">
+    <div class="ascii-diagram-label">ASCII diagram — before MCP vs. MCP</div>
+    <pre>BEFORE MCP
+
+ App A ----> Tool 1
+   |-------> Tool 2
+   |-------> Tool 3
+
+ App B ----> Tool 1
+   |-------> Tool 2
+   |-------> Tool 3
+
+ App C ----> Tool 1
+   |-------> Tool 2
+   |-------> Tool 3
+
+      = MANY CUSTOM ADAPTERS</pre>
+    <p style="color:var(--text-dim); font-size:0.88rem; margin:14px 0 6px;">With MCP:</p>
+    <pre>AFTER MCP
+
+ App A --\
+ App B ---+--> MCP --> Tool 1
+ App C --/          --> Tool 2
+                    --> Tool 3</pre>
+    <div class="recall">Core idea:
+One standardized connector instead of N×M bespoke integrations.</div>
+  </div>
+
   <div class="grid grid-3">
     <div class="card" style="--edge:var(--red)">
       <div class="card-label">Fragmentation</div>
@@ -723,6 +815,59 @@ footer{
   <div class="section-head"><span class="section-num">03</span><h2>Architecture, top to bottom</h2></div>
   <p class="section-intro">Four layers sit between a model's intent and the system that fulfills it: the model itself, the client that speaks MCP, the transport that carries the bytes, and the server that exposes capabilities.</p>
 
+  <div class="ascii-diagram">
+    <div class="ascii-diagram-label">ASCII diagram — MCP architecture, the most important diagram</div>
+    <p style="color:var(--text-dim); font-size:0.88rem; margin-bottom:10px;">When the model decides "I need customer data," does it directly talk to the database? <b style="color:var(--text);">No.</b></p>
+    <pre>+----------+
+| AI Model |
++----+-----+
+     |
+     | intent
+     v
++----------+
+|   MCP    |
+|  Client  |
++----+-----+
+     |
+     | JSON-RPC
+     v
++----------+
+| Transport|
+| stdio /  |
+| SSE/HTTP |
++----+-----+
+     |
+     v
++----------+
+|   MCP    |
+|  Server  |
++----+-----+
+     |
+     +---------> Resources
+     |
+     +---------> Tools
+     |
+     +---------> Prompts
+     |
+     v
++----------------------+
+| External Systems     |
+| DB / API / Files     |
++----------------------+</pre>
+    <div class="recall">Recall chain:
+Model
+  ↓
+MCP Client
+  ↓
+Transport
+  ↓
+MCP Server
+  ↓
+Capability
+  ↓
+External System</div>
+  </div>
+
   <div class="panel">
     <div class="flow">
       <div class="flow-step">
@@ -759,12 +904,74 @@ Database    → MCP Server    <span class="c">rows returned</span>
 MCP Server  → MCP Client    <span class="c">data in a standard format</span>
 MCP Client  → AI Model      <span class="c">generates the summary</span>
 AI Model    → User          <span class="c">"Here's your summary…"</span></div>
+
+  <div class="ascii-diagram" style="margin-top:26px;">
+    <div class="ascii-diagram-label">ASCII diagram — end-to-end request flow</div>
+    <p style="color:var(--text-dim); font-size:0.88rem; margin-bottom:10px;">User asks: "Summarize last quarter's sales." Where does the actual sales data come from?</p>
+    <pre>USER
+  |
+  | "Summarize Q4 sales"
+  v
+AI MODEL
+  |
+  | "I need sales data"
+  v
+MCP CLIENT
+  |
+  | resources/read
+  v
+MCP SERVER
+  |
+  | query
+  v
+DATABASE
+  |
+  | rows
+  v
+MCP SERVER
+  |
+  | structured result
+  v
+MCP CLIENT
+  |
+  v
+AI MODEL
+  |
+  v
+USER
+"Here is your summary..."</pre>
+    <div class="recall">The key insight:
+MCP does not replace the database or API. It standardizes how the
+AI application accesses capabilities exposed by those systems.</div>
+  </div>
 </section>
 
 <!-- ======================= COMPONENTS ======================= -->
 <section class="section reveal" id="components">
   <div class="section-head"><span class="section-num">04</span><h2>The five components</h2></div>
   <p class="section-intro">Client and Server are the two ends of the wire. Resources, Tools, and Prompts are what the server offers across it — data, actions, and templates, respectively.</p>
+
+  <div class="ascii-diagram">
+    <div class="ascii-diagram-label">ASCII diagram — MCP's three capability channels</div>
+    <pre>                  MCP SERVER
+                      |
+          +-----------+-----------+
+          |           |           |
+          v           v           v
+     RESOURCES      TOOLS      PROMPTS
+          |           |           |
+          v           v           v
+        READ        ACT         GUIDE
+          |           |           |
+          v           v           v
+       Customer    Send Email   Sales
+        Data       Charge Card  Analysis
+        Policy     Create File  Template</pre>
+    <div class="recall">Easy memory trick:
+RESOURCE = "Give me something"
+TOOL     = "Do something"
+PROMPT   = "Help me structure something"</div>
+  </div>
 
   <div class="tabs" id="compTabs">
     <button class="tab-btn active" style="--edge:var(--cyan)" data-tab="client">Client</button>
@@ -842,12 +1049,81 @@ AI Model    → User          <span class="c">"Here's your summary…"</span></d
   Return trends, risks, recommendations."</span>
 }</div>
   </div>
+
+  <div class="ascii-diagram" style="margin-top:30px;">
+    <div class="ascii-diagram-label">ASCII diagram — MCP client vs. MCP server</div>
+    <p style="color:var(--text-dim); font-size:0.88rem; margin-bottom:10px;">Which side decides what capability to invoke?</p>
+    <pre>        MCP CLIENT                    MCP SERVER
+     "The decision side"             "The capability side"
+
+     +-------------+                +-------------+
+     | AI Model    |                | Resources   |
+     |             |                | Tools       |
+     | Decides     |                | Prompts     |
+     +------+------+                +------+------+
+            |                              ^
+            | request                      |
+            +----------------------------->|
+                                           |
+                                      execute / read
+                                           |
+                                           v
+                                    External System</pre>
+    <div class="recall">Memory hook:
+Client = brain
+Server = hands + eyes</div>
+    <p style="color:var(--text-dim); font-size:0.85rem; margin-top:12px;">The client initiates connections, routes requests, handles responses/errors, and manages session state; the server exposes and executes capabilities.</p>
+  </div>
 </section>
 
 <!-- ======================= PROTOCOL ======================= -->
 <section class="section reveal" id="protocol">
   <div class="section-head"><span class="section-num">05</span><h2>Protocol internals</h2></div>
   <p class="section-intro">Underneath the concepts is plain JSON-RPC 2.0 — a request/response envelope with an id, a method name, and typed params.</p>
+
+  <div class="ascii-diagram">
+    <div class="ascii-diagram-label">ASCII diagram — JSON-RPC, the wire-level mental model</div>
+    <p style="color:var(--text-dim); font-size:0.88rem; margin-bottom:10px;">What actually travels between the MCP client and server? Not natural language.</p>
+    <pre>          MCP CLIENT
+              |
+              | JSON-RPC 2.0
+              v
+        +-------------+
+        |    Server   |
+        +-------------+</pre>
+    <p style="color:var(--text-dim); font-size:0.85rem; margin:14px 0 6px;">Conceptually:</p>
+    <pre>REQUEST
+
+{
+  method: "tools/call",
+  params: {
+    name: "send_email",
+    arguments: {...}
+  }
+}
+
+              |
+              v
+
+           SERVER
+
+              |
+              v
+
+RESPONSE
+
+{
+  result: {
+    content: [...]
+  }
+}</pre>
+    <div class="recall">Three things to remember:
+JSON-RPC
+   |
+   +--> method
+   +--> params
+   +--> result</div>
+  </div>
 
   <div class="grid grid-2">
     <div>
@@ -892,6 +1168,57 @@ AI Model    → User          <span class="c">"Here's your summary…"</span></d
 <section class="section reveal" id="lifecycle">
   <div class="section-head"><span class="section-num">06</span><h2>Lifecycle of a request</h2></div>
   <p class="section-intro">A real sequence, start to finish — from handshake to the answer landing back with the user.</p>
+
+  <div class="ascii-diagram">
+    <div class="ascii-diagram-label">ASCII diagram — MCP request lifecycle</div>
+    <p style="color:var(--text-dim); font-size:0.88rem; margin-bottom:10px;">Does the client immediately call a tool when it connects? No. There is a lifecycle.</p>
+    <pre>1. DISCOVERY
+      |
+      v
+"What capabilities do you expose?"
+      |
+      v
+2. DECISION
+      |
+      v
+"Which capability do I need?"
+      |
+      v
+3. ACTION
+      |
+      v
+tools/call
+      |
+      v
+4. EXECUTION
+      |
+      v
+Server validates + executes
+      |
+      v
+5. RESPONSE
+      |
+      v
+Structured result
+      |
+      v
+6. PRESENTATION
+      |
+      v
+User sees answer</pre>
+    <div class="recall">Compact recall:
+DISCOVER
+   ↓
+DECIDE
+   ↓
+CALL
+   ↓
+EXECUTE
+   ↓
+RESPOND
+   ↓
+PRESENT</div>
+  </div>
 
   <div class="panel">
     <div class="flow">
@@ -943,6 +1270,34 @@ AI Model    → User          <span class="c">"Here's your summary…"</span></d
 <section class="section reveal" id="transport">
   <div class="section-head"><span class="section-num">07</span><h2>Transport layer</h2></div>
   <p class="section-intro">The protocol is transport-agnostic — the same JSON-RPC messages travel over any of three carriers, chosen by deployment shape rather than by capability.</p>
+
+  <div class="ascii-diagram">
+    <div class="ascii-diagram-label">ASCII diagram — transport layer</div>
+    <p style="color:var(--text-dim); font-size:0.88rem; margin-bottom:10px;">Does MCP itself care whether communication uses local pipes or HTTP? No. The protocol is transport-agnostic.</p>
+    <pre>                 MCP
+                  |
+          JSON-RPC messages
+                  |
+       +----------+----------+
+       |          |          |
+       v          v          v
+     STDIO       SSE        HTTP
+       |          |          |
+     Local     Streaming   Network
+    process     HTTP       service</pre>
+    <div class="recall">Deployment mental model:
+LOCAL TOOL
+   |
+   v
+ STDIO
+
+REMOTE / SHARED TOOL
+   |
+   +--> SSE
+   |
+   +--> HTTP</div>
+    <p style="color:var(--text-dim); font-size:0.85rem; margin-top:12px;">The deployment shape, rather than the capability itself, should drive transport selection.</p>
+  </div>
 
   <div class="grid grid-3">
     <div class="transport-card" style="--edge:var(--cyan)">
@@ -1106,12 +1461,165 @@ AI Model    → User          <span class="c">"Here's your summary…"</span></d
     </div>
     <div class="sketch-note amber">→ this is the pattern most platform teams land on once they pass ~5 internal MCP servers.</div>
   </div>
+
+  <h3 style="margin:44px 0 16px; font-size:1.15rem; color:var(--text-dim);">Compact reference versions</h3>
+  <p class="section-intro" style="margin-bottom:24px;">The four napkin sketches above, restated in their plainest ASCII form — useful as a quick-scan reference alongside the annotated versions.</p>
+
+  <div class="ascii-diagram">
+    <div class="ascii-diagram-label">ASCII diagram — trust boundary</div>
+    <p style="color:var(--text-dim); font-size:0.88rem; margin-bottom:10px;">If the AI client is trusted, does that automatically mean every MCP server is trusted? Absolutely not.</p>
+    <pre>       TRUSTED                 UNTRUSTED / EXTERNAL
+
++-------------+             +----------------+
+| AI / Client | -- auth --> | MCP Server A   | --> DB
++-------------+             +----------------+
+       |
+       |                   +----------------+
+       +------ auth ------>| MCP Server B   | --> API
+                           +----------------+
+
+       EVERY TRUST BOUNDARY
+       NEEDS ITS OWN CHECK</pre>
+    <div class="recall">Critical security principle:
+Model chooses tool
+       ≠
+Model is authorized to use tool
+
+The server must independently enforce:
+Authentication + Authorization + Input validation + Access control</div>
+  </div>
+
+  <div class="ascii-diagram">
+    <div class="ascii-diagram-label">ASCII diagram — fan-out problem</div>
+    <p style="color:var(--text-dim); font-size:0.88rem; margin-bottom:10px;">What happens when one user question requires three MCP servers?</p>
+    <pre>                    +--> Server A -- 40ms
+                   /
+Client -----------+----> Server B -- 900ms
+                   \
+                    +--> Server C -- 55ms</pre>
+    <div class="recall">FAST
+  A = 40ms
+  C = 55ms
+
+SLOW
+  B = 900ms
+       |
+       v
+Overall experience
+       |
+       v
+~900ms+
+
+Architect's questions:
+What is the timeout per server?
+        ↓
+What happens if B fails?
+        ↓
+Can we return partial results?
+        ↓
+Should calls be parallel?</div>
+  </div>
+
+  <div class="ascii-diagram">
+    <div class="ascii-diagram-label">ASCII diagram — the most important resilience diagram</div>
+    <p style="color:var(--text-dim); font-size:0.88rem; margin-bottom:10px;">Is retrying always safe? No.</p>
+    <pre>READ TOOL
+
+get_customer()
+      |
+      v
+   timeout
+      |
+      v
+   RETRY
+      |
+      v
+Usually safe</pre>
+    <p style="color:var(--text-dim); font-size:0.85rem; margin:14px 0 6px;">But:</p>
+    <pre>WRITE TOOL
+
+charge_card()
+      |
+      v
+   timeout
+      |
+      v
+   RETRY ?
+      |
+      v
+   DOUBLE CHARGE
+      X</pre>
+    <div class="recall">Therefore:
+READ
+  |
+  +--> Retry generally safer
+
+WRITE
+  |
+  +--> Idempotency key
+  +--> Controlled retry
+
+Remember this:
+Retries are a resilience mechanism; idempotency makes retries safe.</div>
+  </div>
+
+  <div class="ascii-diagram">
+    <div class="ascii-diagram-label">ASCII diagram — gateway pattern</div>
+    <p style="color:var(--text-dim); font-size:0.88rem; margin-bottom:10px;">What happens when your organization has dozens of MCP servers?</p>
+    <p style="color:var(--text-dim); font-size:0.85rem; margin-bottom:6px;">Without a gateway:</p>
+    <pre>Client A ----> Server 1
+Client A ----> Server 2
+Client A ----> Server 3
+
+Client B ----> Server 1
+Client B ----> Server 2
+Client B ----> Server 3</pre>
+    <p style="color:var(--text-dim); font-size:0.85rem; margin:14px 0 6px;">This becomes difficult to govern. With a gateway:</p>
+    <pre>Client A --\
+Client B ---+--> MCP GATEWAY
+Client C --/          |
+                      +--> Server 1
+                      +--> Server 2
+                      +--> Server 3</pre>
+    <div class="recall">The gateway can centralize:
+Authentication, Authorization, Logging, Quota, Routing, Registry, Governance
+
+Architectural evolution:
+Few servers → Direct connections → More servers → Gateway → Central governance</div>
+  </div>
 </section>
 
 <!-- ======================= ARCHITECT / CTO LENS ======================= -->
 <section class="section reveal" id="architect">
   <div class="section-head"><span class="section-num">09</span><h2>The architect's lens</h2></div>
   <p class="section-intro">Everything above is "how MCP works." This is "what it costs you, what breaks, and what to decide before you ship it" — the questions a CTO or staff architect actually gets asked in the design review.</p>
+
+  <div class="ascii-diagram">
+    <div class="ascii-diagram-label">ASCII diagram — production MCP, the final mental model</div>
+    <p style="color:var(--text-dim); font-size:0.88rem; margin-bottom:10px;">If you were designing MCP for a bank, what are the four areas you would worry about beyond "does the tool work?"</p>
+    <pre>                    MCP PRODUCTION
+                         |
+          +--------------+--------------+
+          |              |              |
+          v              v              v
+       SECURITY       RESILIENCE     GOVERNANCE
+          |              |              |
+       AuthZ          Timeout        Registry
+       PII            Retry          Ownership
+       Approval       Circuit        Versioning
+       Audit          Idempotency     Deprecation
+                         |
+                         v
+                     OPERATIONS
+                         |
+                       Logging
+                         |
+                         v
+                  AUDITABLE SYSTEM</pre>
+    <div class="recall">For a regulated fintech environment, the key message is particularly important:
+The audit trail should capture the chain from
+user/session → prompt → tool → arguments → downstream system → result.</div>
+  </div>
 
   <div class="lens-item" style="--edge:var(--cyan)" data-mark="1">
     <div class="verdict">Decision — build vs. adopt</div>
@@ -1169,6 +1677,43 @@ AI Model    → User          <span class="c">"Here's your summary…"</span></d
       <li>Consider a "dry-run" mode for write tools during rollout — return what would happen without executing</li>
       <li>Rate-limit and quota per model/session, not just per API key — a runaway agent loop is a new failure class</li>
     </ul>
+  </div>
+</section>
+
+<!-- ======================= 7 DIAGRAMS TO MEMORIZE ======================= -->
+<section class="section reveal" id="memorize">
+  <div class="section-head"><span class="section-num">10</span><h2>MCP — 7 diagrams to memorize</h2></div>
+  <p class="section-intro">If you're preparing for an architect/interview discussion, don't try to memorize every diagram above. Memorize these seven — they give you the architectural story of MCP, rather than just its terminology.</p>
+
+  <div class="ascii-diagram">
+    <div class="ascii-diagram-label">ASCII diagram — the 7-diagram recall map</div>
+    <pre>1. BEFORE vs AFTER MCP
+       ↓
+   N×M → standardized interface
+
+2. MCP ARCHITECTURE
+       ↓
+   Model → Client → Transport → Server → System
+
+3. THREE CAPABILITIES
+       ↓
+   Resources / Tools / Prompts
+
+4. REQUEST LIFECYCLE
+       ↓
+   Discover → Decide → Call → Execute → Respond
+
+5. TRUST BOUNDARY
+       ↓
+   Authentication + Authorization at every boundary
+
+6. RETRY / IDEMPOTENCY
+       ↓
+   Read ≠ Write
+
+7. MCP GATEWAY
+       ↓
+   Many clients → Gateway → Many servers</pre>
   </div>
 </section>
 

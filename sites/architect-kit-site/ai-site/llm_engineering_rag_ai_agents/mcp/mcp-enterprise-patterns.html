@@ -124,6 +124,16 @@ a{color:var(--cyan);}
 .readout .k{color:var(--violet);} .readout .s{color:var(--amber);} .readout .c{color:var(--text-faint);} .readout .fn{color:var(--cyan);}
 .readout-label{font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-faint); margin-bottom:6px;}
 
+/* ============ ASCII DIAGRAM BLOCK (source diagrams) ============ */
+.diagram-block{background:#070a0e; border:1px solid var(--line); border-left:2px solid var(--amber); border-radius:var(--radius); padding:20px 22px; overflow-x:auto; margin:20px 0;}
+.diagram-label{font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--amber); margin-bottom:10px; display:flex; align-items:center; gap:8px;}
+.diagram-label::before{content:"◆"; font-size:9px;}
+.diagram-block pre{font-family:'IBM Plex Mono', monospace; font-size:12.6px; line-height:1.6; color:#cfe8e2; white-space:pre; margin:0;}
+.diagram-block .recall{margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); font-family:'IBM Plex Mono', monospace; font-size:12.6px; color:var(--cyan); white-space:pre; line-height:1.6;}
+.diagram-block .subhead{color:var(--text-dim); font-size:0.85rem; margin:14px 0 6px;}
+.diagram-block .subhead:first-child{margin-top:0;}
+.diagram-block + .diagram-block{margin-top:14px;}
+
 /* flow steps */
 .flow{display:flex; flex-direction:column; gap:0; margin-top:10px;}
 .flow-step{display:grid; grid-template-columns:44px 1fr; gap:18px; padding:16px 0; border-bottom:1px dashed var(--line);}
@@ -240,6 +250,7 @@ footer{padding:50px 32px; text-align:center; border-top:1px solid var(--line); c
     <a href="#build">Build</a>
     <a href="#sketches">Sketches</a>
     <a href="#lens">Lens</a>
+    <a href="#mentalmodel">Mental Model</a>
   </nav>
 </div>
 
@@ -305,6 +316,26 @@ footer{padding:50px 32px; text-align:center; border-top:1px solid var(--line); c
     </svg>
     <div class="port-caption">FIG. 1 — the enterprise landscape: agents never touch the mainframe directly, the gateway does</div>
   </div>
+
+  <div class="diagram-block" style="max-width:700px; margin:34px auto 0; text-align:left;">
+    <div class="diagram-label">ASCII diagram — enterprise MCP, the big picture</div>
+    <p class="subhead">If you have multiple AI agents, legacy systems, databases, and SaaS APIs, should every agent connect directly to every backend? Why?</p>
+    <pre> AGENT A ----\
+ AGENT B -----+----> MCP GATEWAY ----+--> Legacy / Mainframe
+ AGENT C ----/                       +--> Database
+                                      +--> SaaS API</pre>
+    <p class="subhead">Enterprise value:</p>
+    <pre>              MCP GATEWAY
+                   |
+       +-----------+-----------+
+       |           |           |
+      Auth       Audit       Rate Limit
+       |           |           |
+       +-----------+-----------+
+                   |
+             MCP Servers</pre>
+    <div class="recall">Core idea: Agents don't need to understand every backend. The gateway becomes the controlled entry point.</div>
+  </div>
 </section>
 
 <div class="container">
@@ -313,6 +344,35 @@ footer{padding:50px 32px; text-align:center; border-top:1px solid var(--line); c
 <section class="section reveal" id="patterns">
   <div class="section-head"><span class="section-num">01</span><h2>Five enterprise integration patterns</h2></div>
   <p class="section-intro">These are shapes, not competitors — a real deployment usually stacks two or three of them. A gateway sits in front of everything; behind it, some servers are aggregators, some are adapters wrapping legacy systems, some ride along as sidecars.</p>
+
+  <div class="diagram-block">
+    <div class="diagram-label">ASCII diagram — five enterprise patterns, at a glance</div>
+    <p class="subhead">When would you use a Gateway, Aggregator, Adapter, Proxy, or Sidecar?</p>
+    <pre>                  MCP PATTERNS
+                       |
+       +---------------+---------------+
+       |               |               |
+    Gateway         Aggregator       Adapter
+       |               |               |
+   Centralize       Combine          Translate
+   access           results          legacy
+       |
+       +---------- Proxy
+       |             |
+       |         Intercept /
+       |         modify behavior
+       |
+       +---------- Sidecar
+                     |
+                 Co-located
+                 MCP interface</pre>
+    <div class="recall">Easy memory:
+Gateway   = CONTROL
+Aggregator= COMBINE
+Proxy     = INTERCEPT
+Adapter   = TRANSLATE
+Sidecar   = CO-LOCATE</div>
+  </div>
 
   <div class="accordion">
     <div class="accordion-item open">
@@ -328,6 +388,41 @@ footer{padding:50px 32px; text-align:center; border-top:1px solid var(--line); c
                  (auth, rate limit,
                   routing, logging)</div>
           <p><strong style="color:var(--text)">Use it when:</strong> you have more than a couple of clients and more than a couple of servers — the N×M wiring problem is exactly what this collapses to N+M.</p>
+          <div class="diagram-block">
+            <div class="diagram-label">ASCII diagram — gateway pattern, N×M → N+M</div>
+            <p class="subhead">Why does the gateway become more valuable as the number of agents and servers increases? Without gateway:</p>
+            <pre>Agent A ----+---- Server 1
+            +---- Server 2
+            +---- Server 3
+
+Agent B ----+---- Server 1
+            +---- Server 2
+            +---- Server 3
+
+Agent C ----+---- Server 1
+            +---- Server 2
+            +---- Server 3
+
+          N × M connections</pre>
+            <p class="subhead">With gateway:</p>
+            <pre>Agent A --\
+Agent B ---+--> GATEWAY ----+--> Server 1
+Agent C --/                 +--> Server 2
+                            +--> Server 3
+
+          N + M connections</pre>
+            <p class="subhead">But the real benefit is not just fewer wires:</p>
+            <pre>             GATEWAY
+                |
+      +---------+---------+
+      |         |         |
+     Auth      Audit     Quota
+      |         |         |
+      +---------+---------+
+                |
+             Routing</pre>
+            <div class="recall">The gateway centralizes cross-cutting concerns.</div>
+          </div>
         </div>
       </div>
     </div>
@@ -349,6 +444,34 @@ footer{padding:50px 32px; text-align:center; border-top:1px solid var(--line); c
         │
    merged JSON response</div>
           <p><strong style="color:var(--text)">Use it when:</strong> the model shouldn't have to reason about which of five backends holds which fact — give it one clean view instead.</p>
+          <div class="diagram-block">
+            <div class="diagram-label">ASCII diagram — aggregator pattern</div>
+            <p class="subhead">If the user asks for "Customer 360", should the model itself have to understand which backend contains CRM, billing, and support information?</p>
+            <pre>                 "Customer 360"
+                       |
+                       v
+                  AGGREGATOR
+                  /    |    \
+                 /     |     \
+                v      v      v
+              CRM   Billing  Support
+                \      |      /
+                 \     |     /
+                  +----+----+
+                       |
+                       v
+                  MERGED VIEW</pre>
+            <p class="subhead">Why? Instead of:</p>
+            <pre>LLM
+ |
+ +--> "Call CRM"
+ +--> "Call Billing"
+ +--> "Call Support"
+ +--> Merge everything</pre>
+            <p class="subhead">The model can simply interact with:</p>
+            <pre>LLM --> Customer360 MCP --> Unified Response</pre>
+            <div class="recall">This reduces orchestration complexity at the model layer.</div>
+          </div>
         </div>
       </div>
     </div>
@@ -379,6 +502,42 @@ footer{padding:50px 32px; text-align:center; border-top:1px solid var(--line); c
           <p>The workhorse for legacy systems. The adapter translates MCP requests into whatever the old system actually speaks — SOAP, a JDBC connection, a mainframe screen-scrape — and translates the response, errors, and retries back into MCP shape.</p>
           <div class="ascii-mini">MCP Client ──MCP──▶ MCP Adapter ──SOAP / REST / JDBC──▶ Legacy System</div>
           <p><strong style="color:var(--text)">Use it when:</strong> the system of record isn't going to be rewritten this decade, but it still needs to be reachable by an agent.</p>
+          <div class="diagram-block">
+            <div class="diagram-label">ASCII diagram — adapter pattern, critical for banking</div>
+            <p class="subhead">How do you expose a 20-year-old COBOL mainframe to an AI agent without rewriting the mainframe?</p>
+            <pre>AI / MCP Client
+       |
+       | MCP
+       v
++----------------+
+| MCP ADAPTER    |
+|                |
+| Translate      |
+| Request        |
+|      ↓         |
+| Legacy format  |
+|      ↓         |
+| Translate      |
+| Response       |
++-------+--------+
+        |
+        | SOAP / JDBC /
+        | Mainframe protocol
+        v
++----------------+
+| LEGACY SYSTEM  |
+| COBOL / Host   |
++----------------+</pre>
+            <p class="subhead">The adapter must handle more than translation:</p>
+            <pre>MCP Adapter
+    |
+    +--> Request translation
+    +--> Response translation
+    +--> Error translation
+    +--> Retry semantics
+    +--> Legacy quirks</pre>
+            <div class="recall">Architect insight: An adapter is an integration project, not merely a thin wrapper.</div>
+          </div>
         </div>
       </div>
     </div>
@@ -399,6 +558,35 @@ footer{padding:50px 32px; text-align:center; border-top:1px solid var(--line); c
 │  MCP Sidecar (Go) ──▶ MCP Client  │
 └────────────────────────────────────┘</div>
           <p><strong style="color:var(--text)">Use it when:</strong> you don't want to touch a service's codebase to give it an MCP interface — common in polyglot microservice fleets like a wealth/demat platform.</p>
+          <div class="diagram-block">
+            <div class="diagram-label">ASCII diagram — sidecar pattern</div>
+            <p class="subhead">How can you expose MCP capabilities for an existing microservice without modifying its codebase?</p>
+            <pre>+--------------------------------+
+|             POD                |
+|                                |
+|  +--------------------------+  |
+|  |    Microservice          |  |
+|  |       Node.js            |  |
+|  +------------+-------------+  |
+|               | localhost       |
+|               v                |
+|  +--------------------------+  |
+|  |      MCP Sidecar         |  |
+|  |         Go               |  |
+|  +--------------------------+  |
+|                                |
++--------------------------------+</pre>
+            <p class="subhead">Mental model:</p>
+            <pre>Microservice
+      |
+      | local communication
+      v
+MCP Sidecar
+      |
+      v
+MCP ecosystem</pre>
+            <div class="recall">Useful in large polyglot microservice fleets where modifying every service is undesirable.</div>
+          </div>
         </div>
       </div>
     </div>
@@ -449,6 +637,29 @@ footer{padding:50px 32px; text-align:center; border-top:1px solid var(--line); c
   <div class="section-head"><span class="section-num">03</span><h2>Multi-agent architecture</h2></div>
   <p class="section-intro">MCP is also the language agents use to talk to <em>each other</em>, not just to tools — an agent can expose its own capability as an MCP server that another agent calls.</p>
 
+  <div class="diagram-block">
+    <div class="diagram-label">ASCII diagram — three multi-agent patterns</div>
+    <p class="subhead">Should every agent directly communicate with every other agent? There are three major patterns.</p>
+    <p class="subhead" style="color:var(--text);"><b>Direct</b></p>
+    <pre>Agent A --------> Agent B
+                  MCP</pre>
+    <p class="subhead">Simple, but coupling can grow.</p>
+    <p class="subhead" style="color:var(--text);"><b>Hub / Orchestrator</b></p>
+    <pre>                  ORCHESTRATOR
+                 /      |      \
+                /       |       \
+               v        v        v
+          Research     Data    Creative
+            Agent      Agent     Agent</pre>
+    <p class="subhead">The orchestrator owns the overall goal and delegates work.</p>
+    <p class="subhead" style="color:var(--text);"><b>Async / Event-driven</b></p>
+    <pre>Agent A ----\
+Agent B -----+----> MESSAGE BUS
+Agent C ----/          |
+                       +--> interested agents</pre>
+    <div class="recall">Agents don't need direct knowledge of each other.</div>
+  </div>
+
   <div class="grid grid-3">
     <div class="card" style="--edge:var(--cyan)">
       <div class="card-label">Direct</div>
@@ -487,6 +698,38 @@ footer{padding:50px 32px; text-align:center; border-top:1px solid var(--line); c
         <div><h4>Orchestrator composes the answer</h4><p>Combines eligibility, order details, and a shipping label into one reply — the customer sees a single coherent response.</p></div>
       </div>
     </div>
+  </div>
+
+  <div class="diagram-block">
+    <div class="diagram-label">ASCII diagram — multi-agent customer service flow</div>
+    <p class="subhead">A customer asks: "Can I return this product?" What specialized work might be required?</p>
+    <pre>                 CUSTOMER
+                    |
+                    v
+              ORCHESTRATOR
+               /    |    \
+              /     |     \
+             v      v      v
+          POLICY   ORDER  LOGISTICS
+           AGENT    AGENT    AGENT
+             |        |        |
+             v        v        v
+          Policy    Order    Label
+          Server    Server   Server
+             \        |        /
+              \       |       /
+               +------+------+
+                      |
+                      v
+                FINAL ANSWER</pre>
+    <p class="subhead">Architect concern — the orchestrator provides centralized coordination, but becomes:</p>
+    <pre>ORCHESTRATOR
+     |
+     +--> Coordination point
+     +--> Decision point
+     +--> Bottleneck
+     +--> Potential single point of failure</pre>
+    <div class="recall">That tradeoff is explicitly highlighted in the source.</div>
   </div>
   <p class="analogy"><span class="tag">Why it matters —</span> every agent added later just plugs into the same MCP servers; nothing about the existing agents has to change.</p>
 </section>
@@ -590,6 +833,67 @@ footer{padding:50px 32px; text-align:center; border-top:1px solid var(--line); c
       <div class="tagrow"><span>zero-trust</span><span>audit</span></div>
     </div>
   </div>
+
+  <div class="diagram-block" style="margin-top:30px;">
+    <div class="diagram-label">ASCII diagram — banking, different latency classes</div>
+    <p class="subhead">Should KYC verification and trade execution use exactly the same latency architecture? No.</p>
+    <pre>BANKING MCP
+     |
+     +------------------+
+     |                  |
+     v                  v
+NORMAL LATENCY       LOW LATENCY
+     |                  |
+    KYC             Trade Execution
+ Fraud               Order Placement
+ Advisory             Market Data
+     |                  |
+  ~seconds            very low
+  acceptable          latency budget</pre>
+    <div class="recall">Architect principle:
+Segment MCP infrastructure by latency class, not only by business domain.
+
+This is especially important for trading paths.</div>
+  </div>
+
+  <div class="diagram-block">
+    <div class="diagram-label">ASCII diagram — security architecture</div>
+    <p class="subhead">If the MCP server exposes transfer_funds, what controls must exist before allowing an AI agent to invoke it?</p>
+    <pre>AI Agent
+   |
+   v
+MCP Gateway
+   |
+   +--> Authenticate
+   |
+   +--> Authorize
+   |
+   +--> Rate Limit
+   |
+   +--> Audit Log
+   |
+   v
+MCP Server
+   |
+   +--> Tool-level permission
+   |
+   +--> Input validation
+   |
+   v
+Banking System</pre>
+    <p class="subhead">For sensitive tools:</p>
+    <pre>transfer_funds
+      |
+      v
+Human Approval?
+      |
+   +--+--+
+   |     |
+  YES    NO
+   |     |
+Execute  Block / policy decision</pre>
+    <div class="recall">The source emphasizes zero-trust, least privilege, audit trails, data isolation, and human approval for high-impact actions.</div>
+  </div>
 </section>
 
 <!-- ===================== CHALLENGES ===================== -->
@@ -608,6 +912,50 @@ footer{padding:50px 32px; text-align:center; border-top:1px solid var(--line); c
       <button class="accordion-head"><span class="tag" style="--edge:var(--red)">resilience</span><span>Reliability &amp; error handling</span><span class="plus">+</span></button>
       <div class="accordion-body"><div class="accordion-body-inner">
         <p>Servers fail, backends slow down. The standard toolkit: timeouts with exponential backoff, circuit breakers, graceful degradation to a fallback response, and health checks with auto-restart.</p>
+        <div class="diagram-block">
+          <div class="diagram-label">ASCII diagram — production reliability</div>
+          <p class="subhead">What should happen when an MCP server becomes slow or unavailable?</p>
+          <pre>             MCP REQUEST
+                  |
+                  v
+             MCP SERVER
+                  |
+             +----+----+
+             |         |
+           HEALTHY   FAILURE
+             |         |
+             v         v
+           RESULT    TIMEOUT
+                       |
+                 +-----+-----+
+                 |           |
+              RETRY?     CIRCUIT
+                 |        BREAKER
+                 v           |
+             Backoff         v
+                 |        FALLBACK
+                 v
+              SUCCESS</pre>
+          <p class="subhead">The source recommends the standard resilience toolkit:</p>
+          <pre>Timeout
+   +
+Exponential backoff
+   +
+Circuit breaker
+   +
+Graceful degradation
+   +
+Health checks</pre>
+          <p class="subhead">Example backoff:</p>
+          <pre>Attempt 1 → immediate
+Attempt 2 → +1 sec
+Attempt 3 → +2 sec
+Attempt 4 → +4 sec
+Attempt 5 → +8 sec
+             |
+             v
+           STOP</pre>
+        </div>
         <div class="ascii-mini">1st attempt: immediate
 2nd attempt: +1s
 3rd attempt: +2s
@@ -625,6 +973,38 @@ footer{padding:50px 32px; text-align:center; border-top:1px solid var(--line); c
       <button class="accordion-head"><span class="tag" style="--edge:var(--cyan)">state</span><span>State management</span><span class="plus">+</span></button>
       <div class="accordion-body"><div class="accordion-body-inner">
         MCP is session-based by design, which is awkward once you're running multiple stateless server instances behind a load balancer. Store session state externally (Redis) and lean on idempotent operations so a retry against a different instance doesn't double up on side effects.
+        <div class="diagram-block">
+          <div class="diagram-label">ASCII diagram — horizontal scaling + session state</div>
+          <p class="subhead">What happens if session state lives only inside one MCP server instance and the load balancer sends the next request elsewhere?</p>
+          <pre>              LOAD BALANCER
+                 /      \
+                /        \
+               v          v
+          Server #1    Server #2
+             |            |
+          Session?      Session?
+             |
+        created here</pre>
+          <p class="subhead">Request 1:</p>
+          <pre>Client --> Server #1
+           Session created</pre>
+          <p class="subhead">Request 2:</p>
+          <pre>Client --> Server #2
+           Session missing!</pre>
+          <p class="subhead">Solution:</p>
+          <pre>          Server #1 ----\
+                         \
+                          +--> REDIS
+                         /
+          Server #2 ----/
+
+             Shared Session State</pre>
+          <div class="recall">Now:
+Client --> Server #1 --> Redis
+Client --> Server #2 --> Redis
+
+Any replica can retrieve the session state.</div>
+        </div>
       </div></div>
     </div>
     <div class="accordion-item">
@@ -785,6 +1165,58 @@ footer{padding:50px 32px; text-align:center; border-top:1px solid var(--line); c
     <div class="verdict">Versioning — the schema is a contract the moment a second team depends on it</div>
     <h4>Treat a tool's input schema like a public API from the day a second consumer shows up</h4>
     <p>A single team iterating on their own MCP server can change a tool's schema freely. The moment another agent, another team, or an external partner starts calling it, that schema is now a contract — silently widening a required field or renaming a parameter breaks every caller at once, often invisibly until a production incident traces back to it.</p>
+  </div>
+</section>
+
+<!-- ===================== FINAL MENTAL MODEL ===================== -->
+<section class="section reveal" id="mentalmodel">
+  <div class="section-head"><span class="section-num">10</span><h2>The enterprise MCP mental model</h2></div>
+  <p class="section-intro">If you want to retain one final diagram from this entire section, use this.</p>
+
+  <div class="diagram-block">
+    <div class="diagram-label">ASCII diagram — the enterprise MCP mental model</div>
+    <pre>                         AI AGENTS
+                    /       |       \
+                   /        |        \
+                  v         v         v
+              Agent A    Agent B    Agent C
+                   \        |        /
+                    \       |       /
+                     v      v      v
+                    +-------------+
+                    | MCP GATEWAY |
+                    |-------------|
+                    | Auth        |
+                    | Audit       |
+                    | Rate Limit  |
+                    | Routing     |
+                    +------+------+
+                           |
+          +----------------+----------------+
+          |                |                |
+          v                v                v
+      AGGREGATOR        ADAPTER          SIDECAR
+          |                |                |
+          v                v                v
+      CRM/Billing      Mainframe       Microservice
+      /Support          /SOAP             /API</pre>
+    <p class="subhead">The architect's mental model:</p>
+    <pre>MCP Enterprise
+     |
+     +--> Gateway     = centralized control
+     |
+     +--> Aggregator  = combine backends
+     |
+     +--> Adapter     = modernize access to legacy
+     |
+     +--> Sidecar     = add MCP without changing app
+     |
+     +--> Orchestrator= coordinate agents
+     |
+     +--> Redis       = shared session state
+     |
+     +--> Zero Trust  = secure every boundary</pre>
+    <div class="recall">This is the smallest set of diagrams to retain for interview/architecture recall from the MCP Enterprise Patterns notes.</div>
   </div>
 </section>
 

@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architects Lab // RAG — Retrieval-Augmented Generation</title>
+<style>
+  :root{
+    --bg:#0a0e14;
+    --bg-panel:#0f1520;
+    --bg-raised:#131a26;
+    --line:#1e2836;
+    --line-bright:#2a3a4d;
+    --amber:#e0a030;
+    --amber-dim:#8a6520;
+    --cyan:#4fd1c5;
+    --cyan-dim:#2a6b64;
+    --text:#c8d3e0;
+    --text-dim:#7c8ba0;
+    --text-bright:#f0f4f8;
+    --red:#e05a4f;
+    --green:#5fbf7f;
+    --mono:'JetBrains Mono','Fira Code',Consolas,monospace;
+    --serif:'Georgia','Iowan Old Style',serif;
+    --sans:-apple-system,'Segoe UI',Roboto,sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.65;
+    padding-bottom:120px;
+  }
+  ::selection{background:var(--amber-dim); color:var(--text-bright);}
+
+  /* ---- Header / blueprint band ---- */
+  .blueprint-band{
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(79,209,197,0.045) 28px),
+      repeating-linear-gradient(90deg, transparent, transparent 27px, rgba(79,209,197,0.045) 28px),
+      linear-gradient(180deg,#0c1119,#0a0e14);
+    border-bottom:1px solid var(--line-bright);
+    padding:56px 8vw 40px;
+    position:relative;
+  }
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:0.28em;
+    color:var(--cyan);
+    text-transform:uppercase;
+    margin-bottom:18px;
+  }
+  .eyebrow::before{content:"◆ "; color:var(--amber);}
+  h1.title{
+    font-family:var(--serif);
+    font-size:clamp(34px,5vw,58px);
+    color:var(--text-bright);
+    font-weight:600;
+    letter-spacing:-0.01em;
+    max-width:14ch;
+  }
+  .title .accent{color:var(--amber); font-style:italic;}
+  .subtitle{
+    font-family:var(--mono);
+    color:var(--text-dim);
+    font-size:14px;
+    margin-top:16px;
+    max-width:62ch;
+    border-left:2px solid var(--line-bright);
+    padding-left:14px;
+  }
+  .meta-row{
+    display:flex; gap:28px; margin-top:32px; flex-wrap:wrap;
+    font-family:var(--mono); font-size:11px; color:var(--text-dim);
+  }
+  .meta-row span b{color:var(--cyan); font-weight:600;}
+
+  /* ---- Layout ---- */
+  .wrap{max-width:920px; margin:0 auto; padding:0 8vw;}
+  section.block{padding:60px 0; border-bottom:1px dashed var(--line);}
+  section.block:last-of-type{border-bottom:none;}
+
+  .qnum{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--amber-dim);
+    letter-spacing:0.2em;
+    margin-bottom:10px;
+  }
+
+  /* ---- Thought-provoking question style ---- */
+  .provoke{
+    background:var(--bg-panel);
+    border:1px solid var(--line-bright);
+    border-left:3px solid var(--amber);
+    border-radius:4px;
+    padding:26px 28px;
+    margin:18px 0 26px;
+    position:relative;
+  }
+  .provoke .q-label{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--amber);
+    letter-spacing:0.15em;
+    margin-bottom:10px;
+    text-transform:uppercase;
+  }
+  .provoke p{
+    font-family:var(--serif);
+    font-size:20px;
+    color:var(--text-bright);
+    font-style:italic;
+    line-height:1.5;
+  }
+
+  h2.q-title{
+    font-family:var(--serif);
+    font-size:clamp(24px,3vw,32px);
+    color:var(--text-bright);
+    margin-bottom:6px;
+    font-weight:600;
+  }
+  h3{
+    font-family:var(--mono);
+    font-size:15px;
+    color:var(--cyan);
+    margin:28px 0 12px;
+    letter-spacing:0.02em;
+  }
+  h3::before{content:"// "; color:var(--text-dim);}
+
+  p{margin-bottom:14px; color:var(--text); font-size:15.5px;}
+  strong{color:var(--text-bright); font-weight:600;}
+  em.term{color:var(--amber); font-style:normal; font-weight:600;}
+
+  ul,ol{margin:0 0 16px 22px; color:var(--text);}
+  li{margin-bottom:8px; font-size:15.5px;}
+  li::marker{color:var(--cyan);}
+
+  /* ---- ASCII diagram box ---- */
+  .diagram{
+    background:#070a10;
+    border:1px solid var(--line-bright);
+    border-radius:4px;
+    padding:20px 22px;
+    margin:20px 0;
+    overflow-x:auto;
+  }
+  .diagram pre{
+    font-family:var(--mono);
+    font-size:12.5px;
+    line-height:1.5;
+    color:var(--cyan);
+    white-space:pre;
+  }
+  .diagram .cap{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--text-dim);
+    margin-top:12px;
+    padding-top:10px;
+    border-top:1px dotted var(--line);
+  }
+
+  /* ---- Expand/collapse ---- */
+  details.expand{
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:4px;
+    margin:16px 0;
+    overflow:hidden;
+  }
+  details.expand summary{
+    cursor:pointer;
+    padding:14px 18px;
+    font-family:var(--mono);
+    font-size:13.5px;
+    color:var(--text-bright);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    list-style:none;
+    user-select:none;
+  }
+  details.expand summary::-webkit-details-marker{display:none;}
+  details.expand summary::after{
+    content:"+ expand";
+    color:var(--cyan);
+    font-size:11px;
+    letter-spacing:0.05em;
+  }
+  details.expand[open] summary::after{content:"– collapse";}
+  details.expand[open] summary{border-bottom:1px solid var(--line);}
+  details.expand .inner{padding:18px;}
+
+  /* ---- Comparison table ---- */
+  table{
+    width:100%; border-collapse:collapse; margin:18px 0;
+    font-size:14px;
+  }
+  th{
+    font-family:var(--mono); font-size:11px; letter-spacing:0.06em;
+    text-transform:uppercase; color:var(--cyan);
+    text-align:left; padding:10px 12px; border-bottom:1px solid var(--line-bright);
+  }
+  td{padding:10px 12px; border-bottom:1px solid var(--line); color:var(--text); vertical-align:top;}
+  tr:hover td{background:rgba(79,209,197,0.03);}
+
+  /* ---- Code ---- */
+  .code{
+    background:#070a10;
+    border:1px solid var(--line-bright);
+    border-radius:4px;
+    padding:16px 18px;
+    margin:16px 0;
+    overflow-x:auto;
+  }
+  .code pre{font-family:var(--mono); font-size:13px; color:#a8e0d0; line-height:1.55;}
+  .code .kw{color:var(--amber);}
+  .code .cm{color:var(--text-dim); font-style:italic;}
+  .code .str{color:var(--green);}
+
+  /* ---- Callouts ---- */
+  .callout{
+    border-radius:4px; padding:16px 18px; margin:18px 0;
+    font-size:14.5px; border-left:3px solid;
+  }
+  .callout.warn{background:rgba(224,90,79,0.06); border-color:var(--red); color:#e8c0bb;}
+  .callout.tip{background:rgba(95,191,127,0.06); border-color:var(--green); color:#c3e5cc;}
+  .callout .label{font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px; display:block;}
+  .callout.warn .label{color:var(--red);}
+  .callout.tip .label{color:var(--green);}
+
+  /* ---- Active recall ---- */
+  .recall{
+    background:linear-gradient(135deg, rgba(224,160,48,0.05), rgba(79,209,197,0.04));
+    border:1px solid var(--line-bright);
+    border-radius:6px;
+    padding:20px 22px;
+    margin:16px 0;
+  }
+  .recall .rq{
+    font-family:var(--mono); font-size:14px; color:var(--text-bright);
+    margin-bottom:10px; cursor:pointer;
+  }
+  .recall .rq::before{content:"▸ "; color:var(--amber);}
+  .recall .ra{
+    display:none; padding:10px 0 0 20px; color:var(--text-dim);
+    border-top:1px dotted var(--line); margin-top:10px; font-size:14px;
+  }
+  .recall.open .ra{display:block;}
+  .recall.open .rq::before{content:"▾ ";}
+
+  /* ---- fintech tag ---- */
+  .fintech-tag{
+    display:inline-block; font-family:var(--mono); font-size:10.5px;
+    color:var(--bg); background:var(--amber); padding:3px 8px; border-radius:3px;
+    letter-spacing:0.06em; margin-bottom:10px; font-weight:700;
+  }
+
+  /* ---- TOC ---- */
+  .toc{
+    background:var(--bg-panel); border:1px solid var(--line-bright);
+    border-radius:6px; padding:24px 26px; margin:34px 0;
+  }
+  .toc-title{font-family:var(--mono); font-size:11px; color:var(--cyan); letter-spacing:0.2em; margin-bottom:14px;}
+  .toc ol{margin:0; list-style:none;}
+  .toc li{margin-bottom:9px;}
+  .toc a{color:var(--text); text-decoration:none; font-size:14.5px; font-family:var(--mono);}
+  .toc a:hover{color:var(--amber);}
+  .toc .n{color:var(--amber-dim); margin-right:8px;}
+
+  footer{
+    text-align:center; padding:60px 8vw 20px; color:var(--text-dim);
+    font-family:var(--mono); font-size:11.5px; letter-spacing:0.08em;
+  }
+
+  @media (max-width:640px){
+    .blueprint-band{padding:40px 6vw 30px;}
+    .wrap{padding:0 6vw;}
+    .provoke p{font-size:17px;}
+  }
+  /* notes width expansion - matches learning plan box */
+  .wrap,.container,main,header.hero,header.masthead,nav.toc,section.block,footer{max-width:100%!important;padding-left:24px!important;padding-right:24px!important;}
+</style>
+</head>
+<body>
+<!-- LEARNING PLAN -->
+<div style="margin:24px;background:#0f1520;border:1px solid #1e2836;border-left:4px solid #e0a030;border-radius:8px;padding:24px 28px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;">
+  <div style="color:#e0a030;font-size:13px;font-weight:700;letter-spacing:.08em;margin-bottom:14px;">&#9670; LEARNING PLAN — 2.5 HOURS DAILY</div>
+  <div style="overflow-x:auto;">
+  <table style="width:100%;border-collapse:collapse;font-size:13px;color:#c8d3e0;margin-bottom:18px;white-space:nowrap;">
+    <thead><tr style="color:#7c8ba0;border-bottom:1px solid #1e2836;">
+      <th style="padding:6px 10px;text-align:left;width:48px;">Step</th>
+      <th style="padding:6px 10px;text-align:left;">Activity</th>
+      <th style="padding:6px 10px;text-align:left;">Outcome</th>
+    </tr></thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">1</td><td style="padding:7px 10px;"><b>Complete the Udemy Course</b> — watch videos, understand concepts, don't rush</td><td style="padding:7px 10px;color:#5fbf7f;">Build strong fundamentals</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">2</td><td style="padding:7px 10px;"><b>Practice Everything</b> — complete exercises, assignments, and source code</td><td style="padding:7px 10px;color:#5fbf7f;">Gain hands-on experience</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">3</td><td style="padding:7px 10px;"><b>Revise with these notes</b></td><td style="padding:7px 10px;color:#5fbf7f;">Reinforce concepts and fill knowledge gaps</td></tr>
+      <tr style="border-bottom:1px solid #1e2836;"><td style="padding:7px 10px;color:#e0a030;font-weight:700;">4</td><td style="padding:7px 10px;"><b>Earn the Udemy Certificate</b></td><td style="padding:7px 10px;color:#5fbf7f;">Ensure the course is completed end-to-end</td></tr>
+      <tr><td style="padding:7px 10px;color:#e0a030;font-weight:700;">5</td><td style="padding:7px 10px;"><b>Practise real world tough scenario</b> — scenario-based questions &amp; interview problems</td><td style="padding:7px 10px;color:#5fbf7f;">Develop practical and interview-ready skills</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">1.5 HRS</div>
+      <div style="font-size:12px;color:#c8d3e0;">Udemy Videos + Exercises + Source Code</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Notes Revision</div>
+    </div>
+    <div style="background:#131a26;border:1px solid #1e2836;border-radius:6px;padding:10px 16px;flex:1;min-width:160px;">
+      <div style="color:#4fd1c5;font-size:11px;font-weight:700;margin-bottom:4px;">30 MIN</div>
+      <div style="font-size:12px;color:#c8d3e0;">Scenario-Based Questions &amp; Practical Problems</div>
+    </div>
+  </div>
+  <div style="color:#f0f4f8;font-size:12px;font-weight:600;letter-spacing:.04em;">GOAL: <span style="color:#e0a030;">Learn → Practice → Revise → Complete → Apply</span></div>
+</div>
+<!-- END LEARNING PLAN -->
+<a href="https://ai.shivawithin.in" id="home-return-btn" title="Back to Home" style="position:fixed;bottom:24px;right:24px;z-index:99999;display:inline-flex;align-items:center;gap:6px;background:#0d1b2a;color:#3fb6ff;border:1px solid #3fb6ff;padding:9px 15px;border-radius:8px;text-decoration:none;font-family:system-ui,-apple-system,sans-serif;font-size:13px;font-weight:600;box-shadow:0 2px 16px rgba(0,0,0,0.5);transition:background 0.2s,box-shadow 0.2s;" onmouseover="this.style.background='#1a2f47';this.style.boxShadow='0 4px 20px rgba(63,182,255,0.25)'" onmouseout="this.style.background='#0d1b2a';this.style.boxShadow='0 2px 16px rgba(0,0,0,0.5)'">&#8592; Home</a>
+
+<div class="blueprint-band">
+  <div class="eyebrow">Architects Lab — Study Note 014</div>
+  <h1 class="title">Retrieval-Augmented <span class="accent">Generation</span></h1>
+  <p class="subtitle">Why a model that has already read most of the internet still needs a librarian standing next to it — and what it costs you when it doesn't have one.</p>
+  <div class="meta-row">
+    <span>DOMAIN: <b>LLM Systems / Applied AI</b></span>
+    <span>DEPTH: <b>Architecture → Production</b></span>
+    <span>FORMAT: <b>Socratic + Active Recall</b></span>
+    <span>CONTEXT: <b>Fintech-grounded examples</b></span>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="toc">
+    <div class="toc-title">◆ CONTENTS</div>
+    <ol>
+      <li><a href="#s1"><span class="n">01</span>The Problem — Why LLMs Alone Aren't Enough</a></li>
+      <li><a href="#s2"><span class="n">02</span>What RAG Actually Is</a></li>
+      <li><a href="#s3"><span class="n">03</span>The Two Pipelines — Indexing vs Query Time</a></li>
+      <li><a href="#s4"><span class="n">04</span>Chunking — The Most Underrated Decision</a></li>
+      <li><a href="#s5"><span class="n">05</span>Embeddings & Vector Space</a></li>
+      <li><a href="#s6"><span class="n">06</span>Retrieval Strategies — Dense, Sparse, Hybrid</a></li>
+      <li><a href="#s7"><span class="n">07</span>Reranking — The Second Filter</a></li>
+      <li><a href="#s8"><span class="n">08</span>Generation — Grounding the Answer</a></li>
+      <li><a href="#s9"><span class="n">09</span>RAG vs Fine-Tuning vs Long Context</a></li>
+      <li><a href="#s10"><span class="n">10</span>Advanced Patterns — HyDE, Agentic RAG, GraphRAG</a></li>
+      <li><a href="#s11"><span class="n">11</span>Evaluation — Is Your RAG Actually Working?</a></li>
+      <li><a href="#s12"><span class="n">12</span>Failure Modes You Will Hit in Production</a></li>
+      <li><a href="#s13"><span class="n">13</span>Fintech Case Study — Wealth Advisory RAG</a></li>
+      <li><a href="#s14"><span class="n">14</span>Active Recall Deck</a></li>
+    </ol>
+  </div>
+
+  <!-- ================= SECTION 1 ================= -->
+  <section class="block" id="s1">
+    <div class="qnum">§ 01 — FIRST PRINCIPLES</div>
+    <div class="provoke">
+      <div class="q-label">Thought experiment</div>
+      <p>You've fine-tuned nothing, changed nothing about the model's weights — and yet an LLM trained on trillions of tokens still cannot tell you what happened in your company's board meeting yesterday, or whether the mutual fund scheme you're asking about even exists anymore. Why does a model that "knows everything" know nothing about the one thing you actually asked?</p>
+    </div>
+
+    <h2 class="q-title">Why do we need RAG at all?</h2>
+    <p>An LLM's knowledge is <em class="term">frozen at training time</em> and <em class="term">compressed into weights</em>. Both of those properties, which make LLMs powerful general reasoners, are exactly what make them unreliable as knowledge sources. Four distinct problems stack up:</p>
+
+    <h3>1. The knowledge cutoff</h3>
+    <p>A model trained through early 2026 has never seen a document created in July 2026. It cannot know today's NAV of a mutual fund, this quarter's RBI circular, or the fact that you resigned from your job five days ago. No amount of clever prompting fixes a gap in the training data — the information was simply never there.</p>
+
+    <h3>2. Hallucination under compression</h3>
+    <p>An LLM doesn't store facts the way a database stores rows. It stores a statistical compression of patterns across its training corpus, spread across billions of parameters. When you ask a narrow, specific question — "what is the exit load on scheme X after 400 days" — the model is not looking anything up. It is <em class="term">generating the most statistically plausible continuation</em>, and for long-tail, specific facts, "plausible" and "true" diverge fast. This is why models confidently invent case citations, product IDs, and API parameters that sound exactly right and are completely wrong.</p>
+
+    <h3>3. Retraining is not a knowledge-update mechanism</h3>
+    <p>Suppose you want the model to know your company's internal KYC policy. You cannot retrain a 70B+ parameter model every time a policy document changes — the compute cost is enormous, the process takes days to weeks, and worse, <em class="term">catastrophic forgetting</em> means new fine-tuning can silently degrade capabilities the model already had. You'd be reheating the entire dish to change one ingredient.</p>
+
+    <h3>4. Private, proprietary, and access-controlled knowledge</h3>
+    <p>Your organization's demat account SOPs, your own git-based Sankalp journal, IDFC's internal squad tracker — none of this was ever going to be in a foundation model's training set, and for good reason: it's private. There is no future in which a general-purpose LLM is trained on your bank's internal wiki. The model must be told this information <em class="term">at the moment it's needed</em>, not baked in permanently.</p>
+
+    <div class="diagram">
+<pre>
+ PARAMETRIC MEMORY (inside the weights)      NON-PARAMETRIC MEMORY (outside, retrievable)
+ ─────────────────────────────────────      ──────────────────────────────────────────
+ "The capital of France is Paris"            "Ankur's F&F settlement was processed on
+ "Photosynthesis converts CO2 + light"        14th August 2026 for ₹X"
+ "How to write a for-loop in Python"          "IDFC scheme XYZ NAV as of today"
+ → stable, general, well-represented          → volatile, specific, private, long-tail
+ → safe to rely on from training               → must be fetched at query time
+</pre>
+      <div class="cap">RAG exists precisely to bridge the right column into a system that only natively has the left.</div>
+    </div>
+
+    <div class="callout tip">
+      <span class="label">The one-line answer</span>
+      RAG is how you give a static, general-purpose reasoning engine access to dynamic, specific, private facts — without retraining it, and while forcing it to show its sources.
+    </div>
+  </section>
+
+  <!-- ================= SECTION 2 ================= -->
+  <section class="block" id="s2">
+    <div class="qnum">§ 02 — DEFINITION</div>
+    <div class="provoke">
+      <div class="q-label">Thought experiment</div>
+      <p>If you handed a brilliant, well-read colleague a stack of the three most relevant documents right before asking them a question, would you trust their answer more than if you'd asked them to answer purely from memory? What exactly changed — did they get smarter, or did their inputs get better?</p>
+    </div>
+
+    <h2 class="q-title">What is RAG, precisely?</h2>
+    <p><em class="term">Retrieval-Augmented Generation</em> is an architecture pattern — not a model, not a product — where, before the LLM generates an answer, a retrieval system searches an external knowledge source for the most relevant pieces of information and <em class="term">injects them into the prompt as context</em>. The model's reasoning ability stays exactly the same; what changes is what it's allowed to reason <em>over</em>.</p>
+
+    <p>The phrase itself decomposes cleanly:</p>
+    <ul>
+      <li><strong>Retrieval</strong> — find the k most relevant documents/chunks from a corpus for a given query, usually via vector similarity search, keyword search, or both.</li>
+      <li><strong>Augmented</strong> — those retrieved chunks are concatenated into the LLM's context window alongside the user's question.</li>
+      <li><strong>Generation</strong> — the LLM produces an answer <em>grounded in</em> the retrieved text, ideally citing which chunk supported which claim.</li>
+    </ul>
+
+    <p>The paper that coined the term (Lewis et al., 2020, Facebook AI Research) originally framed RAG as a way to combine a parametric memory (the seq2seq model) with a non-parametric memory (a dense vector index over Wikipedia) so the model could be factually grounded without growing its own parameter count.</p>
+
+    <details class="expand">
+      <summary>A simple mental model — the open-book exam</summary>
+      <div class="inner">
+        <p>A model without RAG is a student taking a <strong>closed-book exam</strong> from memorized notes — fast, but occasionally confident and wrong. A model with RAG is the same student taking an <strong>open-book exam</strong>: you hand them exactly the three relevant pages from the textbook right before the question, and they still have to read, synthesize, and reason over that material correctly. RAG doesn't make the student smarter. It makes sure they're not reasoning from a foggy memory of a textbook they read a year ago.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ================= SECTION 3 ================= -->
+  <section class="block" id="s3">
+    <div class="qnum">§ 03 — SYSTEM ARCHITECTURE</div>
+    <div class="provoke">
+      <div class="q-label">Thought experiment</div>
+      <p>Search engines index the web once and answer millions of different queries against that same index. Could a RAG system get away with building its index at query time instead — searching, chunking, and embedding your entire document set the moment a user asks a question?</p>
+    </div>
+
+    <h2 class="q-title">Why RAG is really two separate pipelines</h2>
+    <p>The reason the answer to that thought experiment is "technically possible but almost never sane" is that indexing (understanding your documents) and querying (answering a question) have wildly different latency budgets and happen at wildly different frequencies. RAG systems split cleanly into an <em class="term">offline indexing pipeline</em> and an <em class="term">online query pipeline</em>.</p>
+
+    <div class="diagram">
+<pre>
+ OFFLINE — INDEXING PIPELINE (runs once, or on document change)
+ ┌──────────┐   ┌───────────┐   ┌────────────┐   ┌──────────────┐
+ │  Raw     │──▶│  Parse +  │──▶│   Chunk    │──▶│   Embed +     │
+ │  Docs    │   │  Clean    │   │  (split)   │   │   Store in    │
+ │ pdf/html │   │  text     │   │  ~200-800  │   │  Vector Index │
+ │ /docx    │   │           │   │  tokens    │   │  (+metadata)  │
+ └──────────┘   └───────────┘   └────────────┘   └──────────────┘
+
+ ONLINE — QUERY PIPELINE (runs every single user request, low latency)
+ ┌──────────┐   ┌───────────┐   ┌────────────┐   ┌──────────────┐   ┌───────────┐
+ │  User    │──▶│  Embed    │──▶│  Vector    │──▶│   Rerank      │──▶│  LLM      │
+ │  Query   │   │  the      │   │  Search    │   │   top-k       │   │  generates│
+ │          │   │  query    │   │  (top ~50) │   │   → top ~5    │   │  grounded │
+ │          │   │           │   │            │   │               │   │  answer   │
+ └──────────┘   └───────────┘   └────────────┘   └──────────────┘   └───────────┘
+</pre>
+      <div class="cap">Indexing is a batch job you tune for quality and completeness. Querying is a latency-sensitive path you tune for speed and precision. Conflating them is the #1 rookie mistake.</div>
+    </div>
+
+    <p>This separation matters architecturally: you can re-chunk and re-embed your entire corpus overnight with a slow, high-quality embedding model, while your query-time path stays lean — a single embedding call, an ANN (approximate nearest neighbor) lookup, a rerank, and a generation call, ideally under 1-2 seconds end-to-end for a good user experience.</p>
+  </section>
+
+  <!-- ================= SECTION 4 ================= -->
+  <section class="block" id="s4">
+    <div class="qnum">§ 04 — CHUNKING</div>
+    <div class="provoke">
+      <div class="q-label">Thought experiment</div>
+      <p>If you cut a 40-page KYC policy document into 500 fixed-size, non-overlapping blocks with a guillotine — no regard for headings, tables, or sentence boundaries — and a user asks "what documents are required for NRI account opening," is it more likely the answer sits neatly inside one block, or straddles two?</p>
+    </div>
+
+    <h2 class="q-title">Why chunking strategy quietly decides your RAG's ceiling</h2>
+    <p>Chunking is the most underrated lever in a RAG system because everything downstream — embedding quality, retrieval precision, and the LLM's ability to answer — depends on the chunk being a coherent, self-contained unit of meaning. Two failure directions:</p>
+    <ul>
+      <li><strong>Chunks too large</strong> → each chunk contains multiple unrelated ideas, so its embedding becomes a "blurry average" of several topics and matches poorly against specific queries. You also waste context window on irrelevant text once retrieved.</li>
+      <li><strong>Chunks too small</strong> → you lose surrounding context; a sentence like "the exit load is 1%" becomes meaningless once separated from "...for redemptions before 365 days for Scheme X."</li>
+    </ul>
+
+    <h3>Common chunking strategies</h3>
+    <table>
+      <tr><th>Strategy</th><th>How it works</th><th>Best for</th></tr>
+      <tr><td>Fixed-size</td><td>Split every N tokens, often with 10-20% overlap</td><td>Quick baseline, homogeneous prose</td></tr>
+      <tr><td>Recursive character split</td><td>Try paragraph → sentence → word boundaries, in that priority order, until under size limit</td><td>General-purpose default (LangChain's most-used splitter)</td></tr>
+      <tr><td>Semantic chunking</td><td>Embed sentences, split where adjacent-sentence similarity drops sharply</td><td>Long-form narrative content, articles</td></tr>
+      <tr><td>Structure-aware</td><td>Split along markdown headers, HTML tags, or document sections</td><td>Policy docs, manuals, structured PDFs</td></tr>
+      <tr><td>Table/row-aware</td><td>Keep each table row (or table + header) intact as one unit</td><td>Financial statements, fee schedules, NAV tables</td></tr>
+    </table>
+
+    <div class="callout warn">
+      <span class="label">Common trap</span>
+      Splitting a fee schedule table naively by character count is a classic fintech RAG bug — you sever the row header ("Scheme Name") from the numeric row it describes, and the retriever can no longer tell what number belongs to what fund. Table-aware chunking (or converting tables to markdown/JSON before chunking) fixes this.
+    </div>
+
+    <details class="expand">
+      <summary>Why overlap between chunks helps</summary>
+      <div class="inner">
+        <p>If chunk boundaries fall mid-idea, overlapping the last ~10-20% of tokens from the previous chunk into the next one means an idea that spans a boundary is still fully present in at least one chunk. This is a cheap insurance policy against boundary-cutting information loss, at the cost of slightly larger index size.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ================= SECTION 5 ================= -->
+  <section class="block" id="s5">
+    <div class="qnum">§ 05 — EMBEDDINGS</div>
+    <div class="provoke">
+      <div class="q-label">Thought experiment</div>
+      <p>Two sentences share almost no words in common: "the fund's expense ratio was cut" and "TER reduced for the scheme." A keyword search (Ctrl+F) would treat these as unrelated. How can a machine "know" these mean nearly the same thing?</p>
+    </div>
+
+    <h2 class="q-title">Embeddings — meaning as geometry</h2>
+    <p>An <em class="term">embedding model</em> converts a piece of text into a dense vector of floating-point numbers (commonly 384 to 3072 dimensions) such that <em class="term">texts with similar meaning land close together in that vector space</em>, regardless of exact wording. "Expense ratio was cut" and "TER reduced" end up as nearby points because the model was trained on massive amounts of text to associate synonymous/paraphrastic patterns with similar directions in vector space.</p>
+
+    <div class="diagram">
+<pre>
+                    ▲  (dimension 2, illustrative)
+                    │
+     "TER reduced"  ●
+                      \
+                       \  close in vector space
+                        \  (cosine similarity ≈ 0.89)
+     "expense ratio      ●
+      was cut"          /
+                    │   
+     "cricket score  ●── far away (similarity ≈ 0.02)
+      updated"       
+                    └──────────────────────────▶ (dimension 1)
+</pre>
+      <div class="cap">Retrieval = "find the k nearest points to the query's point." That's the entire trick, at scale, across millions of vectors.</div>
+    </div>
+
+    <h3>Similarity metrics</h3>
+    <ul>
+      <li><strong>Cosine similarity</strong> — measures the angle between two vectors, ignoring magnitude. Most common for text embeddings.</li>
+      <li><strong>Dot product</strong> — cosine similarity's cousin, sensitive to magnitude; used when embeddings are normalized to unit length (then it's mathematically equivalent to cosine).</li>
+      <li><strong>Euclidean (L2) distance</strong> — straight-line distance; less common for high-dimensional text embeddings.</li>
+    </ul>
+
+    <h3>Vector databases / indexes</h3>
+    <p>Storing millions of embeddings and finding the nearest ones by brute force (comparing the query against every vector) doesn't scale. Production systems use <em class="term">Approximate Nearest Neighbor (ANN)</em> algorithms — most commonly <strong>HNSW</strong> (Hierarchical Navigable Small World graphs) — which trade a small amount of recall for massive speed gains, turning a search over millions of vectors into single-digit milliseconds. Popular systems: Pinecone, Weaviate, Qdrant, Milvus, pgvector (Postgres extension), and FAISS (library, not a managed DB).</p>
+
+    <div class="callout tip">
+      <span class="label">Practical note</span>
+      Embedding model choice matters more than vector DB choice for answer quality. A mismatched or weak embedding model (e.g. one not tuned for your domain's vocabulary — mutual fund terminology, legal language) silently caps your retrieval quality no matter how good your ANN index is.
+    </div>
+  </section>
+
+  <!-- ================= SECTION 6 ================= -->
+  <section class="block" id="s6">
+    <div class="qnum">§ 06 — RETRIEVAL STRATEGIES</div>
+    <div class="provoke">
+      <div class="q-label">Thought experiment</div>
+      <p>A user searches for "IFSC code for IDFC First Bank Chennai branch." Vector similarity search is excellent at matching meaning — but is an exact alphanumeric code like "IFCB0001234" really a matter of "meaning" at all? What happens when the thing you need to retrieve is precise, not semantic?</p>
+    </div>
+
+    <h2 class="q-title">Dense, sparse, and why hybrid retrieval usually wins</h2>
+
+    <h3>Dense retrieval (semantic / vector search)</h3>
+    <p>Uses embeddings as described above. Excellent at capturing paraphrase, synonymy, and conceptual similarity. Weak at exact-match precision — codes, IDs, rare product names, and numbers often get "smoothed over" because the embedding space cares about overall meaning, not exact tokens.</p>
+
+    <h3>Sparse retrieval (keyword / lexical search)</h3>
+    <p>The classical approach — <strong>BM25</strong> (an evolution of TF-IDF) scores documents by exact term overlap, weighted by term rarity and document length. Excellent at exact-match precision (codes, names, acronyms), poor at synonymy ("cut" vs "reduced").</p>
+
+    <h3>Hybrid retrieval</h3>
+    <p>Run both dense and sparse search in parallel, then merge the ranked lists — commonly via <em class="term">Reciprocal Rank Fusion (RRF)</em>, which combines rankings without needing the two systems' scores to be on the same scale. This captures both "the user meant this conceptually" and "the user typed this exact term."</p>
+
+    <div class="diagram">
+<pre>
+   Query: "exit load after 1 year for equity scheme"
+
+   DENSE SEARCH (semantic)          SPARSE SEARCH (BM25 keyword)
+   ─────────────────────            ────────────────────────────
+   1. "redemption charges..."       1. "...exit load of 1%..."
+   2. "...redeemed within 365..."   2. "exit load applicable..."
+   3. "penalty for early exit"      3. "1 year lock-in period"
+
+                    \                    /
+                     ▼                  ▼
+              RECIPROCAL RANK FUSION (RRF)
+                          │
+                          ▼
+              Final merged top-k passed to reranker
+</pre>
+    </div>
+
+    <table>
+      <tr><th>Approach</th><th>Strength</th><th>Weakness</th></tr>
+      <tr><td>Dense (vector)</td><td>Synonymy, paraphrase, conceptual match</td><td>Exact codes/numbers, rare terms, negation</td></tr>
+      <tr><td>Sparse (BM25)</td><td>Exact terms, IDs, acronyms, precision</td><td>Misses paraphrases entirely</td></tr>
+      <tr><td>Hybrid</td><td>Best of both, higher recall</td><td>More infra complexity, needs fusion tuning</td></tr>
+    </table>
+  </section>
+
+  <!-- ================= SECTION 7 ================= -->
+  <section class="block" id="s7">
+    <div class="qnum">§ 07 — RERANKING</div>
+    <div class="provoke">
+      <div class="q-label">Thought experiment</div>
+      <p>If your first-pass retrieval already returns the 50 "closest" chunks by vector distance, why not just hand all 50 straight to the LLM and let its reasoning sort out which ones matter?</p>
+    </div>
+
+    <h2 class="q-title">Why a second, smarter filter improves everything</h2>
+    <p>Embedding-based retrieval is fast because it precomputes document vectors and only embeds the query at request time — but that speed comes from a shortcut: it never lets the query and the document "look at each other" directly. It just compares two independently-computed points in space. This is called a <em class="term">bi-encoder</em> approach.</p>
+
+    <p>A <em class="term">cross-encoder reranker</em> is slower but far more accurate: it takes the query and a candidate chunk <em>together</em> as a single input, and directly scores how relevant that specific pairing is. Because it's too slow to run over millions of documents, the standard pattern is:</p>
+    <ol>
+      <li>Cast a wide net with cheap dense/sparse retrieval → top 50-100 candidates.</li>
+      <li>Run the expensive, accurate cross-encoder reranker only on those 50-100 → re-sort by true relevance.</li>
+      <li>Keep only the top 3-8 for the LLM's context window.</li>
+    </ol>
+
+    <div class="callout tip">
+      <span class="label">Why this matters more than people expect</span>
+      In practice, adding a reranking stage is one of the highest-ROI upgrades to a RAG pipeline — it's common to see retrieval precision jump 15-30% just from reranking the same candidate set, no changes to chunking or embeddings needed. Cohere Rerank, BGE-reranker, and cross-encoder models from sentence-transformers are common choices.
+    </div>
+
+    <p>There's also a real-world reasoning benefit to keeping the final context small and precise, beyond just retrieval accuracy: <em class="term">"lost in the middle"</em> research shows LLMs pay less attention to information buried in the middle of a long context versus the start or end — so stuffing 50 loosely-relevant chunks into the prompt can actively hurt answer quality, not just waste tokens.</p>
+  </section>
+
+  <!-- ================= SECTION 8 ================= -->
+  <section class="block" id="s8">
+    <div class="qnum">§ 08 — GENERATION</div>
+    <div class="provoke">
+      <div class="q-label">Thought experiment</div>
+      <p>You've retrieved the perfect three chunks. You paste them into the prompt and ask the LLM to answer. What stops the model from ignoring your retrieved text entirely and answering from its own memory anyway — the exact hallucination problem you built this whole pipeline to solve?</p>
+    </div>
+
+    <h2 class="q-title">Grounding the generation step</h2>
+    <p>Retrieval solves "does the right information exist in context." It does not automatically solve "does the model actually use it correctly." The generation step needs explicit prompt discipline:</p>
+
+    <ul>
+      <li><strong>Instruct grounding explicitly</strong> — "Answer only using the provided context. If the answer isn't in the context, say you don't have enough information."</li>
+      <li><strong>Require citations</strong> — ask the model to reference which chunk/source supports each claim (e.g. [Source 2]), which both improves faithfulness and gives the user a way to verify.</li>
+      <li><strong>Separate context from instructions clearly</strong> — using delimiters (XML tags, markdown headers) so the model doesn't confuse retrieved document text with user instructions (this also matters for prompt-injection safety, since retrieved documents are untrusted input).</li>
+      <li><strong>Handle the empty-retrieval case</strong> — explicitly tell the model what to do when nothing relevant was retrieved, rather than letting it silently fall back to ungrounded generation.</li>
+    </ul>
+
+    <div class="code">
+<pre><span class="cm">// Simplified grounded-prompt structure</span>
+<span class="kw">SYSTEM:</span> You are a policy assistant. Answer <span class="str">ONLY</span> using the
+&lt;context&gt; block below. Cite the source number for every claim.
+If the answer is not present in the context, say so explicitly —
+do not use outside knowledge.
+
+&lt;context&gt;
+  [1] "...exit load of 1% applies to redemptions within 365 days..."
+  [2] "...NRI accounts require Form 60 and a valid overseas address proof..."
+&lt;/context&gt;
+
+<span class="kw">USER:</span> What's the exit load if I redeem after 400 days?
+
+<span class="kw">EXPECTED:</span> Based on [1], no exit load applies for redemptions
+after 365 days, so redeeming at 400 days should not incur an exit load.</pre>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 9 ================= -->
+  <section class="block" id="s9">
+    <div class="qnum">§ 09 — COMPARISON</div>
+    <div class="provoke">
+      <div class="q-label">Thought experiment</div>
+      <p>Modern LLMs now support context windows of a million tokens or more. If you could paste your entire knowledge base directly into the prompt every single time, would RAG become obsolete?</p>
+    </div>
+
+    <h2 class="q-title">RAG vs Fine-Tuning vs Long-Context — not a single winner</h2>
+    <p>These three are frequently framed as competitors; in production systems they're usually complementary, each solving a different axis of the problem.</p>
+
+    <table>
+      <tr><th>Approach</th><th>Updates what</th><th>Best for</th><th>Cost profile</th></tr>
+      <tr><td>RAG</td><td>What the model can <em>see</em> at query time</td><td>Fresh facts, private/proprietary data, source attribution, frequently-changing info</td><td>Retrieval infra + per-query latency; no retraining cost</td></tr>
+      <tr><td>Fine-tuning</td><td>How the model <em>behaves</em> (style, format, task-specific skill)</td><td>Domain tone/style, structured output formats, teaching a new skill/behavior pattern</td><td>Training compute upfront, cheap inference after</td></tr>
+      <tr><td>Long-context stuffing</td><td>Nothing — brute-force include everything</td><td>Small, static, well-bounded corpora (a single contract, one codebase)</td><td>Very high per-query cost/latency; "lost in the middle" risk; doesn't scale to large corpora</td></tr>
+    </table>
+
+    <p>Even with huge context windows, dumping your entire knowledge base into every prompt is wasteful and slower — you pay for and wait on tokens the model doesn't need for that specific question, and accuracy on needle-in-a-haystack style questions still degrades with excessive irrelevant context. RAG's job is precisely to do that filtering <em>before</em> the expensive context window gets used, so the model reasons over a small, curated, highly-relevant slice instead of the entire haystack.</p>
+
+    <div class="callout tip">
+      <span class="label">The production pattern that actually wins</span>
+      Fine-tune the model to be excellent at your task's <em>format and reasoning style</em> (e.g. "always answer in a specific compliance-safe tone with citations"), and use RAG to feed it <em>current, correct facts</em>. The two solve orthogonal problems — "how should I answer" vs "what do I answer with."
+    </div>
+  </section>
+
+  <!-- ================= SECTION 10 ================= -->
+  <section class="block" id="s10">
+    <div class="qnum">§ 10 — ADVANCED PATTERNS</div>
+    <div class="provoke">
+      <div class="q-label">Thought experiment</div>
+      <p>A user asks: "Compare the lock-in periods of the ELSS funds I invested in during 2023 with the ones I invested in during 2024, and tell me which ones are now redeemable." Can a single "embed query → search → generate" pass ever answer this, or does answering it actually require the model to <em>plan a sequence of retrievals</em>?</p>
+    </div>
+
+    <h2 class="q-title">Beyond naive RAG</h2>
+
+    <details class="expand">
+      <summary>HyDE — Hypothetical Document Embeddings</summary>
+      <div class="inner">
+        <p>User queries are often short and phrased as questions ("what's the penalty for late redemption"), while the documents that answer them are written in declarative, document-style prose ("a penalty of 1% shall apply..."). This mismatch in phrasing style can hurt embedding similarity even when the meaning matches. <strong>HyDE</strong> asks the LLM to first generate a <em>hypothetical answer</em> to the query (even if it might be wrong), then embeds that hypothetical answer — rather than the raw question — to search the index, because a generated answer is stylistically much closer to real documents than a raw question is.</p>
+      </div>
+    </details>
+
+    <details class="expand">
+      <summary>Query rewriting / decomposition</summary>
+      <div class="inner">
+        <p>A complex query gets broken into sub-queries by the LLM before retrieval — e.g. the 2023-vs-2024 ELSS example above decomposes into "ELSS funds invested 2023," "ELSS funds invested 2024," and "current date vs lock-in end date for each." Each sub-query is retrieved separately, and results are merged before final generation. This directly targets multi-hop questions that a single retrieval pass cannot answer.</p>
+      </div>
+    </details>
+
+    <details class="expand">
+      <summary>Agentic RAG</summary>
+      <div class="inner">
+        <p>Instead of a fixed retrieve-then-generate pipeline, the LLM is given retrieval as a <em>tool</em> it can call repeatedly, reasoning about what to search for next based on what it's already found — similar to how a human researcher iteratively refines a search. This handles multi-hop reasoning, self-correction ("that result didn't answer the question, let me search differently"), and combining retrieval with other tools (calculators, APIs, code execution).</p>
+      </div>
+    </details>
+
+    <details class="expand">
+      <summary>GraphRAG</summary>
+      <div class="inner">
+        <p>Standard RAG treats documents as an unstructured bag of independent chunks — it's poor at questions that require traversing <em>relationships</em> ("which of my portfolio's fund managers also manage a fund I redeemed last year?"). GraphRAG builds a knowledge graph (entities and relationships extracted from the corpus) alongside or instead of a flat vector index, letting retrieval follow relationship edges rather than just semantic proximity — better suited for relational, multi-entity reasoning.</p>
+      </div>
+    </details>
+
+    <details class="expand">
+      <summary>Self-RAG / Corrective RAG (CRAG)</summary>
+      <div class="inner">
+        <p>The model critiques its own retrieved context before generating — checking whether retrieved chunks are actually relevant/sufficient, and triggering a re-search (or falling back to a web search, or admitting insufficient information) if not, rather than blindly generating from whatever was retrieved on the first pass.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ================= SECTION 11 ================= -->
+  <section class="block" id="s11">
+    <div class="qnum">§ 11 — EVALUATION</div>
+    <div class="provoke">
+      <div class="q-label">Thought experiment</div>
+      <p>Your RAG system just gave a confident, well-written, correctly-formatted answer. It also happened to be factually wrong. How would you have caught that — and more importantly, how would you catch it automatically, across thousands of queries, without a human reading every single response?</p>
+    </div>
+
+    <h2 class="q-title">Measuring what actually matters</h2>
+    <p>RAG evaluation has to separate <em class="term">retrieval quality</em> from <em class="term">generation quality</em> — a system can fail at either stage independently, and conflating them hides where the real problem is.</p>
+
+    <h3>Retrieval metrics</h3>
+    <ul>
+      <li><strong>Context Precision</strong> — of the chunks retrieved, what fraction were actually relevant?</li>
+      <li><strong>Context Recall</strong> — of all the relevant chunks that existed in the corpus, what fraction did we actually retrieve?</li>
+      <li><strong>Hit Rate / MRR (Mean Reciprocal Rank)</strong> — did the correct chunk appear at all, and how high up the ranking?</li>
+    </ul>
+
+    <h3>Generation metrics</h3>
+    <ul>
+      <li><strong>Faithfulness / Groundedness</strong> — does every claim in the answer actually trace back to the retrieved context, or did the model add unsupported information (hallucination on top of retrieval)?</li>
+      <li><strong>Answer Relevance</strong> — does the generated answer actually address the user's question (a faithful but off-topic answer still fails the user)?</li>
+      <li><strong>Answer Correctness</strong> — compared against a ground-truth answer, typically via an LLM-as-judge approach at scale.</li>
+    </ul>
+
+    <div class="diagram">
+<pre>
+   FAILURE ATTRIBUTION MATRIX
+
+                     Retrieval GOOD          Retrieval BAD
+                  ┌──────────────────┬──────────────────────┐
+   Generation     │  ✓ System works   │  Model did its best   │
+   GOOD           │                   │  with wrong context — │
+                  │                   │  fix the retriever    │
+                  ├──────────────────┼──────────────────────┤
+   Generation     │  Right info was   │  Compounding failure  │
+   BAD            │  there, model     │  — fix both, retrieval│
+                  │  ignored/misused  │  first                │
+                  │  it — fix prompt  │                       │
+                  └──────────────────┴──────────────────────┘
+</pre>
+      <div class="cap">This 2x2 is the single most useful debugging tool when a RAG pipeline gives a wrong answer — always diagnose which quadrant you're in before changing anything.</div>
+    </div>
+
+    <p>Frameworks like <strong>RAGAS</strong>, <strong>TruLens</strong>, and <strong>DeepEval</strong> operationalize these metrics using an LLM-as-judge pattern, letting you run automated evaluation over a test set of question/expected-answer pairs at scale, rather than manually reading transcripts.</p>
+  </section>
+
+  <!-- ================= SECTION 12 ================= -->
+  <section class="block" id="s12">
+    <div class="qnum">§ 12 — FAILURE MODES</div>
+    <div class="provoke">
+      <div class="q-label">Thought experiment</div>
+      <p>Your RAG demo worked flawlessly for the first fifty test questions you tried. Should that give you confidence it will work in production — or does a demo that "worked" actually tell you almost nothing about the failure modes that only show up at scale, over time, and with real users?</p>
+    </div>
+
+    <h2 class="q-title">What breaks in production, and why demos hide it</h2>
+
+    <ul>
+      <li><strong>Silent retrieval failure</strong> — the right document exists but was never retrieved (bad chunking, weak embedding model for domain jargon, query phrased very differently from document phrasing). The system doesn't error out; it just answers confidently from whatever irrelevant chunks it did find.</li>
+      <li><strong>Stale index</strong> — a document was updated (a policy changed) but the vector index wasn't re-embedded, so the system confidently retrieves and cites an outdated version.</li>
+      <li><strong>Ambiguous/underspecified queries</strong> — "what's my balance" without knowing which account, which date — retrieval has no way to disambiguate without either asking a clarifying question or using conversation history/user metadata.</li>
+      <li><strong>Multi-hop questions hitting single-hop retrieval</strong> — the naive retrieve-once-then-generate pattern silently fails on questions that require chaining multiple facts together (see §10).</li>
+      <li><strong>Context window overflow / lost-in-the-middle</strong> — cramming too many retrieved chunks in "just to be safe" actually degrades answer quality rather than improving it.</li>
+      <li><strong>Prompt injection via retrieved documents</strong> — if your corpus includes user-uploaded or external content, a malicious document can contain text like "ignore previous instructions and..." — retrieved content must be treated as untrusted data, not as trusted instructions.</li>
+      <li><strong>Access control leakage</strong> — in multi-tenant systems, a badly scoped retriever can surface Document A's confidential content in an answer to User B who should never have seen it. Retrieval must respect the same access control the underlying documents have.</li>
+    </ul>
+
+    <div class="callout warn">
+      <span class="label">Why this matters especially in fintech / regulated environments</span>
+      A hallucinated answer about a mutual fund's exit load, an insurance policy's exclusion clause, or a compliance requirement isn't a cosmetic bug — it's a customer-facing factual claim with regulatory and trust consequences. This is exactly why groundedness and citation are non-negotiable design requirements, not optional polish, in domains like wealth/demat platforms.
+    </div>
+  </section>
+
+  <!-- ================= SECTION 13 ================= -->
+  <section class="block" id="s13">
+    <div class="qnum">§ 13 — APPLIED CASE STUDY</div>
+    <span class="fintech-tag">FINTECH GROUNDED</span>
+    <div class="provoke">
+      <div class="q-label">Thought experiment</div>
+      <p>Suppose you're designing a RAG assistant for a wealth and demat platform — covering mutual funds, IPOs, securities, insurance, and loans across dozens of microservices, with product terms, NAVs, and compliance rules that change constantly, and where a wrong answer carries real regulatory weight. Where does a naive "chunk everything, embed everything, search everything" RAG design first break?</p>
+    </div>
+
+    <h2 class="q-title">Sketch: a wealth-advisory RAG system</h2>
+    <p>Walking through the earlier concepts applied to a platform spanning mutual funds, IPOs, securities, insurance, and loans:</p>
+
+    <h3>Corpus segmentation, not one giant index</h3>
+    <p>A single flat vector index across "mutual fund KYC rules," "IPO allotment process," and "loan-against-mutual-funds (LAMF) terms" invites cross-contamination in retrieval — a query about LAMF interest rates can accidentally surface an unrelated mutual fund exit-load chunk that happens to be semantically close in vector space (both discuss percentages and redemption). <strong>Metadata filtering</strong> (product-line tags applied at index time, filtered at query time) keeps retrieval scoped to the right product domain before similarity search even runs.</p>
+
+    <h3>Hybrid retrieval is close to mandatory</h3>
+    <p>Product codes, ISIN numbers, scheme names, IFSC codes — this is exactly the exact-match-heavy content where pure dense retrieval underperforms. BM25 + dense hybrid, as described in §6, directly addresses this.</p>
+
+    <h3>Freshness-aware indexing</h3>
+    <p>NAVs, interest rates, and scheme terms change frequently. Static offline indexing (§3) isn't enough for these — a common pattern is to route highly volatile numeric facts (today's NAV, current interest rate) to a live API/database call rather than a vector-retrieved document at all, reserving RAG for the more stable, prose-heavy content (policies, product descriptions, process explanations, T&Cs).</p>
+
+    <h3>Mandatory citation + groundedness checks</h3>
+    <p>Given the regulatory weight of financial product information, every generated claim about terms, fees, or eligibility should carry a source citation back to the specific policy document/version, and ideally pass an automated faithfulness check (§11) before being shown to the end user — with a hard fallback to "I don't have confirmed information on this, please check with your relationship manager" when confidence or groundedness is low, rather than ever guessing.</p>
+
+    <div class="diagram">
+<pre>
+  QUERY: "What's the LAMF interest rate if I pledge my ELSS units?"
+
+  ┌─ metadata filter: product_line = "LAMF" ─────────────────┐
+  │                                                            │
+  │   hybrid retrieval (dense + BM25) over LAMF policy docs    │
+  │              │                                             │
+  │              ▼                                             │
+  │   is "interest rate" a LIVE numeric fact?  → YES            │
+  │              │                                             │
+  │              ▼                                             │
+  │   route to live rate API, NOT the static vector index      │
+  │              │                                             │
+  │              ▼                                             │
+  │   combine: policy text (RAG) + live rate (API call)         │
+  │              │                                             │
+  │              ▼                                             │
+  │   generate grounded answer with citation + freshness stamp │
+  └────────────────────────────────────────────────────────────┘
+</pre>
+      <div class="cap">The key design insight: not everything belongs in the vector index. RAG handles stable prose; live systems handle volatile numbers. Conflating the two is a common source of stale, wrong financial answers.</div>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 14 ================= -->
+  <section class="block" id="s14">
+    <div class="qnum">§ 14 — ACTIVE RECALL</div>
+    <h2 class="q-title">Test yourself — click each question to reveal the answer</h2>
+    <p>Cover the answers first. Try to answer from memory before expanding.</p>
+
+    <div class="recall" onclick="this.classList.toggle('open')">
+      <div class="rq">Why can't you just retrain the model every time your knowledge base updates?</div>
+      <div class="ra">Retraining a large model is computationally expensive, slow (days to weeks), and risks catastrophic forgetting — degrading capabilities the model already had. RAG updates what the model can see at query time without touching its weights at all.</div>
+    </div>
+
+    <div class="recall" onclick="this.classList.toggle('open')">
+      <div class="rq">What's the difference between a bi-encoder and a cross-encoder, and why does that difference matter for reranking?</div>
+      <div class="ra">A bi-encoder embeds the query and each document independently, then compares vectors — fast, scalable, but less precise. A cross-encoder feeds the query and document together into one model pass, letting them directly attend to each other — far more accurate but too slow to run over millions of documents. So you use the bi-encoder to cast a wide net (top ~50) and the cross-encoder to precisely rerank that smaller set down to the true top few.</div>
+    </div>
+
+    <div class="recall" onclick="this.classList.toggle('open')">
+      <div class="rq">Why might a hybrid (dense + sparse) retriever outperform a pure vector search system?</div>
+      <div class="ra">Dense/vector search excels at conceptual and paraphrase matching but tends to underperform on exact-match content like codes, IDs, and rare or precise terminology. Sparse/BM25 keyword search excels exactly there but misses synonymy. Combining both via rank fusion captures the strengths of each.</div>
+    </div>
+
+    <div class="recall" onclick="this.classList.toggle('open')">
+      <div class="rq">A RAG system gives a wrong answer. What's the first diagnostic question to ask?</div>
+      <div class="ra">Was the correct information actually retrieved into context in the first place? If not, the bug is in retrieval (chunking, embedding, search) — fixing the prompt or the LLM won't help. If the correct information WAS retrieved but the model still got it wrong, the bug is in generation/grounding (prompt discipline, faithfulness).</div>
+    </div>
+
+    <div class="recall" onclick="this.classList.toggle('open')">
+      <div class="rq">Why does giving an LLM a huge context window not make RAG obsolete?</div>
+      <div class="ra">Even with large context windows, stuffing everything into every prompt is slower, more expensive, and can hurt accuracy due to the "lost in the middle" effect where models attend less to information buried in a long context. RAG's filtering step ensures the model reasons over a small, precise, relevant slice instead of an entire haystack every time.</div>
+    </div>
+
+    <div class="recall" onclick="this.classList.toggle('open')">
+      <div class="rq">Why is chunking often called the highest-leverage, most underrated decision in a RAG pipeline?</div>
+      <div class="ra">Every downstream stage — embedding quality, retrieval precision, and the LLM's ability to answer — depends on each chunk being a coherent, self-contained unit of meaning. Chunks too large blur multiple topics into one blurry embedding; chunks too small lose the surrounding context needed to make sense of the fact inside them.</div>
+    </div>
+
+    <div class="recall" onclick="this.classList.toggle('open')">
+      <div class="rq">In a regulated fintech context, why is citation/groundedness a hard requirement rather than a nice-to-have?</div>
+      <div class="ra">A hallucinated answer about fees, exclusions, or eligibility is a customer-facing factual claim with real regulatory and trust consequences — not a cosmetic error. Requiring the model to cite the exact source it drew a claim from, and to explicitly decline when it isn't grounded, is what makes the system safe to expose to end users.</div>
+    </div>
+  </section>
+
+</div>
+
+<footer>ARCHITECTS LAB — Study Note 014 — Retrieval-Augmented Generation — built for deep, active-recall learning</footer>
+
+</body>
+</html>
