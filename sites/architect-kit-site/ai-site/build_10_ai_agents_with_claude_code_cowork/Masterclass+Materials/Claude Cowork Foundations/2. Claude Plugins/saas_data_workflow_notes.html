@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SaaS Data Workflow · practice notes</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #f8f6f2;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .container {
+      max-width: 1000px;
+      width: 100%;
+      background: white;
+      border-radius: 2rem;
+      box-shadow: 0 20px 40px -12px rgba(0,0,0,0.15);
+      padding: 2rem 2rem 2.5rem;
+    }
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: #1e2b2f;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 2px solid #eae3d7;
+      padding-bottom: 0.75rem;
+      margin-bottom: 1.8rem;
+    }
+    h1 small {
+      font-size: 1rem;
+      font-weight: 400;
+      color: #5f6b6e;
+      margin-left: 0.5rem;
+    }
+    .subhead {
+      color: #3d4f54;
+      background: #f0eee8;
+      padding: 0.5rem 1.2rem;
+      border-radius: 40px;
+      display: inline-block;
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+      font-weight: 450;
+    }
+    .card {
+      background: #fcfbf9;
+      border-radius: 1.2rem;
+      padding: 1.2rem 1.5rem 1.5rem;
+      margin-bottom: 1.4rem;
+      border: 1px solid #e8e2d8;
+      transition: box-shadow 0.1s ease;
+    }
+    .card:hover {
+      box-shadow: 0 6px 14px rgba(0,0,0,0.02);
+    }
+    .question {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      cursor: pointer;
+      user-select: none;
+    }
+    .question h3 {
+      font-weight: 550;
+      font-size: 1.2rem;
+      color: #1b2a2f;
+      letter-spacing: -0.2px;
+    }
+    .toggle-btn {
+      background: #eae3d7;
+      border: none;
+      border-radius: 40px;
+      padding: 0.3rem 1rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #1b2a2f;
+      cursor: pointer;
+      transition: 0.15s;
+      white-space: nowrap;
+      background: #e2dad0;
+    }
+    .toggle-btn:hover {
+      background: #d2c8bb;
+    }
+    .answer {
+      margin-top: 1.2rem;
+      padding-top: 1.2rem;
+      border-top: 1px dashed #dbd2c6;
+      display: none;
+      line-height: 1.6;
+      color: #1f3035;
+    }
+    .answer.open {
+      display: block;
+    }
+    .answer p, .answer li {
+      margin-bottom: 0.6rem;
+    }
+    .answer ul, .answer ol {
+      padding-left: 1.6rem;
+      margin: 0.5rem 0 0.8rem;
+    }
+    .answer code, .answer .mono {
+      background: #ede9e2;
+      padding: 0.1rem 0.5rem;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.9rem;
+      color: #1b3a40;
+    }
+    .answer .highlight {
+      background: #f3efe8;
+      padding: 0.8rem 1.2rem;
+      border-radius: 14px;
+      border-left: 3px solid #b6a48b;
+      margin: 0.8rem 0;
+    }
+    .answer blockquote {
+      background: #f3efe8;
+      padding: 0.8rem 1.2rem;
+      border-radius: 14px;
+      border-left: 3px solid #b6a48b;
+      margin: 0.8rem 0;
+      font-style: italic;
+    }
+    .fig {
+      font-family: monospace;
+      background: #f0ece4;
+      padding: 0.8rem 1.2rem;
+      border-radius: 14px;
+      white-space: pre;
+      overflow-x: auto;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin: 0.6rem 0;
+      border: 1px solid #ddd6cb;
+    }
+    .footnote {
+      margin-top: 2.5rem;
+      font-size: 0.9rem;
+      color: #5c6b6e;
+      border-top: 1px solid #e0d9cf;
+      padding-top: 1.2rem;
+      text-align: center;
+    }
+    .footnote span {
+      background: #efeae2;
+      padding: 0.2rem 0.8rem;
+      border-radius: 20px;
+    }
+    @media (max-width: 600px) {
+      .container { padding: 1.5rem; }
+      h1 { font-size: 1.8rem; flex-wrap: wrap; }
+      .question h3 { font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>
+    📈 SaaS Data Workflow
+    <small>practice · reusable Claude commands</small>
+  </h1>
+  <div class="subhead">📘 click each question → expand the answer</div>
+
+  <!-- ===== 0 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>0. What is this prompt demonstrating?</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>This prompt is demonstrating a <strong>data-analysis workflow using reusable Claude commands</strong>. The important idea is that you are taking one Excel file and passing it through several analysis stages.</p>
+      <p><strong>In one picture</strong></p>
+      <div class="fig">                saas_monthly_metrics.xlsx
+                         │
+                         ▼
+                  /explore-data
+                         │
+                         ▼
+                 Understand the data
+                         │
+                         ▼
+                    /validate
+                    (optional)
+                         │
+                         ▼
+                  Check data quality
+                         │
+                         ▼
+              /statistical-analysis
+                         │
+                         ▼
+                Find patterns/trends
+                         │
+                         ▼
+                 Clean the data
+                         │
+                         ▼
+                     v1 file
+                         │
+              ┌──────────┴──────────┐
+              ▼                     ▼
+        /build-dashboard       /create-viz
+              │                     │
+              ▼                     ▼
+          Dashboard             Charts
+              │                     │
+              └──────────┬──────────┘
+                         ▼
+                 PowerPoint Deck
+                         │
+                         ▼
+                    Present to
+                     Manager</div>
+    </div>
+  </div>
+
+  <!-- ===== 1 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>1. /explore-data</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>First, Claude looks at the Excel file.</p>
+      <div class="fig">Excel
+  │
+  ▼
+/explore-data
+  │
+  ├── What columns exist?
+  ├── How many rows?
+  ├── What does the data mean?
+  └── What values are present?</div>
+      <p>Think of this as:</p>
+      <blockquote><strong>"Claude, first understand my data."</strong></blockquote>
+    </div>
+  </div>
+
+  <!-- ===== 2 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>2. /validate</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>This one is optional.</p>
+      <div class="fig">Data
+ │
+ ▼
+/validate
+ │
+ ├── Missing values?
+ ├── Bad values?
+ ├── Duplicates?
+ └── Data problems?</div>
+      <p>Think:</p>
+      <blockquote><strong>"Is my data trustworthy enough to analyze?"</strong></blockquote>
+    </div>
+  </div>
+
+  <!-- ===== 3 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>3. /statistical-analysis</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>Now Claude actually analyzes the data.</p>
+      <div class="fig">Clean/validated data
+        │
+        ▼
+/statistical-analysis
+        │
+        ├── Trends
+        ├── Patterns
+        ├── Relationships
+        └── Important findings</div>
+      <p>Think:</p>
+      <blockquote><strong>"What does the data tell me?"</strong></blockquote>
+    </div>
+  </div>
+
+  <!-- ===== 4 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>4. Clean the data and create v1</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>This is important:</p>
+      <div class="fig">ORIGINAL FILE
+      │
+      │  DON'T MODIFY
+      ▼
+saas_monthly_metrics.xlsx
+
+
+             ↓
+
+
+       Clean the data
+             │
+             ▼
+        NEW FILE v1</div>
+      <p>The instruction specifically says <strong>don't overwrite the original</strong>.</p>
+      <p>So:</p>
+      <div class="fig">Original
+   │
+   └── stays safe ✓
+
+Cleaned version
+   │
+   └── v1 ✓</div>
+      <p>This is a good data-analysis practice because you always retain the original/raw dataset.</p>
+    </div>
+  </div>
+
+  <!-- ===== 5 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>5. /build-dashboard</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>Now Claude turns the analysis/data into a dashboard.</p>
+      <div class="fig">v1 data
+  │
+  ▼
+/build-dashboard
+  │
+  ▼
++---------------------------+
+| SaaS Monthly Metrics      |
+|                           |
+| Revenue       $XXX        |
+| Customers     XXX         |
+| Growth        XX%         |
+|                           |
+|       [Chart]             |
+|                           |
+|       [Chart]             |
++---------------------------+</div>
+      <p>So this step is:</p>
+      <blockquote><strong>"Make the data easy to understand visually."</strong></blockquote>
+    </div>
+  </div>
+
+  <!-- ===== 6 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>6. /create-viz</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>This focuses specifically on visualizations.</p>
+      <div class="fig">Data + findings
+      │
+      ▼
+ /create-viz
+      │
+      ├── Chart
+      ├── Graph
+      └── Visualization</div>
+      <p>So:</p>
+      <div class="fig">Statistical analysis
+        │
+        ▼
+    Findings
+        │
+        ▼
+    Visualize
+        │
+        ▼
+ Easy to understand</div>
+    </div>
+  </div>
+
+  <!-- ===== 7 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>7. Create PowerPoint for the manager</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>Finally, everything you've done gets summarized:</p>
+      <div class="fig">              ALL WORK
+                 │
+       ┌─────────┼─────────┐
+       ▼         ▼         ▼
+    Analysis  Dashboard  Charts
+       │         │         │
+       └─────────┼─────────┘
+                 ▼
+           PowerPoint
+                 │
+                 ▼
+              Manager</div>
+      <p>The PowerPoint is basically answering:</p>
+      <div class="fig">"What did we analyze?"
+        ↓
+"What did we discover?"
+        ↓
+"What do the charts show?"
+        ↓
+"What should my manager know?"</div>
+    </div>
+  </div>
+
+  <!-- ===== 8 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>8. The simplest way to remember it</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <div class="fig">EXPLORE
+   ↓
+VALIDATE
+   ↓
+ANALYZE
+   ↓
+CLEAN
+   ↓
+DASHBOARD
+   ↓
+VISUALIZE
+   ↓
+PRESENT</div>
+      <p>So this is <strong>not just "analyze an Excel file."</strong></p>
+      <p>It is demonstrating a complete <strong>AI-powered data workflow</strong>:</p>
+      <div class="fig">       RAW DATA
+           │
+           ▼
+      UNDERSTAND
+           │
+           ▼
+       CHECK DATA
+           │
+           ▼
+        ANALYZE
+           │
+           ▼
+      CLEAN / SAVE
+           │
+           ▼
+       VISUALIZE
+           │
+           ▼
+        DASHBOARD
+           │
+           ▼
+      POWERPOINT
+           │
+           ▼
+        MANAGER</div>
+      <div class="highlight">
+        And the interesting part is that commands like <code>/explore-data</code>, <code>/validate</code>, <code>/statistical-analysis</code>, <code>/build-dashboard</code>, and <code>/create-viz</code> are being used as <strong>reusable specialized actions</strong>, rather than you having to write a long prompt for every individual step.
+      </div>
+    </div>
+  </div>
+
+  <div class="footnote">
+    <span>📈 saas data workflow · practice notes · all points covered as in the original explanation</span>
+  </div>
+</div>
+
+<script>
+  function toggleAnswer(el) {
+    const card = el.closest('.card');
+    const answer = card.querySelector('.answer');
+    const btn = card.querySelector('.toggle-btn');
+    if (answer.classList.contains('open')) {
+      answer.classList.remove('open');
+      btn.textContent = 'expand ▾';
+    } else {
+      answer.classList.add('open');
+      btn.textContent = 'collapse ▴';
+    }
+  }
+</script>
+</body>
+</html>

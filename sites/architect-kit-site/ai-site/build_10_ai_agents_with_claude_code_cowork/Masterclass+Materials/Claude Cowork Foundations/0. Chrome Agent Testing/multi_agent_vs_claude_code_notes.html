@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Agent vs Claude Code · practice notes</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #f8f6f2;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .container {
+      max-width: 1000px;
+      width: 100%;
+      background: white;
+      border-radius: 2rem;
+      box-shadow: 0 20px 40px -12px rgba(0,0,0,0.15);
+      padding: 2rem 2rem 2.5rem;
+    }
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: #1e2b2f;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 2px solid #eae3d7;
+      padding-bottom: 0.75rem;
+      margin-bottom: 1.8rem;
+    }
+    h1 small {
+      font-size: 1rem;
+      font-weight: 400;
+      color: #5f6b6e;
+      margin-left: 0.5rem;
+    }
+    .subhead {
+      color: #3d4f54;
+      background: #f0eee8;
+      padding: 0.5rem 1.2rem;
+      border-radius: 40px;
+      display: inline-block;
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+      font-weight: 450;
+    }
+    .card {
+      background: #fcfbf9;
+      border-radius: 1.2rem;
+      padding: 1.2rem 1.5rem 1.5rem;
+      margin-bottom: 1.4rem;
+      border: 1px solid #e8e2d8;
+      transition: box-shadow 0.1s ease;
+    }
+    .card:hover {
+      box-shadow: 0 6px 14px rgba(0,0,0,0.02);
+    }
+    .question {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      cursor: pointer;
+      user-select: none;
+    }
+    .question h3 {
+      font-weight: 550;
+      font-size: 1.2rem;
+      color: #1b2a2f;
+      letter-spacing: -0.2px;
+    }
+    .toggle-btn {
+      background: #eae3d7;
+      border: none;
+      border-radius: 40px;
+      padding: 0.3rem 1rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #1b2a2f;
+      cursor: pointer;
+      transition: 0.15s;
+      white-space: nowrap;
+      background: #e2dad0;
+    }
+    .toggle-btn:hover {
+      background: #d2c8bb;
+    }
+    .answer {
+      margin-top: 1.2rem;
+      padding-top: 1.2rem;
+      border-top: 1px dashed #dbd2c6;
+      display: none;
+      line-height: 1.6;
+      color: #1f3035;
+    }
+    .answer.open {
+      display: block;
+    }
+    .answer p, .answer li {
+      margin-bottom: 0.6rem;
+    }
+    .answer ul, .answer ol {
+      padding-left: 1.6rem;
+      margin: 0.5rem 0 0.8rem;
+    }
+    .answer code, .answer .mono {
+      background: #ede9e2;
+      padding: 0.1rem 0.5rem;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.9rem;
+      color: #1b3a40;
+    }
+    .answer .highlight {
+      background: #f3efe8;
+      padding: 0.8rem 1.2rem;
+      border-radius: 14px;
+      border-left: 3px solid #b6a48b;
+      margin: 0.8rem 0;
+    }
+    .answer blockquote {
+      background: #f3efe8;
+      padding: 0.8rem 1.2rem;
+      border-radius: 14px;
+      border-left: 3px solid #b6a48b;
+      margin: 0.8rem 0;
+      font-style: italic;
+    }
+    .fig {
+      font-family: monospace;
+      background: #f0ece4;
+      padding: 0.8rem 1.2rem;
+      border-radius: 14px;
+      white-space: pre;
+      overflow-x: auto;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin: 0.6rem 0;
+      border: 1px solid #ddd6cb;
+    }
+    .footnote {
+      margin-top: 2.5rem;
+      font-size: 0.9rem;
+      color: #5c6b6e;
+      border-top: 1px solid #e0d9cf;
+      padding-top: 1.2rem;
+      text-align: center;
+    }
+    .footnote span {
+      background: #efeae2;
+      padding: 0.2rem 0.8rem;
+      border-radius: 20px;
+    }
+    @media (max-width: 600px) {
+      .container { padding: 1.5rem; }
+      h1 { font-size: 1.8rem; flex-wrap: wrap; }
+      .question h3 { font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>
+    🤖 Multi-Agent vs Claude Code
+    <small>practice · Apple dashboard vs WealthPath</small>
+  </h1>
+  <div class="subhead">📘 click each question → expand the answer</div>
+
+  <!-- ===== 0 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>0. What is this file showing?</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>Yes. This file is showing <strong>two different ways of asking Claude to build a website</strong>: one through <strong>Claude's browser</strong> and one through <strong>Claude Code</strong>.</p>
+      <p>The easiest way to understand what is happening is this:</p>
+      <div class="fig">                 TWO APPROACHES
+                      │
+          ┌───────────┴───────────┐
+          │                       │
+          ▼                       ▼
+    CLAUDE BROWSER            CLAUDE CODE
+          │                       │
+          ▼                       ▼
+   Apple dashboard           WealthPath website
+          │                       │
+          ▼                       ▼
+   Multiple AI agents        Coding agent
+   work together             builds the page</div>
+    </div>
+  </div>
+
+  <!-- ===== 1 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>1. First prompt — Claude Browser</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>The first prompt tells Claude:</p>
+      <blockquote>"You are a team of AI agents. Build an Apple investment dashboard."</blockquote>
+      <p>So instead of asking <strong>one AI to do everything</strong>, we are creating different roles.</p>
+      <div class="fig">                    CLAUDE
+                      │
+          ┌───────────┼───────────┐
+          │           │           │
+          ▼           ▼           ▼
+       Research     Analyst    Developer
+        Agent        Agent       Agent
+          │           │           │
+          ▼           ▼           ▼
+       Find data    Analyze     Build UI
+          │           │           │
+          └───────────┼───────────┘
+                      ▼
+             Apple Dashboard</div>
+      <p>This is the key concept of the first prompt.</p>
+    </div>
+  </div>
+
+  <!-- ===== 2 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>2. Research Agent</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>The Research Agent's job is:</p>
+      <blockquote><strong>Go and collect the facts.</strong></blockquote>
+      <p>It goes to Yahoo Finance and gets:</p>
+      <div class="fig">             RESEARCH AGENT
+                    │
+                    ▼
+              Yahoo Finance
+                    │
+        ┌───────────┼───────────┐
+        ▼           ▼           ▼
+      Price      Market Cap     P/E
+        │
+        ├── % Change
+        │
+        └── Recent trend</div>
+      <p>Then it looks at only <strong>3 recent news articles</strong>.</p>
+      <div class="fig">             NEWS
+              │
+       ┌──────┼──────┐
+       ▼      ▼      ▼
+    Article  Article Article
+       1       2      3
+       │       │      │
+       ▼       ▼      ▼
+    Summary Summary Summary</div>
+      <p>Why "only 3"?</p>
+      <p>Because the prompt is trying to prevent the agent from opening lots of tabs and getting distracted.</p>
+      <div class="fig">NO:
+
+Yahoo → 20 articles → 10 tabs → lots of noise
+
+YES:
+
+Yahoo → 3 articles → useful information</div>
+    </div>
+  </div>
+
+  <!-- ===== 3 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>3. Analyst Agent</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>Now another agent takes the research and asks:</p>
+      <blockquote><strong>"So what does this information actually mean?"</strong></blockquote>
+      <p>This is different from simply collecting data.</p>
+      <div class="fig">Research Agent
+      │
+      │ Facts
+      ▼
+Analyst Agent
+      │
+      ▼
+"What is actually important?"</div>
+      <p>It identifies:</p>
+      <div class="fig">             ANALYST
+                │
+       ┌────────┼────────┐
+       ▼        ▼        ▼
+     Drivers  Signal    Noise
+       │        │        │
+       ▼        ▼        ▼
+   Why stock  Important  Ignore
+   moved      information distractions</div>
+      <p>Then it produces:</p>
+      <div class="fig">3–5 Insights
+     +
+1–2 Risks
+     +
+Final stance
+     │
+ ┌───┼────────┐
+ ▼   ▼        ▼
+Bullish Bearish Neutral</div>
+      <p>And it adds <strong>confidence</strong>:</p>
+      <div class="fig">Recommendation
+      │
+      ├── Bullish
+      │
+      └── Confidence: 80%</div>
+      <p>So:</p>
+      <p><strong>Research Agent = What happened?</strong></p>
+      <p><strong>Analyst Agent = What does it mean?</strong></p>
+    </div>
+  </div>
+
+  <!-- ===== 4 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>4. Developer Agent</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>Now the third agent takes all that information and builds the website.</p>
+      <div class="fig">Research Agent ──┐
+                 │
+Analyst Agent ───┼──► Developer Agent
+                 │
+                 ▼
+            Build HTML</div>
+      <p>The Developer Agent creates:</p>
+      <div class="fig">              APPLE DASHBOARD
+                    │
+       ┌────────────┼────────────┐
+       ▼            ▼            ▼
+   Apple Stats    Chart         News
+       │            │            │
+       ▼            ▼            ▼
+    Price        Movement      Articles
+    P/E          Trend         Summary
+    Market Cap</div>
+      <p>And:</p>
+      <div class="fig">Insights
+   │
+   ├── Signal
+   ├── Noise
+   ├── Risks
+   └── Recommendation</div>
+      <p>The final result is:</p>
+      <div class="fig">Research
+    +
+Analysis
+    +
+Development
+    ↓
+apple dashboard.html</div>
+    </div>
+  </div>
+
+  <!-- ===== 5 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>5. Why call them "Agents"?</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>Very simply:</p>
+      <div class="fig">Agent = AI given a specific job</div>
+      <p>For example:</p>
+      <div class="fig">Research Agent
+     ↓
+"I collect information."
+
+Analyst Agent
+     ↓
+"I interpret information."
+
+Developer Agent
+     ↓
+"I build the website."</div>
+      <p>Instead of:</p>
+      <div class="fig">One AI
+ │
+ ├── Research
+ ├── Analyze
+ ├── Design
+ └── Code</div>
+      <p>you are conceptually doing:</p>
+      <div class="fig">             AI TEAM
+                │
+     ┌──────────┼──────────┐
+     ▼          ▼          ▼
+ Research    Analyst    Developer</div>
+      <p>That's the <strong>multi-agent concept</strong> being demonstrated.</p>
+    </div>
+  </div>
+
+  <!-- ===== 6 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>6. Now the second prompt — Claude Code</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>The second prompt is completely different.</p>
+      <p>Here you are telling Claude Code:</p>
+      <blockquote><strong>"Build me a WealthPath website."</strong></blockquote>
+      <p>There isn't a Research Agent + Analyst Agent + Developer Agent.</p>
+      <p>Instead:</p>
+      <div class="fig">                 CLAUDE CODE
+                     │
+                     ▼
+             Understand request
+                     │
+                     ▼
+                 Write code
+                     │
+                     ▼
+              wealthpath.html</div>
+    </div>
+  </div>
+
+  <!-- ===== 7 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>7. What is WealthPath?</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>The prompt defines a fictional fintech product:</p>
+      <div class="fig">             WEALTHPATH
+                  │
+                  ▼
+     "Clarity and control over
+       your financial future"</div>
+      <p>The website helps a customer understand their finances.</p>
+    </div>
+  </div>
+
+  <!-- ===== 8 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>8. Step-by-step financial intake</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>Instead of showing a giant form:</p>
+      <div class="fig">BAD / LONG FORM
+
+Income ______
+Expenses _____
+Savings ______
+Goal _________
+Name __________
+Email _________
+Time __________
+Notes _________</div>
+      <p>the prompt asks for:</p>
+      <div class="fig">          FINANCIAL INTAKE
+                 │
+                 ▼
+       Monthly income?
+                 │
+                 ▼
+       Monthly expenses?
+                 │
+                 ▼
+          Savings?
+                 │
+                 ▼
+            Goal?
+                 │
+       ┌─────────┼─────────┐
+       ▼         ▼         ▼
+    Save more  Debt     Invest
+                       ...</div>
+      <p>So the user gets <strong>one question at a time</strong>.</p>
+    </div>
+  </div>
+
+  <!-- ===== 9 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>9. Then Claude calculates financial health</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>The inputs are:</p>
+      <div class="fig">Income
+  +
+Expenses
+  +
+Savings
+  +
+Goal</div>
+      <p>Claude Code is instructed to calculate:</p>
+      <div class="fig">             FINANCIAL DATA
+                  │
+                  ▼
+          Savings Rate
+                  │
+                  ▼
+        Financial Health
+                  │
+        ┌─────────┼─────────┐
+        ▼         ▼         ▼
+      Poor     Average    Strong</div>
+      <p>And then give recommendations:</p>
+      <div class="fig">          USER ANSWERS
+                │
+                ▼
+          Calculations
+                │
+                ▼
+       Personalized advice
+          ┌─────┼─────┐
+          ▼     ▼     ▼
+       Advice Advice Advice</div>
+    </div>
+  </div>
+
+  <!-- ===== 10 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>10. Then it creates the dashboard</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>The website shows:</p>
+      <div class="fig">              DASHBOARD
+                  │
+       ┌──────────┴──────────┐
+       ▼                     ▼
+Income vs Expenses       Savings Rate
+       │                     │
+       ▼                     ▼
+   ████████              25%
+   ████</div>
+      <p>So the user doesn't have to interpret raw numbers.</p>
+      <p>The website visualizes them.</p>
+    </div>
+  </div>
+
+  <!-- ===== 11 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>11. Then it adds booking</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>Finally:</p>
+      <div class="fig">             BOOK CONSULTATION
+                     │
+          ┌──────────┼──────────┐
+          ▼          ▼          ▼
+        Name       Email      Time
+                                  │
+                                  ▼
+                                Notes</div>
+      <p>So the whole website becomes:</p>
+      <div class="fig">              WEALTHPATH
+                   │
+                   ▼
+            Financial Intake
+                   │
+                   ▼
+             Calculations
+                   │
+                   ▼
+          Financial Dashboard
+                   │
+                   ▼
+          Recommendations
+                   │
+                   ▼
+          Book Consultation</div>
+    </div>
+  </div>
+
+  <!-- ===== 12 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>12. The BIG difference between the two prompts</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>This is probably the most important thing to understand.</p>
+      <p><strong>First prompt</strong></p>
+      <p>You are demonstrating <strong>multi-agent architecture</strong>:</p>
+      <div class="fig">              PROBLEM
+                 │
+     ┌───────────┼───────────┐
+     ▼           ▼           ▼
+ Research     Analyze      Build
+   Agent       Agent       Agent
+     │           │           │
+     └───────────┼───────────┘
+                 ▼
+             Final UI</div>
+      <p><strong>Second prompt</strong></p>
+      <p>You are demonstrating <strong>Claude Code as a coding agent</strong>:</p>
+      <div class="fig">             REQUIREMENT
+                  │
+                  ▼
+             CLAUDE CODE
+                  │
+          ┌───────┼────────┐
+          ▼       ▼        ▼
+       Analyze   Code    Test
+          │       │        │
+          └───────┼────────┘
+                  ▼
+          wealthpath.html</div>
+    </div>
+  </div>
+
+  <!-- ===== 13 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>13. One very simple analogy</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>Imagine you're building a restaurant.</p>
+      <p><strong>Multi-agent approach</strong></p>
+      <div class="fig">Restaurant Project
+       │
+ ┌─────┼──────┐
+ ▼     ▼      ▼
+Chef  Manager Designer
+ │      │       │
+Food  Business  Interior</div>
+      <p>Each person has a specialized job.</p>
+      <p><strong>Claude Code approach</strong></p>
+      <div class="fig">Restaurant Project
+       │
+       ▼
+   One capable
+   AI developer
+       │
+ ┌─────┼─────┐
+ ▼     ▼     ▼
+Plan  Build  Test
+       │
+       ▼
+   Restaurant</div>
+    </div>
+  </div>
+
+  <!-- ===== 14 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>14. The entire file in one picture</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <div class="fig">                 CLAUDE AI WORKFLOWS
+                         │
+          ┌──────────────┴──────────────┐
+          │                             │
+          ▼                             ▼
+     MULTI-AGENT                    CLAUDE CODE
+       EXAMPLE                         EXAMPLE
+          │                             │
+          ▼                             ▼
+    Apple Dashboard                WealthPath
+          │                             │
+    ┌─────┼─────┐                       │
+    ▼     ▼     ▼                       ▼
+ Research Analyst Developer        One AI builds
+    │       │       │               website
+    └───────┼───────┘                   │
+            ▼                           ▼
+       Apple HTML                 wealthpath.html</div>
+      <div class="highlight">
+        <strong>In short:</strong> the first prompt teaches <strong>"divide one big job among specialized AI agents."</strong> The second teaches <strong>"give Claude Code a complete product requirement and let it build the working website."</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="footnote">
+    <span>🤖 multi-agent vs claude code · practice notes · all points covered as in the original explanation</span>
+  </div>
+</div>
+
+<script>
+  function toggleAnswer(el) {
+    const card = el.closest('.card');
+    const answer = card.querySelector('.answer');
+    const btn = card.querySelector('.toggle-btn');
+    if (answer.classList.contains('open')) {
+      answer.classList.remove('open');
+      btn.textContent = 'expand ▾';
+    } else {
+      answer.classList.add('open');
+      btn.textContent = 'collapse ▴';
+    }
+  }
+</script>
+</body>
+</html>

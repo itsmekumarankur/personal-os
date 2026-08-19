@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apple Monitor Automation · practice notes</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #f8f6f2;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .container {
+      max-width: 1000px;
+      width: 100%;
+      background: white;
+      border-radius: 2rem;
+      box-shadow: 0 20px 40px -12px rgba(0,0,0,0.15);
+      padding: 2rem 2rem 2.5rem;
+    }
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: #1e2b2f;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 2px solid #eae3d7;
+      padding-bottom: 0.75rem;
+      margin-bottom: 1.8rem;
+    }
+    h1 small {
+      font-size: 1rem;
+      font-weight: 400;
+      color: #5f6b6e;
+      margin-left: 0.5rem;
+    }
+    .subhead {
+      color: #3d4f54;
+      background: #f0eee8;
+      padding: 0.5rem 1.2rem;
+      border-radius: 40px;
+      display: inline-block;
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+      font-weight: 450;
+    }
+    .card {
+      background: #fcfbf9;
+      border-radius: 1.2rem;
+      padding: 1.2rem 1.5rem 1.5rem;
+      margin-bottom: 1.4rem;
+      border: 1px solid #e8e2d8;
+      transition: box-shadow 0.1s ease;
+    }
+    .card:hover {
+      box-shadow: 0 6px 14px rgba(0,0,0,0.02);
+    }
+    .question {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      cursor: pointer;
+      user-select: none;
+    }
+    .question h3 {
+      font-weight: 550;
+      font-size: 1.2rem;
+      color: #1b2a2f;
+      letter-spacing: -0.2px;
+    }
+    .toggle-btn {
+      background: #eae3d7;
+      border: none;
+      border-radius: 40px;
+      padding: 0.3rem 1rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #1b2a2f;
+      cursor: pointer;
+      transition: 0.15s;
+      white-space: nowrap;
+      background: #e2dad0;
+    }
+    .toggle-btn:hover {
+      background: #d2c8bb;
+    }
+    .answer {
+      margin-top: 1.2rem;
+      padding-top: 1.2rem;
+      border-top: 1px dashed #dbd2c6;
+      display: none;
+      line-height: 1.6;
+      color: #1f3035;
+    }
+    .answer.open {
+      display: block;
+    }
+    .answer p, .answer li {
+      margin-bottom: 0.6rem;
+    }
+    .answer ul, .answer ol {
+      padding-left: 1.6rem;
+      margin: 0.5rem 0 0.8rem;
+    }
+    .answer code, .answer .mono {
+      background: #ede9e2;
+      padding: 0.1rem 0.5rem;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.9rem;
+      color: #1b3a40;
+    }
+    .answer .highlight {
+      background: #f3efe8;
+      padding: 0.8rem 1.2rem;
+      border-radius: 14px;
+      border-left: 3px solid #b6a48b;
+      margin: 0.8rem 0;
+    }
+    .answer blockquote {
+      background: #f3efe8;
+      padding: 0.8rem 1.2rem;
+      border-radius: 14px;
+      border-left: 3px solid #b6a48b;
+      margin: 0.8rem 0;
+      font-style: italic;
+    }
+    .fig {
+      font-family: monospace;
+      background: #f0ece4;
+      padding: 0.8rem 1.2rem;
+      border-radius: 14px;
+      white-space: pre;
+      overflow-x: auto;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin: 0.6rem 0;
+      border: 1px solid #ddd6cb;
+    }
+    table.recap {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.8rem 0;
+      font-size: 0.95rem;
+    }
+    table.recap th, table.recap td {
+      border: 1px solid #ddd6cb;
+      padding: 0.5rem 0.8rem;
+      text-align: left;
+    }
+    table.recap th {
+      background: #ede9e2;
+      font-weight: 600;
+    }
+    .footnote {
+      margin-top: 2.5rem;
+      font-size: 0.9rem;
+      color: #5c6b6e;
+      border-top: 1px solid #e0d9cf;
+      padding-top: 1.2rem;
+      text-align: center;
+    }
+    .footnote span {
+      background: #efeae2;
+      padding: 0.2rem 0.8rem;
+      border-radius: 20px;
+    }
+    @media (max-width: 600px) {
+      .container { padding: 1.5rem; }
+      h1 { font-size: 1.8rem; flex-wrap: wrap; }
+      .question h3 { font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>
+    🍎 Apple Monitor Automation
+    <small>practice · 5 prompts · manual → automated</small>
+  </h1>
+  <div class="subhead">📘 click each question → expand the answer</div>
+
+  <!-- ===== 0 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>0. What are these 5 prompts building?</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>Absolutely. These 5 prompts are building <strong>one complete automated Apple-monitoring system</strong>, step by step.</p>
+      <p>The easiest way to understand them is:</p>
+      <div class="fig">PROMPT 1
+   ↓
+Find Apple information
+   ↓
+PROMPT 2
+   ↓
+Put information into Excel
+   ↓
+PROMPT 3
+   ↓
+Turn information into PowerPoint
+   ↓
+PROMPT 4
+   ↓
+Turn the whole process into ONE command
+   ↓
+PROMPT 5
+   ↓
+Run that command automatically every 2 hours</div>
+      <p>So the overall journey is:</p>
+      <div class="fig">          APPLE MONITORING SYSTEM
+                    │
+                    ▼
+        ┌──────────────────────┐
+        │  1. SEARCH THE WEB   │
+        └──────────┬───────────┘
+                   ↓
+             Apple data
+                   │
+                   ▼
+        ┌──────────────────────┐
+        │  2. CREATE EXCEL     │
+        └──────────┬───────────┘
+                   ↓
+             apple_monitor.xlsx
+                   │
+                   ▼
+        ┌──────────────────────┐
+        │  3. CREATE POWERPOINT│
+        └──────────┬───────────┘
+                   ↓
+             apple_update.pptx
+                   │
+                   ▼
+        ┌──────────────────────┐
+        │  4. CREATE COMMAND   │
+        └──────────┬───────────┘
+                   ↓
+             /apple-monitor
+                   │
+                   ▼
+        ┌──────────────────────┐
+        │  5. SCHEDULE IT      │
+        └──────────┬───────────┘
+                   ↓
+            Every 2 hours</div>
+    </div>
+  </div>
+
+  <!-- ===== 1 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>1. Prompt 1 — Search Apple information</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>The first prompt is simply saying:</p>
+      <blockquote><strong>"Go to the internet and find everything important about Apple right now."</strong></blockquote>
+      <p>It wants information from several areas:</p>
+      <div class="fig">                    APPLE
+                      │
+       ┌──────────────┼──────────────┐
+       ↓              ↓              ↓
+    STOCK          ANALYSTS        NEWS
+       │              │              │
+       ↓              ↓              ↓
+   Price          Buy/Sell       iPhone
+   Change         Ratings        AI
+   Volume         Targets        Regulation
+   P/E            Upgrades       Earnings
+   Market Cap     Downgrades     Supply chain</div>
+      <p>It also checks social sentiment:</p>
+      <div class="fig">             SOCIAL MEDIA
+                  │
+        ┌─────────┼─────────┐
+        ↓         ↓         ↓
+       X       Reddit    Forums
+        │         │         │
+        └─────────┼─────────┘
+                  ↓
+          What are people
+          saying about Apple?</div>
+      <p>And it compares Apple against:</p>
+      <div class="fig">       MARKET
+         │
+    ┌────┴────┐
+    ↓         ↓
+   SPY       QQQ
+    │         │
+    └────┬────┘
+         ↓
+   Compare with AAPL</div>
+      <p><strong>Final output of Prompt 1</strong></p>
+      <div class="fig">             PROMPT 1
+                 │
+                 ▼
+        Apple Monitor Report
+                 │
+       ┌─────────┼─────────┐
+       ↓         ↓         ↓
+    Price     Sentiment    News
+       │         │         │
+       └─────────┼─────────┘
+                 ↓
+        Bullish / Neutral /
+             Bearish</div>
+      <p>So <strong>Prompt 1 = Research</strong>.</p>
+    </div>
+  </div>
+
+  <!-- ===== 2 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>2. Prompt 2 — Put everything into Excel</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>Now Prompt 2 says:</p>
+      <blockquote><strong>"Take the information you just collected and organize it properly in Excel."</strong></blockquote>
+      <p>Notice something important:</p>
+      <p>It says:</p>
+      <div class="fig">Prompt 1
+   │
+   ▼
+Apple research
+   │
+   │  SAME CONVERSATION
+   ▼
+Prompt 2</div>
+      <p>So Prompt 2 doesn't need to search everything again.</p>
+      <p>It uses the result from Prompt 1.</p>
+      <p><strong>What does it create?</strong></p>
+      <p>It creates:</p>
+      <div class="fig">apple_monitor.xlsx</div>
+      <p>Inside:</p>
+      <div class="fig">apple_monitor.xlsx
+       │
+       ├── Dashboard
+       │
+       ├── Fundamentals
+       │
+       ├── Sentiment
+       │
+       └── News</div>
+      <p><strong>Dashboard</strong></p>
+      <div class="fig">Dashboard
+   │
+   ├── Date / Time
+   ├── Apple price
+   ├── Daily change
+   ├── Overall sentiment
+   └── AAPL vs SPY vs QQQ
+                    │
+                    ▼
+                 Chart</div>
+      <p><strong>Fundamentals</strong></p>
+      <div class="fig">Fundamentals
+     │
+     ├── Market Cap
+     ├── P/E
+     ├── 52-week range
+     ├── Volume
+     └── Other metrics</div>
+      <p><strong>Sentiment</strong></p>
+      <div class="fig">Sentiment
+     │
+     ├── Analyst opinion
+     ├── Buy / Hold / Sell
+     ├── Price targets
+     ├── Social sentiment
+     └── Overall mood</div>
+      <p><strong>News</strong></p>
+      <div class="fig">News
+  │
+  ├── Headline
+  ├── Source
+  ├── Date
+  └── Impact
+       │
+       ├── Positive
+       ├── Negative
+       └── Neutral</div>
+      <p>So:</p>
+      <p><strong>Prompt 1 = collect information</strong></p>
+      <p><strong>Prompt 2 = organize information</strong></p>
+    </div>
+  </div>
+
+  <!-- ===== 3 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>3. Prompt 3 — Create PowerPoint</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>Now Prompt 3 says:</p>
+      <blockquote><strong>"Take the same Apple information and make a presentation."</strong></blockquote>
+      <p>Again:</p>
+      <div class="fig">Prompt 1
+   │
+   ▼
+Research
+   │
+   ▼
+Prompt 2
+   │
+   ▼
+Excel
+   │
+   ▼
+Prompt 3
+   │
+   ▼
+PowerPoint</div>
+      <p>It creates:</p>
+      <div class="fig">apple_update.pptx</div>
+      <p>with 6 slides:</p>
+      <div class="fig">       POWERPOINT
+           │
+           ├── Slide 1
+           │   Apple Monitor
+           │
+           ├── Slide 2
+           │   Price snapshot
+           │
+           ├── Slide 3
+           │   Analyst sentiment
+           │
+           ├── Slide 4
+           │   Social sentiment
+           │
+           ├── Slide 5
+           │   Important news
+           │
+           └── Slide 6
+               Overall assessment</div>
+      <p>So now you have:</p>
+      <div class="fig">                 APPLE DATA
+                     │
+            ┌────────┴────────┐
+            ↓                 ↓
+          EXCEL           POWERPOINT
+            │                 │
+      Detailed data      Quick summary</div>
+      <p><strong>Excel = detailed reference</strong></p>
+      <p><strong>PowerPoint = quick presentation</strong></p>
+    </div>
+  </div>
+
+  <!-- ===== 4 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>4. Prompt 4 — Create /apple-monitor</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>This is where the workflow becomes interesting.</p>
+      <p>Before Prompt 4:</p>
+      <div class="fig">You
+ │
+ ├── Prompt 1 manually
+ │
+ ├── Prompt 2 manually
+ │
+ └── Prompt 3 manually</div>
+      <p>That's repetitive.</p>
+      <p>Prompt 4 says:</p>
+      <blockquote><strong>"Combine all three steps into one reusable command."</strong></blockquote>
+      <p>So:</p>
+      <div class="fig">BEFORE
+
+You
+ │
+ ├── Search
+ │
+ ├── Create Excel
+ │
+ └── Create PowerPoint</div>
+      <p>becomes:</p>
+      <div class="fig">AFTER
+
+You
+ │
+ │
+ ▼
+/apple-monitor
+ │
+ ├── Search Apple
+ │
+ ├── Create Excel
+ │
+ └── Create PowerPoint</div>
+      <p>That's the whole purpose of Prompt 4.</p>
+    </div>
+  </div>
+
+  <!-- ===== 5 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>5. Think of /apple-monitor like a button</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>Instead of doing:</p>
+      <div class="fig">Step 1
+   ↓
+Step 2
+   ↓
+Step 3</div>
+      <p>you now have:</p>
+      <div class="fig">       YOU
+        │
+        ▼
+ /apple-monitor
+        │
+        ▼
+ ┌───────────────┐
+ │ Step 1        │
+ │ Search Apple  │
+ └───────┬───────┘
+         ↓
+ ┌───────────────┐
+ │ Step 2        │
+ │ Create Excel  │
+ └───────┬───────┘
+         ↓
+ ┌───────────────┐
+ │ Step 3        │
+ │ Create PPT    │
+ └───────────────┘</div>
+      <p>So <strong>Prompt 4 = Automation/reusability</strong>.</p>
+    </div>
+  </div>
+
+  <!-- ===== 6 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>6. Prompt 5 — Run it automatically</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>Now the final prompt says:</p>
+      <blockquote><strong>"Don't make me run /apple-monitor manually. Run it every 2 hours during market hours."</strong></blockquote>
+      <p>Without Prompt 5:</p>
+      <div class="fig">You
+ │
+ ▼
+/apple-monitor
+ │
+ ▼
+Report</div>
+      <p>With Prompt 5:</p>
+      <div class="fig">             SCHEDULE
+                │
+                ▼
+         Every 2 hours
+                │
+        ┌───────┼───────┐
+        ↓       ↓       ↓
+       9 AM    11 AM    1 PM
+                │
+                ↓
+               3 PM
+                │
+                ▼
+         /apple-monitor
+                │
+        ┌───────┼────────┐
+        ↓       ↓        ↓
+      Search   Excel     PPT</div>
+      <p>And it doesn't run on weekends:</p>
+      <div class="fig">MON ──► Run
+TUE ──► Run
+WED ──► Run
+THU ──► Run
+FRI ──► Run
+SAT ──► STOP
+SUN ──► STOP</div>
+      <p>So <strong>Prompt 5 = Scheduling</strong>.</p>
+    </div>
+  </div>
+
+  <!-- ===== 7 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>7. The complete concept</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <p>This is the most important diagram to remember:</p>
+      <div class="fig">                     PROMPT 1
+                        │
+                  "Find information"
+                        │
+                        ▼
+               ┌─────────────────┐
+               │ Apple research  │
+               └────────┬────────┘
+                        │
+                        ▼
+                     PROMPT 2
+                        │
+                  "Create Excel"
+                        │
+                        ▼
+               ┌─────────────────┐
+               │ apple_monitor   │
+               │     .xlsx       │
+               └────────┬────────┘
+                        │
+                        ▼
+                     PROMPT 3
+                        │
+                "Create PowerPoint"
+                        │
+                        ▼
+               ┌─────────────────┐
+               │ apple_update    │
+               │     .pptx       │
+               └────────┬────────┘
+                        │
+                        ▼
+                     PROMPT 4
+                        │
+             "Combine everything"
+                        │
+                        ▼
+               ┌─────────────────┐
+               │ /apple-monitor  │
+               └────────┬────────┘
+                        │
+                        ▼
+                     PROMPT 5
+                        │
+                  "Run automatically"
+                        │
+                        ▼
+              ┌─────────────────────┐
+              │ Every 2 hours       │
+              │ during market hours│
+              └─────────────────────┘</div>
+    </div>
+  </div>
+
+  <!-- ===== 8 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>8. In very simple words</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <table class="recap">
+        <tr><th>Prompt</th><th>What are we doing?</th></tr>
+        <tr><td><strong>1</strong></td><td>🔎 <strong>Search</strong> Apple information</td></tr>
+        <tr><td><strong>2</strong></td><td>📊 <strong>Organize</strong> it into Excel</td></tr>
+        <tr><td><strong>3</strong></td><td>📑 <strong>Present</strong> it in PowerPoint</td></tr>
+        <tr><td><strong>4</strong></td><td>🔘 <strong>Combine</strong> the 3 steps into one command</td></tr>
+        <tr><td><strong>5</strong></td><td>⏰ <strong>Schedule</strong> that command to run automatically</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== 9 ===== -->
+  <div class="card">
+    <div class="question" onclick="toggleAnswer(this)">
+      <h3>9. The big lesson</h3>
+      <span class="toggle-btn">expand ▾</span>
+    </div>
+    <div class="answer">
+      <div class="fig">SEARCH
+  ↓
+ORGANIZE
+  ↓
+PRESENT
+  ↓
+AUTOMATE
+  ↓
+SCHEDULE</div>
+      <div class="highlight">
+        This is essentially teaching you how to take a <strong>manual AI workflow</strong> and progressively turn it into an <strong>automated AI workflow</strong>.
+      </div>
+    </div>
+  </div>
+
+  <div class="footnote">
+    <span>🍎 apple monitor automation · practice notes · all points covered as in the original explanation</span>
+  </div>
+</div>
+
+<script>
+  function toggleAnswer(el) {
+    const card = el.closest('.card');
+    const answer = card.querySelector('.answer');
+    const btn = card.querySelector('.toggle-btn');
+    if (answer.classList.contains('open')) {
+      answer.classList.remove('open');
+      btn.textContent = 'expand ▾';
+    } else {
+      answer.classList.add('open');
+      btn.textContent = 'collapse ▴';
+    }
+  }
+</script>
+</body>
+</html>
