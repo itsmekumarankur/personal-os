@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 3 — Authentication & Subscription</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#667085;--accent:#315efb;--accent2:#e9efff;--border:#dfe4ec;--greenbg:#e9f8f0;--green:#087443;--orangebg:#fff4df;--orange:#9a5b00}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;line-height:1.6}
+.wrap{max-width:980px;margin:auto;padding:28px 18px 60px}
+header{background:linear-gradient(135deg,#172554,#315efb);color:white;border-radius:20px;padding:32px 28px;margin-bottom:22px;box-shadow:0 10px 30px #17255422}
+h1{margin:0 0 8px;font-size:34px} header p{margin:0;opacity:.9}
+.tip{background:#eef4ff;border-left:5px solid var(--accent);padding:14px 16px;border-radius:10px;margin:18px 0}
+.section{background:var(--card);border:1px solid var(--border);border-radius:16px;margin:14px 0;overflow:hidden}
+summary{cursor:pointer;padding:18px 20px;font-weight:750;font-size:18px;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary:before{content:"＋";display:inline-block;width:28px;color:var(--accent);font-weight:900}
+details[open]>summary:before{content:"−"}
+.content{padding:0 20px 22px;border-top:1px solid var(--border)}
+h2{font-size:22px;margin-top:22px} h3{font-size:17px;margin-top:20px}
+ul,ol{padding-left:24px}
+.pill{display:inline-block;background:var(--accent2);color:#2346b8;padding:3px 9px;border-radius:999px;font-size:13px;font-weight:700}
+.green{background:var(--greenbg);border-left:5px solid #12a05a;padding:13px 15px;border-radius:9px}
+.orange{background:var(--orangebg);border-left:5px solid #f59e0b;padding:13px 15px;border-radius:9px}
+pre{background:#111827;color:#e5e7eb;padding:16px;border-radius:10px;overflow:auto}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.q{background:#fafbff;border:1px solid var(--border);border-radius:12px;padding:15px;margin:12px 0}
+.q strong{display:block;margin-bottom:7px}
+.answer{margin-top:9px}
+table{border-collapse:collapse;width:100%;margin:12px 0}
+th,td{border:1px solid var(--border);padding:10px;text-align:left;vertical-align:top}
+th{background:#f0f3f9}
+.small{color:var(--muted);font-size:14px}
+.footer{text-align:center;color:var(--muted);margin-top:30px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+<h1>Day 3 — Authentication & Subscription</h1>
+<p>Easy revision notes: Full-stack app → Clerk Authentication → JWT → Subscription → Premium Access</p>
+</header>
+
+<div class="tip">
+<strong>Study method:</strong> Start with the recall questions. Try to answer them without looking.
+Then open the collapsible sections to check your understanding and revise the concepts.
+</div>
+
+<details class="section">
+<summary>🧠 Recall First — Try Before Reading</summary>
+<div class="content">
+<p class="small">Don't open the answers immediately. Try explaining each concept in your own words.</p>
+
+<div class="q"><strong>Q1. What is the difference between a frontend and a backend?</strong>
+<details class="answer"><summary>Show answer</summary>Frontend runs in the user's browser and handles the user interface. Backend runs on the server and contains business logic.</details></div>
+
+<div class="q"><strong>Q2. How does the frontend communicate with the backend?</strong>
+<details class="answer"><summary>Show answer</summary>The frontend makes an API call to an endpoint on the backend. The backend returns a response, commonly JSON.</details></div>
+
+<div class="q"><strong>Q3. What is authentication?</strong>
+<details class="answer"><summary>Show answer</summary>Authentication verifies the identity of a user — essentially, “Who are you?”</details></div>
+
+<div class="q"><strong>Q4. What is Clerk?</strong>
+<details class="answer"><summary>Show answer</summary>Clerk is an authentication/user-management platform used in this lesson. It also provides billing/subscription capabilities.</details></div>
+
+<div class="q"><strong>Q5. What is JWT used for in this application?</strong>
+<details class="answer"><summary>Show answer</summary>The lesson uses JWT tokens as part of the mechanism for confirming to the backend that the request comes from a signed-in user.</details></div>
+
+<div class="q"><strong>Q6. Why do we use .env.local?</strong>
+<details class="answer"><summary>Show answer</summary>To keep environment configuration and sensitive values such as secret keys outside the application source code.</details></div>
+
+<div class="q"><strong>Q7. Why should .env.local be in .gitignore?</strong>
+<details class="answer"><summary>Show answer</summary>So the environment file and its secrets are not committed to the repository.</details></div>
+
+<div class="q"><strong>Q8. What is the difference between authentication and authorization?</strong>
+<details class="answer"><summary>Show answer</summary>Authentication asks “Who are you?” Authorization asks “What are you allowed to access?”</details></div>
+
+<div class="q"><strong>Q9. What happens when a user without a subscription visits the premium product?</strong>
+<details class="answer"><summary>Show answer</summary>Clerk checks the subscription. If the user does not have the required plan, the pricing/subscription interface is shown instead of the protected Idea Generator.</details></div>
+
+<div class="q"><strong>Q10. Where does Stripe fit into this architecture?</strong>
+<details class="answer"><summary>Show answer</summary>Clerk can optionally be connected to Stripe for payment collection. The lesson uses Clerk's test payment gateway instead.</details></div>
+</div>
+</details>
+
+<details class="section" open>
+<summary>1. 🎯 What Is Day 3 About?</summary>
+<div class="content">
+<p>Day 3 adds two important SaaS capabilities:</p>
+<pre><code>Existing SaaS Application
+          │
+     ┌────┴─────┐
+     ▼          ▼
+Authentication  Subscription
+     │          │
+     ▼          ▼
+ Who is the    What can the
+   user?       user access?</code></pre>
+<ul>
+<li><strong>Part 1:</strong> Add user authentication using Clerk.</li>
+<li><strong>Part 2:</strong> Add subscription/billing so premium functionality can be protected.</li>
+</ul>
+<p>The instructor chooses Clerk because it makes these features relatively lightweight to implement.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>2. 🔄 Quick Recap — The Existing Full-Stack App</summary>
+<div class="content">
+<p>Before Day 3, the application already had a frontend and backend deployed in production.</p>
+<table>
+<tr><th>Layer</th><th>Technology / Role</th></tr>
+<tr><td>Frontend</td><td>Next.js + React</td></tr>
+<tr><td>Backend</td><td>Python + FastAPI</td></tr>
+<tr><td>Routing</td><td>Next.js Pages Router</td></tr>
+<tr><td>Styling</td><td>Tailwind CSS</td></tr>
+<tr><td>Deployment</td><td>Vercel</td></tr>
+</table>
+<pre><code>USER
+  ↓
+Frontend — Next.js / React
+  ↓ API request
+Backend — FastAPI
+  ↓
+Business / AI Logic
+  ↓
+Response → Frontend</code></pre>
+</div>
+</details>
+
+<details class="section">
+<summary>3. 🔐 Authentication — What Does It Mean?</summary>
+<div class="content">
+<p><strong>Authentication means verifying who the user is.</strong></p>
+<pre><code>User
+ ↓
+Sign in
+ ↓
+Clerk
+ ↓
+Identity verified
+ ↓
+Authenticated user
+ ↓
+Application</code></pre>
+<p>The lesson demonstrates sign-in using email/social authentication such as Google and GitHub.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>4. 🧩 Clerk — Why Are We Using It?</summary>
+<div class="content">
+<p><strong>Clerk is the authentication and user-management platform used in this lesson.</strong></p>
+<p>Instead of building every authentication capability from scratch, Clerk provides the infrastructure for things such as:</p>
+<ul>
+<li>User sign-in</li>
+<li>User management</li>
+<li>Social authentication</li>
+<li>Authentication/session handling</li>
+<li>Subscription and billing functionality</li>
+</ul>
+<pre><code>Your Application
+       ↓
+     Clerk
+       ├── Authentication
+       ├── User Management
+       └── Billing / Subscriptions</code></pre>
+<div class="green"><strong>Key idea:</strong> Learn the concept with one authentication platform; the same general ideas can help you understand other authentication frameworks later.</div>
+</div>
+</details>
+
+<details class="section">
+<summary>5. 🔑 JWT — What You Need to Know</summary>
+<div class="content">
+<p><strong>JWT = JSON Web Token.</strong></p>
+<p>The instructor deliberately does not go deeply into JWT in this lesson. The important concept is how it fits into the authentication flow.</p>
+<pre><code>User signs in
+     ↓
+Clerk authenticates user
+     ↓
+JWT / authentication token
+     ↓
+Frontend → Backend
+     ↓
+Backend can confirm:
+"This is a signed-in user"</code></pre>
+<div class="orange"><strong>Don't get lost in the JWT rabbit hole yet.</strong> For Day 3, understand its role in authenticated communication rather than memorizing its internal structure.</div>
+</div>
+</details>
+
+<details class="section">
+<summary>6. 🏗️ Create the Clerk Application</summary>
+<div class="content">
+<pre><code>Clerk
+  ↓
+Sign up / Sign in
+  ↓
+Dashboard
+  ↓
+Create Application
+  ↓
+Name: SaaS
+  ↓
+Choose authentication methods
+  ↓
+Application ready</code></pre>
+<p>The lesson configures the SaaS application so users can authenticate through options such as email, Google and GitHub.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>7. 📦 Install Clerk & Supporting Package</summary>
+<div class="content">
+<p>The frontend project installs the Clerk SDK/package using npm.</p>
+<p>The lesson also installs <code>fetch-event-source</code>, which is used for streaming results back while authentication is in place.</p>
+<pre><code>Frontend project
+   ↓
+Install Clerk SDK
+   ↓
+Install fetch-event-source
+   ↓
+Application ready for authentication</code></pre>
+</div>
+</details>
+
+<details class="section">
+<summary>8. 🔐 Public Key vs Secret Key</summary>
+<div class="content">
+<p>Clerk provides keys that the application uses to connect/configure authentication.</p>
+<table>
+<tr><th>Key</th><th>Concept</th></tr>
+<tr><td>Publishable / Public Key</td><td>Associated with the application and intended to be usable on the public/client side.</td></tr>
+<tr><td>Secret Key</td><td>Sensitive credential that must be kept private.</td></tr>
+</table>
+<pre><code>PUBLIC / PUBLISHABLE KEY
+        ↓
+   Client-side use
+
+SECRET KEY
+        ↓
+Secure environment
+        ↓
+KEEP PRIVATE 🔒</code></pre>
+<p>The keys are obtained from the Clerk Dashboard under the API Keys area.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>9. 🗂️ .env.local — Store Configuration Safely</summary>
+<div class="content">
+<p>The lesson creates:</p>
+<pre><code>.env.local</code></pre>
+<p>in the project root and places the required Clerk environment values there.</p>
+<pre><code>Project
+│
+├── pages/
+├── package.json
+├── .env.local       ← environment values
+└── .gitignore</code></pre>
+<p>The purpose is to keep configuration/secrets out of the application source code.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>10. 🚨 .gitignore — Protect the Secrets</summary>
+<div class="content">
+<p><code>.env.local</code> must not be pushed into the repository.</p>
+<pre><code>.env.local
+    ↓
+.gitignore
+    ↓
+Git ignores the file
+    ↓
+Secrets stay out of the repository</code></pre>
+<div class="green"><strong>Critical:</strong> Never accidentally commit secret keys to a repository, especially a public one.</div>
+</div>
+</details>
+
+<details class="section">
+<summary>11. 🌐 Vercel + Clerk Protection</summary>
+<div class="content">
+<p>Before production deployment, the lesson turns off Vercel's own authentication/deployment protection so that Clerk becomes the authentication layer for the SaaS application.</p>
+<pre><code>Internet
+   ↓
+Vercel
+   ↓
+Clerk Authentication
+   ↓
+SaaS Application</code></pre>
+<p>The important architectural idea is to avoid having a second, unnecessary authentication/protection layer in front of the application's Clerk authentication.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>12. 🚀 Authentication in Production</summary>
+<div class="content">
+<pre><code>User
+ ↓
+Open SaaS
+ ↓
+Sign In
+ ↓
+Clerk
+ ↓
+Authenticated
+ ↓
+Frontend
+ ↓
+Protected Backend API
+ ↓
+AI / Business Logic
+ ↓
+Response</code></pre>
+<p>The result is a front-end + back-end application secured with user authentication and deployed in production.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>13. 💳 Part 2 — Subscription</summary>
+<div class="content">
+<p>Now the application becomes more like a real SaaS product.</p>
+<pre><code>Authentication
+"Who are you?"
+      ↓
+Subscription
+"What can you access?"
+      ↓
+Premium Feature</code></pre>
+<p>Authentication alone tells the system who the user is. Subscription status can then be used to decide whether the user gets premium access.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>14. 💰 Clerk Billing & Stripe</summary>
+<div class="content">
+<p>Clerk also provides billing/subscription functionality.</p>
+<pre><code>                 Clerk
+                   │
+          ┌────────┴────────┐
+          ▼                 ▼
+Clerk Payment          Stripe
+   Gateway            Integration</code></pre>
+<ul>
+<li><strong>Clerk payment gateway:</strong> Simple approach used in this lesson.</li>
+<li><strong>Stripe:</strong> Optional integration for payment collection.</li>
+</ul>
+<p>The lesson uses the test payment approach rather than real billing.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>15. 📋 Create Subscription Plans</summary>
+<div class="content">
+<pre><code>Clerk Dashboard
+      ↓
+Configure
+      ↓
+Billing Settings
+      ↓
+Subscription Plans
+      ↓
+Create Plan</code></pre>
+<p>The lesson creates a free plan and a premium subscription plan.</p>
+<p>Example used in the lesson:</p>
+<pre><code>Plan ID:
+premium_subscription
+
+Monthly:
+$100
+
+Annual discounted monthly price:
+$90</code></pre>
+<p>These are test/example values from the lesson; they are not required pricing for your own application.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>16. 🏷️ Plan ID — A Critical Detail</summary>
+<div class="content">
+<p>Every subscription plan has an identifier. In the lesson the example is:</p>
+<pre><code>premium_subscription</code></pre>
+<p>The application code uses this identifier when deciding which plan is required for the protected feature.</p>
+<pre><code>Clerk Plan ID
+     ↓
+premium_subscription
+     ↓
+Application protection rule
+     ↓
+Must match exactly</code></pre>
+<div class="orange"><strong>Critical:</strong> If the plan ID in your application code does not match the plan ID configured in Clerk, the subscription protection will not work as expected.</div>
+</div>
+</details>
+
+<details class="section">
+<summary>17. 🛡️ Protect the Premium Idea Generator</summary>
+<div class="content">
+<p>The Idea Generator is treated as a premium feature.</p>
+<pre><code>User visits /product
+        ↓
+Check subscription
+        ↓
+   ┌────┴────┐
+   ↓         ↓
+Subscribed  Not subscribed
+   ↓         ↓
+Idea       Pricing /
+Generator  Subscription</code></pre>
+<p>This is the core SaaS paywall concept.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>18. 🧠 Authentication vs Authorization</summary>
+<div class="content">
+<table>
+<tr><th>Concept</th><th>Question</th><th>Example</th></tr>
+<tr><td>Authentication</td><td>Who are you?</td><td>Sign in with Google</td></tr>
+<tr><td>Authorization</td><td>What are you allowed to access?</td><td>Does this user have the premium plan?</td></tr>
+</table>
+<pre><code>USER
+  ↓
+Authentication
+"Who are you?"
+  ↓
+Authorization
+"What can you use?"
+  ↓
+Premium Feature</code></pre>
+<div class="green"><strong>Remember:</strong> Authentication and authorization are different concepts, even though they work together.</div>
+</div>
+</details>
+
+<details class="section">
+<summary>19. 💻 Protecting the Product Page</summary>
+<div class="content">
+<p>The product page is updated so that the Idea Generator is protected by the premium subscription plan.</p>
+<pre><code>Protected Feature
+      │
+      ▼
+Check plan:
+premium_subscription
+      │
+ ┌────┴────┐
+ ▼         ▼
+Yes        No
+ │          │
+ ▼          ▼
+Show       Show
+Generator  Pricing</code></pre>
+<p>The protection rule must reference the same plan ID configured in Clerk.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>20. 🏠 Landing Page & Pricing</summary>
+<div class="content">
+<p>The landing page is updated with subscription information and pricing-related content.</p>
+<p>The lesson also points out an important distinction: some pricing shown on the landing page is written by the application's own code, while the actual Clerk-generated pricing table reflects the plan configured in Clerk.</p>
+<div class="orange"><strong>Practical lesson:</strong> Make sure your application's displayed pricing matches the actual subscription configuration.</div>
+</div>
+</details>
+
+<details class="section">
+<summary>21. 👤 Complete New User Flow</summary>
+<div class="content">
+<pre><code>Open Website
+     ↓
+Sign Up / Sign In
+     ↓
+Clerk Authentication
+     ↓
+Choose Subscription
+     ↓
+Test Payment
+     ↓
+Subscription Active
+     ↓
+Access Premium
+     ↓
+Idea Generator</code></pre>
+<p>This demonstrates the complete flow from a new user to a paying subscriber accessing the premium product.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>22. 🧪 Test Payment Flow</summary>
+<div class="content">
+<p>The lesson uses test billing, so the payment flow can be demonstrated without charging real money.</p>
+<pre><code>Choose Premium
+      ↓
+Test Checkout
+      ↓
+Test Card
+      ↓
+Payment Successful
+      ↓
+Subscription Active
+      ↓
+Premium Access</code></pre>
+<p>The lesson also demonstrates account/subscription management for an existing subscriber.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>23. 🔄 What If the User Has No Subscription?</summary>
+<div class="content">
+<pre><code>User logs in
+    ↓
+Visits /product
+    ↓
+Clerk checks subscription
+    ↓
+No subscription
+    ↓
+Pricing table
+    ↓
+Choose plan
+    ↓
+Payment
+    ↓
+Subscription active
+    ↓
+Premium unlocked</code></pre>
+<p>This is the basic paywall mechanism used in the lesson.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>24. ⭐ Final Architecture — Remember This</summary>
+<div class="content">
+<pre><code>
+                         USER
+                           │
+                           ▼
+                    SaaS FRONTEND
+                    Next.js / React
+                           │
+                           ▼
+                         CLERK
+                ┌──────────┴──────────┐
+                │                     │
+        Authentication          Subscription
+                │                     │
+                ▼                     ▼
+          "Who is this?"       "What can they use?"
+                │                     │
+                └──────────┬──────────┘
+                           ▼
+                       BACKEND
+                       FastAPI
+                           │
+                           ▼
+                    Protected API
+                           │
+                           ▼
+                  AI Idea Generator</code></pre>
+</div>
+</details>
+
+<details class="section">
+<summary>25. 🔥 Day 3 in One Flow</summary>
+<div class="content">
+<pre><code>                 DAY 3
+                   │
+        ┌──────────┴──────────┐
+        ▼                     ▼
+ AUTHENTICATION          SUBSCRIPTION
+        │                     │
+      Clerk                 Clerk
+        │                     │
+        ▼                     ▼
+     Sign In              Create Plan
+        │                     │
+        ▼                     ▼
+ JWT / Session          Premium Plan
+        │                     │
+        └──────────┬──────────┘
+                   ▼
+             Protect Feature
+                   │
+          ┌────────┴────────┐
+          ▼                 ▼
+      Subscribed       Not subscribed
+          │                 │
+          ▼                 ▼
+   Idea Generator       Pricing Page</code></pre>
+</div>
+</details>
+
+<details class="section">
+<summary>26. 📚 One-Page Memory Sheet</summary>
+<div class="content">
+<table>
+<tr><th>Concept</th><th>Remember it as...</th></tr>
+<tr><td>Authentication</td><td>Who is the user?</td></tr>
+<tr><td>Authorization</td><td>What can the user access?</td></tr>
+<tr><td>Clerk</td><td>Authentication + user management + billing</td></tr>
+<tr><td>JWT</td><td>Token used as part of authenticated communication</td></tr>
+<tr><td>Publishable Key</td><td>Public application key</td></tr>
+<tr><td>Secret Key</td><td>Private sensitive credential</td></tr>
+<tr><td>.env.local</td><td>Environment configuration/secrets</td></tr>
+<tr><td>.gitignore</td><td>Keeps ignored files out of Git commits</td></tr>
+<tr><td>Subscription Plan</td><td>Defines a user's subscription level</td></tr>
+<tr><td>Plan ID</td><td>Identifier used by the application to check the plan</td></tr>
+<tr><td>Clerk Billing</td><td>Subscription/payment functionality</td></tr>
+<tr><td>Stripe</td><td>Optional payment integration mentioned in the lesson</td></tr>
+</table>
+</div>
+</details>
+
+<details class="section">
+<summary>🎯 Final Recall Challenge — No Looking!</summary>
+<div class="content">
+<div class="q"><strong>1. Explain authentication in one sentence.</strong>
+<details class="answer"><summary>Answer</summary>Authentication verifies the identity of a user — “Who are you?”</details></div>
+
+<div class="q"><strong>2. Explain authorization in one sentence.</strong>
+<details class="answer"><summary>Answer</summary>Authorization determines what an authenticated user is allowed to access.</details></div>
+
+<div class="q"><strong>3. Why do we use Clerk?</strong>
+<details class="answer"><summary>Answer</summary>To simplify authentication/user management and, in this lesson, subscription/billing functionality.</details></div>
+
+<div class="q"><strong>4. Why is .env.local important?</strong>
+<details class="answer"><summary>Answer</summary>It keeps environment configuration and sensitive values out of the application's source code.</details></div>
+
+<div class="q"><strong>5. Why should .env.local be in .gitignore?</strong>
+<details class="answer"><summary>Answer</summary>To prevent those environment values/secrets from being committed to the repository.</details></div>
+
+<div class="q"><strong>6. What is the role of JWT in this lesson?</strong>
+<details class="answer"><summary>Answer</summary>It is part of the authentication mechanism used to help the backend confirm that the request is from a signed-in user.</details></div>
+
+<div class="q"><strong>7. What does the subscription check determine?</strong>
+<details class="answer"><summary>Answer</summary>Whether the user has the required subscription plan for the protected feature.</details></div>
+
+<div class="q"><strong>8. What happens if the user is not subscribed?</strong>
+<details class="answer"><summary>Answer</summary>The pricing/subscription interface is shown instead of the protected Idea Generator.</details></div>
+
+<div class="q"><strong>9. What happens if the user is subscribed?</strong>
+<details class="answer"><summary>Answer</summary>The protected Idea Generator becomes accessible.</details></div>
+
+<div class="q"><strong>10. Explain Day 3 in 30 seconds.</strong>
+<details class="answer"><summary>Answer</summary>We added Clerk authentication so users can sign in, then added Clerk subscription/billing so the application can check a user's plan and protect the premium AI Idea Generator.</details></div>
+</div>
+</details>
+
+<details class="section">
+<summary>🏆 Final Mental Model</summary>
+<div class="content">
+<pre><code>DAY 2
+Build + Deploy
+      ↓
+DAY 3
+Authenticate Users
+      ↓
+Identify the User
+      ↓
+Check Subscription
+      ↓
+Authorize Access
+      ↓
+Allow / Deny Premium Feature</code></pre>
+<p><strong>The core idea:</strong> Day 3 changes the application from simply being a deployed app into a basic SaaS product where users can sign in and premium functionality can be protected by subscription.</p>
+</div>
+</details>
+
+<div class="footer">Day 3 revision notes • Based on the provided Day 3 course transcript</div>
+</div>
+</body>
+</html>

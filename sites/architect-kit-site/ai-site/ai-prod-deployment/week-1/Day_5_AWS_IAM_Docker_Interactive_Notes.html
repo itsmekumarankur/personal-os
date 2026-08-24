@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 5 — AWS, IAM & Docker</title>
+<style>
+  :root {
+    --bg:#f5f7fb; --card:#ffffff; --text:#172033; --muted:#667085;
+    --accent:#315efb; --accent2:#e9efff; --border:#dfe4ec;
+    --green:#087443; --greenbg:#e9f8f0; --orange:#9a5b00; --orangebg:#fff4df;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;line-height:1.6}
+  .wrap{max-width:980px;margin:auto;padding:28px 18px 60px}
+  header{background:linear-gradient(135deg,#172554,#315efb);color:white;border-radius:20px;padding:32px 28px;margin-bottom:22px;box-shadow:0 10px 30px #17255422}
+  h1{margin:0 0 8px;font-size:34px}
+  header p{margin:0;opacity:.9}
+  .tip{background:#eef4ff;border-left:5px solid var(--accent);padding:14px 16px;border-radius:10px;margin:18px 0}
+  .section{background:var(--card);border:1px solid var(--border);border-radius:16px;margin:14px 0;overflow:hidden}
+  summary{cursor:pointer;padding:18px 20px;font-weight:750;font-size:18px;list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary:before{content:"＋";display:inline-block;width:28px;color:var(--accent);font-weight:900}
+  details[open] summary:before{content:"−"}
+  .content{padding:0 20px 22px;border-top:1px solid var(--border)}
+  h2{font-size:22px;margin-top:22px}
+  h3{font-size:17px;margin-top:20px}
+  ul,ol{padding-left:24px}
+  .pill{display:inline-block;background:var(--accent2);color:#2346b8;padding:3px 9px;border-radius:999px;font-size:13px;font-weight:700}
+  .green{background:var(--greenbg);border-left:5px solid #12a05a;padding:13px 15px;border-radius:9px}
+  .orange{background:var(--orangebg);border-left:5px solid #f59e0b;padding:13px 15px;border-radius:9px}
+  pre{background:#111827;color:#e5e7eb;padding:16px;border-radius:10px;overflow:auto}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .q{background:#fafbff;border:1px solid var(--border);border-radius:12px;padding:15px;margin:12px 0}
+  .q strong{display:block;margin-bottom:7px}
+  .answer{margin-top:9px}
+  table{border-collapse:collapse;width:100%;margin:12px 0}
+  th,td{border:1px solid var(--border);padding:10px;text-align:left;vertical-align:top}
+  th{background:#f0f3f9}
+  .small{color:var(--muted);font-size:14px}
+  .footer{text-align:center;color:var(--muted);margin-top:30px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Day 5 — AWS, IAM & Docker</h1>
+  <p>Easy revision notes: SaaS application → Docker → ECR → AWS App Runner → Live AWS deployment</p>
+</header>
+
+<div class="tip">
+  <strong>How to use these notes:</strong> Try the recall questions first without opening the answers.
+  Then use the collapsible sections to revise. Don't try to memorize every AWS term at once—focus on the flow.
+</div>
+
+<details class="section">
+<summary>🧠 Recall First — Try These Before Reading the Notes</summary>
+<div class="content">
+  <p class="small">Write your answers somewhere before opening the answers.</p>
+
+  <div class="q"><strong>Q1. What is IAM?</strong><details class="answer"><summary>Show answer</summary>IAM = Identity and Access Management. It controls who can access what in AWS and what they are allowed to do.</details></div>
+  <div class="q"><strong>Q2. Why should you avoid using the AWS root user for daily work?</strong><details class="answer"><summary>Show answer</summary>The root user has extremely broad permissions. The lesson recommends using a more restricted IAM user for normal work.</details></div>
+  <div class="q"><strong>Q3. What is the difference between a Dockerfile, Docker image and Docker container?</strong><details class="answer"><summary>Show answer</summary>Dockerfile = instructions/recipe → Image = packaged blueprint created from those instructions → Container = running instance of the image.</details></div>
+  <div class="q"><strong>Q4. What does ECR do?</strong><details class="answer"><summary>Show answer</summary>Amazon ECR (Elastic Container Registry) stores Docker/container images in AWS.</details></div>
+  <div class="q"><strong>Q5. What is AWS App Runner used for in this lesson?</strong><details class="answer"><summary>Show answer</summary>It takes the Docker image/container setup and runs the application on AWS, providing an easy way to deploy the container to the cloud.</details></div>
+  <div class="q"><strong>Q6. What is CloudWatch?</strong><details class="answer"><summary>Show answer</summary>An AWS service used for collecting logs and monitoring AWS services.</details></div>
+  <div class="q"><strong>Q7. Why is a /health endpoint created?</strong><details class="answer"><summary>Show answer</summary>AWS can use it as a health check to determine whether the application is healthy.</details></div>
+  <div class="q"><strong>Q8. What is the deployment flow from Docker to AWS?</strong><details class="answer"><summary>Show answer</summary>Build Docker image → test container locally → push/store image in ECR → configure App Runner → deploy → application runs live on AWS.</details></div>
+  <div class="q"><strong>Q9. What is an AWS Region?</strong><details class="answer"><summary>Show answer</summary>A geographical AWS infrastructure location selected in the AWS console for working with regional resources.</details></div>
+  <div class="q"><strong>Q10. What is an ARN?</strong><details class="answer"><summary>Show answer</summary>Amazon Resource Name — a unique identifier for an AWS resource.</details></div>
+</div>
+</details>
+
+<details class="section" open>
+<summary>1. 🎯 Day 5 Goal</summary>
+<div class="content">
+  <p>The main goal is to take the SaaS/Gen-AI application and deploy it to AWS in a production-style setup.</p>
+  <pre><code>Existing SaaS App
+      ↓
+Prepare for AWS
+      ↓
+Docker Image
+      ↓
+Test Container Locally
+      ↓
+Amazon ECR
+      ↓
+AWS App Runner
+      ↓
+LIVE on AWS</code></pre>
+  <p>The lesson describes Day 5 as an introduction/preview of AWS; deeper AWS components are covered later.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>2. 🔐 IAM — Identity and Access Management</summary>
+<div class="content">
+  <p><strong>IAM controls who can access what in AWS and what they are allowed to do.</strong></p>
+  <pre><code>AWS Account
+   │
+   ├── Root User → maximum power
+   │
+   ├── IAM User → restricted working identity
+   │
+   └── Permissions/Policies → what the user can do</code></pre>
+  <p>AWS IAM is highly granular. That can make it feel complicated, but it is an important production skill.</p>
+
+  <h3>Root User</h3>
+  <ul>
+    <li>Extremely powerful account.</li>
+    <li>Should not be used for everyday work.</li>
+    <li>Used in this lesson for permission/user setup and billing/budget management.</li>
+  </ul>
+
+  <h3>IAM User</h3>
+  <p>The course creates an <span class="pill">AI engineer</span> IAM user for normal work.</p>
+
+  <h3>MFA</h3>
+  <p>Multi-Factor Authentication adds another authentication factor, such as an authenticator-app code. The lesson stresses securing the root account with MFA.</p>
+
+  <h3>Account ID</h3>
+  <p>AWS provides a 12-digit account identifier. Keep track of it because it is used in account/IAM login workflows.</p>
+
+  <h3>ARN</h3>
+  <p><strong>ARN = Amazon Resource Name.</strong> It uniquely identifies an AWS resource.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>3. 💰 AWS Cost Awareness & Budgets</summary>
+<div class="content">
+  <p>AWS is an industrial-strength cloud platform. Some resources can cost money, so monitoring spend is part of the production skill.</p>
+  <div class="orange"><strong>Important:</strong> The lesson emphasizes that AWS provides alerts, but not a simple hard spending cap that automatically shuts everything down.</div>
+
+  <h3>Budget alerts used in the lesson</h3>
+  <ol>
+    <li><strong>Zero-spend budget:</strong> alert when spending goes above a very small amount.</li>
+    <li><strong>Monthly cost budget:</strong> alert at thresholds such as 85%, 100%, and forecasted 100%.</li>
+  </ol>
+  <p><strong>Practice:</strong> Keep checking Billing and Cost Management regularly instead of relying only on alerts.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>4. 👥 IAM User Groups & Policies</summary>
+<div class="content">
+  <p>Instead of attaching permissions individually, the lesson creates a user group and attaches policies to that group.</p>
+  <pre><code>User Group
+    │
+    ├── App Runner Full Access
+    ├── ECR Full Access
+    ├── CloudWatch Logs Full Access
+    └── IAM User Change Password
+            ↓
+       AI engineer</code></pre>
+  <p>The lesson calls the group <strong>Broad AI Engineer Access</strong>.</p>
+  <div class="green"><strong>Professional concept:</strong> Real production environments generally aim for more granular permissions—give users only the access they actually need.</div>
+</div>
+</details>
+
+<details class="section">
+<summary>5. 🌍 AWS Regions</summary>
+<div class="content">
+  <p>AWS has many geographical regions. The AWS console lets you select the region you are working in.</p>
+  <pre><code>AWS
+ ├── Region A
+ ├── Region B
+ ├── Region C
+ └── ...</code></pre>
+  <p>Region names have exact formats, for example <code>us-east-1</code>. The lesson warns that typos can lead to confusing errors.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>6. 🐳 Docker — The Core Idea</summary>
+<div class="content">
+  <p>Docker provides a lightweight, isolated and portable environment for running an application.</p>
+  <p>A useful mental model from the lesson is a <strong>computer inside your computer</strong>, but much lighter than a traditional virtual machine.</p>
+  <h3>Why Docker?</h3>
+  <ul>
+    <li><strong>Isolation:</strong> application runs in its own environment.</li>
+    <li><strong>Portability:</strong> the same packaged environment can run on different machines.</li>
+    <li><strong>Reproducibility:</strong> you can recreate the same environment.</li>
+  </ul>
+
+  <h3>Three terms to remember</h3>
+  <pre><code>Dockerfile
+    ↓
+  Image
+    ↓
+Container</code></pre>
+
+  <table>
+    <tr><th>Term</th><th>Easy meaning</th></tr>
+    <tr><td>Dockerfile</td><td>Recipe/instructions for creating the environment.</td></tr>
+    <tr><td>Docker Image</td><td>Blueprint/package created from the Dockerfile.</td></tr>
+    <tr><td>Docker Container</td><td>Running instance of the Docker image.</td></tr>
+  </table>
+</div>
+</details>
+
+<details class="section">
+<summary>7. ☁️ The 3 AWS Services Used for Deployment</summary>
+<div class="content">
+  <h3>AWS App Runner</h3>
+  <p>Used to take the Dockerized application and run it on AWS. It is presented as an easy starting point for deploying containers.</p>
+
+  <h3>Amazon ECR</h3>
+  <p><strong>ECR = Elastic Container Registry.</strong> It stores Docker/container images in AWS.</p>
+
+  <h3>CloudWatch</h3>
+  <p>Used for collecting logs and monitoring AWS services.</p>
+
+  <pre><code>Docker Image
+     ↓
+    ECR
+     ↓
+App Runner
+     ↓
+Running Application
+     ↓
+CloudWatch → logs/monitoring</code></pre>
+</div>
+</details>
+
+<details class="section">
+<summary>8. 🛠️ Prepare the SaaS Application</summary>
+<div class="content">
+  <h3>Frontend</h3>
+  <p>The Next.js frontend is prepared as a static export—HTML, JavaScript and stylesheets generated from the application.</p>
+
+  <h3>Backend</h3>
+  <p>A new <code>server.py</code> using FastAPI handles the backend.</p>
+  <ul>
+    <li><code>/api/consultation</code> — application API route.</li>
+    <li><code>/health</code> — health-check endpoint.</li>
+    <li>Root/static serving — backend can serve the generated static frontend.</li>
+  </ul>
+
+  <h3>Environment configuration</h3>
+  <p>The lesson uses environment variables for configuration/secrets such as Clerk values, OpenAI API key, AWS region and AWS account ID.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>9. 📦 Create the Docker Image</summary>
+<div class="content">
+  <p>A <code>Dockerfile</code> is created at the project root.</p>
+  <h3>High-level build process</h3>
+  <pre><code>Node image
+   ↓
+npm run build
+   ↓
+Static frontend
+
+Python 3.12 slim image
+   ↓
+Install requirements
+   ↓
+Copy server.py
+   ↓
+Copy static frontend
+   ↓
+Health check
+   ↓
+Port 8000
+   ↓
+Uvicorn server</code></pre>
+
+  <h3>.dockerignore</h3>
+  <p>A <code>.dockerignore</code> file excludes files from the Docker build context, similar in concept to <code>.gitignore</code>.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>10. 🧪 Test the Container Locally</summary>
+<div class="content">
+  <p>Before deploying to AWS, the lesson runs the Docker image locally as a container.</p>
+  <pre><code>Docker Image
+     ↓
+ docker run
+     ↓
+Docker Container
+     ↓
+Local Application
+     ↓
+Test</code></pre>
+  <p>The important idea is: <strong>make sure the container works locally before adding cloud deployment complexity.</strong></p>
+</div>
+</details>
+
+<details class="section">
+<summary>11. 🚀 Deploy with ECR + App Runner</summary>
+<div class="content">
+  <p>The working Docker image is uploaded to Amazon ECR and then used by AWS App Runner.</p>
+
+  <pre><code>Local Docker Image
+       ↓
+      ECR
+       ↓
+AWS App Runner
+       ↓
+Docker Container
+       ↓
+Internet
+       ↓
+User</code></pre>
+
+  <h3>Important App Runner settings from the lesson</h3>
+  <ul>
+    <li><strong>Port:</strong> 8000</li>
+    <li><strong>Auto scaling example:</strong> minimum 1, maximum 1</li>
+    <li><strong>Health protocol:</strong> HTTP</li>
+    <li><strong>Health path:</strong> <code>/health</code></li>
+    <li><strong>Timeout:</strong> 5 seconds</li>
+    <li><strong>Interval:</strong> 20 seconds</li>
+  </ul>
+  <p>App Runner can be configured with more instances when an application needs greater scalability.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>12. 🧩 Final Architecture</summary>
+<div class="content">
+  <pre><code>
+                    USER
+                      │
+                      ▼
+              ┌───────────────┐
+              │ AWS App Runner│
+              │               │
+              │ Docker        │
+              │ Container     │
+              │               │
+              │ Frontend      │
+              │      +        │
+              │ FastAPI       │
+              │ Backend       │
+              └───────┬───────┘
+                      │
+             ┌────────┴────────┐
+             ▼                 ▼
+           Clerk             OpenAI
+       Authentication          LLM
+
+Docker Image → ECR → App Runner
+                       │
+                       ▼
+                   CloudWatch
+                  Logs/Monitor</code></pre>
+</div>
+</details>
+
+<details class="section">
+<summary>13. ⭐ One-Page Memory Sheet</summary>
+<div class="content">
+  <table>
+    <tr><th>Concept</th><th>Remember it as...</th></tr>
+    <tr><td>IAM</td><td>Who can do what in AWS</td></tr>
+    <tr><td>Root User</td><td>Maximum power; avoid for daily work</td></tr>
+    <tr><td>IAM User</td><td>Restricted working identity</td></tr>
+    <tr><td>Policy</td><td>Rules defining allowed actions</td></tr>
+    <tr><td>User Group</td><td>Collection of permissions for users</td></tr>
+    <tr><td>MFA</td><td>Extra login security</td></tr>
+    <tr><td>Account ID</td><td>12-digit AWS account identifier</td></tr>
+    <tr><td>ARN</td><td>Unique AWS resource identifier</td></tr>
+    <tr><td>Region</td><td>AWS geographical location</td></tr>
+    <tr><td>Dockerfile</td><td>Recipe</td></tr>
+    <tr><td>Image</td><td>Blueprint/package</td></tr>
+    <tr><td>Container</td><td>Running instance</td></tr>
+    <tr><td>ECR</td><td>Docker image storage/registry</td></tr>
+    <tr><td>App Runner</td><td>Run/deploy container on AWS</td></tr>
+    <tr><td>CloudWatch</td><td>Logs + monitoring</td></tr>
+    <tr><td>/health</td><td>AWS health-check endpoint</td></tr>
+  </table>
+
+  <h3>⭐ The flow to memorize</h3>
+  <pre><code>Application
+   ↓
+Dockerfile
+   ↓
+Docker Image
+   ↓
+Docker Container (test locally)
+   ↓
+ECR
+   ↓
+App Runner
+   ↓
+LIVE AWS APPLICATION</code></pre>
+</div>
+</details>
+
+<details class="section">
+<summary>🎯 Final Recall Challenge — No Looking!</summary>
+<div class="content">
+  <div class="q"><strong>1. Explain IAM in one sentence.</strong><details class="answer"><summary>Answer</summary>IAM manages identities and permissions—who can access AWS resources and what they can do.</details></div>
+  <div class="q"><strong>2. Why use an IAM user instead of the root user?</strong><details class="answer"><summary>Answer</summary>To perform normal work with more restricted permissions instead of using the highly powerful root account.</details></div>
+  <div class="q"><strong>3. Complete the chain: Dockerfile → ? → ?</strong><details class="answer"><summary>Answer</summary>Dockerfile → Docker Image → Docker Container.</details></div>
+  <div class="q"><strong>4. Where is the Docker image stored before App Runner uses it?</strong><details class="answer"><summary>Answer</summary>Amazon ECR.</details></div>
+  <div class="q"><strong>5. What service actually runs the container in this lesson?</strong><details class="answer"><summary>Answer</summary>AWS App Runner.</details></div>
+  <div class="q"><strong>6. What endpoint does App Runner use to check application health?</strong><details class="answer"><summary>Answer</summary><code>/health</code>.</details></div>
+  <div class="q"><strong>7. What port does the lesson configure the application to listen on?</strong><details class="answer"><summary>Answer</summary>Port 8000.</details></div>
+  <div class="q"><strong>8. What AWS service is used for logs and monitoring?</strong><details class="answer"><summary>Answer</summary>CloudWatch.</details></div>
+  <div class="q"><strong>9. Why test Docker locally before deploying?</strong><details class="answer"><summary>Answer</summary>To confirm the containerized application works before introducing AWS deployment/configuration into the debugging process.</details></div>
+  <div class="q"><strong>10. Explain the whole Day 5 deployment in 30 seconds.</strong><details class="answer"><summary>Answer</summary>Prepare the SaaS app → create Dockerfile → build Docker image → run/test the container locally → push/store the image in ECR → configure App Runner → use /health for health checks → deploy the container → application becomes live on AWS.</details></div>
+</div>
+</details>
+
+<div class="footer">Day 5 revision notes • Based on the provided course transcript</div>
+</div>
+</body>
+</html>

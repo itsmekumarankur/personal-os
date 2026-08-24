@@ -1,0 +1,2337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Architect Study Notes — Context, Workflows, AGENTS.md</title>
+<style>
+  :root{
+    --bg:#0d0f14; --panel:#151823; --panel2:#1b1f2e;
+    --ink:#e8e6df; --dim:#9096ab;
+    --gold:#d4af5a; --line:#2a2f42;
+    --mono:'Courier New', ui-monospace, monospace;
+  }
+  *{box-sizing:border-box}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:Georgia,'Times New Roman',serif;
+    max-width:820px; margin:0 auto; padding:30px 20px 100px;
+    line-height:1.7;
+  }
+  h1,h2,h3{color:var(--gold)}
+  .doc-title{font-size:1.9rem; margin:2.6em 0 0.8em; padding-bottom:12px; border-bottom:2px solid var(--gold); color:var(--ink);}
+  section.doc:first-of-type .doc-title{margin-top:0}
+  .intro p{margin:0.8em 0; color:#cfcdc4;}
+  .intro hr{display:none}
+  p{margin:0.8em 0; color:#cfcdc4;}
+  strong{color:var(--ink)}
+  a{color:var(--gold)}
+  blockquote{
+    border-left:3px solid var(--gold); margin:1em 0; padding:6px 16px;
+    background:var(--panel); color:#d8d4bf; font-style:italic;
+  }
+  pre{
+    background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--gold);
+    border-radius:6px; padding:14px 16px; margin:1em 0;
+    overflow-x:auto; font-family:var(--mono); font-size:0.82rem; line-height:1.5; color:#b9c2d8;
+  }
+  code{font-family:var(--mono); color:var(--gold)}
+  p code{background:var(--panel); padding:1px 6px; border-radius:3px; font-size:0.9em;}
+  hr{border:none; border-top:1px solid var(--line); margin:2em 0;}
+  hr.docsep{border-top:3px double var(--gold); margin:3.5em 0;}
+  ul,ol{margin:0.6em 0 0.6em 1.3em; color:#cfcdc4;}
+  li{margin:0.3em 0;}
+
+  header.page{margin-bottom:1.2em;}
+  header.page .k{font-family:var(--mono); font-size:0.7rem; letter-spacing:0.2em; color:var(--dim); text-transform:uppercase;}
+  header.page h0{display:block; font-size:1.5rem; margin:6px 0 18px; color:var(--ink);}
+
+  nav.toc{
+    background:var(--panel); border:1px solid var(--line); border-radius:8px;
+    padding:14px 20px; margin-bottom:1.2em;
+  }
+  nav.toc .k{font-family:var(--mono); font-size:0.68rem; letter-spacing:0.2em; color:var(--dim); text-transform:uppercase; display:block; margin-bottom:8px;}
+  nav.toc ul{list-style:none; margin:0; padding:0;}
+  nav.toc li{margin:4px 0;}
+  nav.toc a{text-decoration:none; font-family:var(--mono); font-size:0.9rem;}
+  nav.toc a:hover{text-decoration:underline;}
+
+  /* ---- global controls bar ---- */
+  .controls{
+    position:sticky; top:0; z-index:10;
+    display:flex; gap:10px; align-items:center;
+    background:rgba(13,15,20,.95); backdrop-filter:blur(6px);
+    border:1px solid var(--line); border-radius:8px;
+    padding:10px 14px; margin-bottom:2em;
+  }
+  .controls .k{font-family:var(--mono); font-size:0.68rem; letter-spacing:0.15em; color:var(--dim); text-transform:uppercase; margin-right:auto;}
+  button.ctrl{
+    font-family:var(--mono); font-size:0.74rem; letter-spacing:0.05em;
+    background:transparent; color:var(--ink); border:1px solid var(--line);
+    padding:7px 14px; border-radius:5px; cursor:pointer; transition:.2s;
+  }
+  button.ctrl:hover{border-color:var(--gold); color:var(--gold);}
+
+  /* ---- collapsible chunks ---- */
+  details.chunk{
+    border:1px solid var(--line); border-left:3px solid var(--gold);
+    border-radius:6px; background:var(--panel2);
+    margin:14px 0; overflow:hidden;
+  }
+  details.chunk > summary{
+    cursor:pointer; padding:14px 18px; font-size:1.05rem;
+    color:var(--ink); list-style:none; font-family:Georgia,serif;
+    display:flex; align-items:center; gap:10px;
+  }
+  details.chunk > summary::-webkit-details-marker{display:none}
+  details.chunk > summary::before{
+    content:"▸"; color:var(--gold); font-family:var(--mono); font-size:0.9rem;
+    transition:transform .15s; flex-shrink:0;
+  }
+  details.chunk[open] > summary::before{ transform:rotate(90deg); }
+  details.chunk > summary:hover{ color:var(--gold); }
+  .chunk-body{ padding:2px 20px 18px; }
+  .chunk-body > *:first-child{ margin-top:0 }
+
+  .backtotop{display:inline-block; margin-top:2em; font-family:var(--mono); font-size:0.75rem; color:var(--dim); text-decoration:none;}
+  .backtotop:hover{color:var(--gold)}
+  @media(max-width:600px){ pre{font-size:0.68rem} .doc-title{font-size:1.4rem} details.chunk>summary{font-size:0.95rem} }
+</style>
+</head>
+<body>
+
+<header class="page" id="top">
+  <span class="k">AI Architect Study Notes</span>
+  <h0>Context Engineering &middot; Agentic Workflows &middot; AGENTS.md</h0>
+</header>
+
+<nav class="toc">
+  <span class="k">Contents</span>
+  <ul>
+<li><a href="#context-engineering">1. Context Engineering</a></li>
+<li><a href="#agentic-workflows">2. Agentic Coding Workflows</a></li>
+<li><a href="#agents-md">3. AGENTS.md — Field Manual</a></li>
+  </ul>
+</nav>
+
+<div class="controls">
+  <span class="k">All sections start collapsed</span>
+  <button class="ctrl" id="expandAll">Expand all</button>
+  <button class="ctrl" id="collapseAll">Collapse all</button>
+</div>
+
+<section id="context-engineering" class="doc" data-doc="context-engineering">
+<div class="doc-title">1. Context Engineering</div>
+<details class="chunk" id="context-engineering-c0"><summary>🧠 Context Engineering — Architect's Recall → Visual Model</summary><div class="chunk-body">
+<p>Based on the uploaded material, let's learn this as an <strong>AI architect</strong>, not as a list of definitions. </p>
+<hr />
+</div></details>
+<details class="chunk" id="context-engineering-c1"><summary>1️⃣ Recall First — Don't Look at the Answer Yet</summary><div class="chunk-body">
+<p>Try to answer these mentally.</p>
+<h3>Q1 — The Stateless Problem</h3>
+<p>Suppose we have:</p>
+<pre><code class="language-text">User → &quot;My name is Ankur&quot;
+</code></pre>
+<p>The LLM replies.</p>
+<p>Five minutes later:</p>
+<pre><code class="language-text">User → &quot;What is my name?&quot;
+</code></pre>
+<p><strong>Question:</strong> If the LLM is stateless, where does the knowledge of "Ankur" come from?</p>
+<hr />
+<h3>Q2 — The Architect's Question</h3>
+<p>If:</p>
+<pre><code class="language-text">OUTPUT = f(INPUT)
+</code></pre>
+<p>then what does this imply about the quality of the input?</p>
+<hr />
+<h3>Q3 — Prompt vs Context</h3>
+<p>Which is bigger?</p>
+<pre><code class="language-text">Prompt Engineering
+        VS
+Context Engineering
+</code></pre>
+<p>And what additional things might exist in the context besides the user's prompt?</p>
+<hr />
+<h3>Q4 — Coding Agent</h3>
+<p>Imagine you give an AI agent this task:</p>
+<blockquote>
+<p>"Implement payment retry logic in our Java service."</p>
+</blockquote>
+<p>Would you give it only that sentence?</p>
+<p><strong>What else should the agent know?</strong></p>
+<hr />
+<h3>Q5 — Tools</h3>
+<p>If the agent can use:</p>
+<pre><code class="language-text">Git
+Database
+Python
+File System
+Web Search
+</code></pre>
+<p>How does the LLM know <strong>what these tools do and when/how to use them?</strong></p>
+<hr />
+<h3>Q6 — The Dangerous Question</h3>
+<p>Suppose your model supports:</p>
+<pre><code class="language-text">1,000,000 tokens
+</code></pre>
+<p>Does that mean:</p>
+<blockquote>
+<p>"More context = better answers"?</p>
+</blockquote>
+<p><strong>Yes or No? Why?</strong></p>
+<hr />
+<h3>Q7 — Coding Agent Memory</h3>
+<p>Why would a coding agent need something like:</p>
+<pre><code class="language-text">AGENTS.md
+CLAUDE.md
+GEMINI.md
+</code></pre>
+<p>instead of relying entirely on the conversation?</p>
+<hr />
+<h3>Q8 — Context Explosion</h3>
+<p>Imagine this:</p>
+<pre><code class="language-text">Conversation
+   ↓
+100 messages
+   ↓
+Tool outputs
+   ↓
+Generated code
+   ↓
+Reasoning
+   ↓
+Logs
+   ↓
+More files
+</code></pre>
+<p>What eventually becomes the problem?</p>
+<hr />
+</div></details>
+<details class="chunk" id="context-engineering-c2"><summary>2️⃣ Now Let's Build the Architecture</summary><div class="chunk-body">
+<h2>The Big Idea</h2>
+<p>The source makes one fundamental point:</p>
+<pre><code class="language-text">                 ┌───────────────────────┐
+                 │         INPUT         │
+                 │       CONTEXT         │
+                 └───────────┬───────────┘
+                             │
+                             ▼
+                    ┌────────────────┐
+                    │      LLM       │
+                    │                │
+                    │ Predict next   │
+                    │ most likely    │
+                    │ tokens         │
+                    └────────┬───────┘
+                             │
+                             ▼
+                 ┌───────────────────────┐
+                 │        OUTPUT         │
+                 └───────────────────────┘
+</code></pre>
+<h3>Architect's takeaway:</h3>
+<blockquote>
+<p><strong>The LLM can only reason over what you put into its context.</strong></p>
+</blockquote>
+<p>So:</p>
+<pre><code class="language-text">Better Context
+      ↓
+Better Information Available
+      ↓
+Better Probability of Useful Output
+</code></pre>
+<hr />
+</div></details>
+<details class="chunk" id="context-engineering-c3"><summary>3️⃣ Prompt Engineering → Context Engineering</summary><div class="chunk-body">
+<p>The evolution is roughly:</p>
+<pre><code class="language-text">        OLD THINKING
+             │
+             ▼
+    ┌─────────────────┐
+    │ Prompt           │
+    │ Engineering      │
+    └────────┬────────┘
+             │
+             │ &quot;How do I write
+             │  a better prompt?&quot;
+             ▼
+        NEW THINKING
+             │
+             ▼
+    ┌─────────────────────┐
+    │ Context Engineering │
+    └──────────┬──────────┘
+               │
+       ┌───────┼────────┐
+       │       │        │
+       ▼       ▼        ▼
+    Prompt   Tools    Memory
+       │       │        │
+       └───────┼────────┘
+               │
+               ▼
+        Conversation
+               │
+               ▼
+        Project Context
+</code></pre>
+<p>So the question changes from:</p>
+<blockquote>
+<p><strong>"What prompt should I write?"</strong></p>
+</blockquote>
+<p>to:</p>
+<blockquote>
+<p><strong>"What information should the model have available to accomplish this task?"</strong></p>
+</blockquote>
+<hr />
+</div></details>
+<details class="chunk" id="context-engineering-c4"><summary>4️⃣ What Actually Goes Into the Context?</summary><div class="chunk-body">
+<p>Think like an architect designing an <strong>LLM request pipeline</strong>:</p>
+<pre><code class="language-text">                  CONTEXT
+                     │
+       ┌─────────────┼──────────────┐
+       │             │              │
+       ▼             ▼              ▼
+ ┌──────────┐  ┌───────────┐  ┌──────────┐
+ │ SYSTEM   │  │   TOOLS   │  │ MEMORY   │
+ │ PROMPT   │  │           │  │          │
+ └──────────┘  └───────────┘  └──────────┘
+       │             │              │
+       └─────────────┼──────────────┘
+                     │
+                     ▼
+             ┌──────────────┐
+             │ CONVERSATION │
+             │   HISTORY    │
+             └──────┬───────┘
+                    │
+                    ▼
+             ┌──────────────┐
+             │ AGENTS.md /  │
+             │ CLAUDE.md    │
+             └──────┬───────┘
+                    │
+                    ▼
+             ┌──────────────┐
+             │   COMPLETE   │
+             │   CONTEXT    │
+             └──────┬───────┘
+                    │
+                    ▼
+                 ┌─────┐
+                 │ LLM │
+                 └─────┘
+</code></pre>
+<hr />
+</div></details>
+<details class="chunk" id="context-engineering-c5"><summary>5️⃣ System Prompt = "Who Am I?"</summary><div class="chunk-body">
+<p>Think of the system prompt as the <strong>operating charter</strong>.</p>
+<pre><code class="language-text">┌──────────────────────────────────┐
+│          SYSTEM PROMPT           │
+├──────────────────────────────────┤
+│ Role                             │
+│ &quot;You are a coding agent&quot;        │
+│                                  │
+│ Objective                        │
+│ &quot;Build reliable software&quot;       │
+│                                  │
+│ Behavior                         │
+│ &quot;Follow project standards&quot;      │
+│                                  │
+│ Tone / approach                  │
+│ &quot;Be precise and cautious&quot;        │
+└─────────────────┬────────────────┘
+                  │
+                  ▼
+                LLM
+</code></pre>
+<p>Architecturally:</p>
+<pre><code class="language-text">System Prompt
+      =
+&quot;Operating Instructions&quot;
+</code></pre>
+<hr />
+</div></details>
+<details class="chunk" id="context-engineering-c6"><summary>6️⃣ Tools = "What Can I Do?"</summary><div class="chunk-body">
+<p>A powerful agent isn't just an LLM.</p>
+<p>It's:</p>
+<pre><code class="language-text">                   ┌─────────────┐
+                   │     LLM     │
+                   └──────┬──────┘
+                          │
+             &quot;What can I actually do?&quot;
+                          │
+        ┌─────────────────┼─────────────────┐
+        ▼                 ▼                 ▼
+   ┌─────────┐       ┌─────────┐       ┌─────────┐
+   │  Git    │       │ Python  │       │ Database│
+   └─────────┘       └─────────┘       └─────────┘
+        │                 │                 │
+        ▼                 ▼                 ▼
+     Commit             Execute           Query
+     Branch             Calculate         Read
+     Diff               Analyze           Write
+</code></pre>
+<p>The <strong>tool descriptions themselves become part of the context</strong>.</p>
+<p>That's important.</p>
+<pre><code class="language-text">LLM
+ │
+ │ sees tool definitions
+ ▼
+&quot;I know what capabilities
+ are available.&quot;
+ │
+ ▼
+Decides whether to call a tool
+</code></pre>
+<hr />
+</div></details>
+<details class="chunk" id="context-engineering-c7"><summary>7️⃣ Memory — "What Should I Remember?"</summary><div class="chunk-body">
+<p>Now imagine an agent working across multiple sessions.</p>
+<pre><code class="language-text">DAY 1
+User
+ │
+ ▼
+AI Agent
+ │
+ └── learns project conventions
+       │
+       ▼
+    MEMORY
+       │
+       │ persists
+       ▼
+DAY 2
+User
+ │
+ ▼
+AI Agent
+ │
+ └── retrieves relevant memory
+</code></pre>
+<p>Memory can contain persistent information that may change over time.</p>
+<pre><code class="language-text">                 MEMORY
+                    │
+       ┌────────────┼────────────┐
+       ▼            ▼            ▼
+ Project       Preferences    Resources
+ Knowledge
+</code></pre>
+<hr />
+</div></details>
+<details class="chunk" id="context-engineering-c8"><summary>8️⃣ AGENTS.md — The Coding Agent's "Field Manual"</summary><div class="chunk-body">
+<p>This is particularly important for coding agents.</p>
+<p>Imagine a new engineer joining your project.</p>
+<p>Would you say:</p>
+<blockquote>
+<p>"Here's the Git repository. Good luck."</p>
+</blockquote>
+<p>Probably not. 😄</p>
+<p>You'd give them something like:</p>
+<pre><code class="language-text">              NEW ENGINEER
+                   │
+                   ▼
+          ┌────────────────┐
+          │   FIELD MANUAL │
+          │                │
+          │ Architecture   │
+          │ Coding rules   │
+          │ Conventions    │
+          │ Commands       │
+          │ Constraints    │
+          └───────┬────────┘
+                  │
+                  ▼
+              PRODUCTIVE
+</code></pre>
+<p><code>AGENTS.md</code> serves a similar purpose for the coding agent.</p>
+<pre><code class="language-text">AGENTS.md
+    │
+    ├── Project conventions
+    ├── Coding standards
+    ├── Architecture guidance
+    ├── Important constraints
+    └── Agent-specific instructions
+             │
+             ▼
+       Coding Agent
+</code></pre>
+<p>Depending on the coding environment, analogous files may be named <code>CLAUDE.md</code> or <code>GEMINI.md</code>. </p>
+<hr />
+</div></details>
+<details class="chunk" id="context-engineering-c9"><summary>9️⃣ The Entire Context — Put It Together</summary><div class="chunk-body">
+<p>Here's the architect's view:</p>
+<pre><code class="language-text">                         ┌─────────────────────┐
+                         │    SYSTEM PROMPT    │
+                         │   &quot;Who are you?&quot;    │
+                         └──────────┬──────────┘
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │       TOOLS         │
+                         │   &quot;What can you do?&quot;│
+                         └──────────┬──────────┘
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │       MEMORY        │
+                         │  &quot;What should you   │
+                         │      remember?&quot;     │
+                         └──────────┬──────────┘
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │   AGENTS.md         │
+                         │ &quot;How this project   │
+                         │      works&quot;         │
+                         └──────────┬──────────┘
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │ CONVERSATION HISTORY│
+                         │ &quot;What happened?&quot;    │
+                         └──────────┬──────────┘
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │ TOOL OUTPUTS / CODE │
+                         │ / OTHER CONTEXT     │
+                         └──────────┬──────────┘
+                                    │
+                                    ▼
+                         ╔═════════════════════╗
+                         ║   COMPLETE CONTEXT  ║
+                         ╚══════════╤══════════╝
+                                    │
+                                    ▼
+                              ┌───────────┐
+                              │    LLM    │
+                              └─────┬─────┘
+                                    │
+                                    ▼
+                               OUTPUT
+</code></pre>
+<hr />
+</div></details>
+<details class="chunk" id="context-engineering-c10"><summary>1️⃣0️⃣ Context Window — The "RAM" Analogy</summary><div class="chunk-body">
+<p>A useful architect mental model:</p>
+<pre><code class="language-text">                 CONTEXT WINDOW
+┌──────────────────────────────────────────────┐
+│                                              │
+│ System Prompt                               │
+│ Tools                                       │
+│ Memory                                      │
+│ AGENTS.md                                   │
+│ Conversation                                │
+│ Tool Outputs                                │
+│ Code                                        │
+│                                              │
+└──────────────────────────────────────────────┘
+                     │
+                     │ MAX CAPACITY
+                     ▼
+              ┌──────────────┐
+              │ CONTEXT LIMIT│
+              └──────────────┘
+</code></pre>
+<p>Think:</p>
+<pre><code class="language-text">Context Window ≈ Working Memory
+</code></pre>
+<p>There is a maximum amount of information the model can consider at once.</p>
+<hr />
+</div></details>
+<details class="chunk" id="context-engineering-c11"><summary>1️⃣1️⃣ Bigger Context ≠ Better Context</summary><div class="chunk-body">
+<p>This is one of the <strong>most important architectural lessons</strong>.</p>
+<p>A common assumption:</p>
+<pre><code class="language-text">More Context
+     │
+     ▼
+More Information
+     │
+     ▼
+Better Answer
+</code></pre>
+<p>But the actual behavior can look more like:</p>
+<pre><code class="language-text">Context Size
+     │
+     │          ┌──────────
+     │        /
+     │      /
+Quality   /
+     │   /
+     │  /
+     │ /
+     └──────────────────────
+       ↑
+       │
+   useful context
+
+              ↓
+       too much noise
+
+              ↓
+       quality can degrade
+</code></pre>
+<p>So:</p>
+<pre><code class="language-text">                 LESS
+                  │
+                  ▼
+        ┌──────────────────┐
+        │ Relevant Context │
+        └────────┬─────────┘
+                 │
+                 ▼
+              GREAT
+             OUTPUT
+</code></pre>
+<p>is often preferable to:</p>
+<pre><code class="language-text">                 MORE
+                  │
+                  ▼
+        ┌──────────────────┐
+        │ Everything       │
+        │ Everywhere       │
+        │ All at once      │
+        └────────┬─────────┘
+                 │
+                 ▼
+            INFORMATION
+              NOISE
+                 │
+                 ▼
+        POSSIBLE QUALITY DROP
+</code></pre>
+<p><strong>Architectural principle:</strong></p>
+<blockquote>
+<p><strong>Optimize for relevant context, not maximum context.</strong></p>
+</blockquote>
+<hr />
+</div></details>
+<details class="chunk" id="context-engineering-c12"><summary>1️⃣2️⃣ Context Compaction — The "Compression" Event</summary><div class="chunk-body">
+<p>Eventually:</p>
+<pre><code class="language-text">Context
+████████████████████████████████████████
+████████████████████████████████████████
+████████████████████████████████████████
+████████████████████████████████████████
+                 ↓
+            Almost FULL
+</code></pre>
+<p>Instead of simply failing, systems such as coding agents can perform <strong>compaction</strong>.</p>
+<pre><code class="language-text">        HUGE CONVERSATION
+                │
+                ▼
+       ┌─────────────────┐
+       │    COMPACTOR    │
+       │                 │
+       │ What matters?   │
+       │ What can go?    │
+       └────────┬────────┘
+                │
+                ▼
+        ┌───────────────┐
+        │   SUMMARY     │
+        │               │
+        │ Key decisions │
+        │ Important     │
+        │ context       │
+        │ Current state  │
+        └───────┬───────┘
+                │
+                ▼
+       FREED CONTEXT SPACE
+                │
+                ▼
+             CONTINUE
+</code></pre>
+<hr />
+</div></details>
+<details class="chunk" id="context-engineering-c13"><summary>1️⃣3️⃣ Why Compaction Can Be Dangerous</summary><div class="chunk-body">
+<p>Imagine the conversation contains:</p>
+<pre><code class="language-text">100 decisions
+   │
+   ▼
+Compactor
+   │
+   ├── remembers 95 ✅
+   │
+   └── misses 5 ❌
+</code></pre>
+<p>One of those five might be:</p>
+<pre><code class="language-text">&quot;NEVER modify the payment
+ settlement table.&quot;
+</code></pre>
+<p>If that disappears...</p>
+<pre><code class="language-text">Agent
+  │
+  ▼
+&quot;Let's modify settlement table.&quot;
+  │
+  ▼
+💥 Architecture violation
+</code></pre>
+<p>That's why maintaining persistent project instructions can be valuable.</p>
+<pre><code class="language-text">Conversation
+     │
+     │ temporary
+     ▼
+  Compaction
+     │
+     X
+  details may disappear
+
+
+AGENTS.md
+     │
+     │ persistent project guidance
+     ▼
+  Agent
+</code></pre>
+<p>The uploaded material also notes that compaction has improved substantially and is often worth trusting rather than automatically fighting it. </p>
+<hr />
+</div></details>
+<details class="chunk" id="context-engineering-c14"><summary>1️⃣4️⃣ The Architect's Golden Model 🏗️</summary><div class="chunk-body">
+<p>If you remember only one diagram, remember this:</p>
+<pre><code class="language-text">                    YOUR OBJECTIVE
+                         │
+                         ▼
+              ┌─────────────────────┐
+              │  CONTEXT ENGINEERING │
+              └──────────┬──────────┘
+                         │
+       ┌─────────────────┼─────────────────┐
+       │                 │                 │
+       ▼                 ▼                 ▼
+   INSTRUCTIONS       CAPABILITIES       KNOWLEDGE
+       │                 │                 │
+       ▼                 ▼                 ▼
+ System Prompt          Tools            Memory
+       │                                   │
+       │                                   ▼
+       │                              AGENTS.md
+       │
+       └─────────────────┬─────────────────┘
+                         │
+                         ▼
+                  CONVERSATION
+                         │
+                         ▼
+                   TOOL OUTPUTS
+                         │
+                         ▼
+              ┌─────────────────────┐
+              │   CONTEXT WINDOW    │
+              │                     │
+              │  Relevant &gt; Huge    │
+              └──────────┬──────────┘
+                         │
+                         ▼
+                       ┌─────┐
+                       │ LLM │
+                       └──┬──┘
+                          │
+                          ▼
+                       OUTPUT
+</code></pre>
+<h2>🎯 Final Recall Challenge</h2>
+<p>Without looking back, explain these <strong>5 concepts in one sentence each</strong>:</p>
+<pre><code class="language-text">1. Stateless LLM
+       ↓
+2. Context Engineering
+       ↓
+3. Context Window
+       ↓
+4. AGENTS.md
+       ↓
+5. Context Compaction
+</code></pre>
+<p>If you can explain those five clearly, you have the <strong>architectural mental model</strong> of context engineering rather than just memorizing terminology.</p></div></details>
+</section>
+
+<hr class='docsep'>
+<section id="agentic-workflows" class="doc" data-doc="agentic-workflows">
+<div class="doc-title">2. Agentic Coding Workflows</div>
+<details class="chunk" id="agentic-workflows-c0"><summary>🧠 Agentic Coding Workflows — From Micromanagement to Agent Swarms</summary><div class="chunk-body">
+<p>This section connects <strong>three ideas</strong> we have already covered:</p>
+<pre><code class="language-text">CONTEXT ENGINEERING
+        +
+AGENTS.md
+        +
+WORKFLOW
+        ↓
+How much autonomy should
+we give the coding agent?
+</code></pre>
+<p>The important message from the source is <strong>not "more autonomy is always better."</strong></p>
+<p>It is:</p>
+<blockquote>
+<p><strong>Choose the workflow according to the risk, complexity, innovation, and mission-criticality of the task.</strong> </p>
+</blockquote>
+<hr />
+</div></details>
+<details class="chunk" id="agentic-workflows-c1"><summary>PART 1 — 🧩 Recall First</summary><div class="chunk-body">
+<p>Don't look at the answers yet.</p>
+<h3>Q1 — Trust</h3>
+<p>Imagine an AI agent is modifying:</p>
+<pre><code class="language-text">Payment Settlement Service
+</code></pre>
+<p>Would you:</p>
+<pre><code class="language-text">A → Approve every change
+B → Give it a plan first
+C → Give it a specification and verify later
+D → Say &quot;YOLO, do whatever you want&quot;
+</code></pre>
+<p>Which would you choose?</p>
+<p><strong>Why?</strong></p>
+<hr />
+<h3>Q2 — The Opposite Scenario</h3>
+<p>Now imagine:</p>
+<pre><code class="language-text">Empty folder
+     ↓
+New React website
+     ↓
+Mostly boilerplate
+     ↓
+Prototype
+     ↓
+Not production critical
+</code></pre>
+<p>Would your answer change?</p>
+<hr />
+<h3>Q3 — Planning</h3>
+<p>Why might an agent have a:</p>
+<pre><code class="language-text">PLAN MODE
+</code></pre>
+<p>before:</p>
+<pre><code class="language-text">EXECUTION MODE
+</code></pre>
+<p>What problem does this solve?</p>
+<hr />
+<h3>Q4 — Ralph Loop</h3>
+<p>Suppose an agent does:</p>
+<pre><code class="language-text">Build
+ ↓
+Test
+ ↓
+Find problems
+ ↓
+Fix
+</code></pre>
+<p>What happens if we put <strong>that entire process inside another loop</strong>?</p>
+<hr />
+<h3>Q5 — Multi-Agent</h3>
+<p>What happens when instead of one agent:</p>
+<pre><code class="language-text">Agent
+</code></pre>
+<p>we have:</p>
+<pre><code class="language-text">Manager
+ ├── Coding Agent
+ ├── Testing Agent
+ ├── Review Agent
+ └── Feedback Agent
+</code></pre>
+<p>What architectural pattern are we approaching?</p>
+<hr />
+<h3>Q6 — The Most Important Question</h3>
+<p>Who is responsible for the final quality of the software?</p>
+<pre><code class="language-text">Developer
+       OR
+LLM
+</code></pre>
+<p>Be careful before answering. 😉</p>
+<hr />
+</div></details>
+<details class="chunk" id="agentic-workflows-c2"><summary>PART 2 — The Evolution of Trust 🚦</summary><div class="chunk-body">
+<p>The easiest way to understand the entire topic is:</p>
+<pre><code class="language-text">LESS TRUST
+    │
+    ▼
+MORE HUMAN CONTROL
+    │
+    ▼
+MORE TRUST
+    │
+    ▼
+MORE AGENT AUTONOMY
+</code></pre>
+<p>The source describes <strong>six workflow levels</strong>, evolving from tight human control toward autonomous multi-agent systems. </p>
+<hr />
+</div></details>
+<details class="chunk" id="agentic-workflows-c3"><summary>1️⃣ Workflow #1 — MICROMANAGEMENT</summary><div class="chunk-body">
+<p>This is:</p>
+<blockquote>
+<p><strong>"I don't trust you yet."</strong></p>
+</blockquote>
+<pre><code class="language-text">             HUMAN
+               │
+               ▼
+        Detailed Prompt
+               │
+               ▼
+            AGENT
+               │
+               ▼
+          Small Change
+               │
+               ▼
+        HUMAN REVIEWS
+               │
+        ┌──────┴──────┐
+        │             │
+       OK          NOT OK
+        │             │
+        ▼             ▼
+      Next        Rewrite
+                   Prompt
+                     │
+                     ▼
+                  Restart
+</code></pre>
+<p>This is essentially:</p>
+<pre><code class="language-text">Human = Driver
+Agent = Very fast junior developer
+</code></pre>
+<p>You are constantly checking:</p>
+<pre><code class="language-text">&quot;Did you do exactly what I asked?&quot;
+</code></pre>
+<hr />
+</div></details>
+<details class="chunk" id="agentic-workflows-c4"><summary>2️⃣ Workflow #2 — PLAN → EXECUTE → REVIEW → TEST</summary><div class="chunk-body">
+<p>Now we give the agent more freedom.</p>
+<pre><code class="language-text">                 HUMAN
+                   │
+                   ▼
+                 PLAN
+                   │
+                   ▼
+             ┌─────────────┐
+             │   EXECUTE   │
+             └──────┬──────┘
+                    │
+                    ▼
+                 REVIEW
+                    │
+                    ▼
+                  TEST
+                    │
+                    ▼
+                COMPLETE
+</code></pre>
+<p>But usually this happens <strong>phase by phase</strong>:</p>
+<pre><code class="language-text">Phase 1
+  ↓
+Build
+  ↓
+Review
+  ↓
+Test
+  ↓
+✓
+
+Phase 2
+  ↓
+Build
+  ↓
+Review
+  ↓
+Test
+  ↓
+✓
+
+Phase 3
+  ↓
+...
+</code></pre>
+<p>Think of it as:</p>
+<pre><code class="language-text">Human
+  │
+  ├── Defines direction
+  ├── Reviews work
+  ├── Validates tests
+  └── Approves next phase
+</code></pre>
+<p>More trust, but still substantial human supervision.</p>
+<hr />
+</div></details>
+<details class="chunk" id="agentic-workflows-c5"><summary>3️⃣ Workflow #3 — SPEC-DRIVEN DEVELOPMENT</summary><div class="chunk-body">
+<p>Now we move another step back.</p>
+<p>Instead of repeatedly telling the agent what to do:</p>
+<pre><code class="language-text">&quot;Do this...&quot;
+&quot;Now change this...&quot;
+&quot;Actually, undo that...&quot;
+&quot;Try this...&quot;
+</code></pre>
+<p>we create a strong specification:</p>
+<pre><code class="language-text">                SPECIFICATION
+                     │
+        ┌────────────┼────────────┐
+        │            │            │
+      Goal        Rules       Acceptance
+                                Criteria
+        │            │            │
+        └────────────┼────────────┘
+                     │
+                     ▼
+                   AGENT
+                     │
+                     ▼
+               IMPLEMENTATION
+                     │
+                     ▼
+                 VERIFY
+</code></pre>
+<p>The mindset becomes:</p>
+<blockquote>
+<p><strong>Trust, but verify.</strong></p>
+</blockquote>
+<p>You don't constantly watch the agent.</p>
+<p>You return later and verify the result.</p>
+<hr />
+</div></details>
+<details class="chunk" id="agentic-workflows-c6"><summary>🧠 The First Three</summary><div class="chunk-body">
+<p>Put them together:</p>
+<pre><code class="language-text">                    HUMAN CONTROL
+                         ▲
+                         │
+                         │
+              ┌──────────┴──────────┐
+              │                     │
+        MICROMANAGEMENT       PLAN → EXECUTE
+              │                     │
+              │                     │
+              └──────────┬──────────┘
+                         │
+                    SPEC-DRIVEN
+                         │
+                         ▼
+                    MORE TRUST
+</code></pre>
+<hr />
+</div></details>
+<details class="chunk" id="agentic-workflows-c7"><summary>4️⃣ Workflow #4 — YOLO 🤖</summary><div class="chunk-body">
+<p>Now we cross into the <strong>2026-style autonomy</strong> described in the source.</p>
+<p>YOLO means:</p>
+<pre><code class="language-text">&quot;Just go.&quot;
+</code></pre>
+<p>No constant approvals.</p>
+<pre><code class="language-text">              HUMAN
+                │
+                │
+             &quot;Build it&quot;
+                │
+                ▼
+        ┌────────────────┐
+        │     AGENT      │
+        │                │
+        │ Think          │
+        │ Code           │
+        │ Use tools      │
+        │ Modify files   │
+        └───────┬────────┘
+                │
+                │
+                ▼
+             RESULT
+</code></pre>
+<p>Human isn't sitting there saying:</p>
+<pre><code class="language-text">&quot;Can I approve this?&quot;
+&quot;Can I approve that?&quot;
+&quot;Can I approve this file?&quot;
+</code></pre>
+<p>Instead:</p>
+<pre><code class="language-text">               TRUST
+                 │
+                 ▼
+               YOLO
+                 │
+                 ▼
+        Agent operates freely
+</code></pre>
+<p>The source describes this as a major increase in trust and notes that it has increasingly moved beyond hobby projects into real use cases. </p>
+<hr />
+</div></details>
+<details class="chunk" id="agentic-workflows-c8"><summary>5️⃣ Workflow #5 — RALPH LOOPS 🔄</summary><div class="chunk-body">
+<p>Now things get really interesting.</p>
+<p>An agent already operates internally in a loop:</p>
+<pre><code class="language-text">       ┌───────────────┐
+       │     AGENT     │
+       └───────┬───────┘
+               │
+               ▼
+             THINK
+               │
+               ▼
+             TOOL
+               │
+               ▼
+            OBSERVE
+               │
+               ▼
+             ACT
+               │
+               └───────────┐
+                           │
+                           ▼
+                         AGAIN
+</code></pre>
+<p>A <strong>Ralph Loop</strong> essentially puts this entire agent process inside another loop.</p>
+<pre><code class="language-text">          OUTER LOOP
+     ┌─────────────────────┐
+     │                     │
+     │     ┌───────────┐   │
+     │     │   AGENT   │   │
+     │     │   LOOP    │   │
+     │     └─────┬─────┘   │
+     │           │         │
+     │           ▼         │
+     │         RESULT      │
+     │           │         │
+     │           ▼         │
+     │         TEST        │
+     │           │         │
+     │           ▼         │
+     │       FEEDBACK      │
+     │           │         │
+     │           └─────────┤
+     │                     │
+     └─────────────────────┘
+</code></pre>
+<h3>The magic is:</h3>
+<pre><code class="language-text">Agent
+  ↓
+Build
+  ↓
+Evaluate
+  ↓
+Feedback
+  ↓
+Agent AGAIN
+  ↓
+Build
+  ↓
+Evaluate
+  ↓
+Feedback
+  ↓
+Agent AGAIN
+  ↓
+...
+</code></pre>
+<p>So instead of:</p>
+<pre><code class="language-text">Human feedback
+      ↓
+Agent
+</code></pre>
+<p>we increasingly get:</p>
+<pre><code class="language-text">Agent
+  ↓
+Self-evaluation
+  ↓
+Feedback
+  ↓
+Agent
+  ↓
+Self-evaluation
+  ↓
+Feedback
+  ↓
+Agent
+</code></pre>
+<hr />
+</div></details>
+<details class="chunk" id="agentic-workflows-c9"><summary>6️⃣ Ralph Loop = Overnight Engineer 🌙</summary><div class="chunk-body">
+<p>This is the important mental model.</p>
+<h3>Traditional agent:</h3>
+<pre><code class="language-text">Human
+  ↓
+Prompt
+  ↓
+Agent
+  ↓
+Result
+  ↓
+Human
+</code></pre>
+<p>Maybe:</p>
+<pre><code class="language-text">Minutes
+</code></pre>
+<h3>Ralph-style workflow:</h3>
+<pre><code class="language-text">Human
+  │
+  ▼
+Goal
+  │
+  ▼
+┌─────────────────────┐
+│      AGENT LOOP     │
+│                     │
+│ Build → Test        │
+│   ↑       ↓         │
+│   └─ Fix ←┘         │
+└─────────┬───────────┘
+          │
+          ▼
+       Evaluate
+          │
+          ▼
+       Again
+          │
+          ▼
+       Again
+          │
+          ▼
+       Again
+</code></pre>
+<p>Potentially:</p>
+<pre><code class="language-text">1 loop
+2 loops
+5 loops
+10 loops
+...
+</code></pre>
+<p>The source frames Ralph Loops as a pattern for <strong>long-running agentic coding</strong>, potentially running for hours or overnight rather than merely minutes. </p>
+<hr />
+</div></details>
+<details class="chunk" id="agentic-workflows-c10"><summary>7️⃣ Workflow #6 — MULTI-AGENT SWARM 🐝</summary><div class="chunk-body">
+<p>Now we go one step further.</p>
+<p>Instead of:</p>
+<pre><code class="language-text">       AGENT
+</code></pre>
+<p>we have:</p>
+<pre><code class="language-text">                 MANAGER AGENT
+                       │
+          ┌────────────┼────────────┐
+          │            │            │
+          ▼            ▼            ▼
+       CODING       TESTING       REVIEW
+       AGENT         AGENT         AGENT
+          │            │            │
+          └────────────┼────────────┘
+                       │
+                       ▼
+                  FEEDBACK
+                       │
+                       ▼
+                 MANAGER AGENT
+</code></pre>
+<p>This is <strong>agent orchestration</strong>.</p>
+<hr />
+</div></details>
+<details class="chunk" id="agentic-workflows-c11"><summary>🐝 Agent Swarm</summary><div class="chunk-body">
+<p>A more complex architecture might look like:</p>
+<pre><code class="language-text">                       ┌───────────────┐
+                       │ MANAGER AGENT │
+                       └───────┬───────┘
+                               │
+            ┌──────────────────┼──────────────────┐
+            │                  │                  │
+            ▼                  ▼                  ▼
+      ┌──────────┐       ┌──────────┐       ┌──────────┐
+      │ ARCHITECT│       │ CODER    │       │ TESTER   │
+      │  AGENT   │       │  AGENT   │       │  AGENT   │
+      └────┬─────┘       └────┬─────┘       └────┬─────┘
+           │                  │                  │
+           ▼                  ▼                  ▼
+       Design             Implement            Test
+           │                  │                  │
+           └──────────────────┼──────────────────┘
+                              ▼
+                         REVIEW AGENT
+                              │
+                              ▼
+                        QUALITY GATE
+                              │
+                     ┌────────┴────────┐
+                     │                 │
+                    FAIL              PASS
+                     │                 │
+                     ▼                 ▼
+                  ITERATE             DONE
+</code></pre>
+<p>Now you've effectively built a <strong>distributed software development team made of agents</strong>.</p>
+<hr />
+</div></details>
+<details class="chunk" id="agentic-workflows-c12"><summary>8️⃣ The Six Workflows — One Picture</summary><div class="chunk-body">
+<p>This is the diagram I'd memorize:</p>
+<pre><code class="language-text">TRUST
+  │
+  │ LOW
+  ▼
+┌──────────────────────────────────────────────┐
+│ 1. MICROMANAGEMENT                           │
+│    Human approves everything                 │
+└──────────────────────┬───────────────────────┘
+                       │
+                       ▼
+┌──────────────────────────────────────────────┐
+│ 2. PLAN → EXECUTE → REVIEW → TEST            │
+│    Human supervises phases                   │
+└──────────────────────┬───────────────────────┘
+                       │
+                       ▼
+┌──────────────────────────────────────────────┐
+│ 3. SPEC-DRIVEN                               │
+│    Trust → Verify                            │
+└──────────────────────┬───────────────────────┘
+                       │
+                       ▼
+┌──────────────────────────────────────────────┐
+│ 4. YOLO                                      │
+│    Agent operates independently               │
+└──────────────────────┬───────────────────────┘
+                       │
+                       ▼
+┌──────────────────────────────────────────────┐
+│ 5. RALPH LOOP                                │
+│    Agent → Evaluate → Feedback → Agent       │
+└──────────────────────┬───────────────────────┘
+                       │
+                       ▼
+┌──────────────────────────────────────────────┐
+│ 6. MULTI-AGENT / SWARM                       │
+│    Multiple specialized agents cooperate     │
+└──────────────────────────────────────────────┘
+                       │
+                       ▼
+                HIGH AUTONOMY
+</code></pre>
+<hr />
+</div></details>
+<details class="chunk" id="agentic-workflows-c13"><summary>9️⃣ But Here's the BIG Architectural Insight 🎯</summary><div class="chunk-body">
+<p>Do <strong>NOT</strong> think:</p>
+<pre><code class="language-text">Workflow 1
+    ↓
+Workflow 2
+    ↓
+Workflow 3
+    ↓
+Workflow 4
+    ↓
+Workflow 5
+    ↓
+Workflow 6
+</code></pre>
+<p>as:</p>
+<blockquote>
+<p>"I must always use the latest workflow."</p>
+</blockquote>
+<p>Instead think:</p>
+<pre><code class="language-text">                 ┌───────────────┐
+                 │     TASK      │
+                 └───────┬───────┘
+                         │
+          ┌──────────────┼──────────────┐
+          │              │              │
+          ▼              ▼              ▼
+      RISK LEVEL     COMPLEXITY     INNOVATION
+          │              │              │
+          └──────────────┼──────────────┘
+                         │
+                         ▼
+                  RISK APPETITE
+                         │
+                         ▼
+                  CHOOSE WORKFLOW
+</code></pre>
+<hr />
+</div></details>
+<details class="chunk" id="agentic-workflows-c14"><summary>🔟 Mission-Critical Software 🏦</summary><div class="chunk-body">
+<p>For:</p>
+<pre><code class="language-text">Banking
+Payments
+Settlement
+Risk
+Security
+Large enterprise systems
+Highly innovative systems
+Large existing codebases
+</code></pre>
+<p>the source recommends leaning toward the <strong>first three workflows</strong>. </p>
+<p>Think:</p>
+<pre><code class="language-text">              MISSION CRITICAL
+                     │
+                     ▼
+              HUMAN OVERSIGHT
+                     │
+                     ▼
+             ┌───────────────┐
+             │     PLAN      │
+             └───────┬───────┘
+                     ▼
+                EXECUTE
+                     │
+                     ▼
+                 REVIEW
+                     │
+                     ▼
+                  TEST
+                     │
+                     ▼
+                VERIFY
+</code></pre>
+<p>Why?</p>
+<p>Because the cost of:</p>
+<pre><code class="language-text">AI mistake
+    ↓
+Production
+    ↓
+Financial / Security / Customer impact
+</code></pre>
+<p>is enormous.</p>
+<hr />
+</div></details>
+<details class="chunk" id="agentic-workflows-c15"><summary>1️⃣1️⃣ MVP / Prototype / Boilerplate 🚀</summary><div class="chunk-body">
+<p>Now consider:</p>
+<pre><code class="language-text">Empty directory
+       │
+       ▼
+React application
+       │
+       ▼
+CRUD backend
+       │
+       ▼
+Prototype
+       │
+       ▼
+Low business risk
+</code></pre>
+<p>Here:</p>
+<pre><code class="language-text">       MORE AUTONOMY
+             │
+             ▼
+           YOLO
+             │
+             ▼
+       RALPH LOOP
+             │
+             ▼
+       MULTI-AGENTS
+</code></pre>
+<p>can make much more sense.</p>
+<hr />
+</div></details>
+<details class="chunk" id="agentic-workflows-c16"><summary>1️⃣2️⃣ The Decision Matrix</summary><div class="chunk-body">
+<p>Here's the architect's version:</p>
+<pre><code class="language-text">                         RISK
+                  LOW              HIGH
+                   │                │
+                   │                │
+        ┌──────────┼────────────────┼──────────┐
+        │          │                │          │
+        │          │                │          │
+LOW     │   YOLO   │   SPEC         │          │
+        │          │   DRIVEN       │          │
+COMPLEX │          │                │          │
+        │          │                │          │
+        ├──────────┼────────────────┼──────────┤
+        │          │                │          │
+HIGH    │  RALPH   │   PLAN +       │ MICRO    │
+        │  LOOP    │   REVIEW       │ MANAGE   │
+COMPLEX │          │                │          │
+        │          │                │          │
+        └──────────┴────────────────┴──────────┘
+</code></pre>
+<p>A simpler version:</p>
+<pre><code class="language-text">Prototype / Boilerplate
+        ↓
+More autonomy
+
+Enterprise / Mission Critical
+        ↓
+More control
+</code></pre>
+<hr />
+</div></details>
+<details class="chunk" id="agentic-workflows-c17"><summary>1️⃣3️⃣ And Now Connect This to Context Engineering 🔗</summary><div class="chunk-body">
+<p>This is where the previous lessons become powerful.</p>
+<p>We previously learned:</p>
+<pre><code class="language-text">       CONTEXT
+          │
+ ┌────────┼─────────┐
+ │        │         │
+ ▼        ▼         ▼
+Prompt  Tools    Memory
+ │                  │
+ └───────┬──────────┘
+         ▼
+     AGENTS.md
+         │
+         ▼
+        LLM
+</code></pre>
+<p>Now add <strong>workflow</strong>:</p>
+<pre><code class="language-text">                    CONTEXT
+                       │
+                       ▼
+                    AGENT
+                       │
+                       ▼
+                  WORKFLOW
+                       │
+       ┌───────────────┼───────────────┐
+       │               │               │
+       ▼               ▼               ▼
+    Review           Loop           Swarm
+       │               │               │
+       ▼               ▼               ▼
+    Human           Agent          Agents
+    control        feedback       cooperate
+</code></pre>
+<p>So:</p>
+<blockquote>
+<p><strong>Context engineering tells the agent what it knows.</strong></p>
+<p><strong>Workflow engineering tells the agent how it works.</strong></p>
+</blockquote>
+<p>That distinction is extremely useful.</p>
+<hr />
+</div></details>
+<details class="chunk" id="agentic-workflows-c18"><summary>1️⃣4️⃣ The Most Important Principle ⚠️</summary><div class="chunk-body">
+<p>The source ends with perhaps the most important professional lesson:</p>
+<pre><code class="language-text">                LLM
+                 │
+                 │ helps
+                 ▼
+             DEVELOPER
+                 │
+                 │ owns
+                 ▼
+              QUALITY
+                 │
+                 ▼
+           PRODUCTION CODE
+</code></pre>
+<p>NOT:</p>
+<pre><code class="language-text">LLM
+ │
+ ▼
+&quot;I wrote it.&quot;
+ │
+ ▼
+&quot;Not my responsibility.&quot;
+</code></pre>
+<p>❌</p>
+<p>Instead:</p>
+<pre><code class="language-text">                    YOU
+                     │
+             ┌───────┴────────┐
+             │                │
+             ▼                ▼
+          AI HELP          YOUR JUDGMENT
+             │                │
+             └───────┬────────┘
+                     ▼
+                  VALIDATE
+                     │
+                     ▼
+                   TEST
+                     │
+                     ▼
+                  VERIFY
+                     │
+                     ▼
+              DELIVER QUALITY
+</code></pre>
+<p>The source is explicit: <strong>the LLM writing the code is not an excuse for poor quality; the engineer remains accountable for validating and delivering working software.</strong> </p>
+<hr />
+</div></details>
+<details class="chunk" id="agentic-workflows-c19"><summary>🧠 Final Mental Model</summary><div class="chunk-body">
+<p>If you remember only <strong>one diagram</strong>, make it this:</p>
+<pre><code class="language-text">                         TASK
+                           │
+                           ▼
+                  ┌────────────────┐
+                  │  ASSESS RISK   │
+                  └───────┬────────┘
+                          │
+             ┌────────────┼────────────┐
+             │            │            │
+             ▼            ▼            ▼
+          CRITICAL      COMPLEX      BOILERPLATE
+             │            │            │
+             ▼            ▼            ▼
+       MORE CONTROL   SPEC/PLAN      MORE TRUST
+             │            │            │
+             ▼            ▼            ▼
+       ┌──────────┐  ┌──────────┐  ┌──────────┐
+       │ HUMAN    │  │  AGENT   │  │  AGENT   │
+       │ REVIEWS  │  │ + VERIFY │  │ AUTONOMY │
+       └────┬─────┘  └────┬─────┘  └────┬─────┘
+            │             │             │
+            └─────────────┼─────────────┘
+                          ▼
+                    TEST + VALIDATE
+                          │
+                          ▼
+                    ┌────────────┐
+                    │   HUMAN    │
+                    │ ACCOUNTABLE│
+                    └─────┬──────┘
+                          │
+                          ▼
+                     PRODUCTION
+</code></pre>
+<h2>🎯 Final Recall Challenge</h2>
+<p>Try answering these <strong>without looking back</strong>:</p>
+<ol>
+<li><strong>Why isn't YOLO always better than micromanagement?</strong></li>
+<li><strong>What is the key difference between Spec-Driven Development and Ralph Loops?</strong></li>
+<li><strong>What makes a Ralph Loop different from a normal agent loop?</strong></li>
+<li><strong>When would you choose a multi-agent swarm?</strong></li>
+<li><strong>Why is a large enterprise codebase different from a greenfield prototype?</strong></li>
+<li><strong>What determines the appropriate level of agent autonomy?</strong></li>
+<li><strong>Who owns the final quality of AI-generated code?</strong></li>
+</ol>
+<h3>The one-line answer tying everything together:</h3>
+<pre><code class="language-text">     GOOD AI ENGINEERING
+            =
+   RIGHT CONTEXT
+        +
+   RIGHT WORKFLOW
+        +
+   RIGHT LEVEL
+    OF AUTONOMY
+        +
+   HUMAN ACCOUNTABILITY
+</code></pre>
+<p>That is the <strong>architect's mental model</strong> for agentic coding. </p></div></details>
+</section>
+
+<hr class='docsep'>
+<section id="agents-md" class="doc" data-doc="agents-md">
+<div class="doc-title">3. AGENTS.md — Field Manual</div>
+<details class="chunk" id="agents-md-c0"><summary>🧠 AGENTS.md — Your AI Agent's Field Manual</summary><div class="chunk-body">
+<p>Let's learn this as an <strong>AI architect designing an agentic software system</strong>.</p>
+<p>The key idea from the material is that <code>AGENTS.md</code> is not merely documentation. It is a way of <strong>injecting project-specific operating instructions into the agent's context</strong>. </p>
+<hr />
+</div></details>
+<details class="chunk" id="agents-md-c1"><summary>PART 1 — 🧩 Recall First</summary><div class="chunk-body">
+<p>Don't look at the answers yet.</p>
+<h3>Q1 — Why Markdown?</h3>
+<p>Why do you think <code>AGENTS.md</code> uses <strong>Markdown</strong> instead of some complicated configuration format?</p>
+<p>Think:</p>
+<pre><code class="language-text">LLM
+ │
+ ├── Reads?
+ ├── Understands?
+ └── Generates?
+</code></pre>
+<hr />
+<h3>Q2 — One File or Many?</h3>
+<p>Suppose your project looks like:</p>
+<pre><code class="language-text">my-app/
+├── AGENTS.md
+├── frontend/
+│   └── AGENTS.md
+└── backend/
+    ├── AGENTS.md
+    └── payments/
+        └── AGENTS.md
+</code></pre>
+<p>If the agent is modifying:</p>
+<pre><code class="language-text">backend/payments/refund.go
+</code></pre>
+<p>Which <code>AGENTS.md</code> files should influence it?</p>
+<hr />
+<h3>Q3 — The Override Question</h3>
+<p>Suppose the root says:</p>
+<pre><code class="language-text">&quot;Use REST APIs.&quot;
+</code></pre>
+<p>But:</p>
+<pre><code class="language-text">backend/payments/AGENTS.md
+</code></pre>
+<p>says:</p>
+<pre><code class="language-text">&quot;Use gRPC for payment services.&quot;
+</code></pre>
+<p>Which rule should win?</p>
+<hr />
+<h3>Q4 — Context Budget</h3>
+<p>Why shouldn't you write a 10,000-line <code>AGENTS.md</code>?</p>
+<p>Think back to our previous discussion:</p>
+<pre><code class="language-text">AGENTS.md
+     ↓
+CONTEXT WINDOW
+</code></pre>
+<p>What is the architectural problem?</p>
+<hr />
+<h3>Q5 — Positive vs Negative Instructions</h3>
+<p>Which is likely to be better?</p>
+<pre><code class="language-text">A:
+&quot;Don't write complicated code.
+ Don't add unnecessary comments.
+ Don't create long README files.&quot;
+</code></pre>
+<p>or:</p>
+<pre><code class="language-text">B:
+&quot;Prefer simple code.
+ Use comments only when necessary.
+ Keep README files concise.&quot;
+</code></pre>
+<p>Why?</p>
+<hr />
+<h3>Q6 — The 2025 vs 2026 Question</h3>
+<p>Which approach would you choose for a <strong>large production banking platform</strong>?</p>
+<pre><code class="language-text">2025:
+Control the agent tightly
+        VS
+2026:
+Give it the goal and let it self-correct
+</code></pre>
+<p>Is the answer always one or the other?</p>
+<hr />
+</div></details>
+<details class="chunk" id="agents-md-c2"><summary>PART 2 — 🏗️ What Is AGENTS.md?</summary><div class="chunk-body">
+<p>Think of a new software engineer joining your organization.</p>
+<p>You wouldn't just give them:</p>
+<pre><code class="language-text">Git repository
+      ↓
+&quot;Good luck!&quot;
+</code></pre>
+<p>Instead:</p>
+<pre><code class="language-text">                    NEW ENGINEER
+                         │
+                         ▼
+              ┌─────────────────────┐
+              │   ENGINEERING       │
+              │     HANDBOOK        │
+              ├─────────────────────┤
+              │ Architecture        │
+              │ Coding standards    │
+              │ Commands            │
+              │ Constraints         │
+              │ Project goals       │
+              │ Testing rules       │
+              └──────────┬──────────┘
+                         │
+                         ▼
+                  PRODUCTIVE DEV
+</code></pre>
+<p><code>AGENTS.md</code> plays a similar role for a <strong>coding agent</strong>.</p>
+<pre><code class="language-text">                    CODING AGENT
+                         │
+                         ▼
+              ┌─────────────────────┐
+              │     AGENTS.md       │
+              ├─────────────────────┤
+              │ Project goals       │
+              │ Success criteria    │
+              │ Coding standards    │
+              │ Important rules     │
+              │ Testing expectations│
+              └──────────┬──────────┘
+                         │
+                         ▼
+                  BETTER AGENT
+                   BEHAVIOR
+</code></pre>
+<hr />
+</div></details>
+<details class="chunk" id="agents-md-c3"><summary>PART 3 — Why Markdown? 📝</summary><div class="chunk-body">
+<p>Markdown is basically:</p>
+<pre><code class="language-text">Plain Text
+    +
+Simple Structure
+    +
+Human Readability
+    +
+LLM Friendly
+</code></pre>
+<p>For example:</p>
+<pre><code class="language-text"># Project Goal
+
+Build a reliable payment service.
+
+## Coding Standards
+
+- Prefer simple implementations
+- Keep functions small
+- Write concise documentation
+
+## Testing
+
+- Run unit tests
+- Validate payment failure scenarios
+</code></pre>
+<p>Very simple.</p>
+<pre><code class="language-text">Markdown
+   │
+   ├── Easy for humans
+   │
+   ├── Easy for LLMs
+   │
+   ├── Easy to edit
+   │
+   └── Easy to version-control
+</code></pre>
+<p>The source specifically emphasizes that LLMs are very familiar with Markdown because of their training on large amounts of it. </p>
+<hr />
+</div></details>
+<details class="chunk" id="agents-md-c4"><summary>PART 4 — The Most Important Rule</summary><div class="chunk-body">
+<p>Your <code>AGENTS.md</code> is <strong>NOT free</strong>.</p>
+<p>It consumes context.</p>
+<pre><code class="language-text">             CONTEXT WINDOW
+┌─────────────────────────────────────┐
+│                                     │
+│ System Instructions                 │
+│ Tools                               │
+│ Memory                              │
+│ Conversation                        │
+│ Code                                │
+│ Tool Results                        │
+│                                     │
+│ AGENTS.md  ◄──────────────┐         │
+│                           │         │
+└───────────────────────────┼─────────┘
+                            │
+                         SPACE
+                         CONSUMED
+</code></pre>
+<p>Therefore:</p>
+<pre><code class="language-text">BAD AGENTS.md
+────────────────────────
+Very long
+Very verbose
+Repeated rules
+Unnecessary explanations
+Too many examples
+</code></pre>
+<p>versus:</p>
+<pre><code class="language-text">GOOD AGENTS.md
+────────────────────────
+Concise
+Specific
+Assertive
+Relevant
+High-signal
+</code></pre>
+<h3>🧠 Architect's rule</h3>
+<blockquote>
+<p><strong>Every line in AGENTS.md competes for context-window space.</strong></p>
+</blockquote>
+<p>The source explicitly describes this space as precious and recommends making every word count. </p>
+<hr />
+</div></details>
+<details class="chunk" id="agents-md-c5"><summary>PART 5 — The Hierarchy Is the Interesting Part 🔥</summary><div class="chunk-body">
+<p>This is where <code>AGENTS.md</code> becomes much more powerful.</p>
+<p>Imagine:</p>
+<pre><code class="language-text">project/
+│
+├── AGENTS.md
+│
+├── frontend/
+│   ├── AGENTS.md
+│   │
+│   └── components/
+│       └── AGENTS.md
+│
+└── backend/
+    ├── AGENTS.md
+    │
+    └── payments/
+        └── AGENTS.md
+</code></pre>
+<p>Now the agent works on:</p>
+<pre><code class="language-text">backend/payments/refund.go
+</code></pre>
+<p>It can effectively build context from:</p>
+<pre><code class="language-text">project/AGENTS.md
+        │
+        ▼
+backend/AGENTS.md
+        │
+        ▼
+payments/AGENTS.md
+        │
+        ▼
+refund.go
+</code></pre>
+<p>Think of it as <strong>context inheritance</strong>.</p>
+<hr />
+</div></details>
+<details class="chunk" id="agents-md-c6"><summary>PART 6 — Parent → Child Inheritance</summary><div class="chunk-body">
+<p>Here's the mental model:</p>
+<pre><code class="language-text">                    PROJECT
+                      │
+                 AGENTS.md
+                      │
+                General Rules
+                      │
+                      ▼
+                  BACKEND
+                      │
+                 AGENTS.md
+                      │
+             Backend Rules
+                      │
+                      ▼
+                 PAYMENTS
+                      │
+                 AGENTS.md
+                      │
+            Payment Rules
+                      │
+                      ▼
+                 refund.go
+</code></pre>
+<p>The deeper you go:</p>
+<pre><code class="language-text">        GENERAL
+           │
+           ▼
+      MORE SPECIFIC
+           │
+           ▼
+     VERY SPECIFIC
+</code></pre>
+<hr />
+</div></details>
+<details class="chunk" id="agents-md-c7"><summary>PART 7 — Override Mechanism ⚡</summary><div class="chunk-body">
+<p>Suppose:</p>
+<pre><code class="language-text">ROOT AGENTS.md
+
+&quot;Use REST APIs.&quot;
+</code></pre>
+<p>Then:</p>
+<pre><code class="language-text">backend/payments/AGENTS.md
+
+&quot;Payment services use gRPC.&quot;
+</code></pre>
+<p>The agent working inside <code>payments/</code> gets:</p>
+<pre><code class="language-text">ROOT
+ │
+ │ general rule
+ ▼
+&quot;REST&quot;
+ │
+ │ overridden by
+ ▼
+PAYMENTS
+ │
+ ▼
+&quot;gRPC&quot;
+</code></pre>
+<p>So:</p>
+<pre><code class="language-text">Outer Rule
+    │
+    ▼
+General
+    │
+    X
+    │ overridden
+    ▼
+Inner Rule
+    │
+    ▼
+Specific
+</code></pre>
+<h3>🧠 Think:</h3>
+<pre><code class="language-text">Parent = default
+Child  = specialization
+</code></pre>
+<p>This is very similar to <strong>configuration inheritance</strong> in software architecture.</p>
+<hr />
+</div></details>
+<details class="chunk" id="agents-md-c8"><summary>PART 8 — Scope Matters 🎯</summary><div class="chunk-body">
+<p>This is an important distinction.</p>
+<p>A root <code>AGENTS.md</code>:</p>
+<pre><code class="language-text">project/AGENTS.md
+</code></pre>
+<p>is broadly applicable.</p>
+<p>But:</p>
+<pre><code class="language-text">project/payments/AGENTS.md
+</code></pre>
+<p>is relevant when the agent works in:</p>
+<pre><code class="language-text">payments/
+   ├── create.go
+   ├── refund.go
+   └── settlement.go
+</code></pre>
+<p>So:</p>
+<pre><code class="language-text">             PROJECT
+                │
+        ┌───────┴────────┐
+        │                │
+    frontend           backend
+                         │
+                      payments
+                         │
+                  AGENTS.md
+                         │
+                         ▼
+                  Payment Work
+</code></pre>
+<p>The deeper file provides <strong>localized context</strong>.</p>
+<hr />
+</div></details>
+<details class="chunk" id="agents-md-c9"><summary>PART 9 — What Should Go Inside?</summary><div class="chunk-body">
+<p>A useful structure:</p>
+<pre><code class="language-text">                 AGENTS.md
+                     │
+        ┌────────────┼─────────────┐
+        │            │             │
+        ▼            ▼             ▼
+     GOALS       STANDARDS      SUCCESS
+                                  CRITERIA
+        │            │             │
+        └────────────┼─────────────┘
+                     │
+                     ▼
+                  TESTING
+                     │
+                     ▼
+               EXTRA DOCS
+</code></pre>
+<p>More concretely:</p>
+<pre><code class="language-text"># Project Goal
+
+What are we building?
+
+# Success Criteria
+
+What does &quot;done&quot; mean?
+
+# Coding Standards
+
+How should code be written?
+
+# Testing
+
+How do we verify the work?
+
+# Additional Resources
+
+Where can the agent find more information?
+</code></pre>
+<hr />
+</div></details>
+<details class="chunk" id="agents-md-c10"><summary>PART 10 — Success Criteria Are Powerful 🎯</summary><div class="chunk-body">
+<p>Instead of simply saying:</p>
+<pre><code class="language-text">&quot;Implement payment retry.&quot;
+</code></pre>
+<p>give the agent measurable completion criteria:</p>
+<pre><code class="language-text">SUCCESS CRITERIA
+────────────────────────────
+
+[ ] Retry transient failures
+[ ] Maximum 3 attempts
+[ ] Exponential backoff
+[ ] Preserve idempotency
+[ ] Add unit tests
+[ ] Add failure-path tests
+</code></pre>
+<p>Now the agent has a <strong>definition of done</strong>.</p>
+<pre><code class="language-text">                 TASK
+                  │
+                  ▼
+          ┌───────────────┐
+          │ AGENTS.md     │
+          │               │
+          │ Success       │
+          │ Criteria      │
+          └───────┬───────┘
+                  │
+                  ▼
+             IMPLEMENT
+                  │
+                  ▼
+               TEST
+                  │
+                  ▼
+          ┌───────────────┐
+          │ CHECKLIST     │
+          │               │
+          │ ☑ Requirement │
+          │ ☑ Requirement │
+          │ ☑ Requirement │
+          └───────────────┘
+                  │
+                  ▼
+                 DONE
+</code></pre>
+<p>The source specifically recommends success criteria and checklists as part of an effective <code>AGENTS.md</code>. </p>
+<hr />
+</div></details>
+<details class="chunk" id="agents-md-c11"><summary>PART 11 — Coding Standards: Don't Let AI "Get Creative" 😄</summary><div class="chunk-body">
+<p>LLMs have a tendency to over-engineer.</p>
+<p>You might ask:</p>
+<pre><code class="language-text">&quot;Add a simple API.&quot;
+</code></pre>
+<p>And receive:</p>
+<pre><code class="language-text">API
+ │
+ ├── Factory
+ ├── Abstract Factory
+ ├── Strategy
+ ├── Builder
+ ├── Adapter
+ ├── Event Bus
+ ├── 7 interfaces
+ └── 14 files
+</code></pre>
+<p>😂</p>
+<p>Your <code>AGENTS.md</code> can establish:</p>
+<pre><code class="language-text">                 CODING PRINCIPLE
+
+                  SIMPLE
+                    │
+                    ▼
+              &quot;Simpler is better&quot;
+                    │
+        ┌───────────┼───────────┐
+        ▼           ▼           ▼
+     Minimal     Clear       Focused
+     design      code        changes
+</code></pre>
+<p>The source specifically calls out avoiding unnecessary complexity, excessive comments, lengthy README files, over-defensive programming, and unnecessary exception handling. </p>
+<hr />
+</div></details>
+<details class="chunk" id="agents-md-c12"><summary>PART 12 — Positive Instructions Work Better 👍</summary><div class="chunk-body">
+<p>Instead of:</p>
+<pre><code class="language-text">❌ DON'T write complicated code
+❌ DON'T create long README files
+❌ DON'T add unnecessary comments
+❌ DON'T use X
+</code></pre>
+<p>prefer:</p>
+<pre><code class="language-text">✅ Prefer simple implementations
+✅ Keep README files concise
+✅ Add comments only when necessary
+✅ Follow the project's preferred tooling
+</code></pre>
+<p>Think:</p>
+<pre><code class="language-text">NEGATIVE INSTRUCTIONS
+        │
+        ▼
+   &quot;DON'T DO X&quot;
+        │
+        ▼
+    More ambiguity
+
+
+POSITIVE INSTRUCTIONS
+        │
+        ▼
+    &quot;DO Y&quot;
+        │
+        ▼
+   Clear behavior
+</code></pre>
+<p>The source notes that agents tend to handle positive instructions more coherently than a large number of negative constraints. </p>
+<hr />
+</div></details>
+<details class="chunk" id="agents-md-c13"><summary>PART 13 — Tool-Specific Names</summary><div class="chunk-body">
+<p>The concept is the same, even though names differ:</p>
+<pre><code class="language-text">                 CODING AGENT
+                       │
+          ┌────────────┼────────────┐
+          ▼            ▼            ▼
+       Cursor       Claude       Gemini
+          │           Code          │
+          ▼            ▼            ▼
+       Rules /      CLAUDE.md    GEMINI.md
+       AGENTS.md
+</code></pre>
+<p>The material describes <code>AGENTS.md</code> as the broader/de facto direction, while some tools retain their own mechanisms or naming conventions. </p>
+<hr />
+</div></details>
+<details class="chunk" id="agents-md-c14"><summary>PART 14 — 2025 vs 2026 Mindset ⚔️</summary><div class="chunk-body">
+<p>This is probably the most interesting strategic section.</p>
+<h2>🏛️ 2025 Mindset</h2>
+<pre><code class="language-text">        HUMAN
+          │
+          ▼
+   Carefully prepare
+     AGENTS.md
+          │
+          ▼
+   Carefully prepare
+      context
+          │
+          ▼
+      Start Agent
+          │
+          ▼
+       Observe
+          │
+          ▼
+      Stop Agent
+          │
+          ▼
+      Rewrite / Prune
+          │
+          ▼
+       Reset
+          │
+          ▼
+       Continue
+</code></pre>
+<p>Human remains heavily involved.</p>
+<hr />
+<h2>🤖 2026 Mindset</h2>
+<pre><code class="language-text">                 HUMAN
+                   │
+                   ▼
+              END GOAL
+                   │
+                   ▼
+             ┌───────────┐
+             │   AGENT   │
+             └─────┬─────┘
+                   │
+          ┌────────┼────────┐
+          ▼        ▼        ▼
+       Skills    Agents   Sub-agents
+          │        │        │
+          └────────┼────────┘
+                   ▼
+               LOOP
+                   │
+                   ▼
+              SELF-CORRECT
+                   │
+                   ▼
+                  DONE
+</code></pre>
+<p>The human increasingly says:</p>
+<blockquote>
+<p><strong>"Here's what I want. Figure out how to get there."</strong></p>
+</blockquote>
+<hr />
+</div></details>
+<details class="chunk" id="agents-md-c15"><summary>PART 15 — But Here's the Architect's Answer 🏗️</summary><div class="chunk-body">
+<p>The source doesn't really argue that one approach universally replaces the other.</p>
+<p>Instead:</p>
+<pre><code class="language-text">                 PROJECT
+                    │
+          ┌─────────┴──────────┐
+          │                    │
+          ▼                    ▼
+      LOW RISK              HIGH RISK
+      / TOY                  / PROD
+          │                    │
+          ▼                    ▼
+     LET AGENT GO        MORE CONTROL
+          │                    │
+          ▼                    ▼
+    Goal-oriented         Strong context
+    autonomy              engineering
+</code></pre>
+<p>For something like:</p>
+<pre><code class="language-text">Small prototype
+        │
+        ▼
+&quot;Let the agent cook.&quot; 🍳
+</code></pre>
+<p>might be perfectly reasonable.</p>
+<p>But for:</p>
+<pre><code class="language-text">Banking
+Payments
+Settlement
+Security
+Compliance
+Financial transactions
+</code></pre>
+<p>you probably want:</p>
+<pre><code class="language-text">              HUMAN ARCHITECT
+                     │
+                     ▼
+              CLEAR OBJECTIVE
+                     │
+                     ▼
+               STRONG CONTEXT
+                     │
+                     ▼
+                AGENTIC LOOP
+                     │
+                     ▼
+                 TESTING
+                     │
+                     ▼
+             HUMAN VALIDATION
+</code></pre>
+<p>The source author explicitly describes still favoring the more controlled/context-optimized approach for larger projects while recognizing the increasing shift toward autonomous agentic workflows in 2026. </p>
+<hr />
+</div></details>
+<details class="chunk" id="agents-md-c16"><summary>🧠 The One Diagram to Remember</summary><div class="chunk-body">
+<p>If you're an <strong>AI architect</strong>, remember this:</p>
+<pre><code class="language-text">                         PROJECT
+                            │
+                            ▼
+                 ┌─────────────────────┐
+                 │      AGENTS.md      │
+                 │                     │
+                 │  &quot;How should the    │
+                 │   agent operate?&quot;   │
+                 └──────────┬──────────┘
+                            │
+              ┌─────────────┼──────────────┐
+              │             │              │
+              ▼             ▼              ▼
+           GOALS        STANDARDS      SUCCESS
+                                        CRITERIA
+              │             │              │
+              └─────────────┼──────────────┘
+                            │
+                            ▼
+                    CONTEXT WINDOW
+                            │
+                            ▼
+                       ┌─────────┐
+                       │  AGENT  │
+                       └────┬────┘
+                            │
+                  ┌─────────┼─────────┐
+                  ▼         ▼         ▼
+                TOOLS     SKILLS   SUB-AGENTS
+                  │         │         │
+                  └─────────┼─────────┘
+                            ▼
+                         EXECUTE
+                            │
+                            ▼
+                       SELF-CHECK
+                            │
+                            ▼
+                    ┌───────────────┐
+                    │   SUCCESS?    │
+                    └───────┬───────┘
+                            │
+                   ┌────────┴────────┐
+                   │                 │
+                  NO                YES
+                   │                 │
+                   ▼                 ▼
+                ITERATE             DONE
+</code></pre>
+<h2>🎯 Final Recall Test</h2>
+<p>Without looking above, explain these <strong>7 concepts</strong>:</p>
+<pre><code class="language-text">1. AGENTS.md
+      ↓
+2. Context Budget
+      ↓
+3. Root vs Nested AGENTS.md
+      ↓
+4. Override / Inheritance
+      ↓
+5. Success Criteria
+      ↓
+6. Positive Instructions
+      ↓
+7. 2025 vs 2026 Agentic Mindset
+</code></pre>
+<p>If you can explain those seven, you understand <strong>how to architect the instruction layer of a coding agent</strong>, rather than simply knowing what <code>AGENTS.md</code> is.</p></div></details>
+</section>
+
+
+<p><a class="backtotop" href="#top">&uarr; back to top</a></p>
+
+<script>
+  document.getElementById('expandAll').onclick = function(){
+    document.querySelectorAll('details.chunk').forEach(function(d){ d.open = true; });
+  };
+  document.getElementById('collapseAll').onclick = function(){
+    document.querySelectorAll('details.chunk').forEach(function(d){ d.open = false; });
+  };
+</script>
+
+</body>
+</html>

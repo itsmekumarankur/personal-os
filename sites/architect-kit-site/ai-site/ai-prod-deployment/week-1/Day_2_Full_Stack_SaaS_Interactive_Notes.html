@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 2 — Full Stack SaaS Application</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#667085;--accent:#315efb;--border:#dfe4ec;--blue:#eef4ff;--green:#eaf8f0;--orange:#fff4df}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;line-height:1.6}
+.wrap{max-width:1000px;margin:auto;padding:28px 18px 60px}header{background:linear-gradient(135deg,#172554,#315efb);color:#fff;border-radius:20px;padding:32px 28px;margin-bottom:22px;box-shadow:0 10px 30px #17255422}
+h1{margin:0 0 8px;font-size:34px}header p{margin:0;opacity:.92}.tip{background:var(--blue);border-left:5px solid var(--accent);padding:14px 16px;border-radius:10px;margin:18px 0}
+.section{background:var(--card);border:1px solid var(--border);border-radius:16px;margin:14px 0;overflow:hidden}
+summary{cursor:pointer;padding:18px 20px;font-weight:750;font-size:18px;list-style:none}summary::-webkit-details-marker{display:none}
+summary:before{content:"＋";display:inline-block;width:28px;color:var(--accent);font-weight:900}details[open]>summary:before{content:"−"}
+.content{padding:0 20px 22px;border-top:1px solid var(--border)}h2{font-size:22px;margin-top:22px}h3{font-size:17px;margin-top:20px}
+ul,ol{padding-left:24px}pre{background:#111827;color:#e5e7eb;padding:16px;border-radius:10px;overflow:auto}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.green{background:var(--green);border-left:5px solid #12a05a;padding:13px 15px;border-radius:9px}
+.orange{background:var(--orange);border-left:5px solid #f59e0b;padding:13px 15px;border-radius:9px}.small{color:var(--muted);font-size:14px}
+.q{background:#fafbff;border:1px solid var(--border);border-radius:12px;padding:15px;margin:12px 0}.q strong{display:block;margin-bottom:7px}
+table{border-collapse:collapse;width:100%;margin:12px 0}th,td{border:1px solid var(--border);padding:10px;text-align:left;vertical-align:top}th{background:#f0f3f9}
+.footer{text-align:center;color:var(--muted);margin-top:30px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1>Day 2 — Build Your First Full-Stack SaaS App</h1>
+<p>Interactive revision notes: Frontend + Backend + React + Next.js + FastAPI + OpenAI + Git/GitHub + Deployment</p>
+</header>
+
+<div class="tip"><strong>Best way to use these notes:</strong> Start with the recall questions. Then open only the sections you need. The goal is to understand the architecture and why each technology is being used—not just memorize commands.</div>
+
+<details class="section" open>
+<summary>🧠 Recall First — Try Before Reading</summary>
+<div class="content">
+<p class="small">Answer these from memory before opening the answers.</p>
+<div class="q"><strong>Q1. What is the difference between frontend and backend?</strong><details><summary>Show answer</summary><p>Frontend runs in the user's browser and handles the UI. Backend runs on the server and handles business logic, databases, LLM/API calls, secrets and other server-side work.</p></details></div>
+<div class="q"><strong>Q2. How do frontend and backend normally communicate?</strong><details><summary>Show answer</summary><p>The frontend makes an API request to a backend endpoint. The backend processes it and commonly returns JSON, which the frontend uses to update the UI.</p></details></div>
+<div class="q"><strong>Q3. What is React?</strong><details><summary>Show answer</summary><p>A component-based JavaScript/TypeScript frontend framework/library approach for building user interfaces.</p></details></div>
+<div class="q"><strong>Q4. What does SPA mean?</strong><details><summary>Show answer</summary><p>Single Page Application: the application frontend is loaded once and subsequent interaction commonly happens through API calls while the same client application updates the UI.</p></details></div>
+<div class="q"><strong>Q5. Why use Next.js on top of React?</strong><details><summary>Show answer</summary><p>React is flexible and relatively bare-bones. Next.js adds useful application-level functionality such as routing, data fetching and rendering tools, reducing the number of separate decisions/frameworks you need to make.</p></details></div>
+<div class="q"><strong>Q6. What are props and state in React?</strong><details><summary>Show answer</summary><p>Props are information passed from higher-level components to lower-level components. State represents information/status managed by components that can change and cause the UI to update.</p></details></div>
+<div class="q"><strong>Q7. Why is FastAPI being used?</strong><details><summary>Show answer</summary><p>It is a modern Python framework optimized for building API servers/endpoints.</p></details></div>
+<div class="q"><strong>Q8. Why is the Next.js API folder removed?</strong><details><summary>Show answer</summary><p>Because this project uses a separate Python FastAPI backend rather than a JavaScript/Next.js backend.</p></details></div>
+<div class="q"><strong>Q9. What is requirements.txt for?</strong><details><summary>Show answer</summary><p>It lists the Python packages that need to be installed, such as FastAPI, Uvicorn and OpenAI.</p></details></div>
+<div class="q"><strong>Q10. What is the app being built on Day 2?</strong><details><summary>Show answer</summary><p>A simple business idea generator that uses an LLM to generate a new business idea for AI agents.</p></details></div>
+<div class="q"><strong>Q11. What is the five-day progression?</strong><details><summary>Show answer</summary><p>Day 2: frontend + backend. Day 3: authentication + subscription. Day 4: real business functionality. Day 5: deploy the application to AWS.</p></details></div>
+</div>
+</details>
+
+<details class="section" open>
+<summary>1. 🎯 Day 2 Goal — Build a Full-Stack Application</summary>
+<div class="content">
+<p>Day 2 moves from isolated pieces toward a <strong>full-stack application</strong>: a frontend running in the browser connected to a backend running on a server.</p>
+<pre><code>Browser / Frontend
+       │
+       │ API request
+       ▼
+Server / Backend
+       │
+       ├── Business logic
+       ├── LLM calls
+       ├── APIs
+       ├── Database access
+       └── Secrets
+       │
+       ▼
+Response (often JSON)
+       │
+       ▼
+Frontend updates UI</code></pre>
+<p>The instructor emphasizes that this is only an introduction to frontend engineering. The objective is to develop enough intuition to understand how the frontend and backend fit together.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>2. 🖥️ Frontend vs Backend — Core Concept</summary>
+<div class="content">
+<table>
+<tr><th>Frontend</th><th>Backend</th></tr>
+<tr><td>Runs in the user's browser</td><td>Runs on the server</td></tr>
+<tr><td>HTML — structure</td><td>Business logic</td></tr>
+<tr><td>CSS — appearance</td><td>Database access</td></tr>
+<tr><td>JavaScript/TypeScript — interaction</td><td>LLM/API calls</td></tr>
+<tr><td>Buttons, animations, UI</td><td>Secrets and server-side operations</td></tr>
+</table>
+<p><strong>Simple mental model:</strong></p>
+<pre><code>Frontend = What the user sees and interacts with
+Backend  = What the application does behind the scenes</code></pre>
+</div>
+</details>
+
+<details class="section">
+<summary>3. 🔌 How an API Call Connects Them</summary>
+<div class="content">
+<p>A typical flow is:</p>
+<pre><code>User interacts with UI
+        ↓
+Frontend makes API call
+        ↓
+Specific URL / endpoint
+        ↓
+Backend function runs
+        ↓
+Backend generates result
+        ↓
+JSON response
+        ↓
+Frontend receives JSON
+        ↓
+UI changes</code></pre>
+<p>An <strong>endpoint</strong> is essentially a particular URL through which backend functionality can be called.</p>
+<div class="green"><strong>Important:</strong> The frontend does not need to know how the backend internally generates the result. It calls the endpoint and consumes the response.</div>
+</div>
+</details>
+
+<details class="section">
+<summary>4. 📄 Another Backend Pattern — Server Generates the Whole Page</summary>
+<div class="content">
+<p>The backend is not limited to returning JSON. Another pattern is for the server to generate the entire web page and send the resulting page to the browser.</p>
+<pre><code>Browser requests /home
+        ↓
+Server generates page
+        ↓
+Complete page returned
+        ↓
+Browser displays it</code></pre>
+<p>The course will expose you to both patterns.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>5. 🧩 Where Does Gradio Fit?</summary>
+<div class="content">
+<p>Gradio is described as a <strong>backend framework</strong> that can generate the frontend code for you.</p>
+<pre><code>Developer writes UI description in Python
+              ↓
+            Gradio
+              ↓
+Generates frontend UI code
+              ↓
+           Browser</code></pre>
+<p>That is why Gradio can feel like frontend + backend in one. The course is not using Gradio because the goal is to build “real” separate frontend and backend applications.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>6. 🧭 Frontend Technology Evolution</summary>
+<div class="content">
+<pre><code>Vanilla HTML/CSS/JavaScript
+            ↓
+          jQuery
+            ↓
+    JavaScript frameworks
+    React / Vue / Angular / Svelte
+            ↓
+        TypeScript
+            ↓
+     Application frameworks
+          Next.js</code></pre>
+<h3>Vanilla frontend</h3>
+<p>HTML defines structure, CSS controls styling and JavaScript provides interaction. JavaScript often interacts with the <strong>DOM</strong>.</p>
+<h3>DOM</h3>
+<p>DOM means <strong>Document Object Model</strong>. It represents the web page in the browser so JavaScript can find and manipulate elements such as buttons and their appearance.</p>
+<h3>Frontend frameworks</h3>
+<p>React and similar frameworks provide reusable components that make sophisticated interfaces faster to build.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>7. ⚛️ React — The Important Ideas</summary>
+<div class="content">
+<p>React is component-based. A UI is assembled from reusable building blocks.</p>
+<pre><code>             React UI
+                 │
+      ┌──────────┼──────────┐
+      ▼          ▼          ▼
+   Header      Form       Results
+      │          │          │
+  reusable   reusable   reusable
+  component  component  component</code></pre>
+<h3>Declarative UI</h3>
+<p>Instead of manually telling the browser every individual DOM operation, you describe <strong>what the UI should look like for a given state</strong>. React figures out which parts need updating when state changes.</p>
+<h3>Why this matters</h3>
+<p>Historically developers had to write lots of logic to determine which parts of the screen should change. React handles that update process for you.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>8. 🔄 React Props vs State</summary>
+<div class="content">
+<table>
+<tr><th>Concept</th><th>Meaning</th></tr>
+<tr><td><strong>Props</strong></td><td>Properties/information passed from a higher-level component down to smaller components. They influence how the child component presents itself.</td></tr>
+<tr><td><strong>State</strong></td><td>The current information/status managed by components. When state changes, React determines how the UI should update.</td></tr>
+</table>
+<pre><code>Parent Component
+      │
+      │ props
+      ▼
+Child Component
+      │
+      │ manages state
+      ▼
+UI changes when state changes</code></pre>
+</div>
+</details>
+
+<details class="section">
+<summary>9. 📝 JSX / TSX</summary>
+<div class="content">
+<p><strong>JSX</strong> and <strong>TSX</strong> provide a convenient hybrid syntax combining markup with JavaScript/TypeScript logic.</p>
+<pre><code>&lt;UI element&gt;
+   + TypeScript/JavaScript logic
+   + UI markup
+&lt;/UI element&gt;</code></pre>
+<p>The course uses <strong>TypeScript + TSX</strong>. The instructor emphasizes that it becomes natural after seeing it repeatedly.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>10. 🧰 React Ecosystem & Component Libraries</summary>
+<div class="content">
+<p>React has a large ecosystem of reusable components and component libraries.</p>
+<p>Examples mentioned include:</p>
+<ul>
+<li>Material UI</li>
+<li>Chakra</li>
+</ul>
+<p>These libraries provide suites of components that can be combined to build interfaces quickly.</p>
+<div class="green"><strong>Practical lesson:</strong> Modern frontend development often means composing existing components instead of building every UI element from scratch.</div>
+</div>
+</details>
+
+<details class="section">
+<summary>11. ▲ Next.js — React Application Framework</summary>
+<div class="content">
+<p>Next.js is an application framework built on top of React. It packages additional functionality so developers don't have to make as many separate framework choices.</p>
+<p>It provides things such as:</p>
+<ul>
+<li>Routing</li>
+<li>Data fetching tools</li>
+<li>Rendering options</li>
+<li>Transpiling/build tooling</li>
+<li>Bundling</li>
+</ul>
+<pre><code>React
+  ↓
+Flexible but relatively bare-bones
+  ↓
+Next.js
+  ↓
+Routing + data fetching + rendering + build tooling
+  ↓
+Ready-to-build application</code></pre>
+</div>
+</details>
+
+<details class="section">
+<summary>12. 🗂️ Next.js Pages Router vs App Router</summary>
+<div class="content">
+<table>
+<tr><th>Pages Router</th><th>App Router</th></tr>
+<tr><td>Uses a <code>pages</code> directory</td><td>Uses an <code>app</code> directory</td></tr>
+<tr><td>Older / established approach</td><td>Newer approach</td></tr>
+<tr><td>Very common and trusted</td><td>More powerful and now recommended by Next.js</td></tr>
+<tr><td>Used in this week's project</td><td>Not used this week because of the authentication framework requirement</td></tr>
+</table>
+<div class="orange"><strong>Course-specific decision:</strong> The course deliberately uses the Pages Router this week because the authentication framework being used supports it.</div>
+</div>
+</details>
+
+<details class="section">
+<summary>13. 🌐 Client-Side vs Server-Side Rendering</summary>
+<div class="content">
+<p>A page can ultimately be generated in two broad places:</p>
+<pre><code>Client-side rendering:
+Server sends application code
+        ↓
+Browser creates the final page
+
+Server-side rendering:
+Request
+  ↓
+Server runs code
+  ↓
+Server creates final page
+  ↓
+Browser receives page</code></pre>
+<p>For this course, the instructor chooses the <strong>client-side approach</strong> because it is simpler and fits the course better.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>14. 🔧 Transpiling & Bundling</summary>
+<div class="content">
+<p>The course uses modern TypeScript, but browsers do not necessarily understand all of it directly.</p>
+<pre><code>Modern TypeScript
+      ↓
+   Transpiling
+      ↓
+JavaScript suitable for browser
+      ↓
+    Bundling
+      ↓
+Efficient browser assets</code></pre>
+<p>Next.js handles this behind the scenes, allowing the developer to focus on writing the application.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>15. 🐍 Backend Frameworks — Django vs Flask vs FastAPI</summary>
+<div class="content">
+<table>
+<tr><th>Framework</th><th>Main idea</th></tr>
+<tr><td><strong>Django</strong></td><td>Heavyweight / “batteries included”. Includes ORM, authentication, templating and an admin UI among other features.</td></tr>
+<tr><td><strong>Flask</strong></td><td>Minimal/micro framework. Very quick to start, but you generally add other pieces yourself.</td></tr>
+<tr><td><strong>FastAPI</strong></td><td>Modern, popular Python API framework optimized for serving API endpoints; uses async capabilities and integrates with Pydantic.</td></tr>
+</table>
+<div class="green"><strong>Day 2 choice:</strong> FastAPI is used throughout the course as the Python backend.</div>
+</div>
+</details>
+
+<details class="section">
+<summary>16. 📁 Repository Strategy for the Course</summary>
+<div class="content">
+<p>Unlike previous courses with one repository for everything, this course uses a more production-oriented structure with a <strong>different repository for each week</strong>.</p>
+<h3>Why?</h3>
+<ul>
+<li>Practice setting up a project repository from scratch.</li>
+<li>One repo represents one application.</li>
+<li>Support deployment workflows such as GitHub Actions.</li>
+<li>Avoid unnecessary complexity from a monorepo for this course.</li>
+</ul>
+<pre><code>Course
+  │
+  ├── Week 1 repo
+  │     ├── instructions
+  │     ├── guides
+  │     └── application work
+  │
+  ├── Week 2 repo
+  │     └── ...
+  │
+  └── Other weeks</code></pre>
+</div>
+</details>
+
+<details class="section">
+<summary>17. 📚 Week Repository Structure</summary>
+<div class="content">
+<p>The Week 1 repository contains:</p>
+<ul>
+<li><strong>Week 1 instructions</strong> — daily guides.</li>
+<li><strong>Guides</strong> — additional self-study material, including topics such as Docker and frontend development.</li>
+<li><strong>Community contributions</strong> — troubleshooting tips, project write-ups or other useful contributions.</li>
+</ul>
+<p>Community contributions can be shared as a Markdown file with the contributor's name, explanation and potentially a link to their own repository, submitted as a pull request.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>18. 🐙 GitHub + Git Clone — Practical Setup</summary>
+<div class="content">
+<p>The workflow demonstrated is:</p>
+<ol>
+<li>Open GitHub.</li>
+<li>Open the repository.</li>
+<li>Click the green <strong>Code</strong> button.</li>
+<li>Choose HTTPS.</li>
+<li>Copy the repository URL.</li>
+<li>Open a terminal.</li>
+<li>Go to your projects directory.</li>
+<li>Run <code>git clone</code> with the repository URL.</li>
+<li>Enter the newly cloned directory.</li>
+<li>Open it as a project in the IDE.</li>
+</ol>
+<pre><code>GitHub repository
+       ↓
+     HTTPS URL
+       ↓
+    git clone
+       ↓
+Local project copy
+       ↓
+Open in IDE</code></pre>
+</div>
+</details>
+
+<details class="section">
+<summary>19. 💻 IDE / Terminal Tips</summary>
+<div class="content">
+<p>The instructor uses Cursor, but it is not required. Other VS Code-like IDEs, VS Code itself, PyCharm and similar tools can be used.</p>
+<p>Terminal shortcuts demonstrated:</p>
+<ul>
+<li><strong>Ctrl + `</strong> — toggle terminal.</li>
+<li><strong>Ctrl + Shift + `</strong> — open another terminal.</li>
+</ul>
+<p>The instructor recommends keeping project files outside cloud-sync folders such as OneDrive or iCloud when possible, because the projects are already version-controlled and synchronized through GitHub.</p>
+</div>
+</details>
+
+<details class="section" open>
+<summary>20. 🚀 Day 2 Application — Business Idea Generator</summary>
+<div class="content">
+<p>The first application is intentionally simple: a <strong>business idea generator</strong>.</p>
+<p>The user asks the LLM to generate a new business idea related to AI agents.</p>
+<pre><code>User
+ ↓
+Frontend
+ ↓
+FastAPI /api endpoint
+ ↓
+OpenAI API
+ ↓
+LLM generates business idea
+ ↓
+Backend returns result
+ ↓
+Frontend displays it</code></pre>
+<p>The instructor encourages you to change the prompt and make the application your own after getting the basic version working.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>21. 🏗️ Creating the Next.js Project</summary>
+<div class="content">
+<p>Before creating the project, <strong>Node.js must be installed</strong>.</p>
+<p>The project is created using <strong>create-next-app</strong> from the projects directory.</p>
+<p>The selected setup is:</p>
+<table>
+<tr><th>Option</th><th>Choice</th></tr>
+<tr><td>Language</td><td>TypeScript</td></tr>
+<tr><td>Linter</td><td>ESLint</td></tr>
+<tr><td>Styling</td><td>Tailwind CSS</td></tr>
+<tr><td>src directory</td><td>No</td></tr>
+<tr><td>Router</td><td>Pages Router</td></tr>
+<tr><td>Turbopack</td><td>No</td></tr>
+<tr><td>Custom import alias</td><td>No</td></tr>
+</table>
+<div class="orange"><strong>Why Pages Router?</strong> Because the course's authentication framework for the week requires/supports it.</div>
+</div>
+</details>
+
+<details class="section">
+<summary>22. 🎨 Tailwind CSS — Why It Is Used</summary>
+<div class="content">
+<p>Tailwind is a CSS framework that provides ready-to-use utility classes for styling.</p>
+<p>Instead of writing large amounts of traditional CSS, developers can use descriptive utility classes directly in the UI code.</p>
+<pre><code>Traditional approach
+HTML
+  ↓
+CSS files
+  ↓
+Many custom styles
+
+Tailwind
+HTML/TSX
+  ↓
+Utility classes
+  ↓
+Fast styling</code></pre>
+<p>The instructor's advice is essentially: learn by seeing the classes, then reuse and modify styles you like.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>23. 🗑️ Removing Next.js's Built-in API Folder</summary>
+<div class="content">
+<p>The generated Next.js project contains an API folder inside <code>pages</code>. It is removed because the application will use <strong>FastAPI/Python</strong> as its backend.</p>
+<pre><code>Initial Next.js project
+pages/
+ ├── _app.tsx
+ ├── document.tsx
+ ├── index.tsx
+ └── api/
+      └── hello.ts
+
+Remove pages/api/
+        ↓
+Use separate Python backend instead</code></pre>
+<div class="green"><strong>Key distinction:</strong> The original <code>pages/api</code> folder is deleted. Later, a new <code>api</code> folder is created at the <strong>project root</strong> for the Python backend setup.</div>
+</div>
+</details>
+
+<details class="section">
+<summary>24. 🐍 Creating the Python Backend Structure</summary>
+<div class="content">
+<p>At the project root, create:</p>
+<pre><code>sass/
+├── pages/
+├── public/
+├── styles/
+├── api/
+│   └── index.py
+└── requirements.txt</code></pre>
+<p><strong>requirements.txt</strong> lists the Python packages to install:</p>
+<ul>
+<li>FastAPI</li>
+<li>Uvicorn</li>
+<li>OpenAI</li>
+</ul>
+<p><strong>api/index.py</strong> contains the FastAPI backend route.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>25. ⚡ FastAPI — How the /api Route Works</summary>
+<div class="content">
+<p>The backend starts by creating a FastAPI application object.</p>
+<p>A route is defined so that when a request reaches <code>/api</code>, a Python function runs and its result becomes the response.</p>
+<pre><code>HTTP request
+     │
+     ▼
+   /api
+     │
+     ▼
+FastAPI route
+     │
+     ▼
+Python function
+     │
+     ▼
+Response</code></pre>
+<p>In this initial implementation, the response is described as plain text.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>26. 🤖 The AI Part — OpenAI Backend Call</summary>
+<div class="content">
+<p>The instructor emphasizes that this is almost the <strong>only AI-specific code</strong> being written during Day 2. Most of the work is application setup and deployment.</p>
+<p>The backend:</p>
+<ol>
+<li>Creates an OpenAI Python client.</li>
+<li>Builds a user prompt.</li>
+<li>Sends the prompt to the model.</li>
+<li>Reads the returned response content.</li>
+<li>Returns it through the FastAPI endpoint.</li>
+</ol>
+<pre><code>FastAPI
+   ↓
+OpenAI Python client
+   ↓
+Prompt:
+"Come up with a new business idea
+for AI agents"
+   ↓
+LLM
+   ↓
+response.choices[0].message.content
+   ↓
+API response</code></pre>
+</div>
+</details>
+
+<details class="section">
+<summary>27. 💰 Model / Provider Flexibility</summary>
+<div class="content">
+<p>The lesson uses a low-cost model variant for the demonstration. The instructor also notes that you can use other providers/models if you prefer.</p>
+<p>Alternatives mentioned in the course context include:</p>
+<ul>
+<li>Gemini</li>
+<li>OpenRouter</li>
+<li>Other options described in the course guides</li>
+</ul>
+<p>The important architectural idea is that the backend calls an LLM and returns its result; the exact provider can be changed.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>28. 🔄 Complete Day 2 Architecture</summary>
+<div class="content">
+<pre><code>
+                         USER
+                           │
+                           ▼
+                 Next.js + React
+                 TypeScript / TSX
+                           │
+                           │ API request
+                           ▼
+                    FastAPI Backend
+                           │
+                           ▼
+                    OpenAI Python
+                       Client
+                           │
+                           ▼
+                         LLM
+                           │
+                           ▼
+                  Generated response
+                           │
+                           ▼
+                    FastAPI response
+                           │
+                           ▼
+                   Frontend displays
+                           │
+                           ▼
+                          USER
+
+Styling: Tailwind CSS
+Backend packages: FastAPI + Uvicorn + OpenAI
+Repo: GitHub
+IDE: Cursor / VS Code / PyCharm etc.</code></pre>
+</div>
+</details>
+
+<details class="section">
+<summary>29. 🗺️ Week 1 Roadmap — Put Day 2 in Context</summary>
+<div class="content">
+<pre><code>DAY 2
+Frontend + Backend
+Business Idea Generator
+        ↓
+DAY 3
+Authentication + Subscription
+        ↓
+DAY 4
+Real business functionality
+        ↓
+Business SaaS app
+        ↓
+Vercel deployment
+        ↓
+DAY 5
+Deploy the same application to AWS</code></pre>
+<p>So Day 2 is the foundation. The application will be made more commercially useful over the next days.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>30. ⭐ Critical Concepts to Really Understand</summary>
+<div class="content">
+<h3>1. Full stack</h3><p>Frontend and backend working together as one application.</p>
+<h3>2. API endpoint</h3><p>A URL through which the frontend can call backend functionality.</p>
+<h3>3. React</h3><p>Component-based way of building interactive UIs.</p>
+<h3>4. Next.js</h3><p>Application framework built on React that adds routing, rendering and other development tooling.</p>
+<h3>5. FastAPI</h3><p>Python framework for building API servers.</p>
+<h3>6. Tailwind</h3><p>CSS framework providing utility classes for fast styling.</p>
+<h3>7. Pydantic connection</h3><p>FastAPI is built around strong schema/data-description capabilities through Pydantic, which becomes especially important in later days.</p>
+<h3>8. LLM call</h3><p>The backend sends a prompt to an LLM and returns the generated result.</p>
+<h3>9. Deployment mindset</h3><p>A major part of production engineering is configuration and setup, not just writing application logic.</p>
+</div>
+</details>
+
+<details class="section">
+<summary>31. 🧠 One-Page Memory Sheet</summary>
+<div class="content">
+<table>
+<tr><th>Term</th><th>Remember it as...</th></tr>
+<tr><td>Frontend</td><td>Browser-side UI</td></tr>
+<tr><td>Backend</td><td>Server-side business logic</td></tr>
+<tr><td>API endpoint</td><td>URL that calls backend functionality</td></tr>
+<tr><td>JSON</td><td>Common format for data returned by APIs</td></tr>
+<tr><td>DOM</td><td>Browser's model of the web page</td></tr>
+<tr><td>React</td><td>Reusable component-based UI building</td></tr>
+<tr><td>SPA</td><td>One loaded client application that updates through interaction/API calls</td></tr>
+<tr><td>Props</td><td>Data passed down to components</td></tr>
+<tr><td>State</td><td>Changing information managed by components</td></tr>
+<tr><td>JSX/TSX</td><td>Markup + JavaScript/TypeScript syntax</td></tr>
+<tr><td>Next.js</td><td>React application framework</td></tr>
+<tr><td>Pages Router</td><td>Next.js routing approach used this week</td></tr>
+<tr><td>FastAPI</td><td>Python API framework</td></tr>
+<tr><td>Uvicorn</td><td>Python package included for serving the backend</td></tr>
+<tr><td>Tailwind</td><td>Utility-first CSS framework</td></tr>
+<tr><td>requirements.txt</td><td>Python dependency list</td></tr>
+<tr><td>LLM</td><td>Generates the business idea from the prompt</td></tr>
+</table>
+</div>
+</details>
+
+<details class="section">
+<summary>🎯 Final Recall Challenge</summary>
+<div class="content">
+<div class="q"><strong>1. Explain frontend and backend in one sentence each.</strong><details><summary>Answer</summary>Frontend is browser-side UI; backend is server-side application/business logic.</details></div>
+<div class="q"><strong>2. Draw the API flow from user click to result.</strong><details><summary>Answer</summary>User → Frontend → API endpoint → Backend → LLM/API → Backend response → Frontend → UI.</details></div>
+<div class="q"><strong>3. Why doesn't the project use Next.js's API folder?</strong><details><summary>Answer</summary>Because the backend is being built separately in Python with FastAPI.</details></div>
+<div class="q"><strong>4. Why use Next.js instead of plain React?</strong><details><summary>Answer</summary>Next.js adds application-level functionality such as routing, data fetching and rendering/build tooling on top of React.</details></div>
+<div class="q"><strong>5. What is the difference between props and state?</strong><details><summary>Answer</summary>Props are passed into components; state is information managed by components that can change and drive UI updates.</details></div>
+<div class="q"><strong>6. Why is Tailwind useful?</strong><details><summary>Answer</summary>It provides ready-made utility classes that make styling faster and easier.</details></div>
+<div class="q"><strong>7. What three Python packages are placed in requirements.txt?</strong><details><summary>Answer</summary>FastAPI, Uvicorn and OpenAI.</details></div>
+<div class="q"><strong>8. What does /api do?</strong><details><summary>Answer</summary>It maps an incoming request to a FastAPI Python function, which generates and returns the result.</details></div>
+<div class="q"><strong>9. What does the LLM receive?</strong><details><summary>Answer</summary>A prompt asking it to generate a new business idea for AI agents.</details></div>
+<div class="q"><strong>10. What is the most important Day 2 architecture to remember?</strong><details><summary>Answer</summary>Next.js/React frontend communicates with a separate FastAPI Python backend, which calls an LLM and sends the result back to the frontend.</details></div>
+</div>
+</details>
+
+<details class="section">
+<summary>🏆 Final Mental Model</summary>
+<div class="content">
+<pre><code>
+        MODERN FULL-STACK AI APP
+
+             React / Next.js
+                  │
+          User Interface
+                  │
+                  │ API
+                  ▼
+             FastAPI
+                  │
+          Server-side logic
+                  │
+                  ▼
+                LLM
+                  │
+          Generated result
+                  │
+                  ▼
+             FastAPI
+                  │
+                  ▼
+          React / Next.js
+                  │
+                  ▼
+                User
+
+   Next.js = application framework
+   React   = UI components
+   TSX     = TypeScript + markup
+   Tailwind = styling
+   FastAPI = Python API backend
+   OpenAI  = LLM provider
+   GitHub  = source repository
+</code></pre>
+<p><strong>Day 2 in one sentence:</strong> We built the foundation of a production-oriented SaaS application by connecting a TypeScript/React/Next.js frontend to a Python/FastAPI backend that calls an LLM and returns the generated result.</p>
+</div>
+</details>
+
+<div class="footer">Day 2 interactive notes • Based on the attached Day 2 course context</div>
+</div>
+</body>
+</html>
