@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architects Lab — Docker for AI/ML & Agentic Workflows</title>
+<style>
+  :root{
+    --bg:#0d0f14; --panel:#151823; --panel2:#1b1f2e;
+    --ink:#e8e6df; --dim:#8b8fa3;
+    --gold:#d4af5a; --gold-soft:#b8964a;
+    --teal:#5ad4c8; --rose:#d47a8a; --violet:#9a8ad4; --amber:#d4915a;
+    --line:#2a2f42;
+    --mono:'Courier New', ui-monospace, monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif;display:flex;flex-direction:column;min-height:100vh}
+  header{padding:16px 26px 12px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  header .k{font-family:var(--mono);font-size:.68rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase}
+  header h1{font-size:1rem;font-weight:normal}
+  header .count{margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--dim)}
+  .tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
+  .tab{flex:1;min-width:110px;padding:9px 10px;text-align:center;font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;color:var(--dim);border-right:1px solid var(--line);cursor:pointer;white-space:nowrap;transition:.2s;background:transparent;border-top:none;border-bottom:none;border-left:none}
+  .tab:last-child{border-right:none}
+  .tab.active{color:var(--bg);font-weight:bold}
+  .tab[data-c="gold"].active{background:var(--gold)}
+  .tab[data-c="teal"].active{background:var(--teal)}
+  .tab[data-c="rose"].active{background:var(--rose)}
+  .tab[data-c="violet"].active{background:var(--violet)}
+  .tab[data-c="amber"].active{background:var(--amber)}
+  .tab[data-c="ink"].active{background:var(--ink)}
+  main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px 96px;overflow-y:auto}
+  .slide{max-width:780px;width:100%;animation:fadeUp .4s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @media (prefers-reduced-motion: reduce){.slide{animation:none}}
+  .eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px}
+  .eyebrow.gold{color:var(--gold)} .eyebrow.teal{color:var(--teal)} .eyebrow.rose{color:var(--rose)}
+  .eyebrow.violet{color:var(--violet)} .eyebrow.amber{color:var(--amber)} .eyebrow.ink{color:var(--dim)}
+  .slide h2{font-size:1.55rem;font-weight:normal;line-height:1.3;margin-bottom:14px}
+  .slide h2 em{font-style:italic;color:var(--gold)}
+  .slide p{color:#c9c7bf;line-height:1.75;font-size:1rem;margin-bottom:13px}
+  .slide p strong, .slide li strong{color:var(--ink)}
+  .slide code{font-family:var(--mono);font-size:.85em;background:var(--panel2);padding:2px 6px;border-radius:3px;color:var(--gold)}
+  .ascii{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:6px;padding:14px 16px;margin:14px 0;font-family:var(--mono);font-size:.74rem;line-height:1.5;color:#b9c2d8;overflow-x:auto;white-space:pre}
+  .ascii .hl{color:var(--gold)} .ascii .tl{color:var(--teal)} .ascii .rs{color:var(--rose)}
+  .note{border:1px dashed var(--gold-soft);border-radius:6px;padding:11px 15px;margin:14px 0;font-size:.9rem;color:#cfc9ae;line-height:1.65}
+  .note b{color:var(--gold)}
+  ul.pts{margin:10px 0 13px 2px;list-style:none}
+  ul.pts li{padding:6px 0 6px 21px;position:relative;color:#c9c7bf;line-height:1.6;font-size:.95rem}
+  ul.pts li::before{content:"\203A";position:absolute;left:4px;color:var(--gold);font-family:var(--mono)}
+  /* ---- Think First (question) slides ---- */
+  .qcard{border:2px solid var(--gold);border-radius:10px;background:linear-gradient(160deg,#1a1608,#151823);padding:30px 28px;margin:6px 0 18px;position:relative}
+  .qcard::before{content:"?";position:absolute;top:-20px;left:22px;width:38px;height:38px;border-radius:50%;background:var(--gold);color:var(--bg);font-family:var(--mono);font-weight:bold;font-size:1.3rem;display:flex;align-items:center;justify-content:center}
+  .qcard .qlabel{font-family:var(--mono);font-size:.64rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;margin-bottom:12px}
+  .qcard .qtext{font-size:1.25rem;line-height:1.55;color:var(--ink);font-style:italic}
+  .qcard .qsub{margin-top:14px;font-size:.86rem;color:var(--dim);font-style:normal;font-family:var(--mono)}
+  /* ---- lenses (CTO / Director) ---- */
+  details.lens{margin:10px 0;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+  details.lens summary{cursor:pointer;padding:10px 14px;font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;color:var(--teal);list-style:none}
+  details.lens summary::before{content:"+ ";color:var(--gold)}
+  details.lens[open] summary::before{content:"\2212 "}
+  details.lens.dir summary{color:var(--rose)}
+  details.lens .body{padding:2px 16px 13px}
+  details.lens .body li{font-size:.9rem}
+  /* ---- recall quiz slides ---- */
+  .recall-item{border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:6px;background:var(--panel);margin:12px 0;overflow:hidden}
+  .recall-item summary{cursor:pointer;padding:13px 16px;font-size:.98rem;color:var(--ink);list-style:none;line-height:1.55}
+  .recall-item summary::before{content:"Q  ";font-family:var(--mono);color:var(--teal);font-weight:bold}
+  .recall-item .ans{padding:0 16px 13px;color:#b9c2b0;font-size:.92rem;line-height:1.65;border-top:1px dashed var(--line);padding-top:11px;margin:0 16px 13px;padding-left:0;padding-right:0}
+  .recall-item .ans b{color:var(--teal)}
+  .recall-hint{font-family:var(--mono);font-size:.7rem;color:var(--dim);margin-top:6px}
+  footer{position:fixed;left:0;right:0;bottom:0;background:rgba(13,15,20,.93);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:11px 20px;display:flex;align-items:center;gap:14px}
+  .dots{display:flex;gap:4px;flex:1;justify-content:center;flex-wrap:wrap}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--line);cursor:pointer;transition:.2s}
+  .dot.on{background:var(--gold);transform:scale(1.45)}
+  .dot.q{border:1px solid var(--gold);background:transparent}
+  .dot.q.on{background:var(--gold)}
+  button.nav{font-family:var(--mono);font-size:.78rem;letter-spacing:.1em;background:transparent;color:var(--ink);border:1px solid var(--line);padding:9px 18px;border-radius:5px;cursor:pointer;transition:.2s}
+  button.nav:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+  button.nav.primary{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:bold}
+  button.nav.primary:hover{background:#e2c070}
+  button.nav:disabled{opacity:.25;cursor:default}
+  button.nav:focus-visible,.tab:focus-visible,.dot:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .hint{position:fixed;bottom:62px;right:18px;font-family:var(--mono);font-size:.6rem;color:var(--dim);letter-spacing:.1em}
+  @media(max-width:600px){.slide h2{font-size:1.28rem}.ascii{font-size:.58rem;padding:11px}.hint{display:none}.qcard .qtext{font-size:1.08rem}}
+</style>
+</head>
+<body>
+<header>
+  <span class="k">Architects Lab</span>
+  <h1>Docker for AI/ML &amp; Agentic Workflows</h1>
+  <span class="count" id="counter"></span>
+</header>
+<div class="tabs" id="tabs"></div>
+<main><div id="stage"></div></main>
+<div class="hint">&larr; &rarr; keys work too</div>
+<footer>
+  <button class="nav" id="prevBtn">&larr; Prev</button>
+  <div class="dots" id="dots"></div>
+  <button class="nav primary" id="nextBtn">Next &rarr;</button>
+</footer>
+<script>
+const SECTIONS=[
+ {id:"why", label:"WHY DOCKER", c:"teal"},
+ {id:"benefits", label:"BENEFITS", c:"gold"},
+ {id:"workflow", label:"WORKFLOW", c:"violet"},
+ {id:"proof", label:"REAL PROOF", c:"rose"},
+ {id:"frontier", label:"NEW FRONTIER", c:"amber"},
+ {id:"setup", label:"SETUP", c:"ink"}
+];
+const S=[
+
+// ===== INTRO =====
+{sec:"why", c:"teal", eyebrow:"Start Here", t:"a",
+ h:"You already know Docker. This deck tells you <em>why</em> it matters for AI.",
+ body:`<p>You have already built and shipped a Docker container before, on a real project.
+ That was the "how". This deck is the "why" — why Docker became the default tool for
+ building AI and machine learning systems, not just normal apps.</p>
+ <div class="ascii">HOW TO USE THIS DECK
+────────────────────
+1. Every new idea starts with a QUESTION slide.
+2. Try to guess the answer in your head first.
+3. Press Next to see the real answer.
+4. At the end of each part, a quick RECALL quiz checks
+   if the idea actually stuck.
+
+Goal: finish this deck and feel sure you can explain
+"why AI teams use Docker" to anyone, in plain words.</div>
+ <div class="note"><b>Memory hook:</b> Think of Docker as a lunchbox. You pack the food
+ (your code) exactly the way you like it, close the lid, and it tastes the same
+ no matter where you open it — your laptop, your friend's laptop, or a big cloud server.</div>`},
+
+// ===== SECTION: WHY =====
+{sec:"why", c:"teal", eyebrow:"Why Docker · 01", t:"q",
+ q:`Before Docker, teams used <b>Virtual Machines (VMs)</b> to isolate their apps.
+ VMs give you full, strong isolation — a complete fake computer inside your computer.
+ So why did the industry move to Docker, which gives <b>less</b> isolation?
+ What did they get in return for giving something up?`},
+
+{sec:"why", c:"teal", eyebrow:"Why Docker · 01", t:"a",
+ h:"Docker trades a little safety for a lot of <em>speed</em>",
+ body:`<p>A Virtual Machine copies an entire computer — its own operating system, its own
+ memory, everything — just to run one app. That is heavy and slow to start.</p>
+ <p>A Docker container does not copy the operating system. It shares the host computer's
+ operating system "engine" underneath, and only packs the app plus its own tiny bits.
+ That makes it fast, light, and easy to move around.</p>
+ <div class="ascii">                  DOCKER          vs        VIRTUAL MACHINE
+Portability        <span class="hl">Very high</span>                  Lower
+Resource use        <span class="hl">Light</span>                    Heavy
+Startup speed        <span class="hl">Fast</span>                    Slow
+Isolation           Good enough              <span class="rs">Very strong</span></div>
+ <p>As AI models and LLM apps get bigger and more complex, teams need something
+ reproducible (same result every time), portable (runs anywhere), and scalable
+ (handles more load). Docker became the standard way to get all three at once —
+ VMs are now seen as the older, heavier option, saved only for cases that truly
+ need maximum isolation.</p>
+ <div class="note"><b>The trade, in one line:</b> Docker gives up some isolation to gain
+ speed and portability. For almost all AI/ML work, that trade is worth it.</div>`},
+
+{sec:"why", c:"teal", eyebrow:"Why Docker · 02", t:"q",
+ q:`A container does not have its own separate operating system — it shares the
+ host machine's OS. Given that, in your own words: is a container really a "small
+ computer", or something else entirely? What is the one word that best describes
+ what a container actually is?`},
+
+{sec:"why", c:"teal", eyebrow:"Why Docker · 02", t:"a",
+ h:"A container is a <em>process</em> wearing a costume, not a computer",
+ body:`<p>A container is really just a normal running program on your computer — but
+ Docker dresses it up so it <em>believes</em> it has its own private filesystem, its
+ own network, and its own list of running processes. It shares the real engine
+ (the Linux kernel) underneath with every other container on that machine.</p>
+ <div class="ascii">Your Laptop
+ └── One shared Operating System engine (the kernel)
+       ├── Container 1  (thinks it's alone)
+       ├── Container 2  (thinks it's alone)
+       └── Container 3  (thinks it's alone)</div>
+ <p>This sharing is exactly why containers start in under a second, while a VM can
+ take a minute or more — a VM has to boot a whole fake computer from scratch every time.</p>`},
+
+{sec:"why", c:"teal", eyebrow:"Why Docker · Recall", t:"r",
+ h:"Quick recall: Why Docker",
+ qs:[
+  {q:"What is the one big thing Docker gives up compared to a VM — and what does it get in return?",
+   a:"It gives up <b>some isolation</b> (containers share the host's OS kernel instead of having their own full OS). In return it gets <b>speed, portability, and light resource use</b> — for almost all AI/ML work, this trade is worth it."},
+  {q:"In one sentence, why do containers start so much faster than VMs?",
+   a:"Because a container is just a normal process using the <b>already-running</b> host OS kernel, while a VM must boot an entire separate fake computer from scratch."},
+  {q:"Name the three qualities AI/ML teams need as models get bigger and more complex, that Docker provides.",
+   a:"<b>Reproducible</b> (same result every time), <b>portable</b> (runs anywhere), and <b>scalable</b> (handles more load)."}
+ ]},
+
+// ===== SECTION: BENEFITS =====
+{sec:"benefits", c:"gold", eyebrow:"Benefits · 01", t:"q",
+ q:`Here is a very common complaint in tech teams: <b>"It works on my machine!"</b>
+ — a bug shows up for one teammate but not another, even though they are running
+ the "same" code. Which single Docker idea kills this complaint completely, and why?`},
+
+{sec:"benefits", c:"gold", eyebrow:"Benefits · 01", t:"a",
+ h:"Docker ends <em>\"it works on my machine\"</em> for good",
+ body:`<p>The trick is simple: instead of everyone installing Python, libraries, and
+ tools separately on their own laptop (and drifting slowly out of sync), you pack
+ the <b>exact</b> versions of everything into one container image. Whoever runs that
+ image — your laptop, a teammate's laptop, or a production server — gets the exact
+ same environment. There is no room left for tiny version differences to cause bugs.</p>
+ <ul class="pts">
+  <li><b>Consistent environments</b> — dev, staging, and production behave identically</li>
+  <li><b>Simple dependency management</b> — the exact Python version, exact library
+  versions, all locked together in one package</li>
+  <li><b>Easy experiment tracking</b> — each container image can be tied to a
+  specific experiment or environment version</li>
+  <li><b>Portable deployment</b> — cloud, VM, edge device, or laptop, the same
+  image runs the same way everywhere</li>
+  <li><b>No more "works on my machine"</b> — the single most repeated problem
+  Docker solves for teams</li>
+ </ul>
+ <div class="note"><b>Memory hook:</b> A container is a sealed lunchbox. Nobody can
+ quietly swap out an ingredient once it's packed and sealed.</div>`},
+
+{sec:"benefits", c:"gold", eyebrow:"Benefits · 02", t:"q",
+ q:`Four very different people care about Docker for very different reasons: an
+ <b>ML Engineer</b>, a <b>DevOps Engineer</b>, a <b>Data Scientist</b>, and a
+ curious <b>Hobbyist</b> at home. Before reading on — guess one specific reason
+ each of these four would personally care about Docker.`},
+
+{sec:"benefits", c:"gold", eyebrow:"Benefits · 02", t:"a",
+ h:"Same tool, four very different reasons to love it",
+ body:`<table style="width:100%;border-collapse:collapse;margin:14px 0;font-size:.9rem">
+ <tr style="border-bottom:1px solid var(--line)"><td style="padding:8px 4px;color:var(--gold)"><b>ML Engineer</b></td><td style="padding:8px 4px;color:#c9c7bf">Reproducible experiments with pinned versions, plus scalable inference infrastructure</td></tr>
+ <tr style="border-bottom:1px solid var(--line)"><td style="padding:8px 4px;color:var(--gold)"><b>DevOps Engineer</b></td><td style="padding:8px 4px;color:#c9c7bf">One standard way to package and deploy, with confident rollout to Kubernetes</td></tr>
+ <tr style="border-bottom:1px solid var(--line)"><td style="padding:8px 4px;color:var(--gold)"><b>Data Scientist</b></td><td style="padding:8px 4px;color:#c9c7bf">Escapes "it works for me, not for my colleague" completely</td></tr>
+ <tr><td style="padding:8px 4px;color:var(--gold)"><b>Hobbyist</b></td><td style="padding:8px 4px;color:#c9c7bf">Can run powerful AI models at home with minimal setup, using tools like Docker Model Runner</td></tr>
+ </table>
+ <p>Notice the pattern: every single reason traces back to the same root idea —
+ packaging an exact, repeatable environment. The benefit just shows up differently
+ depending on what that person's daily job actually is.</p>`},
+
+{sec:"benefits", c:"gold", eyebrow:"Benefits · Recall", t:"r",
+ h:"Quick recall: Benefits",
+ qs:[
+  {q:"Which Docker idea most directly kills the \"works on my machine\" problem, and why?",
+   a:"<b>Consistent, reproducible environments</b> plus <b>simplified dependency management</b> — the exact same image with exact pinned versions runs identically everywhere, so there's no gap left for silent version drift to cause different behaviour."},
+  {q:"Name two of the five core Docker benefits from memory.",
+   a:"Any two of: <b>consistent environments</b>, <b>simplified dependency management</b>, <b>easy experiment/version tracking</b>, <b>portable deployment</b>, or <b>no more \"works on my machine\"</b>."},
+  {q:"Why does a Hobbyist care about Docker, specifically?",
+   a:"Because tools like <b>Docker Model Runner</b> let them run powerful, ready-made AI models at home with very little setup."}
+ ]},
+
+// ===== SECTION: WORKFLOW =====
+{sec:"workflow", c:"violet", eyebrow:"Workflow · 01", t:"q",
+ q:`Machine learning has many stages: collecting data, training a model, tracking
+ experiments, packaging the model, deploying it, and watching it in production.
+ Guess: does Docker touch just ONE of these stages, or does it show up across
+ the WHOLE pipeline?`},
+
+{sec:"workflow", c:"violet", eyebrow:"Workflow · 01", t:"a",
+ h:"Docker shows up at <em>every single stage</em> of the ML pipeline",
+ body:`<div class="ascii">Data collection & exploration → JupyterHub notebooks in a container
+Feature engineering            → same, consistent dev environment
+Model training                 → containerised training jobs (even on GPU clusters)
+Experiment tracking            → tools like MLflow or DVC, launched via Docker
+Model packaging                → serving tools like TensorFlow Serving, TorchServe,
+                                  or simply a FastAPI wrapper around the model
+Deployment                     → Docker Compose, Kubernetes, or Hugging Face Spaces
+Monitoring                     → the same containerised ecosystem, watched over time</div>
+ <p>Popular ML tools — JupyterHub, VS Code dev containers, MLflow, DVC — already
+ plug directly into Docker. You don't need a separate, special setup for each one.</p>
+ <div class="note"><b>The one big mental model to keep:</b> "Wrap it in a small web
+ API (like FastAPI), then put that wrapper in a container, then deploy it." This
+ exact pattern repeats for a classical ML model doing predictions, an LLM app
+ calling an AI API, and even the newer AI "tool" servers called MCP servers. Same
+ shape, different insides.</p>`},
+
+{sec:"workflow", c:"violet", eyebrow:"Workflow · Recall", t:"r",
+ h:"Quick recall: Workflow",
+ qs:[
+  {q:"Does Docker help with just model deployment, or the whole ML lifecycle? Name 3 stages it touches.",
+   a:"The <b>whole lifecycle</b>. Any three of: data collection, feature engineering, model training, experiment tracking, model packaging, deployment, or monitoring."},
+  {q:"What is the one repeating packaging pattern for serving both classical ML models and LLM apps?",
+   a:"Wrap the model or LLM app in a small API layer (like <b>FastAPI</b>), then put that wrapper inside a <b>Docker container</b> — the same pattern either way."}
+ ]},
+
+// ===== SECTION: PROOF =====
+{sec:"proof", c:"rose", eyebrow:"Real Proof · 01", t:"q",
+ q:`Big, very different companies — a space agency, a streaming service, a
+ retail giant — all landed on the same tool for their AI work. Before reading
+ the list: what do you think is the ONE shared underlying problem that made
+ all of them choose Docker, regardless of their industry?`},
+
+{sec:"proof", c:"rose", eyebrow:"Real Proof · 01", t:"a",
+ h:"Six very different companies, one identical reason",
+ body:`<table style="width:100%;border-collapse:collapse;margin:14px 0;font-size:.88rem">
+ <tr style="border-bottom:1px solid var(--line)"><td style="padding:7px 4px;color:var(--rose)"><b>Uber</b></td><td style="padding:7px 4px;color:#c9c7bf">Containerises ML workflows for consistent environments across large teams</td></tr>
+ <tr style="border-bottom:1px solid var(--line)"><td style="padding:7px 4px;color:var(--rose)"><b>Netflix</b></td><td style="padding:7px 4px;color:#c9c7bf">Container-based delivery at scale, via an internal system called "Maestro"</td></tr>
+ <tr style="border-bottom:1px solid var(--line)"><td style="padding:7px 4px;color:var(--rose)"><b>Walmart</b></td><td style="padding:7px 4px;color:#c9c7bf">Containerises whole AI applications, running on a large Kubernetes setup</td></tr>
+ <tr style="border-bottom:1px solid var(--line)"><td style="padding:7px 4px;color:var(--rose)"><b>Ingka Group (IKEA)</b></td><td style="padding:7px 4px;color:#c9c7bf">Built their entire MLOps platform on containers, with GitOps and CI/CD</td></tr>
+ <tr style="border-bottom:1px solid var(--line)"><td style="padding:7px 4px;color:var(--rose)"><b>NASA</b></td><td style="padding:7px 4px;color:#c9c7bf">Uses containers to standardise and speed up ML workflows</td></tr>
+ <tr><td style="padding:7px 4px;color:var(--rose)"><b>Zeiss</b></td><td style="padding:7px 4px;color:#c9c7bf">Deploys the same AI model to cloud, VM, on-site servers, and local Windows PCs — one container, four destinations</td></tr>
+ </table>
+ <div class="note"><b>Why this list matters:</b> the same words — consistency, standardisation,
+ speed, scale — repeat almost word-for-word across every single company. That
+ repetition is the real signal. This is not six unrelated stories. It is proof
+ that the same underlying pain (messy environments, slow onboarding, fragile
+ deployment) shows up at every size, in every industry — and containers are the
+ answer the whole industry converged on independently.</div>`},
+
+{sec:"proof", c:"rose", eyebrow:"Real Proof · Recall", t:"r",
+ h:"Quick recall: Real proof",
+ qs:[
+  {q:"Name two companies from the list and, from memory, what they use Docker/containers for.",
+   a:"Any two — e.g. <b>Uber</b> (consistent ML environments across teams), <b>Walmart</b> (containerised AI apps on Kubernetes), <b>Zeiss</b> (one container deployed to cloud, VM, on-site, and Windows PCs)."},
+  {q:"Why does it matter that the SAME reasons (consistency, speed, standardisation) show up across every company on the list?",
+   a:"Because it shows this is not a trendy choice by one company's culture — it is <b>convergent evidence</b> that the same engineering pain (environment drift, slow onboarding, fragile deployment) exists everywhere, and containers are the industry-wide answer."}
+ ]},
+
+// ===== SECTION: FRONTIER =====
+{sec:"frontier", c:"amber", eyebrow:"New Frontier · 01", t:"q",
+ q:`Docker started as a tool for normal apps, then grew into the standard for
+ classical ML. Now it is expanding again — into the world of AI agents and LLMs.
+ Guess: what NEW jobs might Docker start doing for an AI agent system, beyond
+ just running a model?`},
+
+{sec:"frontier", c:"amber", eyebrow:"New Frontier · 01", t:"a",
+ h:"Docker is becoming infrastructure for the LLM & agent era",
+ body:`<p>This is the newest, least obvious part of the story. Docker is no longer
+ just for classical ML — it is quietly becoming a core piece of how AI agents
+ and LLM apps get built and shipped:</p>
+ <ul class="pts">
+  <li><b>Docker Model Runner</b> — a curated library of ready-made AI models you
+  can pull and run locally with one simple command, the same way you'd pull a
+  container image</li>
+  <li><b>Docker + MCP (Model Context Protocol)</b> — trusted, pre-built "tool
+  servers" for AI agents, available through a Docker Hub-style catalogue, with
+  a safe, managed way to launch and manage them</li>
+  <li><b>NVIDIA NIM</b> — GPU-accelerated model serving that hides away all the
+  messy graphics-driver setup, deployable the same way locally or at big scale
+  via Kubernetes</li>
+ </ul>
+ <div class="note"><b>Memory hook:</b> think of Docker Hub for MCP tool servers
+ the same way you think of an app store — trusted, pre-checked, one-click install,
+ instead of everyone hand-building their own version from scratch.</div>`},
+
+{sec:"frontier", c:"amber", eyebrow:"New Frontier · 02", t:"q",
+ q:`A modern AI "agent" system usually needs three different things working
+ together: something that remembers and reasons, something that gives it tools
+ to use, and the actual AI brain making decisions. If you wanted to containerise
+ an agent system properly, would you cram all three into ONE container, or
+ split them apart? Why?`},
+
+{sec:"frontier", c:"amber", eyebrow:"New Frontier · 02", t:"a",
+ h:"Multi-agent systems: split each layer into its own container",
+ body:`<div class="ascii">MULTI-AGENT SYSTEM, PROPERLY LAYERED
+─────────────────────────────────────
+<span class="hl">Agent container</span>      → the agent framework itself:
+                     memory + agent-to-agent talk
+<span class="tl">Tool / MCP container</span> → gives the agent access to
+                     outside tools and actions
+<span class="rs">Model container</span>      → the actual LLM brain the
+                     agent calls (maybe via Model Runner)
+
+All three composed together with Docker Compose or Kubernetes.</div>
+ <p>Agent frameworks like LangGraph or CrewAI-style systems need memory,
+ agent-to-agent communication, and tool access. Docker can host each of these
+ as its own separate, independently manageable container — instead of one huge,
+ tangled container doing everything.</p>
+ <div class="note"><b>Why split them:</b> Splitting means you can upgrade, scale,
+ or restart just the "tools" layer without touching the model layer at all —
+ the same reason microservices get split apart instead of built as one giant app.</div>`},
+
+{sec:"frontier", c:"amber", eyebrow:"New Frontier · Recall", t:"r",
+ h:"Quick recall: New frontier",
+ qs:[
+  {q:"What does Docker Model Runner let you do, in one sentence?",
+   a:"Pull and run <b>ready-made AI models</b> locally with a simple command, the same way you'd pull a normal container image."},
+  {q:"In a multi-agent system, name the three separately-hostable container layers.",
+   a:"<b>Agent containers</b> (the framework — memory, agent-to-agent talk), <b>tool/MCP-server containers</b> (outside tools and actions), and <b>model containers</b> (the actual LLM the agent calls)."},
+  {q:"What does NVIDIA NIM take away the pain of doing manually?",
+   a:"It hides away <b>CUDA and GPU driver configuration</b>, so you get GPU-accelerated model serving without configuring the messy graphics stack yourself."}
+ ]},
+
+// ===== SECTION: SETUP =====
+{sec:"setup", c:"ink", eyebrow:"Setup · 01", t:"q",
+ q:`Docker Desktop is the popular, official way to run Docker on your laptop.
+ But it has one hidden catch if you plan to use it at a company job, on a
+ company laptop. What do you think that catch might be?`},
+
+{sec:"setup", c:"ink", eyebrow:"Setup · 01", t:"a",
+ h:"Docker Desktop has a licensing catch — Rancher Desktop is the free escape hatch",
+ body:`<table style="width:100%;border-collapse:collapse;margin:14px 0;font-size:.88rem">
+ <tr><th style="text-align:left;padding:7px 4px;color:var(--dim)"></th><th style="text-align:left;padding:7px 4px;color:var(--gold)">Docker Desktop</th><th style="text-align:left;padding:7px 4px;color:var(--teal)">Rancher Desktop</th></tr>
+ <tr style="border-bottom:1px solid var(--line)"><td style="padding:7px 4px;color:#c9c7bf">License</td><td style="padding:7px 4px;color:#c9c7bf">Has <span class="hl">commercial-use restrictions</span> — matters on a company device</td><td style="padding:7px 4px;color:#c9c7bf">Fully open source</td></tr>
+ <tr style="border-bottom:1px solid var(--line)"><td style="padding:7px 4px;color:#c9c7bf">CLI</td><td style="padding:7px 4px;color:#c9c7bf">Native docker CLI</td><td style="padding:7px 4px;color:#c9c7bf">Fully compatible, no aliasing needed</td></tr>
+ <tr><td style="padding:7px 4px;color:#c9c7bf">Model Runner / MCP</td><td style="padding:7px 4px;color:#c9c7bf">Yes, built in</td><td style="padding:7px 4px;color:#c9c7bf"><span class="rs">No equivalent yet</span></td></tr>
+ </table>
+ <div class="note"><b>Risk flag:</b> Docker Desktop's commercial-use licensing terms
+ are a real thing to check against your employer's policy before installing it on
+ a work laptop — never just assume it's fine. Rancher Desktop is the safe,
+ fully open-source fallback, but it currently has no equivalent to Docker Model
+ Runner or Docker's MCP tooling — so you would lose those specific AI features.</div>`},
+
+{sec:"setup", c:"ink", eyebrow:"Setup · 02", t:"q",
+ q:`You just installed Docker and typed <code>docker version</code> in your
+ terminal. If it only prints a "Client" section and nothing else, is Docker
+ fully working, or is something missing?`},
+
+{sec:"setup", c:"ink", eyebrow:"Setup · 02", t:"a",
+ h:"Always check for BOTH \"Client\" and \"Server\" — not just one",
+ body:`<div class="ascii">docker version
+  → must show BOTH "Client" AND "Server" sections.
+    Seeing only "Client" means the Docker engine
+    isn't actually running yet — a very common
+    early setup mistake.</div>
+ <p>Docker Desktop runs a lightweight virtual machine in the background on Mac
+ (it runs natively on Linux). You can configure how many CPU cores, how much RAM,
+ swap, and disk space it gets in its settings — a common starting point is
+ around 4 cores and 4GB RAM, roughly half of a typical laptop's resources.
+ Docker Desktop also offers a quick built-in single-node Kubernetes option for
+ local experiments, though many experienced users prefer a separate, more
+ serious tool called "kind" for local Kubernetes testing.</p>
+ <div class="note"><b>Memory hook:</b> this one cheap check — "did I see BOTH
+ words?" — saves hours of confused debugging later. Small verification habits
+ like this are worth writing into any onboarding checklist for a team, instead
+ of assuming it's obvious to everyone.</div>`},
+
+{sec:"setup", c:"ink", eyebrow:"Setup · 03", t:"q",
+ q:`Besides Docker itself, what other tools and accounts do you think you'd
+ need before you can comfortably follow a hands-on Docker-for-AI course?
+ Try naming at least three.`},
+
+{sec:"setup", c:"ink", eyebrow:"Setup · 03", t:"a",
+ h:"The full environment checklist",
+ body:`<ul class="pts">
+  <li><b>Docker Hub account</b> — needed to publish or pull container images
+  (the same role GitHub plays for source code, but for images)</li>
+  <li><b>GitHub account</b> — for cloning and forking course repositories</li>
+  <li><b>Git</b> installed locally</li>
+  <li><b>Python</b> plus <b>pip</b></li>
+  <li><b>UV</b> — a fast, modern way to manage Python packages and virtual
+  environments, recommended over plain pip, venv, or Conda, so installed
+  packages never pollute your system-wide Python</li>
+  <li>A code editor (VS Code or similar) — though some experienced users just
+  work straight from the command line</li>
+  <li><b>Hardware:</b> around 4 cores / 4GB RAM is workable for small models;
+  8 cores / 8GB RAM / 10GB free disk is a comfortable baseline. If your laptop
+  falls short, a cheap cloud VM (DigitalOcean, Vultr, Akamai) is a fine workaround</li>
+ </ul>
+ <div class="note"><b>Golden rule when videos and docs disagree:</b> always trust
+ the written documentation over the video. Documentation is far easier to keep
+ up to date than re-recording an entire video every time a tool or version changes.</div>`},
+
+{sec:"setup", c:"ink", eyebrow:"Setup · Recall", t:"r",
+ h:"Quick recall: Setup",
+ qs:[
+  {q:"What is the real risk of installing Docker Desktop on a work laptop?",
+   a:"Its <b>commercial-use licensing terms</b> may not be allowed by your employer's policy — always check first rather than assuming it's fine."},
+  {q:"What is the one Docker Model Runner / MCP feature gap if you choose Rancher Desktop instead?",
+   a:"Rancher Desktop currently has <b>no equivalent</b> to Docker Model Runner or Docker's MCP tooling — you'd need Docker Desktop (or another solution) for those specific features."},
+  {q:"When `docker version` only shows a \"Client\" section, what does that mean?",
+   a:"The Docker <b>engine (Server) isn't actually running yet</b> — a common early setup mistake worth checking for every time."},
+  {q:"Why should you trust written documentation over course videos when they disagree?",
+   a:"Because documentation is <b>much easier to keep current</b> than re-recording video content every time something changes."}
+ ]},
+
+// ===== WRAP-UP =====
+{sec:"setup", c:"gold", eyebrow:"Wrap-up", t:"a",
+ h:"What this lesson adds on top of what you already know",
+ body:`<div class="ascii">Already hands-on before this lesson:
+  - Wrote a Dockerfile, built an image, ran it locally
+  - Multi-stage build (front-end compile → backend runtime)
+  - Pushed to a registry, deployed to a cloud service
+
+<span class="hl">New from THIS lesson:</span>
+  - The "why", generalised across the WHOLE ML lifecycle,
+    not just one app's deployment
+  - Real company case studies proving the pattern at scale
+  - Docker's specific expansion into the LLM/agent world:
+    Model Runner, MCP catalogue, NVIDIA NIM, multi-agent layering
+  - Practical setup nuances: licensing risk, Rancher Desktop,
+    UV as the recommended Python tool</div>
+ <p>You now have the full "why" behind a tool you already used hands-on.
+ Part 2 of this study set moves back into hands-on territory: actually pulling
+ real ML tools (MLflow and JupyterLab) as containers and connecting them together.</p>`},
+
+{sec:"setup", c:"gold", eyebrow:"Whole-Deck Recall", t:"r",
+ h:"Final recall: the whole deck",
+ qs:[
+  {q:"In one line: what is the single biggest trade-off Docker makes compared to a VM?",
+   a:"It trades <b>some isolation</b> for <b>speed, portability, and light resource use</b> — usually a very good trade for AI/ML work."},
+  {q:"Name the whole ML lifecycle stage list, in order, from memory.",
+   a:"<b>Data collection → feature engineering → training → experiment tracking → packaging → deployment → monitoring</b> — Docker touches every one."},
+  {q:"What is Docker Model Runner, MCP, and NVIDIA NIM all examples of?",
+   a:"Docker's <b>expansion into the LLM and agent world</b> — running models, distributing agent tool servers, and GPU-accelerated serving."},
+  {q:"What's the one setup risk you must personally check before installing Docker Desktop at work?",
+   a:"Its <b>commercial-use licensing terms</b>, against your employer's actual policy."},
+  {q:"Continue to Part 2 for...",
+   a:"Getting hands-on: pulling real MLflow and JupyterLab images, running them as containers, and connecting two containers together over a network — just like two microservices talking to each other."}
+ ]}
+];
+
+let i=0;
+const stage=document.getElementById('stage'),dots=document.getElementById('dots'),
+tabs=document.getElementById('tabs'),counter=document.getElementById('counter'),
+prevBtn=document.getElementById('prevBtn'),nextBtn=document.getElementById('nextBtn');
+SECTIONS.forEach(s=>{const b=document.createElement('button');b.className='tab';b.dataset.c=s.c;b.dataset.sec=s.id;b.textContent=s.label;b.onclick=()=>go(S.findIndex(x=>x.sec===s.id));tabs.appendChild(b);});
+S.forEach((sl,k)=>{const d=document.createElement('span');d.className='dot'+(sl.t==='q'?' q':'');d.tabIndex=0;d.setAttribute('role','button');d.setAttribute('aria-label','Slide '+(k+1));d.onclick=()=>go(k);d.onkeydown=e=>{if(e.key==='Enter')go(k)};dots.appendChild(d);});
+function lens(cto,dir){
+  return '<details class="lens"><summary>CTO LENS</summary><div class="body"><ul class="pts">'+cto.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>'
+       + '<details class="lens dir"><summary>DIRECTOR LENS</summary><div class="body"><ul class="pts">'+dir.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></details>';
+}
+function go(k){
+  i=Math.max(0,Math.min(S.length-1,k));
+  const s=S[i];stage.innerHTML='';
+  const el=document.createElement('div');el.className='slide';
+  if(s.t==='q'){
+    el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div>'
+      +'<div class="qcard"><div class="qlabel">Think first &middot; predict before you peek</div>'
+      +'<div class="qtext">'+s.q+'</div>'
+      +'<div class="qsub">Form your answer in your head. Then press Next to compare.</div></div>';
+  } else if(s.t==='r'){
+    el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'
+      +'<p>Answer from memory first. Tap a question to reveal the answer.</p>'
+      +s.qs.map(x=>'<details class="recall-item"><summary>'+x.q+'</summary><div class="ans">'+x.a+'</div></details>').join('')
+      +'<div class="recall-hint">Struggled on any? Jump back with the tabs above, then return.</div>';
+  } else {
+    el.innerHTML='<div class="eyebrow '+s.c+'">'+s.eyebrow+'</div><h2>'+s.h+'</h2>'+s.body+(s.cto?lens(s.cto,s.dir):'');
+  }
+  stage.appendChild(el);
+  counter.textContent=(i+1)+' / '+S.length;
+  document.querySelectorAll('.dot').forEach((d,k2)=>d.classList.toggle('on',k2===i));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.sec===s.sec));
+  prevBtn.disabled=(i===0);
+  nextBtn.textContent=(i===S.length-1)?'Done \u2713':'Next \u2192';
+  nextBtn.disabled=(i===S.length-1);
+  document.querySelector('main').scrollTop=0;window.scrollTo(0,0);
+}
+prevBtn.onclick=()=>go(i-1);nextBtn.onclick=()=>go(i+1);
+document.addEventListener('keydown',e=>{if(e.target.closest('details'))return;if(e.key==='ArrowRight')go(i+1);if(e.key==='ArrowLeft')go(i-1);});
+go(0);
+</script>
+</body>
+</html>
