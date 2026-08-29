@@ -127,6 +127,29 @@ const S=[
  and sends its results — scores and the saved model file — to MLflow running in a
  completely SEPARATE container. Two independent, independently-manageable pieces
  of infrastructure, talking over the network, exactly like two microservices would.</p>
+ <div class="ascii">        Your laptop
+   ┌─────────────────────────────────────────┐
+   │  ┌───────────────┐    ┌───────────────┐ │
+   │  │ <span class="hl">Jupyter</span>       │    │ <span class="tl">MLflow</span>        │ │
+   │  │ container     │───▶│ container     │ │
+   │  │ (writes &     │ log │ (tracks the   │ │
+   │  │  runs code)   │  s   │  results)     │ │
+   │  └───────────────┘    └───────────────┘ │
+   │   port 8888              port 5000       │
+   └─────────────────────────────────────────┘
+   Two separate, independent boxes — talking
+   only through the network, like two microservices.</div>
+ <div class="ascii">WHAT MLFLOW ACTUALLY RECORDS, PER RUN
+────────────────────────────────────────
+Experiment: "simple-linear-demo"
+   └── Run #1  (timestamped)
+         ├── param:  model_type = LinearRegression
+         ├── metric: mse = 87.3
+         └── artifact: model.pkl (downloadable)
+   └── Run #2
+         ├── param:  model_type = LinearRegression
+         ├── metric: mse = 84.1   ← compare side by side
+         └── artifact: model.pkl</div>
  <div class="note"><b>Real-world link:</b> this two-container handshake is a tiny,
  local rehearsal of the exact service-to-service pattern used across large
  microservice systems — one container's job is only to know HOW to reach the
@@ -170,7 +193,19 @@ If a field is left out, Docker fills in a default:
  store your code AND a place to store your container images.</p>
  <p>In this project, MLflow's image comes from GHCR while the Jupyter image
  comes from Docker Hub — two different registries. The four-part naming scheme
- is exactly what makes both of them unambiguous, no matter where they came from.</p>`},
+ is exactly what makes both of them unambiguous, no matter where they came from.</p>
+ <div class="ascii">THIS PROJECT PULLS FROM TWO DIFFERENT REGISTRIES
+──────────────────────────────────────────────────
+   ghcr.io/mlflow/mlflow:latest
+   └──▶ <span class="hl">GitHub Container Registry</span> (GHCR)
+
+   jupyter/scipy-notebook
+   └──▶ <span class="tl">Docker Hub</span> (registry left out, so it
+         defaults to docker.io automatically)
+
+   Both work with the exact same "docker pull" /
+   "docker run" commands — the registry is invisible
+   to how you actually use the image.</div>`},
 
 {sec:"anatomy", c:"gold", eyebrow:"Image Anatomy · 02", t:"q",
  q:`When you run <code>docker pull</code> to download an image, you'll notice
@@ -182,6 +217,19 @@ If a field is left out, Docker fills in a default:
  body:`<p>Each of those chunks is called a <b>layer</b>, and each layer roughly
  matches one stage of how the image was built: the base operating system, the
  runtime, the dependencies, and finally the application code itself.</p>
+ <div class="ascii">    ┌─────────────────────────┐
+    │ <span class="hl">App code (MLflow v2.4)</span> │ ← changes often,
+    ├─────────────────────────┤    small, re-pulled fast
+    │ Python dependencies     │ ← changes sometimes
+    ├─────────────────────────┤
+    │ Python runtime          │ ← rarely changes
+    ├─────────────────────────┤
+    │ Base OS (e.g. Debian)   │ ← almost never changes,
+    └─────────────────────────┘    stays cached on your machine
+
+New MLflow version released?
+Only the TOP layer re-downloads. Everything
+below it is already sitting on your disk.</div>
  <p>Because of this, upgrading just the application inside an image (say, a new
  MLflow version) usually only needs to re-download the top layer or two. The
  operating system and dependency layers underneath stay exactly the same and
@@ -189,7 +237,18 @@ If a field is left out, Docker fills in a default:
  <div class="note"><b>Why this matters:</b> this is exactly why a Docker build or
  pull can feel "instant" the second time you do it. The unchanged layers are
  reused, not rebuilt — this layering is what makes container distribution
- efficient at scale, instead of re-downloading everything from scratch every time.</div>`},
+ efficient at scale, instead of re-downloading everything from scratch every time.</div>
+ <div class="ascii">PULLING FOR THE FIRST TIME vs THE SECOND TIME
+────────────────────────────────────────────────
+First pull:   [████][████][████][████]  ← all 4 layers
+              download fresh
+
+Second pull   [cached][cached][cached][████]  ← only the
+(new version):                                  changed layer
+                                                 downloads
+
+Result: the SAME image feels instant to re-pull,
+because 3 out of 4 layers were already on disk.</div>`},
 
 {sec:"anatomy", c:"gold", eyebrow:"Image Anatomy · Recall", t:"r",
  h:"Quick recall: Image anatomy",
@@ -227,7 +286,20 @@ but NOT the container directly — there's a wall in between.
  <p>No, you can't reach it directly — by default a container's internal network
  is sealed off from the outside world. This is called <b>port mapping</b> (or
  port forwarding): the <code>-p host_port:container_port</code> flag builds
- exactly one bridge between one outside port and one inside port.</p>`},
+ exactly one bridge between one outside port and one inside port.</p>
+ <div class="ascii">RUNNING BOTH CONTAINERS AT ONCE — NO PORT CLASHES
+────────────────────────────────────────────────────
+MLflow:   -p 5555:5000   (host 5555  → container's 5000)
+Jupyter:  -p 8888:8888   (host 8888  → container's 8888)
+
+Your laptop's ports:  ...5555...8888...
+                         │           │
+                         ▼           ▼
+                     MLflow UI   Jupyter UI
+
+Two different host ports, two different bridges —
+each container is still only reachable on ITS
+own mapped port, never by guessing.</div>`},
 
 {sec:"running", c:"violet", eyebrow:"Running It · 02", t:"q",
  q:`You start MLflow's container in your terminal and it happily prints live
@@ -251,7 +323,18 @@ docker run -d -p 5555:5000 --name mlflow ghcr.io/mlflow/mlflow:latest mlflow ser
  process inside the container — which stops it completely.</p>
  <div class="note"><b>The practical default:</b> always run anything long-lived
  with <code>-d</code> (detached), and give it a readable <code>--name</code>
- instead of relying on Docker's random adjective-noun name generator.</div>`},
+ instead of relying on Docker's random adjective-noun name generator.</div>
+ <div class="ascii">WHY CTRL+C KILLS IT — WHAT'S REALLY HAPPENING
+────────────────────────────────────────────────
+ATTACHED mode:
+  Your terminal IS the container's main process (PID 1)
+  Ctrl+C sends a stop-signal straight to PID 1
+  PID 1 dies  →  <span class="rs">the whole container dies with it</span>
+
+DETACHED mode (-d):
+  The container's PID 1 runs in the background,
+  NOT tied to your terminal at all
+  Ctrl+C only affects your terminal — nothing to kill</div>`},
 
 {sec:"running", c:"violet", eyebrow:"Running It · Recall", t:"r",
  h:"Quick recall: Running containers",
@@ -272,7 +355,15 @@ docker run -d -p 5555:5000 --name mlflow ghcr.io/mlflow/mlflow:latest mlflow ser
 
 {sec:"lifecycle", c:"rose", eyebrow:"Lifecycle · 01", t:"a",
  h:"\"Exited\" is not gone — <em>stop</em> and <em>remove</em> are very different",
- body:`<table style="width:100%;border-collapse:collapse;margin:14px 0;font-size:.88rem">
+ body:`<div class="ascii">   docker run              docker stop            docker rm
+        │                       │                      │
+        ▼                       ▼                      ▼
+  ┌───────────┐  ────────▶ ┌───────────┐  ────────▶  <span class="rs">GONE</span>
+  │ <span class="hl">RUNNING</span>   │            │ <span class="tl">EXITED</span>    │            (permanent,
+  └───────────┘  ◀──────── └───────────┘             files deleted)
+                docker start   (data & filesystem
+                               still fully intact!)</div>
+ <table style="width:100%;border-collapse:collapse;margin:14px 0;font-size:.88rem">
  <tr><th style="text-align:left;padding:6px 4px;color:var(--rose)">Command</th><th style="text-align:left;padding:6px 4px;color:var(--dim)">What it does</th></tr>
  <tr style="border-bottom:1px solid var(--line)"><td style="padding:6px 4px"><code>docker ps</code></td><td style="padding:6px 4px;color:#c9c7bf">List only RUNNING containers</td></tr>
  <tr style="border-bottom:1px solid var(--line)"><td style="padding:6px 4px"><code>docker ps -a</code></td><td style="padding:6px 4px;color:#c9c7bf">List ALL containers, running or stopped</td></tr>
@@ -290,7 +381,14 @@ docker run -d -p 5555:5000 --name mlflow ghcr.io/mlflow/mlflow:latest mlflow ser
  actually deletes it. So if you're debugging a crashed container, check
  <code>docker logs</code> FIRST — don't reflexively remove it, or you lose the evidence.</div>
  <p>You can also reference any container by its full ID, its name, or even just a
- <b>short unique prefix</b> of the ID — handy for fast terminal work.</p>`},
+ <b>short unique prefix</b> of the ID — handy for fast terminal work.</p>
+ <div class="ascii">REFERENCING A CONTAINER — THREE WAYS, SAME TARGET
+────────────────────────────────────────────────────
+Full ID:     docker start 799a3f8e2b41c7d9...
+Short ID:    docker start 799        ← unique prefix works
+Given name:  docker start mlflow     ← easiest to remember
+
+All three commands hit the exact same container.</div>`},
 
 {sec:"lifecycle", c:"rose", eyebrow:"Lifecycle · 02", t:"q",
  q:`You save a notebook file inside your Jupyter container. Later, that container
@@ -316,6 +414,17 @@ docker run -d -p 8888:8888 --name notebook \\
  bind-mounting a real host directory into a path inside the container. A file
  created in either location shows up instantly in the other — it's the exact
  same storage underneath, not a copy that needs syncing.</p>
+ <div class="ascii">WITHOUT A VOLUME               WITH A VOLUME (-v)
+─────────────────               ──────────────────
+notebook.ipynb saved            notebook.ipynb saved
+  inside the container            inside the container
+        │                              │
+docker rm notebook               docker rm notebook
+        │                              │
+        ▼                              ▼
+  <span class="rs">FILE GONE FOREVER</span>          <span class="hl">file is safe — it actually</span>
+                                   <span class="hl">lived in ~/ml-docker/notebooks</span>
+                                   <span class="hl">on your real laptop all along</span></div>
  <div class="note"><b>On Windows:</b> relative paths like <code>~</code> for
  "home" don't work reliably for volume mounts — always use a full, absolute path.</div>
  <div class="note"><b>Real-world link:</b> "containers are disposable, real data
@@ -333,11 +442,25 @@ docker run -d -p 8888:8888 --name notebook \\
  body:`<p>JupyterLab's container turns on token-based login by default, as a
  security measure. You will not find the token sitting anywhere in the app
  itself. Instead, run:</p>
- <div class="ascii">docker logs notebook</div>
+ <div class="ascii">You                docker logs notebook           Container's
+browser  ◀───────── (prints startup message) ───── startup log
+   │                                                     │
+   │   http://127.0.0.1:8888/lab?token=abc123...         │
+   └─────────────── copy or open this URL ───────────────┘</div>
  <p>This prints a startup message containing the full access URL with the
  token already embedded in it, something like
  <code>http://127.0.0.1:8888/lab?token=...</code>. You can either open that
- exact link, or copy just the token into the login box.</p>`},
+ exact link, or copy just the token into the login box.</p>
+ <div class="ascii">WHY BOTHER WITH A TOKEN AT ALL?
+──────────────────────────────────
+Port 8888 is mapped to your host — which means
+ANY app on your laptop could try to open it.
+
+Without a token: whoever reaches port 8888 gets
+                  straight into your notebook
+With a token:     you must know a random secret
+                  string first — a lightweight
+                  lock on an otherwise open door</div>`},
 
 {sec:"lifecycle", c:"rose", eyebrow:"Lifecycle · Recall", t:"r",
  h:"Quick recall: Lifecycle & persistence",
@@ -369,11 +492,18 @@ Solution: <span class="hl">host.docker.internal</span>
     (including other containers' mapped ports).
 
 mlflow.set_tracking_uri("http://host.docker.internal:5555")</div>
- <p>This connects to the same host port (5555) that was mapped to the MLflow
- container earlier. The Jupyter container reaches out through the host machine,
- down to that mapped port, and back into the MLflow container. Two independently
- running containers, connected purely through network addressing — no shared
- files, no special container-to-container link needed.</p>
+ <div class="ascii">THE FULL ROUND-TRIP, STEP BY STEP
+────────────────────────────────────
+1. Jupyter container calls host.docker.internal:5555
+2. Request leaves the Jupyter container, hits the
+   real Docker host (your laptop's networking layer)
+3. Host sees port 5555 is mapped → forwards inward
+4. Request lands inside the MLflow container on
+   its internal port 5000
+5. MLflow processes it, response travels back the
+   same path, in reverse
+
+   Jupyter ──▶ host ──▶ MLflow ──▶ host ──▶ Jupyter</div>
  <div class="note"><b>Important limit:</b> <code>host.docker.internal</code> is
  a Docker Desktop convenience made specifically for local development. It does
  NOT work the same way on a real multi-server production setup (like
@@ -397,6 +527,16 @@ with mlflow.start_run():
     mlflow.log_param("model_type", "LinearRegression")   # records a config value
     mlflow.log_metric("mse", mse)                          # records an evaluation number
     mlflow.sklearn.log_model(model, artifact_path="model") # saves the trained model itself</div>
+ <div class="ascii">WHAT HAPPENS INSIDE <code>with mlflow.start_run():</code>
+──────────────────────────────────────────────────
+Cell run #1  ──▶  new tracked run created, timestamped
+Cell run #2  ──▶  ANOTHER new tracked run (not overwritten!)
+Cell run #3  ──▶  yet another new tracked run
+
+MLflow UI shows all of them side by side:
+  Run 1: mse=91.2   Run 2: mse=87.3   Run 3: mse=84.1
+                                        ▲
+                              best one so far</div>
  <p>Everything inside the <code>with mlflow.start_run():</code> block is
  automatically tracked as one distinct, timestamped entry in the MLflow UI —
  complete with its parameters, its metrics, and a downloadable model file.
@@ -433,7 +573,17 @@ docker stop &lt;container_id&gt;             # stop
 docker start &lt;container_id&gt;            # restart a stopped one
 docker rm &lt;container_id&gt;               # remove (permanent)
 docker logs &lt;container_id&gt;             # view logs
-docker exec -it &lt;container_id&gt; bash    # interactive shell</div>`},
+docker exec -it &lt;container_id&gt; bash    # interactive shell</div>
+ <div class="ascii">A "DAY IN THE LIFE" — TYPICAL COMMAND ORDER
+──────────────────────────────────────────────
+docker pull <image>            1. get the image
+docker run -d -p H:C --name X  2. start it, mapped, named
+docker ps                      3. confirm it's running
+docker logs X                  4. check output / find a token
+docker exec -it X bash         5. poke around inside, if needed
+docker stop X                  6. done for today, pause it
+docker start X                 7. tomorrow: bring it right back
+docker rm X                    8. only when truly finished</div>`},
 
 {sec:"reference", c:"ink", eyebrow:"What's Next", t:"a",
  h:"What comes after this: writing your <em>own</em> Dockerfile",
@@ -442,6 +592,17 @@ docker exec -it &lt;container_id&gt; bash    # interactive shell</div>`},
  Environment with a Dockerfile."</b> That means moving from pulling and running
  other people's images, to writing your OWN Dockerfile that defines a custom
  image with your exact Python dependencies pre-installed.</p>
+ <div class="ascii">TODAY (this project)         NEXT MODULE
+──────────────────────       ────────────────────────
+Pull someone else's    ──▶   Write your OWN Dockerfile
+image (Jupyter, MLflow)      (choose base image, add
+                              your own dependencies)
+
+Two separate              ──▶   Maybe: Docker Compose
+docker run commands              manages both as ONE unit
+
+host.docker.internal      ──▶   Real service discovery
+(local dev trick only)          at production scale</div>
  <ul class="pts">
   <li>Will the custom Dockerfile build on top of one of these same base images,
   or start from a more minimal Python base and add everything by hand?</li>

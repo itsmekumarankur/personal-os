@@ -150,6 +150,14 @@ Portability        <span class="hl">Very high</span>                  Lower
 Resource use        <span class="hl">Light</span>                    Heavy
 Startup speed        <span class="hl">Fast</span>                    Slow
 Isolation           Good enough              <span class="rs">Very strong</span></div>
+ <div class="ascii">STARTING A VM                    STARTING A CONTAINER
+──────────────                   ────────────────────
+1. Power on fake hardware        1. Ask the shared kernel for
+2. Boot a full OS (BIOS,            a new isolated process
+   kernel, init system...)       2. Mount the app's files
+3. Start background services     3. Run the app
+4. Finally start your app        <span class="hl">← done in well under a second</span>
+   <span class="rs">← can take a minute or more</span></div>
  <p>As AI models and LLM apps get bigger and more complex, teams need something
  reproducible (same result every time), portable (runs anywhere), and scalable
  (handles more load). Docker became the standard way to get all three at once —
@@ -175,6 +183,16 @@ Isolation           Good enough              <span class="rs">Very strong</span>
        ├── Container 1  (thinks it's alone)
        ├── Container 2  (thinks it's alone)
        └── Container 3  (thinks it's alone)</div>
+ <div class="ascii">WHAT MAKES A CONTAINER "BELIEVE" IT'S ALONE?
+─────────────────────────────────────────────
+<span class="hl">Namespaces</span>  → give it its OWN view of:
+              process list, network, hostname,
+              filesystem mount points, user IDs
+<span class="tl">Cgroups</span>     → put a HARD LIMIT on how much
+              CPU, memory, and disk it may use
+
+Together: an illusion of a private machine,
+built entirely out of the ONE real kernel.</div>
  <p>This sharing is exactly why containers start in under a second, while a VM can
  take a minute or more — a VM has to boot a whole fake computer from scratch every time.</p>`},
 
@@ -202,6 +220,15 @@ Isolation           Good enough              <span class="rs">Very strong</span>
  the <b>exact</b> versions of everything into one container image. Whoever runs that
  image — your laptop, a teammate's laptop, or a production server — gets the exact
  same environment. There is no room left for tiny version differences to cause bugs.</p>
+ <div class="ascii">WITHOUT DOCKER                      WITH DOCKER
+─────────────────                   ───────────
+Your laptop:   Python 3.11          <span class="hl">One sealed image:</span>
+Teammate's PC: Python 3.9             Python 3.11.4 + numpy 1.26.2
+Server:        Python 3.10            + pandas 2.1.0 + your code
+     │                                          │
+     ▼                                          ▼
+<span class="rs">"works on my machine"</span>              <span class="hl">runs IDENTICALLY</span>
+ bugs creep in slowly              everywhere the image is run</div>
  <ul class="pts">
   <li><b>Consistent environments</b> — dev, staging, and production behave identically</li>
   <li><b>Simple dependency management</b> — the exact Python version, exact library
@@ -213,6 +240,17 @@ Isolation           Good enough              <span class="rs">Very strong</span>
   <li><b>No more "works on my machine"</b> — the single most repeated problem
   Docker solves for teams</li>
  </ul>
+ <div class="ascii">BUILD ONCE                        RUN ANYWHERE
+─────────                         ─────────────
+Write code + Dockerfile   ──▶     Pull the SAME image on:
+       │                            • your laptop
+       ▼                            • a teammate's laptop
+Build ONE image                     • staging server
+       │                            • production server
+       ▼                            • a cloud GPU box
+Push to a registry
+(Docker Hub / GHCR)       ──▶     Every one runs the exact
+                                   same bytes, no reinstalling</div>
  <div class="note"><b>Memory hook:</b> A container is a sealed lunchbox. Nobody can
  quietly swap out an ingredient once it's packed and sealed.</div>`},
 
@@ -230,6 +268,17 @@ Isolation           Good enough              <span class="rs">Very strong</span>
  <tr style="border-bottom:1px solid var(--line)"><td style="padding:8px 4px;color:var(--gold)"><b>Data Scientist</b></td><td style="padding:8px 4px;color:#c9c7bf">Escapes "it works for me, not for my colleague" completely</td></tr>
  <tr><td style="padding:8px 4px;color:var(--gold)"><b>Hobbyist</b></td><td style="padding:8px 4px;color:#c9c7bf">Can run powerful AI models at home with minimal setup, using tools like Docker Model Runner</td></tr>
  </table>
+ <div class="ascii">                    ┌───────────────────────┐
+                    │  ONE ROOT IDEA:       │
+                    │  <span class="hl">exact, repeatable</span>    │
+                    │  <span class="hl">packaged environment</span> │
+                    └───────┬───────┬───────┘
+              ┌─────────────┤       ├─────────────┐
+              ▼             ▼       ▼             ▼
+        <span class="tl">ML Engineer</span>   <span class="tl">DevOps Eng</span> <span class="tl">Data Sci</span>   <span class="tl">Hobbyist</span>
+        "repeatable  "one deploy  "no more   "run big
+         experiments"  pipeline"   drift"     models
+                                              at home"</div>
  <p>Notice the pattern: every single reason traces back to the same root idea —
  packaging an exact, repeatable environment. The benefit just shows up differently
  depending on what that person's daily job actually is.</p>`},
@@ -262,6 +311,17 @@ Model packaging                → serving tools like TensorFlow Serving, TorchS
                                   or simply a FastAPI wrapper around the model
 Deployment                     → Docker Compose, Kubernetes, or Hugging Face Spaces
 Monitoring                     → the same containerised ecosystem, watched over time</div>
+ <div class="ascii">          ┌────────────────────────────────────┐
+          │                                    ▼
+   ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
+   │  <span class="hl">Collect</span>  │─▶│  <span class="hl">Train</span>    │─▶│ <span class="hl">Deploy</span>   │─▶│ <span class="hl">Monitor</span>  │
+   │  data    │  │  & track │  │  as an   │  │  in      │
+   │          │  │  runs    │  │  API     │  │  prod    │
+   └──────────┘  └──────────┘  └──────────┘  └────┬─────┘
+                                                    │
+                              model drifts, retrain │
+                              (loop back to Train) ◀┘
+   Every box above is a Docker container.</div>
  <p>Popular ML tools — JupyterHub, VS Code dev containers, MLflow, DVC — already
  plug directly into Docker. You don't need a separate, special setup for each one.</p>
  <div class="note"><b>The one big mental model to keep:</b> "Wrap it in a small web
@@ -296,6 +356,32 @@ Monitoring                     → the same containerised ecosystem, watched ove
  <tr style="border-bottom:1px solid var(--line)"><td style="padding:7px 4px;color:var(--rose)"><b>NASA</b></td><td style="padding:7px 4px;color:#c9c7bf">Uses containers to standardise and speed up ML workflows</td></tr>
  <tr><td style="padding:7px 4px;color:var(--rose)"><b>Zeiss</b></td><td style="padding:7px 4px;color:#c9c7bf">Deploys the same AI model to cloud, VM, on-site servers, and local Windows PCs — one container, four destinations</td></tr>
  </table>
+ <div class="ascii">          <span class="rs">Uber</span>   <span class="rs">Netflix</span>   <span class="rs">Walmart</span>   <span class="rs">IKEA</span>   <span class="rs">NASA</span>   <span class="rs">Zeiss</span>
+            \\      |        |       |      |      /
+             \\     |        |       |      |     /
+              \\    |        |       |      |    /
+               ╲   |        |       |      |   ╱
+                ▼   ▼        ▼       ▼      ▼  ▼
+          ┌─────────────────────────────────────┐
+          │   SAME PAIN, EVERY SIZE, EVERY       │
+          │   INDUSTRY: <span class="hl">messy environments,</span>       │
+          │   <span class="hl">slow onboarding, fragile deploys</span>    │
+          └──────────────────┬──────────────────┘
+                              ▼
+                    <span class="hl">CONTAINERS, independently</span>
+                    <span class="hl">chosen as the fix, by all six</span></div>
+ <div class="ascii">ZEISS — ONE IMAGE, FOUR DESTINATIONS
+─────────────────────────────────────
+                 ┌─────────────┐
+                 │  ONE Docker │
+                 │  image      │
+                 └──────┬──────┘
+        ┌───────┬───────┼───────┬───────┐
+        ▼       ▼       ▼       ▼
+     Cloud     VM    On-prem  Windows
+                              PC client
+   Same model, same behaviour, four
+   completely different destinations.</div>
  <div class="note"><b>Why this list matters:</b> the same words — consistency, standardisation,
  speed, scale — repeat almost word-for-word across every single company. That
  repetition is the real signal. This is not six unrelated stories. It is proof
@@ -335,6 +421,34 @@ Monitoring                     → the same containerised ecosystem, watched ove
   messy graphics-driver setup, deployable the same way locally or at big scale
   via Kubernetes</li>
  </ul>
+ <div class="ascii">CLASSICAL DOCKER JOB              DOCKER'S NEW AI/LLM JOB
+────────────────────              ────────────────────────
+Package your app's code           <span class="hl">Docker Model Runner</span>
+  → run it anywhere                 → pull & run a ready AI model,
+                                       one command, like pulling a
+                                       normal image
+
+Publish an image on                <span class="hl">Docker + MCP catalogue</span>
+Docker Hub                          → pull a trusted, pre-built
+  → anyone can pull it                "tool server" for an agent,
+                                       same trust model as an image
+
+Run on any hardware                <span class="hl">NVIDIA NIM</span>
+  → CPU handles it fine              → GPU-accelerated serving,
+                                       CUDA/driver mess hidden away</div>
+ <div class="ascii">HOW AN AGENT ACTUALLY USES AN MCP TOOL SERVER
+────────────────────────────────────────────
+  Your AI Agent
+      │  "I need to check the weather"
+      ▼
+  Docker MCP catalogue  ──▶  pulls a pre-vetted,
+      │                      trusted "weather-tool"
+      ▼                      container — no hand-
+  Runs the tool server        rolled integration code
+      │
+      ▼
+  Result goes back to the agent, which
+  continues reasoning with the new information</div>
  <div class="note"><b>Memory hook:</b> think of Docker Hub for MCP tool servers
  the same way you think of an app store — trusted, pre-checked, one-click install,
  instead of everyone hand-building their own version from scratch.</div>`},
@@ -358,6 +472,20 @@ Monitoring                     → the same containerised ecosystem, watched ove
                      agent calls (maybe via Model Runner)
 
 All three composed together with Docker Compose or Kubernetes.</div>
+ <div class="ascii">docker-compose.yml  (the glue that ties it together)
+─────────────────────────────────────────
+services:
+  <span class="hl">agent</span>:
+    image: my-agent:latest      # reasoning + memory
+    depends_on: [tools, model]
+
+  <span class="tl">tools</span>:
+    image: mcp-catalog/weather  # tool/MCP server
+
+  <span class="rs">model</span>:
+    image: docker-model-runner/llama3   # the LLM brain
+
+One file, three containers, one command: <code>docker compose up</code></div>
  <p>Agent frameworks like LangGraph or CrewAI-style systems need memory,
  agent-to-agent communication, and tool access. Docker can host each of these
  as its own separate, independently manageable container — instead of one huge,
@@ -391,11 +519,34 @@ All three composed together with Docker Compose or Kubernetes.</div>
  <tr style="border-bottom:1px solid var(--line)"><td style="padding:7px 4px;color:#c9c7bf">CLI</td><td style="padding:7px 4px;color:#c9c7bf">Native docker CLI</td><td style="padding:7px 4px;color:#c9c7bf">Fully compatible, no aliasing needed</td></tr>
  <tr><td style="padding:7px 4px;color:#c9c7bf">Model Runner / MCP</td><td style="padding:7px 4px;color:#c9c7bf">Yes, built in</td><td style="padding:7px 4px;color:#c9c7bf"><span class="rs">No equivalent yet</span></td></tr>
  </table>
+ <div class="ascii">Are you on a COMPANY / office laptop?
+        │
+        ├── <span class="hl">YES</span> → check employer's licensing policy first
+        │        │
+        │        ├── OK with commercial license → <span class="tl">Docker Desktop</span>
+        │        │                                  (get Model Runner + MCP)
+        │        │
+        │        └── NOT allowed / unsure → <span class="tl">Rancher Desktop</span>
+        │                                     (open source, but no
+        │                                      Model Runner / MCP yet)
+        │
+        └── <span class="hl">NO</span> (personal laptop) → <span class="tl">Docker Desktop</span> is fine</div>
  <div class="note"><b>Risk flag:</b> Docker Desktop's commercial-use licensing terms
  are a real thing to check against your employer's policy before installing it on
  a work laptop — never just assume it's fine. Rancher Desktop is the safe,
  fully open-source fallback, but it currently has no equivalent to Docker Model
- Runner or Docker's MCP tooling — so you would lose those specific AI features.</div>`},
+ Runner or Docker's MCP tooling — so you would lose those specific AI features.</div>
+ <div class="ascii">DOCKER DESKTOP, UNDER THE HOOD (on Mac)
+─────────────────────────────────────────
+Your Mac
+ └── a tiny Linux VM Docker Desktop creates for you
+       └── the real Docker engine runs INSIDE this VM
+             └── your containers live here
+
+This is WHY resource settings (cores/RAM) exist —
+you're really sizing that hidden Linux VM, not
+your Mac directly. On native Linux, this VM step
+isn't needed — Docker runs directly on the host.</div>`},
 
 {sec:"setup", c:"ink", eyebrow:"Setup · 02", t:"q",
  q:`You just installed Docker and typed <code>docker version</code> in your
@@ -409,6 +560,20 @@ All three composed together with Docker Compose or Kubernetes.</div>
     Seeing only "Client" means the Docker engine
     isn't actually running yet — a very common
     early setup mistake.</div>
+ <div class="ascii">docker version    (what "Client" and "Server" MEAN)
+──────────────
+YOU type a command
+      │
+      ▼
+<span class="hl">Client</span>  → the "docker" command itself, just a
+          messenger, sends your request onward
+      │
+      ▼
+<span class="tl">Server</span>  → the real engine (called "dockerd") that
+          actually builds, runs, and manages containers
+
+If Server never answers, you have the messenger
+but nobody home to receive the message.</div>
  <p>Docker Desktop runs a lightweight virtual machine in the background on Mac
  (it runs natively on Linux). You can configure how many CPU cores, how much RAM,
  swap, and disk space it gets in its settings — a common starting point is
@@ -428,7 +593,12 @@ All three composed together with Docker Compose or Kubernetes.</div>
 
 {sec:"setup", c:"ink", eyebrow:"Setup · 03", t:"a",
  h:"The full environment checklist",
- body:`<ul class="pts">
+ body:`<div class="ascii">☐ Docker Hub account   ☐ GitHub account   ☐ Git
+☐ Python + pip         ☐ <span class="hl">UV</span> (better than pip/venv/Conda)
+☐ Code editor          ☐ Hardware: 4 cores/4GB min,
+                                    8 cores/8GB/10GB comfy
+                                    (or a cheap cloud VM)</div>
+ <ul class="pts">
   <li><b>Docker Hub account</b> — needed to publish or pull container images
   (the same role GitHub plays for source code, but for images)</li>
   <li><b>GitHub account</b> — for cloning and forking course repositories</li>
@@ -443,6 +613,18 @@ All three composed together with Docker Compose or Kubernetes.</div>
   8 cores / 8GB RAM / 10GB free disk is a comfortable baseline. If your laptop
   falls short, a cheap cloud VM (DigitalOcean, Vultr, Akamai) is a fine workaround</li>
  </ul>
+ <div class="ascii">WITHOUT UV                        WITH UV
+──────────                        ───────
+System Python                     Isolated venv per project
+  │                                  │
+  ▼                                  ▼
+pip install X globally     vs     uv installs X only INSIDE
+  │                                  that project's own space
+  ▼                                  │
+Project A needs numpy 1.2         ▼
+Project B needs numpy 2.0         Both A and B can each have
+   ⚡ CONFLICT — one breaks         their own numpy version,
+                                    no conflict, ever</div>
  <div class="note"><b>Golden rule when videos and docs disagree:</b> always trust
  the written documentation over the video. Documentation is far easier to keep
  up to date than re-recording an entire video every time a tool or version changes.</div>`},
@@ -476,6 +658,22 @@ All three composed together with Docker Compose or Kubernetes.</div>
     Model Runner, MCP catalogue, NVIDIA NIM, multi-agent layering
   - Practical setup nuances: licensing risk, Rancher Desktop,
     UV as the recommended Python tool</div>
+ <div class="ascii">THE ONE MENTAL MODEL TO CARRY FORWARD
+──────────────────────────────────────
+        ┌───────────────────────────┐
+        │  Pack code + dependencies │
+        │  into ONE sealed image    │
+        └─────────────┬─────────────┘
+                       ▼
+        ┌───────────────────────────┐
+        │  Run that SAME image      │
+        │  anywhere — laptop, cloud,│
+        │  edge, GPU cluster        │
+        └─────────────┬─────────────┘
+                       ▼
+   Whether it's a classical ML model, an LLM app,
+   or an agent's MCP tool server — <span class="hl">this exact loop
+   is the reason Docker became the default.</span></div>
  <p>You now have the full "why" behind a tool you already used hands-on.
  Part 2 of this study set moves back into hands-on territory: actually pulling
  real ML tools (MLflow and JupyterLab) as containers and connecting them together.</p>`},
