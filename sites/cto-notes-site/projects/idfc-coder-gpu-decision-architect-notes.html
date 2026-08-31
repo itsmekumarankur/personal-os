@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDFC Coder — Architect Thinking Notes</title>
+<style>
+  body {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 28px 20px 80px;
+    font-family: Georgia, 'Times New Roman', serif;
+    background: #fbfaf7;
+    color: #1e1e1e;
+    line-height: 1.6;
+  }
+  h1.src-heading.lvl1 {
+    font-size: 1.7rem;
+    margin-top: 2.2em;
+    padding-top: 0.5em;
+    border-top: 3px solid #222;
+  }
+  h2.src-heading.lvl2 {
+    font-size: 1.3rem;
+    margin-top: 1.6em;
+  }
+  h3.src-heading.lvl3 {
+    font-size: 1.05rem;
+    margin-top: 1.5em;
+    color: #444;
+  }
+  hr {
+    border: none;
+    border-top: 1px dashed #bbb;
+    margin: 2em 0;
+  }
+  p {
+    margin: 0.8em 0;
+  }
+  pre {
+    background: #f0efe9;
+    border: 1px solid #ddd;
+    border-left: 4px solid #999;
+    border-radius: 4px;
+    padding: 12px 16px;
+    overflow-x: auto;
+    font-family: 'Courier New', ui-monospace, monospace;
+    font-size: 0.82rem;
+    line-height: 1.4;
+    white-space: pre;
+  }
+  blockquote {
+    margin: 0.9em 0;
+    padding: 8px 14px;
+    border-left: 3px solid #b8964a;
+    background: #f7f3e8;
+    font-style: italic;
+  }
+  .qbox {
+    background: #fff7e0;
+    border: 2px solid #d4af5a;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 1.2em 0 0.6em;
+    font-style: italic;
+    font-size: 1.05rem;
+  }
+  details.reveal {
+    margin: 0 0 1.2em;
+  }
+  details.reveal summary {
+    cursor: pointer;
+    display: inline-block;
+    background: #222;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 4px;
+    margin: 10px 0;
+  }
+  details.reveal[open] summary {
+    background: #555;
+  }
+  details.reveal summary::-webkit-details-marker {
+    display: none;
+  }
+  .reveal-body {
+    border-left: 3px solid #e0d9c0;
+    padding-left: 16px;
+    margin-top: 6px;
+  }
+  code {
+    background: #eee;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+  }
+  strong {
+    color: #000;
+  }
+  .topbar {
+    position: sticky;
+    top: 0;
+    background: #fbfaf7;
+    padding: 10px 0;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 10px;
+    display: flex;
+    gap: 10px;
+    z-index: 10;
+  }
+  .topbar button {
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 7px 14px;
+    border-radius: 4px;
+    border: 1px solid #333;
+    background: #fff;
+    cursor: pointer;
+  }
+  .topbar button:hover {
+    background: #222;
+    color: #fff;
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button onclick="document.querySelectorAll('details.reveal').forEach(d=>d.open=true)">Reveal all</button>
+  <button onclick="document.querySelectorAll('details.reveal').forEach(d=>d.open=false)">Hide all</button>
+</div>
+<h1 class="src-heading lvl1">GPU &amp; Self-Hosting Cost Decision — Architect Notes (Enhanced Edition - Complete)</h1>
+<h2 class="src-heading lvl2">The core mental model for this entire deck</h2>
+<p>Before going slide-by-slide, keep this architecture in your head:</p>
+<pre>                    BUSINESS QUESTION
+                           │
+                           ↓
+                 "Should we self-host?"
+                           │
+              ┌────────────┼────────────┐
+              ↓            ↓            ↓
+           USERS         USAGE         MODEL
+              │            │            │
+              └────────────┼────────────┘
+                           ↓
+                      WORKLOAD
+                           │
+                           ↓
+                    VRAM REQUIREMENT
+                           │
+                           ↓
+                     GPU SELECTION
+                           │
+                           ↓
+                    CONCURRENCY
+                           │
+                           ↓
+                    GPU COUNT
+                           │
+                           ↓
+                  INFRASTRUCTURE COST
+                           │
+                           ↓
+                   ENGINEERING COST
+                           │
+                           ↓
+                    TOTAL TCO
+                           │
+                           ↓
+                    SaaS COMPARISON
+                           │
+                           ↓
+                  COMMERCIAL DECISION</pre>
+<p>The biggest lesson:</p>
+<div class="qbox"><strong>Don't start with "Which GPU should I buy?" Start with "What workload am I trying to serve?"</strong></div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<hr>
+</div></details>
+<h1 class="src-heading lvl1">PART 1 — BUSINESS CASE</h1>
+<h1 class="src-heading lvl1">Slide 1 — Self-hosting vs SaaS</h1>
+<h3 class="src-heading lvl3">Ask before revealing</h3>
+<div class="qbox"><strong>"50 developers × $200/month. At what point does owning infrastructure become cheaper?"</strong></div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<p>But don't let the audience immediately multiply.</p>
+<p>Ask:</p>
+<blockquote>"What does 'owning infrastructure' actually mean?"</blockquote>
+<p>Draw:</p>
+<pre>SAAS
+────
+
+50 developers
+      │
+      ↓
+$200 / developer / month
+      │
+      ↓
+Predictable subscription</pre>
+<p>Now:</p>
+<pre>SELF-HOSTED
+───────────
+
+50 developers
+      │
+      ↓
+     GPU
+      +
+   Software
+      +
+ Engineering
+      +
+ Networking
+      +
+ Storage
+      +
+ Monitoring
+      +
+ Operations</pre>
+<p>Then ask:</p>
+<blockquote>"If I tell you the GPU costs ₹4 lakh, can you conclude self-hosting costs ₹4 lakh?"</blockquote>
+<p>Obviously no.</p>
+</div></details>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Hidden Cost Layers</h3>
+<p>Before revealing the TCO, challenge the audience:</p>
+<div class="qbox">"Name five hidden costs that don't appear on the GPU invoice."</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<p><strong>Expected answers:</strong></p>
+<pre>HIDDEN COSTS
+      │
+      ├── Engineering setup time
+      ├── Ongoing operations
+      ├── Model updates/re-training
+      ├── Monitoring/observability
+      ├── Security/compliance
+      ├── Networking/bandwidth
+      ├── Storage for models/logs
+      ├── Backup/disaster recovery
+      └── Opportunity cost of engineers</pre>
+<p><strong>The iceberg model:</strong></p>
+<pre>          VISIBLE COSTS
+          (GPU purchase)
+              ████
+              ████
+              ████
+              ████
+          ────────────
+              ████████
+              ████████
+              ████████
+              ████████
+              ████████
+              ████████
+              ████████
+              ████████
+              ████████
+          HIDDEN COSTS
+          (People, operations, complexity)</pre>
+<blockquote><strong>"The GPU invoice is the tip of the iceberg. The real cost is underwater."</strong></blockquote>
+</div></details>
+<h3 class="src-heading lvl3">The TCO equation</h3>
+<pre>SELF-HOSTED TCO
+=
+GPU
++
+Infrastructure
++
+Engineering
++
+Operations
++
+Networking
++
+Storage
++
+Monitoring
++
+Opportunity Cost</pre>
+<p>Versus:</p>
+<pre>SAAS TCO
+=
+Users × Subscription × Time</pre>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Opportunity Cost Dimension</h3>
+<p>Ask:</p>
+<div class="qbox">"What's the opportunity cost of using your best engineers to build GPU infrastructure rather than building customer-facing features?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<pre>OPPORTUNITY COST
+      │
+      ↓
+"An hour spent on GPU ops is an hour NOT spent on..."
+      │
+      ├── Customer features
+      ├── Product innovation
+      ├── Technical debt reduction
+      ├── Developer productivity
+      └── Strategic initiatives</pre>
+<p><strong>The framing:</strong></p>
+<pre>           ENGINEERING BUDGET
+                  │
+      ┌───────────┴───────────┐
+      ↓                       ↓
+  GPU OPS               PRODUCT
+  (Infrastructure)      (Features)
+      │                       │
+      ↓                       ↓
+  "Cost center"        "Value creation"</pre>
+<blockquote><strong>"Every rupee spent on infrastructure operations is a rupee not spent on building the business."</strong></blockquote>
+</div></details>
+<h3 class="src-heading lvl3">Architect takeaway</h3>
+<p>The first mistake architects make is comparing:</p>
+<pre>GPU price
+      ↓
+      VS
+SaaS subscription</pre>
+<p>Instead compare:</p>
+<pre>              TOTAL COST OF OWNERSHIP
+                         │
+              ┌──────────┴──────────┐
+              ↓                     ↓
+         SELF-HOSTED              SAAS
+              │                     │
+       all internal costs      subscription</pre>
+<hr>
+<h1 class="src-heading lvl1">Slide 2 — ₹58% savings</h1>
+<p>The answer says:</p>
+<pre>50 heavy users
+      │
+      ├── SaaS       ₹57.0 L
+      │
+      └── Self-host  ₹23.8 L</pre>
+<p>Savings:</p>
+<pre>₹57.0 L
+  -
+₹23.8 L
+───────
+₹33.2 L</pre>
+<p>Approximately:</p>
+<pre>58%</pre>
+<h3 class="src-heading lvl3">But ask this question</h3>
+<div class="qbox"><strong>"Is 58% savings automatically enough to justify self-hosting?"</strong></div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<p>Probably not.</p>
+<p>Why?</p>
+<pre>SAVINGS
+   │
+   ↓
+₹33.2L
+   │
+   ├── Engineering risk
+   ├── Operational risk
+   ├── GPU availability
+   ├── Model quality
+   ├── Security
+   └── Developer productivity</pre>
+<p>Therefore:</p>
+<blockquote><strong>Cost saving is an input to the architecture decision, not the decision itself.</strong></blockquote>
+</div></details>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Risk-Adjusted Savings</h3>
+<p>Ask:</p>
+<div class="qbox">"What's the value of NOT taking the risk?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<pre>RISK-ADJUSTED SAVINGS
+         │
+         ↓
+   RAW SAVINGS
+      ₹33.2L
+         │
+         ↓
+      - RISK COSTS
+         │
+         ├── Operational failure: ₹10L
+         ├── Security breach: ₹20L
+         ├── Performance issues: ₹5L
+         ├── Engineering burnout: ₹5L
+         └── Project delay: ₹10L
+         │
+         ↓
+   NET SAVINGS
+      -₹16.8L
+      (Self-hosting loses!)</pre>
+<p><strong>The principle:</strong></p>
+<pre>RAW SAVINGS ≠ ACTUAL SAVINGS
+       │
+       ↓
+   "What's the probability of each risk materializing?"
+       │
+       ↓
+   "Expected value = Probability × Cost"</pre>
+<blockquote><strong>"A 58% raw saving might be a 0% risk-adjusted saving, or worse."</strong></blockquote>
+</div></details>
+<h3 class="src-heading lvl3">The breakeven concept</h3>
+<pre>             USER COUNT
+                 │
+                 ↓
+      ┌─────────────────────┐
+      │ SaaS cost increases │
+      │ almost linearly     │
+      └──────────┬──────────┘
+                 │
+                 │
+                 │
+        ─────────●──────────
+                 ↑
+             ~21 users
+                 │
+        self-hosting
+        starts winning</pre>
+<p>The important insight:</p>
+<div class="qbox">Below ~21 heavy users → SaaS is cheaper.<br>Above ~21 → self-hosting begins to make economic sense under these assumptions.</div>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Sensitivity Analysis</h3>
+<p>Ask:</p>
+<div class="qbox">"What assumptions could make the breakeven point 50 users or 10 users?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<pre>ASSUMPTION                    IMPACT ON BREAKEVEN
+─────────────────────────────────────────────────────
+GPU cost: ₹93/hr → ₹60/hr    Lower breakeven
+Engineering cost: ₹19L → ₹9L Lower breakeven
+User requests: 200 → 100/day Higher breakeven
+Model size: 33B → 70B        Higher breakeven
+SaaS cost: ₹1.14L → ₹0.57L   Higher breakeven</pre>
+<p><strong>The visual:</strong></p>
+<pre>BREAKEVEN SENSITIVITY
+          │
+          │
+70 users ─┼─── High SaaS cost scenario
+          │
+50 users ─┼─── Base case
+          │
+30 users ─┼─── Low SaaS cost scenario
+          │
+10 users ─┼─── Very low cost scenario
+          │
+          └────────────────────────────────</pre>
+<p><strong>The insight:</strong></p>
+<pre>BREAKEVEN IS NOT A FIXED NUMBER
+        │
+        ↓
+  "It's a function of assumptions"
+        │
+        ↓
+  "Test your assumptions before committing"</pre>
+<hr>
+</div></details>
+<h1 class="src-heading lvl1">PART 2 — GPU FUNDAMENTALS</h1>
+<h1 class="src-heading lvl1">Slide 3 — Which resource becomes the bottleneck?</h1>
+<p>Ask:</p>
+<div class="qbox"><strong>"An AWS instance gives me CPU, RAM, GPU, VRAM and disk. Which one can prevent a 33B model from running at all?"</strong></div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<p>Draw:</p>
+<pre>AWS INSTANCE
+│
+├── CPU
+├── RAM
+├── GPU
+│    └── VRAM  ← ?
+├── Disk
+└── Network</pre>
+<p>Now imagine:</p>
+<pre>33B model
+   │
+   ↓
+needs memory
+   │
+   ↓
+GPU VRAM</pre>
+<p>Ask:</p>
+<blockquote>"If my CPU is extremely powerful but my GPU has insufficient VRAM, can the model run?"</blockquote>
+<p>No.</p>
+<p>This gives:</p>
+<pre>VRAM
+ │
+ ├── enough → model CAN run
+ │
+ └── insufficient → model CANNOT run</pre>
+</div></details>
+<h3 class="src-heading lvl3">Critical distinction</h3>
+<pre>GPU SPEED
+   =
+How fast can I compute?
+
+VRAM
+   =
+Can I fit the workload at all?</pre>
+<p>That distinction should stay in the audience's head throughout the deck.</p>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Capacity vs Performance Matrix</h3>
+<p>Ask:</p>
+<div class="qbox">"What happens if you have the fastest GPU but insufficient VRAM?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<pre>      CAPACITY (VRAM)
+           │
+    ┌──────┴──────┐
+    │             │
+    │     FAST    │
+    │    +        │
+    │  INSUFFICIENT│
+    │   VRAM      │
+    │             │
+HIGH │             │  FAST + SUFFICIENT
+PERF │             │  (The ideal)
+     │             │
+    └─────────────┘
+               CAPACITY</pre>
+<p><strong>The answer:</strong></p>
+<pre>FAST + INSUFFICIENT VRAM
+           │
+           ↓
+      "It doesn't run"
+           │
+           ↓
+     INFINITE COST/REQUEST</pre>
+<blockquote><strong>"You can't compute what you can't load."</strong></blockquote>
+<hr>
+</div></details>
+<h1 class="src-heading lvl1">Slide 4 — How much VRAM?</h1>
+<p>Ask:</p>
+<div class="qbox"><strong>"Before looking at AWS GPU names, how would you determine the minimum GPU memory?"</strong></div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<p>Start with:</p>
+<pre>MODEL
+  │
+  ↓
+33 BILLION PARAMETERS</pre>
+<p>Then ask:</p>
+<blockquote>"How many bytes does each parameter require?"</blockquote>
+<pre>FP32 → 4 bytes
+FP16 → 2 bytes
+INT8 → 1 byte
+INT4 → ~0.5 byte</pre>
+<p>Therefore:</p>
+<pre>33B × bytes/parameter</pre>
+<p>But don't stop there.</p>
+<p>Ask:</p>
+<blockquote>"Does model weight memory equal total GPU memory?"</blockquote>
+<p>No.</p>
+<pre>TOTAL VRAM
+│
+├── Model weights
+├── KV cache
+├── Activations
+├── Framework/runtime
+└── Safety headroom</pre>
+</div></details>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Complete Memory Breakdown</h3>
+<p>Before revealing, ask the audience:</p>
+<div class="qbox">"What percentage of VRAM do you think each component consumes?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<pre>MEMORY BREAKDOWN (typical)
+          │
+          ↓
+Model weights: 60-70%
+KV cache: 15-25%
+Activations: 5-10%
+Runtime/overhead: 5-10%
+Safety headroom: 5%</pre>
+<p><strong>The visual:</strong></p>
+<pre>VRAM DISTRIBUTION
+────────────────────────────
+████████████████████ 70%  Weights
+██████████ 20%            KV Cache
+████ 5%                   Activations
+████ 5%                   Runtime
+████ 5%                   Headroom
+────────────────────────────</pre>
+<p><strong>The real calculation:</strong></p>
+<pre>EXAMPLE: 33B INT4 Model
+
+Weights: 17GB
+KV cache (2K context, 8 concurrent): ~2GB
+Activations (during inference): ~1GB
+Runtime overhead (vLLM, PyTorch): ~2GB
+Headroom (safety): ~1GB
+─────────────────────────
+TOTAL: ~23GB
+
+→ L4 (24GB) fits, but just barely
+→ T4 (16GB) fails</pre>
+<blockquote><strong>"The model weights are the main event, but the supporting cast consumes more memory than you think."</strong></blockquote>
+</div></details>
+<h3 class="src-heading lvl3">Architect rule</h3>
+<pre>Required VRAM
+≠
+Model size alone</pre>
+<p>Instead:</p>
+<pre>Required VRAM
+=
+Weights
++
+KV cache
++
+Activations
++
+Runtime overhead
++
+Headroom</pre>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The KV Cache Dimension</h3>
+<p>Ask:</p>
+<div class="qbox">"What happens to VRAM when context length doubles?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<pre>KV CACHE FORMULA
+       │
+       ↓
+KV Cache = 2 × Layers × Head_Dim × Seq_Length × Precision
+
+For DeepSeek 33B:
+  Layers: 60
+  Head_Dim: 128
+  Seq_Length: 2048 (2K)
+  Precision: 2 bytes (FP16)
+  
+  KV = 2 × 60 × 128 × 2048 × 2
+     = 62,914,560 bytes
+     ≈ 60 MB per concurrent request
+
+For 8 concurrent requests:
+  8 × 60 MB = 480 MB
+
+For 4K context:
+  4 × 480 MB = 1.92 GB
+
+For 8K context:
+  8 × 480 MB = 3.84 GB
+
+For 32K context:
+  32 × 480 MB = 15.36 GB</pre>
+<p><strong>The visual:</strong></p>
+<pre>CONTEXT LENGTH VS KV CACHE
+          │
+          │
+15GB ─────┼────●──────────────
+          │
+10GB ─────┼─────────●─────────
+          │
+ 5GB ─────┼──────────────●────
+          │
+          └────────────────────→ Context Length
+              2K   4K   8K</pre>
+<p><strong>The insight:</strong></p>
+<pre>CONTEXT LENGTH
+      │
+      ↓
+   "It's not just about the model"
+      │
+      ↓
+   "Longer context = More VRAM"
+      │
+      ↓
+   "Longer context = More GPU needed"</pre>
+<blockquote><strong>"Doubling context length isn't free. It consumes VRAM exponentially in practice."</strong></blockquote>
+<hr>
+</div></details>
+<h1 class="src-heading lvl1">Slide 5 — Why VRAM rules</h1>
+<p>Now reveal the machine model.</p>
+<pre>Developer
+    │
+    ↓
+AI API
+    │
+    ↓
+vLLM
+    │
+    ↓
+GPU
+    │
+    ↓
+LLM</pre>
+<p>Explain the resources:</p>
+<pre>CPU
+ ↓
+normal application logic
+
+RAM
+ ↓
+system/application memory
+
+GPU
+ ↓
+AI computation
+
+VRAM
+ ↓
+model + working state
+
+Disk
+ ↓
+model files/logs
+
+Network
+ ↓
+requests/responses</pre>
+<p>Then show the fundamental calculation:</p>
+<pre>DeepSeek 33B
+
+FP32
+33B × 4 bytes
+≈ 132 GB
+
+FP16
+33B × 2 bytes
+≈ 66 GB
+
+INT8
+33B × 1 byte
+≈ 33 GB
+
+INT4
+33B × 0.5 byte
+≈ 16.5 GB</pre>
+<h3 class="src-heading lvl3">The architectural lever</h3>
+<pre>                QUANTIZATION
+                     │
+         ┌───────────┼───────────┐
+         ↓           ↓           ↓
+       FP16        INT8         INT4
+        66GB        33GB        17GB
+         │           │            │
+         ↓           ↓            ↓
+      expensive    medium       cheap
+       GPUs         GPUs         GPUs</pre>
+<p>This is why quantization is not merely a model optimization.</p>
+<p>It can fundamentally change:</p>
+<div class="qbox"><strong>the infrastructure architecture.</strong></div>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Quantization Trade-Off Matrix</h3>
+<p>Ask:</p>
+<div class="qbox">"For each quantization level, what do you gain and lose?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<pre>              QUANTIZATION TRADE-OFFS
+                     │
+      ┌──────────────┼──────────────┐
+      ↓              ↓              ↓
+    FP16           INT8           INT4
+      │              │              │
+      ↓              ↓              ↓
+  GAINS:         GAINS:         GAINS:
+  Best           Good           Cheap
+  quality        quality        GPUs
+  No             2x memory      4x memory
+  quantization   reduction      reduction
+  loss
+      │              │              │
+      ↓              ↓              ↓
+  LOSSES:        LOSSES:        LOSSES:
+  Expensive      Some           Quality
+  GPUs           quality        loss
+  2x memory      loss           May need
+  requirement                    retraining</pre>
+<p><strong>The quality continuum:</strong></p>
+<pre>QUALITY
+  ↑
+  │  FP16 ────●
+  │           │
+  │           │
+  │  INT8 ────●────────
+  │           │
+  │           │
+  │  INT4 ────●────────────────
+  │
+  └────────────────────────────────→ COST
+       Cheap      Medium     Expensive</pre>
+<p><strong>The decision framework:</strong></p>
+<pre>WHEN TO USE EACH PRECISION
+
+FP16:
+  │
+  └── When quality is paramount
+       └── When you can afford expensive GPUs
+            └── When model accuracy is critical
+
+INT8:
+  │
+  └── When quality matters but cost is a concern
+       └── When you want 2x memory savings
+            └── When quality loss is acceptable
+
+INT4:
+  │
+  └── When cost is the primary driver
+       └── When you need to fit on small GPUs
+            └── When quality loss is acceptable
+                 └── When model can be fine-tuned</pre>
+<blockquote><strong>"Quantization is a lever between cost and quality. Pull it wisely."</strong></blockquote>
+<hr>
+</div></details>
+<h1 class="src-heading lvl1">Slide 6 — Calculate memory yourself</h1>
+<p>Before showing the answer, give the audience this:</p>
+<pre>33 BILLION PARAMETERS
+
+FP32 = ?
+FP16 = ?
+INT8 = ?
+INT4 = ?</pre>
+<p>Ask them to derive it.</p>
+<pre>33B
+ │
+ ├── × 4 bytes → 132 GB
+ ├── × 2 bytes → 66 GB
+ ├── × 1 byte  → 33 GB
+ └── × 0.5     → 16.5 GB</pre>
+<p>Then ask:</p>
+<div class="qbox">"Which GPU immediately becomes impossible?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<p>For example:</p>
+<pre>T4 = 16GB
+
+INT4 ≈ 16.5GB
+
+16GB &lt; 16.5GB</pre>
+<p>Already impossible <strong>before</strong>:</p>
+<pre>KV cache
++
+runtime
++
+batching</pre>
+<p>This is the important insight.</p>
+</div></details>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The GPU Fit Table</h3>
+<p>Create this table live with the audience:</p>
+<pre>                GPU FIT TABLE (33B Model)
+                ─────────────────────────
+
+GPU     │ VRAM  │ FP16  │ INT8  │ INT4  │ REAL
+        │       │ 66GB  │ 33GB  │ 16.5GB│ 23GB*
+─────────────────────────────────────────────────
+T4      │ 16GB  │  ✗   │  ✗   │  ✗   │  ✗
+L4      │ 24GB  │  ✗   │  ✗   │  ✓   │  ✓
+A10G    │ 24GB  │  ✗   │  ✗   │  ✓   │  ✓
+A100    │ 40GB  │  ✗   │  ✓   │  ✓   │  ✓
+A100    │ 80GB  │  ✓   │  ✓   │  ✓   │  ✓
+H100    │ 80GB  │  ✓   │  ✓   │  ✓   │  ✓
+
+* REAL = INT4 + KV cache + runtime + headroom</pre>
+<p><strong>The key insight:</strong></p>
+<pre>ONLY GPUS WITH 24GB+ CAN RUN THIS WORKLOAD
+                │
+                ↓
+         ┌──────┴──────┐
+         ↓             ↓
+      T4 FAILS    L4 WORKS</pre>
+<div class="qbox"><strong>"The GPU must fit the model before it can run the model."</strong></div>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Headroom Principle</h3>
+<p>Ask:</p>
+<div class="qbox">"Why do we need headroom? Why can't we use 100% of VRAM?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<pre>HEADROOM REASONS
+      │
+      ├── Memory fragmentation
+      ├── Unexpected allocations
+      ├── Batching overhead
+      ├── Model loading/unloading
+      ├── Failover/reserve
+      └── GPU driver overhead</pre>
+<p><strong>The rule of thumb:</strong></p>
+<pre>NEVER USE 100% OF VRAM
+        │
+        ↓
+  "Always leave 10-20% headroom"
+        │
+        ↓
+   "When you're at 80%, you're at 100%"</pre>
+<p><strong>The visual:</strong></p>
+<pre>VRAM UTILIZATION
+────────────────────────────────
+███████████████████████ 85%  Used
+█████ 15%                    Headroom
+────────────────────────────────
+        ↑
+     "Safe zone"</pre>
+<blockquote><strong>"Headroom isn't waste—it's insurance against unpredictable memory spikes."</strong></blockquote>
+<hr>
+</div></details>
+<h1 class="src-heading lvl1">Slide 7 — Why not always INT4?</h1>
+<p>This is a very important architect question.</p>
+<p>Ask:</p>
+<div class="qbox"><strong>"If INT4 makes everything cheaper, why not quantize every model to INT4?"</strong></div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<p>Draw:</p>
+<pre>                    QUANTIZATION
+                         │
+              ┌──────────┼──────────┐
+              ↓          ↓          ↓
+            FP16       INT8       INT4
+              │          │          │
+           quality     balance     memory
+              ↑                       ↓
+           expensive                cheap</pre>
+<p>Now ask:</p>
+<blockquote>"What are we trading?"</blockquote>
+<p>Potential dimensions:</p>
+<pre>INT4
+ │
+ ├── ↓ memory
+ ├── ↓ infrastructure cost
+ ├── ↑ model fit
+ │
+ └── possible ↓ quality</pre>
+<p>Therefore:</p>
+<pre>                 QUALITY
+                    ↑
+                    │
+               FP16 ●
+                    │
+               INT8 ●
+                    │
+               INT4 ●
+                    │
+                    └────────────→ COST</pre>
+<p>The correct question is not:</p>
+<blockquote>"What's the cheapest precision?"</blockquote>
+<p>It is:</p>
+<blockquote><strong>"What's the cheapest precision that meets our quality SLA?"</strong></blockquote>
+</div></details>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Quality Degradation Spectrum</h3>
+<p>Ask:</p>
+<div class="qbox">"What types of quality degradation occur with quantization?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<pre>QUANTIZATION EFFECTS
+         │
+         ↓
+   ┌─────┴─────┐
+   ↓           ↓
+PERPLEXITY  ACCURACY
+   │           │
+   ↓           ↓
+"Model     "Correct
+ becomes    answers
+ less       decrease"
+ confident"
+   │           │
+   ↓           ↓
+FP16: 1.0x   FP16: 100%
+INT8: 1.05x  INT8: 98-99%
+INT4: 1.15x  INT4: 95-97%</pre>
+<p><strong>The visual:</strong></p>
+<pre>ACCURACY VS QUANTIZATION
+          │
+100% ─────●───────────────────────
+          │  ●
+ 98% ─────┤     ●
+          │
+ 96% ─────┤          ●
+          │
+ 94% ─────┤               ●
+          │
+          └────────────────────────→
+               FP16  INT8  INT4</pre>
+<p><strong>The decision:</strong></p>
+<pre>                     QUALITY SLA
+                         │
+            ┌────────────┼────────────┐
+            ↓            ↓            ↓
+      "95% is       "98% is        "Must
+       acceptable"   acceptable"    be 99.9%"
+            │            │            │
+            ↓            ↓            ↓
+         INT4          INT8          FP16</pre>
+<blockquote><strong>"Quantization choice is a quality SLA decision disguised as a memory decision."</strong></blockquote>
+<hr>
+</div></details>
+<h1 class="src-heading lvl1">Slide 8 — Quantization answer</h1>
+<p>Use the simplest possible mental model:</p>
+<pre>FP16
+66GB
+ │
+ │ quantize
+ ↓
+INT8
+33GB
+ │
+ │ quantize
+ ↓
+INT4
+16.5GB</pre>
+<p>Then connect it to hardware:</p>
+<pre>              33B MODEL
+                  │
+        ┌─────────┼─────────┐
+        ↓         ↓         ↓
+       FP16      INT8      INT4
+        │         │         │
+       66GB      33GB      17GB
+        │         │         │
+        ↓         ↓         ↓
+     large GPU  larger    24GB GPU</pre>
+<h3 class="src-heading lvl3">Key insight</h3>
+<div class="qbox"><strong>Quantization is a hardware-selection decision disguised as a model-format decision.</strong></div>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Quantization Decision Tree</h3>
+<p>Ask:</p>
+<div class="qbox">"Walk me through the decision tree for choosing quantization."</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<pre>              QUANTIZATION DECISION
+                      │
+                      ↓
+            "What's your quality requirement?"
+                      │
+         ┌────────────┴────────────┐
+         ↓                         ↓
+    "High quality"            "Acceptable quality"
+         │                         │
+         ↓                         ↓
+      "Use FP16"               "Can we use INT8?"
+         │                         │
+         ↓                         ↓
+    "Expensive GPUs"          "What's the accuracy loss?"
+         │                         │
+         │             ┌───────────┴───────────┐
+         │             ↓                       ↓
+         │        "Acceptable"          "Not acceptable"
+         │             │                       │
+         │             ↓                       ↓
+         │          "Use INT8"            "Use FP16"
+         │             │
+         │             ↓
+         │       "Could we use INT4?"
+         │             │
+         │    ┌────────┴────────┐
+         │    ↓                 ↓
+         │ "Yes"              "No"
+         │    │                 │
+         │    ↓                 ↓
+         │ "Use INT4"      "Stick with INT8"
+         │    │
+         │    ↓
+         └────┴───────→ "Benchmark quality vs baseline"</pre>
+<p><strong>The decision matrix:</strong></p>
+<pre>QUALITY REQUIREMENT    →  PRECISION    →  GPU TYPE
+────────────────────────────────────────────────────
+99.9% (Production)     →  FP16         →  A100 80GB
+98% (Good enough)      →  INT8         →  A100 40GB
+95% (Acceptable)       →  INT4         →  L4 24GB</pre>
+<blockquote><strong>"The quantization decision cascades into GPU selection, which cascades into cost."</strong></blockquote>
+<hr>
+</div></details>
+<h1 class="src-heading lvl1">Slide 9 — Complete VRAM chain</h1>
+<p>Ask the audience to reconstruct:</p>
+<pre>Parameters
+    ↓
+Precision
+    ↓
+Weight memory
+    ↓
+Runtime overhead
+    ↓
+KV cache
+    ↓
+Concurrency
+    ↓
+Required VRAM</pre>
+<p>Then ask:</p>
+<div class="qbox"><strong>"Which part is easiest to underestimate?"</strong></div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<p>The dangerous assumption:</p>
+<pre>Model = 17GB
+GPU = 24GB
+Therefore:
+17 &lt; 24
+DONE</pre>
+<p>Wrong.</p>
+<p>Correct:</p>
+<pre>17GB weights
++
+KV cache
++
+activations
++
+runtime
++
+headroom
+=
+REAL requirement</pre>
+</div></details>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Underestimation Traps</h3>
+<p>Ask:</p>
+<div class="qbox">"What are the top 3 underestimation traps?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<pre>UNDERESTIMATION TRAPS
+         │
+         ↓
+TRAP 1: KV CACHE
+         │
+         ↓
+   "I forgot that KV cache grows
+    with context length and concurrency"
+         │
+         ↓
+TRAP 2: RUNTIME OVERHEAD
+         │
+         ↓
+   "I didn't account for the inference
+    engine's memory usage"
+         │
+         ↓
+TRAP 3: HEADROOM
+         │
+         ↓
+   "I thought 24GB meant 24GB usable"</pre>
+<p><strong>The real calculation:</strong></p>
+<pre>VRAM REQUIREMENT
+        │
+        ↓
+  [Weights]     17GB
+  + [KV Cache]  2GB   (8 concurrent, 2K context)
+  + [Activations]1GB
+  + [Runtime]    2GB   (vLLM, PyTorch, CUDA)
+  + [Headroom]   1GB   (10% safety)
+  ─────────────────
+  TOTAL:        23GB</pre>
+</div></details>
+<h3 class="src-heading lvl3">Strong architect phrase</h3>
+<div class="qbox"><strong>"Fit is binary; performance is continuous."</strong></div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<p>First:</p>
+<pre>Does it fit?</pre>
+<p>Then:</p>
+<pre>How fast does it run?</pre>
+</div></details>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Performance Continuum</h3>
+<p>Ask:</p>
+<div class="qbox">"What happens AFTER the model fits?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<pre>PERFORMANCE CONTINUUM
+         │
+         ↓
+    ┌────┴────┐
+    ↓         ↓
+LATENCY   THROUGHPUT
+    │         │
+    ↓         ↓
+"How fast   "How many
+ per         per
+ request?"   second?"
+    │         │
+    ↓         ↓
+  ┌────┴────┐
+  ↓         ↓
+BATCHING  CONCURRENCY
+    │         │
+    ↓         ↓
+"How many   "How many
+ can we     in flight?"
+ process
+ together?"</pre>
+<p><strong>The trade-off:</strong></p>
+<pre>BATCHING VS LATENCY
+        │
+        │
+LATENCY │        ●
+  ↑     │       ●
+        │      ●
+        │     ●
+        │    ●
+        │   ●
+        │  ●
+        │ ●
+        │●
+        └──────────────────→ BATCH SIZE
+        1   2   4   8   16</pre>
+<blockquote><strong>"Fitting is the entrance exam. Performance is the ongoing job."</strong></blockquote>
+<hr>
+</div></details>
+<h1 class="src-heading lvl1">PART 3 — GPU OPTIONS</h1>
+<h1 class="src-heading lvl1">Slide 11 — T4 vs A10G vs L4</h1>
+<p>Ask:</p>
+<div class="qbox"><strong>"If T4 costs only ₹50/hour and L4 costs ₹93/hour, why not choose T4?"</strong></div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<p>Draw:</p>
+<pre>T4
+16GB
+₹50/hr
+   │
+   ↓
+INT4 model
+~17GB
+   │
+   X
+Doesn't fit</pre>
+<p>Therefore:</p>
+<blockquote>Cheap infrastructure that cannot run the workload has <strong>infinite cost/request</strong>.</blockquote>
+<p>That's an important framing.</p>
+<pre>GPU cost/hour
+      ↓
+   ₹50/hr
+
+But:
+capacity = 0
+
+Therefore:
+₹ / successful request
+= effectively infinite</pre>
+<p>Now compare:</p>
+<pre>L4
+24GB
+₹93/hr
+ │
+ ↓
+17-19GB workload
+ │
+ ↓
+FIT</pre>
+</div></details>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The "Infinite Cost" Principle</h3>
+<p>Ask:</p>
+<div class="qbox">"What's the cost/request of a GPU that can't run the model?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<pre>COST PER REQUEST = GPU COST / REQUESTS SERVED
+
+T4:
+  GPU cost: ₹50/hr
+  Requests served: 0 (model doesn't fit)
+  Cost/request: ₹50 / 0 = ∞
+
+L4:
+  GPU cost: ₹93/hr
+  Requests served: 1,000/hr
+  Cost/request: ₹0.093</pre>
+<p><strong>The visual:</strong></p>
+<pre>COST PER REQUEST
+       │
+       │
+₹1.00 ─┤
+       │
+₹0.50 ─┤
+       │        ● L4 (₹0.093)
+₹0.10 ─┤       ●
+       │      ●
+       │     ●
+       │    ●
+       │   ● T4 (infinite)
+       └──────────────────────→ GPU
+            T4    L4</pre>
+<blockquote><strong>"A ₹50 GPU that serves 0 requests is infinitely more expensive than a ₹93 GPU that serves 1,000 requests."</strong></blockquote>
+</div></details>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Capability Comparison</h3>
+<p>Before revealing, ask the audience:</p>
+<div class="qbox">"Why does L4 cost more than T4 but win the architecture?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<pre>COMPARISON MATRIX
+───────────────────────────────────────────────────────
+
+FEATURE        │ T4 (16GB)  │ A10G (24GB) │ L4 (24GB)
+───────────────────────────────────────────────────────
+VRAM           │ 16GB       │ 24GB        │ 24GB
+───────────────────────────────────────────────────────
+Cost/hr        │ ₹50        │ ₹115        │ ₹93
+───────────────────────────────────────────────────────
+Fit 33B INT4?  │ ✗          │ ✓           │ ✓
+───────────────────────────────────────────────────────
+Generation     │ Older      │ Older       │ Newer
+───────────────────────────────────────────────────────
+Performance    │ Lower      │ Higher      │ Moderate
+───────────────────────────────────────────────────────
+Availability   │ High       │ High        │ Growing
+───────────────────────────────────────────────────────
+Suitability    │ ✗          │ ✓           │ ✓✓
+───────────────────────────────────────────────────────</pre>
+<p><strong>The winner:</strong></p>
+<pre>L4 WINS BECAUSE:
+      │
+      ├── Fits the model (24GB)
+      ├── Cheaper than A10G (₹93 vs ₹115)
+      ├── Newer generation
+      └── Lower total cost of ownership</pre>
+<blockquote><strong>"The winner isn't the cheapest GPU. It's the cheapest GPU that works."</strong></blockquote>
+<hr>
+</div></details>
+<h1 class="src-heading lvl1">Slide 12 — What should the GPU decision function be?</h1>
+<p>Ask:</p>
+<div class="qbox"><strong>"If I give you five GPUs, what number should determine the winner?"</strong></div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<p>Possible answers:</p>
+<pre>₹/hour
+VRAM
+tokens/sec
+requests/sec
+latency
+cost/request</pre>
+<p>Then say:</p>
+<blockquote>"None of these alone."</blockquote>
+<p>The real objective:</p>
+<pre>                GPU VALUE
+                    │
+        ┌───────────┼───────────┐
+        ↓           ↓           ↓
+      FIT          SLA         COST
+        │           │           │
+      VRAM        latency     ₹/request</pre>
+<p>A useful conceptual formula:</p>
+<pre>Cost / useful request
+=
+GPU hourly cost
+────────────────────
+successful requests/hour</pre>
+<p>But only after satisfying:</p>
+<pre>VRAM requirement
++
+quality
++
+latency SLA
++
+concurrency</pre>
+<p>So:</p>
+<pre>                 SELECT GPU
+                      │
+                      ↓
+                 Does it fit?
+                      │
+                     YES
+                      │
+                      ↓
+                 Meets latency?
+                      │
+                     YES
+                      │
+                      ↓
+                 Meets concurrency?
+                      │
+                     YES
+                      │
+                      ↓
+               Lowest cost/request</pre>
+</div></details>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The GPU Selection Algorithm</h3>
+<p>Ask:</p>
+<div class="qbox">"Write the algorithm for selecting a GPU."</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<pre>GPU_SELECTION_ALGORITHM
+         │
+         ↓
+    1. INPUTS:
+         │
+         ├── Model size (parameters)
+         ├── Precision (FP16/INT8/INT4)
+         ├── Context length
+         ├── Expected concurrency
+         ├── Latency SLA
+         └── Budget
+         │
+         ↓
+    2. CALCULATE:
+         │
+         ├── Weight memory
+         ├── KV cache per request
+         ├── Total VRAM needed
+         └── Required performance
+         │
+         ↓
+    3. FILTER:
+         │
+         └── Only GPUs where VRAM &gt;= Required VRAM
+         │
+         ↓
+    4. TEST:
+         │
+         └── Only GPUs that meet latency SLA
+         │
+         ↓
+    5. OPTIMIZE:
+         │
+         └── Choose cheapest GPU from remaining</pre>
+<p><strong>The implementation:</strong></p>
+<pre>function selectGPU(workload, candidates):
+    # Step 1: Calculate requirements
+    required_vram = calculateVRAM(workload)
+    required_perf = calculatePerformance(workload)
+    
+    # Step 2: Filter by fit
+    fitting = [gpu for gpu in candidates 
+               if gpu.vram &gt;= required_vram]
+    
+    # Step 3: Test performance
+    performing = [gpu for gpu in fitting
+                  if benchmark(gpu) &gt;= required_perf]
+    
+    # Step 4: Minimize cost
+    return min(performing, key=lambda gpu: gpu.cost_per_hour)</pre>
+<blockquote><strong>"The GPU selection function is a filter-then-optimize algorithm, not a popularity contest."</strong></blockquote>
+<hr>
+</div></details>
+<h1 class="src-heading lvl1">Slide 13 — L4 wins</h1>
+<p>The candidate table:</p>
+<pre>GPU       VRAM      ₹/hr
+──────────────────────────
+T4        16GB       50
+A10G      24GB      115
+L4        24GB       93</pre>
+<p>Architect reasoning:</p>
+<pre>T4
+ │
+ └── cheap
+      BUT
+      ↓
+      insufficient VRAM
+
+A10G
+ │
+ └── fits
+      BUT
+      ↓
+</pre>
+</body>
+</html>

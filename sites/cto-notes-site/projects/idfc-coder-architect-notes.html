@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDFC Coder — Architect Thinking Notes</title>
+<style>
+  body {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 28px 20px 80px;
+    font-family: Georgia, 'Times New Roman', serif;
+    background: #fbfaf7;
+    color: #1e1e1e;
+    line-height: 1.6;
+  }
+  h1.src-heading.lvl1 {
+    font-size: 1.7rem;
+    margin-top: 2.2em;
+    padding-top: 0.5em;
+    border-top: 3px solid #222;
+  }
+  h2.src-heading.lvl2 {
+    font-size: 1.3rem;
+    margin-top: 1.6em;
+  }
+  h3.src-heading.lvl3 {
+    font-size: 1.05rem;
+    margin-top: 1.5em;
+    color: #444;
+  }
+  hr {
+    border: none;
+    border-top: 1px dashed #bbb;
+    margin: 2em 0;
+  }
+  p {
+    margin: 0.8em 0;
+  }
+  pre {
+    background: #f0efe9;
+    border: 1px solid #ddd;
+    border-left: 4px solid #999;
+    border-radius: 4px;
+    padding: 12px 16px;
+    overflow-x: auto;
+    font-family: 'Courier New', ui-monospace, monospace;
+    font-size: 0.82rem;
+    line-height: 1.4;
+    white-space: pre;
+  }
+  blockquote {
+    margin: 0.9em 0;
+    padding: 8px 14px;
+    border-left: 3px solid #b8964a;
+    background: #f7f3e8;
+    font-style: italic;
+  }
+  .qbox {
+    background: #fff7e0;
+    border: 2px solid #d4af5a;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 1.2em 0 0.6em;
+    font-style: italic;
+    font-size: 1.05rem;
+  }
+  details.reveal {
+    margin: 0 0 1.2em;
+  }
+  details.reveal summary {
+    cursor: pointer;
+    display: inline-block;
+    background: #222;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 4px;
+    margin: 10px 0;
+  }
+  details.reveal[open] summary {
+    background: #555;
+  }
+  details.reveal summary::-webkit-details-marker {
+    display: none;
+  }
+  .reveal-body {
+    border-left: 3px solid #e0d9c0;
+    padding-left: 16px;
+    margin-top: 6px;
+  }
+  code {
+    background: #eee;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+  }
+  strong {
+    color: #000;
+  }
+  .topbar {
+    position: sticky;
+    top: 0;
+    background: #fbfaf7;
+    padding: 10px 0;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 10px;
+    display: flex;
+    gap: 10px;
+    z-index: 10;
+  }
+  .topbar button {
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 7px 14px;
+    border-radius: 4px;
+    border: 1px solid #333;
+    background: #fff;
+    cursor: pointer;
+  }
+  .topbar button:hover {
+    background: #222;
+    color: #fff;
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button onclick="document.querySelectorAll('details.reveal').forEach(d=>d.open=true)">Reveal all</button>
+  <button onclick="document.querySelectorAll('details.reveal').forEach(d=>d.open=false)">Hide all</button>
+</div>
+<h1 class="src-heading lvl1">IDFC Coder — Architect Thinking Notes (Enhanced Edition)</h1>
+<h2 class="src-heading lvl2">How to use these notes</h2>
+<p>For each slide, follow this rhythm:</p>
+<pre>             ┌───────────────────────┐
+             │  1. ASK THE QUESTION  │
+             └───────────┬───────────┘
+                         ↓
+                Let audience think
+                         ↓
+             ┌───────────────────────┐
+             │  2. DRAW THE MODEL    │
+             └──────────┬────────────┘
+                        ↓
+                Discuss possibilities
+                        ↓
+             ┌───────────────────────┐
+             │  3. REVEAL THE SLIDE  │
+             └──────────┬────────────┘
+                        ↓
+             Compare thought vs reality</pre>
+<p>The objective is <strong>not merely to explain the architecture</strong>.</p>
+<p>The objective is to make the audience think:</p>
+<div class="qbox">"If I were the architect, what would I do?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<hr>
+</div></details>
+<h1 class="src-heading lvl1">1. System Design — Start With the Business Problem</h1>
+<h3 class="src-heading lvl3">Before showing Slide 1</h3>
+<h3 class="src-heading lvl3">Thought-provoking question</h3>
+<div class="qbox"><strong>You have 10,000 developers in a regulated bank. Would you really build an AI coding platform yourself? Or would you simply buy GitHub Copilot / Claude / another commercial solution?</strong></div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<p>Don't immediately talk about GPUs.</p>
+<p>Ask:</p>
+<pre>                 AI Coding
+                    │
+        ┌───────────┴───────────┐
+        ↓                       ↓
+     BUY API                BUILD IT
+        │                       │
+        ↓                       ↓
+  Easy to start          More control
+  Low engineering        More complexity
+  Vendor dependency      GPU investment
+  Data leaves?           Data sovereignty</pre>
+<p>Then ask:</p>
+<blockquote>"What would make BUILD economically and strategically rational?"</blockquote>
+<p>Let them come up with:</p>
+<pre>                 BUILD
+                   │
+       ┌───────────┼────────────┐
+       ↓           ↓            ↓
+      COST       DATA         CONTROL
+       │        SOVEREIGNTY      │
+       ↓           ↓            ↓
+    Scale      Code stays      Audit
+    matters      internal      Custom model</pre>
+</div></details>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Real Strategic Question</h3>
+<div class="qbox"><strong>"If you build, you're not just building a system—you're building a capability. What's the difference?"</strong></div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<pre>                     SYSTEM
+                        │
+          ┌─────────────┴─────────────┐
+          ↓                           ↓
+    CAPABILITY                    FEATURE
+          │                           │
+          ↓                           ↓
+    Can evolve                  Solves one
+    Can differentiate           problem
+    Can become core            Can be replaced
+    to business</pre>
+<p><strong>The deeper question:</strong></p>
+<blockquote>"Is AI code generation a feature or a core competency for a bank?"</blockquote>
+<p>If it's a <strong>feature</strong> → buy it.</p>
+<p>If it's a <strong>core competency</strong> → build it.</p>
+<p><strong>The bank's answer:</strong></p>
+<pre>      BANKING
+          │
+          ↓
+   TECHNOLOGY
+          │
+          ↓
+    AI CAPABILITY
+          │
+          ↓
+   COMPETITIVE EDGE</pre>
+<p>Because:</p>
+<p>- Banks are becoming technology companies</p>
+<p>- Technology companies are becoming AI companies</p>
+<p>- Therefore: Banks must become AI-native</p>
+<p><strong>The real question becomes:</strong></p>
+<blockquote>"If we don't build this capability now, when will we ever develop AI engineering muscle?"</blockquote>
+<p>This shifts the conversation from:</p>
+<blockquote>"Should we build or buy?"</blockquote>
+<p>To:</p>
+<blockquote>"How do we develop this capability while managing risk?"</blockquote>
+</div></details>
+<h3 class="src-heading lvl3">Architect insight</h3>
+<p>The important architectural decision is <strong>not "which LLM?"</strong></p>
+<p>It starts with:</p>
+<pre>             BUSINESS CONSTRAINTS
+                     │
+       ┌─────────────┼─────────────┐
+       ↓             ↓             ↓
+     COST         SECURITY       CONTROL
+       │             │             │
+       └─────────────┼─────────────┘
+                     ↓
+              ARCHITECTURE
+                     ↓
+               MODEL / GPU</pre>
+<p><strong>Mental model:</strong></p>
+<div class="qbox">Architecture should be a consequence of constraints, not technology enthusiasm.</div>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Constraint-Driven Design Principle</h3>
+<pre>              CONSTRAINTS
+                   │
+                   ↓
+           "WHAT CAN WE
+           NOT CHANGE?"
+                   │
+                   ↓
+    ┌──────────────┼──────────────┐
+    ↓              ↓              ↓
+REGULATORY    SECURITY       COST
+    │              │              │
+    ↓              ↓              ↓
+Data can't    No data can    $0.01 per
+leave         leave VPC      request max</pre>
+<p>Every architectural decision should be traceable to a constraint.</p>
+<div class="qbox"><strong>"If you can't explain why a decision was made in terms of a constraint, you're probably over-engineering."</strong></div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<hr>
+</div></details>
+<h1 class="src-heading lvl1">2. Business Case — Don't Start With GPU Cost</h1>
+<h3 class="src-heading lvl3">Before Slide 3</h3>
+<p>Ask:</p>
+<div class="qbox">"10,000 developers. Suppose each developer makes 50 AI requests every day. What is the annual cost?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<p>Don't let them calculate immediately.</p>
+<p>Ask:</p>
+<blockquote>"What assumption could make your answer wrong by 3×?"</blockquote>
+<p>Draw:</p>
+<pre>10,000 developers
+       │
+       ↓
+requests/developer/day
+       │
+       ↓
+tokens/request
+       │
+       ↓
+price/token
+       │
+       ↓
+annual cost</pre>
+<p>Then introduce the hidden variables:</p>
+<pre>                    COST
+                      │
+        ┌─────────────┼─────────────┐
+        ↓             ↓             ↓
+    # USERS       # REQUESTS     TOKENS
+        │             │             │
+        ↓             ↓             ↓
+    10,000          50/day       context
+                                   +
+                                  output</pre>
+</div></details>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Estimation Game</h3>
+<p>Before revealing the answer, play this game:</p>
+<p><strong>Round 1: Simple estimation</strong></p>
+<pre>10,000 × 50 × 365 = 182.5 million requests/year</pre>
+<p><strong>Round 2: Token estimation</strong></p>
+<pre>Average prompt: 2,000 tokens
+Average output: 500 tokens
+Total: 2,500 tokens/request</pre>
+<p><strong>Round 3: Cost estimation</strong></p>
+<pre>182.5M requests × 2,500 tokens = 456 billion tokens/year
+
+If cost = $0.001/1K tokens
+Annual cost = $456,000
+
+If cost = $0.01/1K tokens  
+Annual cost = $4,560,000</pre>
+<p><strong>Round 4: The hidden multiplier</strong></p>
+<pre>ACTUAL COST = ESTIMATED COST × HIDDEN MULTIPLIERS
+
+Hidden multipliers:
+- Retries: 1.2x
+- Error correction: 1.1x
+- Token waste: 1.3x
+- Peak premium: 1.15x
+
+Total multiplier: ~1.8x</pre>
+<p><strong>Now ask:</strong></p>
+<div class="qbox">"Which cost assumption is the most dangerous one to be wrong about?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<p>The answer:</p>
+<pre>                    ALL OF THEM
+                         │
+                         ↓
+             "It's not the number.
+              It's the model."</pre>
+<blockquote><strong>"If you can't model the cost, you can't manage the cost."</strong></blockquote>
+</div></details>
+<h3 class="src-heading lvl3">Key architectural lesson</h3>
+<p>Never say:</p>
+<div class="qbox">"The API costs $X."</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<p>Instead say:</p>
+<blockquote>"Our cost model is a function of usage."</blockquote>
+<pre>Annual API Cost
+=
+Users
+× Requests/User
+× Tokens/Request
+× Price/Token
+× 365</pre>
+<p>Now ask:</p>
+<blockquote>"What happens when usage doubles?"</blockquote>
+<p>Commercial API:</p>
+<pre>USAGE ────────────────→ COST
+  1x                     1x
+  2x                     2x
+  5x                     5x</pre>
+<p>Self-hosting:</p>
+<pre>USAGE
+  │
+  ├── low ─────→ existing GPUs
+  │
+  ├── higher ──→ add GPU node
+  │
+  └── very high → add another cluster</pre>
+<p>This is the fundamental economic argument.</p>
+</div></details>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Break-Even Analysis</h3>
+<pre>                    BREAK-EVEN
+                         │
+                         ↓
+        ┌────────────────┴────────────────┐
+        ↓                                 ↓
+    API COST                        GPU COST
+        ↓                                 ↓
+    $456K/year                     $120K/node
+    (assumes 456B                    (A100)
+    tokens/year)
+        ↓                                 ↓
+    Year 1: $456K                  Year 1: $120K
+    Year 2: $912K                  Year 2: $240K
+    Year 3: $1.37M                 Year 3: $360K
+    Year 4: $1.82M                 Year 4: $480K
+    Year 5: $2.28M                 Year 5: $600K</pre>
+<p><strong>The visual:</strong></p>
+<pre>Cost
+  │
+3M┤                    API
+  │                    ╱
+2M┤                  ╱
+  │                ╱
+1M┤              ╱       GPU
+  │            ╱    ════════════
+  │          ╱     ────────────
+  │        ╱
+  │      ╱
+  │    ╱
+ 0 └──┴──┴──┴──┴──┴──→ Years
+     1  2  3  4  5
+               ↑
+           Break-even
+           ~2.5 years</pre>
+<p><strong>The question becomes:</strong></p>
+<div class="qbox">"Does the bank expect to use AI coding for more than 2.5 years?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<p>If yes → build.</p>
+<p>If no → buy.</p>
+<hr>
+</div></details>
+<h1 class="src-heading lvl1">3. Data Sovereignty — Ask the Question That Changes the Conversation</h1>
+<p>Before Slide 8:</p>
+<div class="qbox">"Imagine your AI provider is acquired tomorrow by a competitor. What information has your organization already exposed?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<p>Draw:</p>
+<pre>Developer
+   │
+   │ source code
+   │ prompts
+   │ architecture
+   ↓
+┌──────────────┐
+│ External API │
+└──────┬───────┘
+       │
+       ↓
+   THIRD PARTY</pre>
+<p>Then compare:</p>
+<pre>             THIRD PARTY              SELF HOSTED
+
+Developer ──→ API ──→ Provider         Developer
+                                      │
+                                      ↓
+                                  Internal VPC
+                                      │
+                                      ↓
+                                     LLM</pre>
+<p>Ask:</p>
+<blockquote>"Which architecture gives the bank control over the entire data path?"</blockquote>
+<p>This is where the conversation moves from:</p>
+<p><strong>"AI cost optimization"</strong></p>
+<p>to:</p>
+<p><strong>"Engineering sovereignty."</strong></p>
+</div></details>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Data Sovereignty Layers</h3>
+<pre>                DATA SOVEREIGNTY
+                       │
+       ┌───────────────┼───────────────┐
+       ↓               ↓               ↓
+    PROMPTS         CODEBASE         USAGE
+                       │
+       ┌───────────────┼───────────────┐
+       ↓               ↓               ↓
+    What we ask     What we build   How we build</pre>
+<p><strong>The risk spectrum:</strong></p>
+<pre>RISK
+  │
+  │     ┌───────────────────────────────┐
+  │     │  SOURCE CODE EXPOSED           │
+  │     │  (Competitive advantage lost)  │
+  │     │                               │
+  │     │  ARCHITECTURE EXPOSED          │
+  │     │  (Security patterns known)     │
+  │     │                               │
+  │     │  USAGE PATTERNS EXPOSED        │
+  │     │  (Business priorities known)   │
+  │     │                               │
+  │     │  METADATA EXPOSED              │
+  │     │  (Who's working on what)       │
+  └─────┴───────────────────────────────→
+        Low                            High
+                       RISK</pre>
+<p><strong>The architect's question:</strong></p>
+<div class="qbox">"Which of these risks are acceptable to transfer to a vendor?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<p>The answer:</p>
+<pre>ACCEPTABLE     │    UNACCEPTABLE
+               │
+Metadata       │    Source code
+Usage patterns │    Architecture
+Anonymous      │    Business logic
+Aggregates     │    Security controls</pre>
+<blockquote><strong>"Data sovereignty isn't about paranoia—it's about control over your competitive future."</strong></blockquote>
+</div></details>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Vendor Lock-In Spiral</h3>
+<pre>                     START
+                       │
+                       ↓
+              "We'll use the API"
+                       │
+                       ↓
+              "It's just a trial"
+                       │
+                       ↓
+              "Everyone loves it"
+                       │
+                       ↓
+              "We need more features"
+                       │
+                       ↓
+              "Custom training needed"
+                       │
+                       ↓
+              "Fine-tuning on our data"
+                       │
+                       ↓
+              "Now we can't leave"
+                       │
+                       ↓
+              VENDOR LOCK-IN</pre>
+<p><strong>The real cost:</strong></p>
+<pre>VENDOR LOCK-IN
+      │
+      ├── Switching cost: 12-18 months
+      ├── Data migration: 6-9 months
+      ├── Model retraining: 3-6 months
+      ├── Integration rewrite: 6-12 months
+      └── Total: 2-4 years</pre>
+<div class="qbox"><strong>"The cheapest vendor today might become the most expensive vendor tomorrow."</strong></div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<hr>
+</div></details>
+<h1 class="src-heading lvl1">4. LLM Selection — Kill the "Biggest Model = Best Model" Assumption</h1>
+<p>Before Slide 11:</p>
+<div class="qbox">"You have eight models. One has the highest code-generation score. Should you automatically choose it?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<p>Then draw:</p>
+<pre>                MODEL SELECTION
+                      │
+       ┌──────────────┼──────────────┐
+       ↓              ↓              ↓
+    QUALITY        LATENCY          COST
+       │              │              │
+       ↓              ↓              ↓
+   Accuracy       Response       GPU/hour
+                    time</pre>
+<p>Then add:</p>
+<pre>              "BEST MODEL"
+                   ≠
+             "BEST SYSTEM"</pre>
+<p>Ask:</p>
+<blockquote>"What happens if your best model is 2× slower?"</blockquote>
+<p>Now:</p>
+<pre>             Model A
+             Quality 9
+             Latency 2 sec
+                  │
+                  ↓
+             Developer
+             frustrated</pre>
+<p>versus:</p>
+<pre>             Model B
+             Quality 8
+             Latency 300 ms
+                  │
+                  ↓
+             Developer
+               happy</pre>
+</div></details>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Productivity Equation</h3>
+<pre>DEVELOPER PRODUCTIVITY
+         │
+         ↓
+   Time Saved
+         │
+         ↓
+   (Model Quality × Response Speed)
+         │
+         ↓
+   "Which model maximizes this?"</pre>
+<p><strong>The math:</strong></p>
+<pre>Model A:
+  Quality: 9/10
+  Latency: 2 sec
+  Productivity = 9/10
+
+Model B:
+  Quality: 8/10
+  Latency: 0.3 sec
+  Productivity = 8/10
+
+Model C:
+  Quality: 6/10
+  Latency: 0.1 sec
+  Productivity = 6/10</pre>
+<p><strong>But wait:</strong></p>
+<pre>HUMAN PERCEPTION
+       │
+       ↓
+  "The model that feels
+   snappy is used more"
+       │
+       ↓
+   USAGE × QUALITY
+       │
+       ↓
+   TRUE PRODUCTIVITY</pre>
+<p><strong>The hidden dimension:</strong></p>
+<pre>              MODEL SELECTION
+                    │
+       ┌────────────┼────────────┐
+       ↓            ↓            ↓
+    QUALITY      LATENCY      ADOPTION
+       │            │            │
+       ↓            ↓            ↓
+   "Correct"    "Fast"      "Used"</pre>
+<div class="qbox"><strong>"A perfect model that nobody uses is worth less than an imperfect model everyone uses."</strong></div>
+<h3 class="src-heading lvl3">Architect principle</h3>
+<p>Optimize:</p>
+<pre>             BUSINESS VALUE
+                   │
+       ┌───────────┼───────────┐
+       ↓           ↓           ↓
+    QUALITY     LATENCY      COST</pre>
+<p>—not benchmark score alone.</p>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Benchmark Fallacy</h3>
+<pre>              BENCHMARK
+                  │
+                  ↓
+        "Best on HumanEval"
+                  │
+                  ↓
+          BUT...
+                  │
+                  ↓
+     ┌────────────┴────────────┐
+     ↓                         ↓
+REAL CODE                BENCHMARK
+     │                         │
+     ├── Internal APIs        ├── Known problems
+     ├── Legacy code          ├── Clean code
+     ├── Business logic       ├── Synthetic
+     ├── Edge cases           └── Perfect docs
+     └── Ugly real code</pre>
+<p><strong>The gap:</strong></p>
+<pre>BENCHMARK SCORE
+      │
+      ↓
+   "Good"
+      │
+      X
+      │
+PRODUCTION QUALITY
+      │
+      ↓
+   "Unknown"</pre>
+<p><strong>The test:</strong></p>
+<div class="qbox">"Run your actual code through the model before trusting the benchmark."</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<blockquote><strong>"Benchmarks measure potential. Production measures reality."</strong></blockquote>
+<hr>
+</div></details>
+<h1 class="src-heading lvl1">5. Multi-Model Strategy</h1>
+<p>Before revealing Slide 15:</p>
+<div class="qbox">"Would you send every request from 10,000 developers to your most powerful model?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<p>Draw:</p>
+<pre>                    REQUEST
+                       │
+                       ↓
+                  ┌─────────┐
+                  │ ROUTER  │
+                  └────┬────┘
+             ┌─────────┼─────────┐
+             ↓         ↓         ↓
+           SIMPLE    NORMAL    COMPLEX
+             │         │         │
+             ↓         ↓         ↓
+          7B model   33B       34B</pre>
+<p>Then ask:</p>
+<blockquote>"Why waste a 33B model answering something a 7B model can solve?"</blockquote>
+<p>The deck's answer:</p>
+<pre>95% simple requests
+        │
+        ↓
+   Mistral 7B
+
+complex generation
+        │
+        ↓
+ DeepSeek 33B
+
+specialized work
+        │
+        ↓
+ WizardCoder 34B</pre>
+</div></details>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Classification Problem</h3>
+<p>Before routing, you must classify:</p>
+<pre>                 REQUEST
+                    │
+                    ↓
+          ┌─────────────────┐
+          │  CLASSIFIER     │
+          │                 │
+          │ Complexity?     │
+          │ Domain?         │
+          │ Urgency?        │
+          │ User?           │
+          └────────┬────────┘
+                   ↓
+              ROUTING</pre>
+<p><strong>Classifier inputs:</strong></p>
+<pre>CLASSIFICATION
+      │
+      ├── Prompt length
+      ├── Token count
+      ├── User role
+      ├── Team history
+      ├── Query type
+      └── Time of day</pre>
+<p><strong>Classifier outputs:</strong></p>
+<pre>ROUTING DECISION
+      │
+      ├── "Simple" → Mistral 7B
+      ├── "Normal" → DeepSeek 33B
+      ├── "Complex" → WizardCoder 34B
+      └── "Unknown" → DeepSeek 33B (default)</pre>
+<p><strong>The feedback loop:</strong></p>
+<pre>        REQUEST
+           │
+           ↓
+      CLASSIFY
+           │
+           ↓
+        ROUTE
+           │
+           ↓
+        MODEL
+           │
+           ↓
+       RESPONSE
+           │
+           ↓
+      EVALUATE
+           │
+           ↓
+    "Was routing correct?"
+           │
+           ↓
+      UPDATE ROUTER</pre>
+<div class="qbox"><strong>"A routing system is a learning system. Start simple, then improve."</strong></div>
+<h3 class="src-heading lvl3">Deep architectural lesson</h3>
+<p><strong>Model routing is equivalent to compute scheduling.</strong></p>
+<p>You're effectively building:</p>
+<pre>             AI COMPUTE POOL
+                   │
+            intelligent router
+                   │
+       ┌───────────┼───────────┐
+       ↓           ↓           ↓
+     cheap       normal      expensive</pre>
+<p>This is one of the strongest architecture discussions in the deck.</p>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Economic Optimization</h3>
+<pre>             REQUEST DISTRIBUTION
+                    │
+                    ↓
+    ┌───────────────┼───────────────┐
+    ↓               ↓               ↓
+ 95% simple      4% normal       1% complex
+    │               │               │
+    ↓               ↓               ↓
+  7B model       33B model      34B model
+ ($0.0001)      ($0.001)       ($0.01)</pre>
+<p><strong>Cost calculation:</strong></p>
+<pre>100,000 requests/day
+
+Simple:  95,000 × $0.0001 = $9.50
+Normal:   4,000 × $0.001  = $4.00
+Complex:  1,000 × $0.01   = $10.00
+Total:                      $23.50/day</pre>
+<p><strong>If we used 34B for everything:</strong></p>
+<pre>100,000 × $0.01 = $1,000/day</pre>
+<p><strong>Savings:</strong></p>
+<pre>$1,000 - $23.50 = $976.50/day
+                = ~$356,000/year</pre>
+<div class="qbox"><strong>"Model routing isn't just clever—it's economically essential."</strong></div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<hr>
+</div></details>
+<h1 class="src-heading lvl1">6. Network Architecture — Draw the Trust Boundaries</h1>
+<p>Before Slide 18:</p>
+<div class="qbox">"If I give you one VPC and 10,000 developers, where exactly do you put the GPUs?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<p>Don't accept:</p>
+<blockquote>"Inside the VPC."</blockquote>
+<p>Ask:</p>
+<blockquote>"Inside which subnet?"</blockquote>
+<p>Then draw:</p>
+<pre> INTERNET
+    │
+    ↓
+ WAF / Shield
+    │
+    ↓
+ ALB
+    │
+    ↓
+┌─────────────────────────────┐
+│       PRIVATE VPC           │
+│                             │
+│  App Tier                   │
+│      │                      │
+│      ↓                      │
+│  GPU Tier                   │
+│      │                      │
+│      ↓                      │
+│  Data Tier                  │
+│                             │
+└─────────────────────────────┘</pre>
+<p>Now ask:</p>
+<blockquote>"Why shouldn't the GPU directly access everything?"</blockquote>
+<p>The answer is segmentation.</p>
+<pre>        INTERNET
+           │
+       [WAF/ALB]
+           │
+           ↓
+      [APP SUBNET]
+           │
+           ↓
+      [GPU SUBNET]
+           │
+           ↓
+      [DATA SUBNET]</pre>
+<p>Every arrow is a <strong>trust boundary</strong>.</p>
+</div></details>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Zero Trust Architecture</h3>
+<pre>              TRADITIONAL
+                  │
+                  ↓
+          "Trust but verify"
+                  │
+                  ↓
+          PERIMETER SECURITY
+                  │
+                  ↓
+         ┌────────┴────────┐
+         ↓                 ↓
+    INSIDE            OUTSIDE
+    (trust)           (distrust)</pre>
+<p>But the bank's reality:</p>
+<pre>               ZERO TRUST
+                    │
+                    ↓
+         "Never trust, always verify"
+                    │
+                    ↓
+         ┌──────────┴──────────┐
+         ↓                     ↓
+   EVERY REQUEST         EVERY REQUEST
+   MUST BE AUTHED       MUST BE AUTHED</pre>
+<p><strong>Network segmentation:</strong></p>
+<pre>              LAYERS
+                 │
+    ┌────────────┼────────────┐
+    ↓            ↓            ↓
+PUBLIC      INTERNAL      PRIVATE
+    │            │            │
+    ↓            ↓            ↓
+WAF          App Tier    GPU Tier
+ALB          Services    Data Tier</pre>
+<p><strong>The question:</strong></p>
+<div class="qbox">"What happens if the GPU subnet is compromised?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<pre>GPU COMPROMISED
+      │
+      ↓
+   Can it reach...
+      │
+      ├── Data tier? NO (separate subnet)
+      ├── Other GPUs? NO (network policies)
+      ├── App tier? NO (ingress only)
+      └── Internet? NO (no route)</pre>
+<p><strong>The answer:</strong></p>
+<pre>                BREACH
+                  │
+                  ↓
+         "Network segmentation
+          contains the blast radius"</pre>
+<blockquote><strong>"Design for compromise, not just for performance."</strong></blockquote>
+</div></details>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Data Path</h3>
+<pre>              DATA FLOW
+                  │
+                  ↓
+        ┌─────────┴─────────┐
+        ↓                   ↓
+   CONTROL PATH        DATA PATH
+        │                   │
+        ↓                   ↓
+   "What to do"        "What to use"</pre>
+<p><strong>Control path:</strong></p>
+<pre>Developer ──→ Auth ──→ Quota ──→ Model
+(Trusted)     (Check)  (Limit)   (Select)</pre>
+<p><strong>Data path:</strong></p>
+<pre>Model ──→ Codebase ──→ Repository
+(Infer)   (Read)        (Store)</pre>
+<p><strong>The principle:</strong></p>
+<pre>          DATA PATH
+              │
+              ↓
+   "What data touches the model?"
+              │
+              ↓
+    ┌─────────┴─────────┐
+    ↓                   ↓
+  PROMPT           CONTEXT
+  (User input)    (Retrieved)
+    │                   │
+    ↓                   ↓
+  "What's          "What data
+   exposed?"        is used?"</pre>
+<div class="qbox"><strong>"The data path is the trust path. Know what touches the model."</strong></div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<hr>
+</div></details>
+<h1 class="src-heading lvl1">7. GPU Decision — Don't Ask "Which GPU Is Faster?"</h1>
+<p>Before Slide 21:</p>
+<div class="qbox">"H100 is faster than A100. So should we automatically choose H100?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<p>Expected instinct:</p>
+<pre>H100
+ ↓
+FASTER
+ ↓
+BETTER</pre>
+<p>Challenge it.</p>
+<pre>               GPU DECISION
+                    │
+       ┌────────────┼────────────┐
+       ↓            ↓            ↓
+    SPEED        CAPACITY       COST
+       │            │            │
+       ↓            ↓            ↓
+   latency      concurrency    $/request</pre>
+<p>Ask:</p>
+<blockquote>"What does the developer actually care about?"</blockquote>
+<p>Probably:</p>
+<pre>Developer
+   │
+   ↓
+"How quickly do I get my answer?"</pre>
+<p>Business:</p>
+<pre>CFO
+ │
+ ↓
+"How much does each answer cost?"</pre>
+<p>Architecture:</p>
+<pre>Architect
+ │
+ ├── p95 latency
+ ├── throughput
+ ├── concurrency
+ ├── GPU utilization
+ └── cost/request</pre>
+<p>Therefore:</p>
+<blockquote><strong>The correct GPU is not the fastest GPU. It is the GPU that satisfies the SLA at the lowest acceptable cost.</strong></blockquote>
+</div></details>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The GPU Selection Matrix</h3>
+<pre>                     GPU OPTIONS
+                         │
+         ┌───────────────┼───────────────┐
+         ↓               ↓               ↓
+       A100            H100           L4/Others
+    (40GB/80GB)    (80GB/HBM3)      (24GB/cheap)
+         │               │               │
+         ↓               ↓               ↓
+    "Workhorse"     "Premium"       "Budget"</pre>
+<p><strong>Decision matrix:</strong></p>
+<pre>      CRITERION    |  A100  |  H100  |   L4
+      ──────────────────────────────────────────
+      Speed        │   8    │   10   │   5
+      Memory       │   8    │   10   │   3
+      Cost         │   6    │   3    │   10
+      Availability │   8    │   4    │   8
+      Total        │  30    │   27   │  26</pre>
+<p><strong>But wait:</strong></p>
+<pre>                    WEIGHTED SCORING
+                          │
+                          ↓
+         ┌────────────────┴────────────────┐
+         ↓                                 ↓
+   CRITERION                         WEIGHT
+         │                                 │
+         ↓                                 ↓
+   Cost: 40%                        Price sensitive
+   Speed: 30%                       Developer latency
+   Memory: 20%                      Model size
+   Availability: 10%                Supply chain</pre>
+<p><strong>The score:</strong></p>
+<pre>A100: 8×0.3 + 8×0.2 + 6×0.4 + 8×0.1 = 7.2
+H100: 10×0.3 + 10×0.2 + 3×0.4 + 4×0.1 = 6.6
+L4:   5×0.3 + 3×0.2 + 10×0.4 + 8×0.1 = 6.9
+
+Winner: A100 (7.2)</pre>
+<p><strong>The insight:</strong></p>
+<div class="qbox">"The 'fastest' GPU isn't always the 'best' GPU."</div>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: GPU Economics</h3>
+<pre>              GPU ECONOMICS
+                    │
+                    ↓
+       ┌────────────┴────────────┐
+       ↓                         ↓
+   CAPEX                     OPEX
+       │                         │
+       ↓                         ↓
+  $X per GPU              $Y per request
+       │                         │
+       ↓                         ↓
+  "How many GPUs          "How many requests
+   do we need?"            per GPU?"</pre>
+<p><strong>The utilization equation:</strong></p>
+<pre>COST PER REQUEST = (GPU COST + OPERATING COST) / REQUESTS
+
+A100:
+  GPU cost: $30,000
+  Operating: $5,000/year
+  Requests/day: 1,000 (assumed)
+  Cost/request: $0.096</pre>
+<p><strong>The question:</strong></p>
+<div class="qbox">"What if we need 10,000 requests/day?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<pre>10,000 requests/day:
+  A100: 10 GPUs × ($30,000 + $5,000) = $350,000
+  Cost/request: $0.096
+
+H100:
+  8 GPUs × ($40,000 + $7,000) = $376,000
+  Cost/request: $0.103
+
+L4:
+  20 GPUs × ($10,000 + $3,000) = $260,000
+  Cost/request: $0.071</pre>
+<p><strong>The winner changes with scale:</strong></p>
+<pre>                SCALE
+                  │
+                  ↓
+      ┌───────────┴───────────┐
+      ↓                       ↓
+  LOW SCALE              HIGH SCALE
+      ↓                       ↓
+  L4 (cheaper)          A100 (balanced)
+                         H100 (if needed)</pre>
+<blockquote><strong>"The correct GPU depends on your scale, not just your model size."</strong></blockquote>
+<hr>
+</div></details>
+<h1 class="src-heading lvl1">8. Scaling — What Happens Monday Morning?</h1>
+<p>Before Slide 24:</p>
+<div class="qbox">"You normally have 100 concurrent developers. Monday morning gives you 500. What breaks first?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<p>Draw:</p>
+<pre>NORMAL
+
+100 users
+   │
+   ↓
+[GPU GPU GPU]
+   │
+   ↓
+happy users</pre>
+<p>Peak:</p>
+<pre>500 users
+    │
+    ↓
+[GPU GPU GPU]
+    │
+    ↓
+   QUEUE
+    │
+    ↓
+LATENCY ↑</pre>
+<p>Now ask:</p>
+<blockquote>"What is our response?"</blockquote>
+<p>Possible answers:</p>
+<pre>Option 1 → add GPUs
+Option 2 → batch
+Option 3 → queue
+Option 4 → degrade quality
+Option 5 → reject</pre>
+<p>The architectural answer is usually <strong>a combination</strong>.</p>
+<pre>BURST
+  │
+  ↓
+QUEUE
+  │
+  ├── batching
+  │
+  ├── autoscaling
+  │
+  └── backpressure</pre>
+</div></details>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Scaling Dimensions</h3>
+<pre>              SCALING
+                 │
+    ┌────────────┼────────────┐
+    ↓            ↓            ↓
+ VERTICAL    HORIZONTAL   ELASTIC
+    │            │            │
+    ↓            ↓            ↓
+"Bigger"    "More"       "Smarter"
+ GPU         GPUs         routing</pre>
+<p><strong>Vertical scaling:</strong></p>
+<pre>A100 40GB → A100 80GB → H100
+   │           │           │
+   ↓           ↓           ↓
+  Single      Single     Single
+  GPU         GPU        GPU</pre>
+<p><strong>Horizontal scaling:</strong></p>
+<pre>GPU1 ←→ GPU2 ←→ GPU3 ←→ GPU4
+  │       │       │       │
+  ↓       ↓       ↓       ↓
+Load balancer routes requests</pre>
+<p><strong>Elastic scaling:</strong></p>
+<pre>LOAD
+  │
+  │  ────┐
+  │      │
+  │      │
+  │      │   ───────
+  │  ────┤  │
+  │      │  │
+  │      │  │
+  └──────┴──┴────────→ Time
+     ↓      ↓
+   Scale   Scale
+    up     down</pre>
+<p><strong>The cost of elasticity:</strong></p>
+<pre>STATIC SCALING
+  Always have capacity for peak
+  Cost: Peak × 24/7
+
+ELASTIC SCALING
+  Scale to meet demand
+  Cost: Average × 24/7</pre>
+<p><strong>Example:</strong></p>
+<pre>Peak: 500 users (1 hour/day)
+Average: 100 users (24 hours/day)
+
+Static cost:
+  500 GPUs × $30,000 = $15,000,000
+
+Elastic cost:
+  100 GPUs × $30,000 = $3,000,000
+  + 400 GPUs × 1/24 × $30,000 = $500,000
+  Total: $3,500,000
+
+Savings: $11,500,000 (77%)</pre>
+<div class="qbox"><strong>"Scaling isn't about having more—it's about having the right amount at the right time."</strong></div>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Queue Theory</h3>
+<pre>              QUEUE
+                │
+                ↓
+      ┌─────────┴─────────┐
+      ↓                   ↓
+  ARRIVAL           SERVICE
+  RATE              RATE
+      │                   │
+      ↓                   ↓
+  500 req/sec       100 req/sec</pre>
+<p><strong>The math:</strong></p>
+<pre>Traffic intensity (ρ) = λ / μ
+  λ = arrival rate (500/sec)
+  μ = service rate (100/sec)
+  ρ = 5 (overloaded)
+
+Average queue length = ρ² / (1 - ρ)
+  = 25 / (1 - 5)
+  = Negative! (system unstable)</pre>
+<p><strong>The solution:</strong></p>
+<pre>QUEUE MANAGEMENT
+      │
+      ├── Increase service rate (add GPUs)
+      ├── Reduce arrival rate (rate limiting)
+      ├── Accept longer wait (queue depth)
+      └── Reject requests (circuit breaker)</pre>
+<p><strong>The trade-offs:</strong></p>
+<pre>           SERVICE
+              │
+      ┌───────┴───────┐
+      ↓               ↓
+  LOW QUEUE       HIGH QUEUE
+      │               │
+      ↓               ↓
+  Happy users     Unhappy users
+  but expensive   but cheaper</pre>
+<div class="qbox"><strong>"Every queue is a trade-off between quality and cost."</strong></div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<hr>
+</div></details>
+<h1 class="src-heading lvl1">9. Batching — The Counterintuitive Question</h1>
+<p>Before Slide 25:</p>
+<div class="qbox">"If four developers send four requests, why process four separate GPU operations?"</div>
+<details class="reveal"><summary>Reveal</summary><div class="reveal-body">
+<p>Draw:</p>
+<pre>Without batching
+
+Req1 ──→ GPU
+Req2 ──→ GPU
+Req3 ──→ GPU
+Req4 ──→ GPU</pre>
+<p>versus:</p>
+<pre>With batching
+
+Req1 ─┐
+Req2 ─┤
+Req3 ─┼──→ GPU ──→ responses
+Req4 ─┘</pre>
+<p>Then ask:</p>
+<blockquote>"What are we trading?"</blockquote>
+<p>Answer:</p>
+<pre>             BATCHING
+                │
+       ┌────────┴────────┐
+       ↓                 ↓
+   throughput ↑       latency ↑
+                     slightly</pre>
+<p>The key is the <strong>50 ms batching window</strong>.</p>
+<p>You're intentionally spending a tiny amount of latency to gain throughput.</p>
+</div></details>
+<h3 class="src-heading lvl3">🧠 DEEP ENRICHMENT: The Batching Trade-Off</h3>
+<pre>              BATCHING
+                  │
+                  ↓
+        ┌─────────┴─────────┐
+        ↓                   ↓
+    LATENCY            THROUGHPUT
+        │                   │
+        ↓                   ↓
+    "Wait for         "Process more
+     more work"       per second"</pre>
+<p><strong>The equation:</strong></p>
+<pre>LATENCY = (BATCH_SIZE × AVG_WAIT) + PROCESSING_TIME
+
+BATCH_SIZE 1:  100ms + 100ms = 200ms
+BATCH_SIZE 4:  50ms + 200ms = 250ms
+BATCH_SIZE 8:  25ms + 400ms = 425ms</pre>
+<p><strong>The graph:</strong></p>
+<pre>Latency
+  │
+  │    ╲
+  │     ╲
+  │      ╲
+  │       ╲
+  │        ╲
+  │         ╲
+  │          ╲
+  │           ╲
+  └────────────→ Batch Size
+  1    4    8
+       ↑    ↑
+    Good   Too high
+    trade-off</pre>
+<p><strong>The sweet spot:</strong></p>
+<pre>BATCH_SIZE = 4-8
+  │
+  │   - Acceptable latency increase (50ms)
+  │   - Significant throughput gain (4-8×)
+  │   - GPU utilization improves
+  │   - Cost per request decreases</pre>
+<p><strong>The real insight:</strong></p>
+<pre>             BATCHING
+                 │
+                 ↓
+   "Optimizing for the average case"
+</pre>
+</body>
+</html>
