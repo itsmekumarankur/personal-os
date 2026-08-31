@@ -113,6 +113,8 @@ const SECTIONS=[
 ];
 const S=[
 
+{sec:"intro",c:"ink",eyebrow:"Optimus · System Design",t:"q",q:`You have 10,000 developers in a regulated fintech. <b>Would you build your own AI coding platform or buy an existing one?</b> What are the three strongest reasons that would make you choose one over the other?<br><br><span style="font-size:.85rem;color:var(--dim)">Think about: economics, data sovereignty, developer productivity, operational complexity.</span>`},
+
 {sec:"intro",c:"ink",eyebrow:"Optimus · System Design",t:"a",h:"Self-Hosted AI Code Generation Platform <em>for a 10,000-Person Fintech</em>",body:`
 <p>Replacing expensive third-party AI coding assistants with self-hosted LLMs in a regulated fintech environment — built for <strong>data sovereignty, cost control, and production reliability</strong>, and wired directly into the Jira workflow via an autonomous agent.</p>
 <div class="ascii">Scale         : 10,000 devs
@@ -123,7 +125,9 @@ Timeline      : 18 months</div>
 <div class="note"><b>What we learned (exec summary):</b> a regulated fintech can replace third-party AI coding tools with a self-hosted stack without giving up developer productivity — as long as sovereignty, cost and reliability are designed in from day one, not bolted on later.</div>`},
 
 /* ---- BUSINESS CASE ---- */
-{sec:"case",c:"teal",eyebrow:"Business Case · 01",t:"q",q:`10,000 developers, ~50 API calls/day each, $0.03/call. <b>Compute the annual bill.</b> Then adjust for heavy users, longer contexts and premium models — how far off was your first number?`},
+{sec:"case",c:"teal",eyebrow:"Business Case · 01",t:"q",q:`If 10,000 developers generate 50 AI requests every day, <b>how would you estimate the annual cost</b> of an external AI coding platform? Before calculating, which assumptions could make your estimate wrong by 2&times; or 3&times;?`},
+
+{sec:"case",c:"teal",eyebrow:"Business Case · 01",t:"q",q:`If the external API costs several million dollars a year, <b>what would self-hosting actually need to cost before migration becomes economically rational?</b> Would you compare only GPU cost, or something else?`},
 
 {sec:"case",c:"teal",eyebrow:"Business Case · 01",t:"a",h:"The cost reality check",body:`
 <div class="ascii">CURRENT STATE (third-party APIs)
@@ -145,7 +149,9 @@ But this is conservative. In reality:
  <span class="tl">Annual savings: $4.6-8.6M (54-72% reduction)</span></div>
 <div class="note"><b>What we learned:</b> at 10,000-developer scale, per-call API pricing scales <b>linearly</b> with usage while self-hosted infrastructure scales in <b>steps</b> (GPU nodes) — so the larger and heavier the usage, the more self-hosting's economics win.</div>`},
 
-{sec:"case",c:"teal",eyebrow:"Business Case · 01b",t:"q",q:`Cost is the obvious driver. <b>Name the other one</b> — and answer this: if your competitor gets acquired by your AI provider, what happens to all the proprietary code patterns you've been sending to their API?`},
+{sec:"case",c:"teal",eyebrow:"Business Case · 01b",t:"q",q:`Suppose the AI provider is acquired by one of your competitors tomorrow. <b>What information has your organization already exposed through the AI API</b>, and which of those exposures would be impossible to reverse?`},
+
+{sec:"case",c:"teal",eyebrow:"Business Case · 01b",t:"q",q:`If two architectures have similar cost and productivity, <b>what architectural property would make a regulated bank prefer one over the other?</b> How would you prove that property technically rather than through a compliance statement?`},
 
 {sec:"case",c:"teal",eyebrow:"Business Case · 01b",t:"a",h:"The control imperative: data sovereignty",body:`
 <div class="ascii">DATA SOVEREIGNTY MATRIX
@@ -158,12 +164,16 @@ Latency SLA           Provider's       Your infrastructure
 Regulatory (SOC2)     Complex          Direct control</div>
 <div class="note"><b>What we learned:</b> cost savings alone don't justify the migration risk — the real unlock is that <b>code never leaves the VPC</b>, giving complete audit trails and regulatory control a third-party API can never offer.</div>`},
 
+{sec:"case",c:"teal",eyebrow:"Business Case · Recall",t:"q",q:`You have 30 seconds with the CTO: <b>what numbers and arguments would you use to justify self-hosting</b> without showing the detailed calculations?`},
+
 {sec:"case",c:"teal",eyebrow:"Business Case · Recall",t:"r",h:"Quick recall: the business case",qs:[
 {q:`Conservative vs realistic third-party spend, and the self-hosted figure.`,a:`Conservative <b>$5.4M/yr</b>; realistic with heavy usage <b>$8–12M/yr</b>. Self-hosted ~$286,880/month = <b>$3.4M/yr</b> &rarr; savings $4.6–8.6M (54–72%).`},
 {q:`Name the six rows of the sovereignty matrix.`,a:`Code leaves VPC, provider sees code, audit trail, model customization, latency SLA, regulatory (SOC2) control.`}]},
 
 /* ---- LLM SELECTION ---- */
-{sec:"llm",c:"gold",eyebrow:"LLM Selection · 02",t:"q",q:`Eight models scored across six dimensions. Llama 2 70B scored <b>highest on code generation (8.8)</b>. Predict: was it chosen? If not, what beat it and why?`},
+{sec:"llm",c:"gold",eyebrow:"LLM Selection · 02",t:"q",q:`You have eight candidate models and one model scores highest on raw code-generation quality. <b>Would you automatically select it for production?</b> What dimensions could make the highest-scoring model the wrong architectural choice?`},
+
+{sec:"llm",c:"gold",eyebrow:"LLM Selection · 02",t:"q",q:`Design your model-selection framework before seeing these scores. <b>Which six dimensions would you measure</b>, and how would you weight them for an enterprise coding assistant?`},
 
 {sec:"llm",c:"gold",eyebrow:"LLM Selection · 02",t:"a",h:"The candidate pool: 8 models, 6 dimensions",body:`
 <div class="ascii">EVALUATION MATRIX (1-10, higher = better)
@@ -177,6 +187,8 @@ GPT-NeoX 20B            6.0      7.0      7.0      7.0      Apache
 Phi-2 (fine-tuned)      7.2      9.0      9.8      6.0      MIT
 WizardCoder 34B         8.7      7.0      7.5      8.0      Open</div>
 <div class="note"><b>What we learned:</b> benchmark scores on paper rarely tell the full story — <b>no single model wins on every axis</b>, which is exactly why a multi-model strategy made more sense than picking one "best" model.</div>`},
+
+{sec:"llm",c:"gold",eyebrow:"LLM Selection · 02b",t:"q",q:`Would you deploy one LLM for every request, or build a model router? <b>If you build a router, what signals would determine</b> whether a request goes to a small, medium, or large model?`},
 
 {sec:"llm",c:"gold",eyebrow:"LLM Selection · 02b",t:"a",h:"The final decision: a multi-model strategy",body:`
 <div class="ascii">PRIMARY WORKHORSE: DeepSeek Coder 33B
@@ -215,13 +227,17 @@ Regex/Pattern Match         94%       91%      88%
 Security Review             68%       65%      55%</div>
 <div class="note"><b>What we learned:</b> the best model for a task isn't always the biggest — routing <b>95% of simple completions to a small fine-tuned model</b> while reserving the 33B for real generation is what made the economics and latency work.</div>`},
 
+{sec:"llm",c:"gold",eyebrow:"LLM Selection · Recall",t:"q",q:`Imagine your primary model suddenly becomes 2&times; slower. <b>Which workloads would you immediately move to another model</b>, and what quality degradation would you be willing to tolerate?`},
+
 {sec:"llm",c:"gold",eyebrow:"LLM Selection · Recall",t:"r",h:"Quick recall: model choice",qs:[
 {q:`Name the three-model strategy and each one's job.`,a:`<b>DeepSeek Coder 33B</b> = primary workhorse. <b>Mistral 7B fine-tuned</b> = fast path for simple completions/IDE autocomplete (95% of simple queries). <b>WizardCoder 34B</b> = specialized path for complex refactoring and test generation, on explicit request only.`},
 {q:`Why was Llama 2 70B rejected despite the best CodeGen score?`,a:`2.5 s inference on A100 (unacceptable for IDE use), needs 2× A100s for comfortable deployment, and Meta's custom license caused legal review delays.`},
 {q:`Which internal-benchmark categories were the model's weakest?`,a:`<b>Security review (68%)</b> and <b>multi-file refactoring (71%)</b> — WizardCoder edged it on unit tests (82%) and refactoring (74%).`}]},
 
 /* ---- AWS INFRA ---- */
-{sec:"aws",c:"violet",eyebrow:"AWS Infra · 03",t:"q",q:`Sketch the VPC before peeking: what sits in <b>public</b> subnets, what in <b>private app</b> subnets, what in <b>GPU compute</b> subnets, and what in <b>data/state</b>? Why separate them at all?`},
+{sec:"aws",c:"violet",eyebrow:"AWS Infra · 03",t:"q",q:`Design the network architecture from scratch: <b>where should internet-facing traffic terminate</b>, where should application services live, where should GPUs live, and where should state live? What security boundary would you create between each layer?`},
+
+{sec:"aws",c:"violet",eyebrow:"AWS Infra · 03",t:"q",q:`Looking at the proposed topology, <b>what would happen if the GPU layer were compromised?</b> Can an attacker move laterally into the application or data layer? What controls would prevent that?`},
 
 {sec:"aws",c:"violet",eyebrow:"AWS Infra · 03",t:"a",h:"VPC topology",body:`
 <div class="ascii">INTERNET
@@ -255,7 +271,9 @@ Security Review             68%       65%      55%</div>
 +--------------------------------------------------+</div>
 <div class="note"><b>What we learned:</b> isolating wrapper service, GPU compute and data layers into separate subnets isn't just security hygiene — it's what lets each layer <b>scale, fail, and be audited independently</b>.</div>`},
 
-{sec:"aws",c:"violet",eyebrow:"AWS Infra · 03b",t:"q",q:`Constraints: 10,000 devs, peak concurrency ~500, p95 &lt; 800 ms, budget $250K/month, models must fit a single GPU. <b>A100-40GB or H100-80GB?</b> The H100 is 2–3× faster — does that win?`},
+{sec:"aws",c:"violet",eyebrow:"AWS Infra · 03b",t:"q",q:`An H100 is dramatically faster than an A100. If performance is your goal, <b>why wouldn't you simply buy H100s?</b> What metric should actually determine the winner: raw inference speed, cost/request, concurrency, latency, or something else?`},
+
+{sec:"aws",c:"violet",eyebrow:"AWS Infra · 03b",t:"q",q:`You have 500 concurrent developers but a fixed monthly GPU budget. <b>Would you optimize for maximum requests per second or minimum cost per request?</b> How would you calculate the right balance?`},
 
 {sec:"aws",c:"violet",eyebrow:"AWS Infra · 03b",t:"a",h:"The GPU math: A100 vs H100",body:`
 <div class="ascii">OUR CONSTRAINTS
@@ -282,6 +300,8 @@ OPTION 2: H100-80GB (p5.48xlarge)
 <span class="hl">WINNER: A100s</span> - better cost/capacity ratio, sufficient
 performance for our latency targets, more flexible for fine-tuning.</div>
 <div class="note"><b>What we learned:</b> the faster, more expensive H100 wasn't the right call — once you model real concurrency against latency targets, <b>the "better" chip can still be the worse business decision</b>. (The real question: what happens Monday morning when 40% of developers hit the system at once?)</div>`},
+
+{sec:"aws",c:"violet",eyebrow:"AWS Infra · 03c",t:"q",q:`If traffic is highly bursty, would you solve the problem by <b>adding more GPUs, increasing batch size, queuing requests, or accepting higher latency?</b> Which combination gives you the best cost/latency trade-off?`},
 
 {sec:"aws",c:"violet",eyebrow:"AWS Infra · 03c",t:"a",h:"Auto-scaling &amp; the batching queue",body:`
 <div class="ascii">SAGEMAKER AUTO-SCALING POLICY - DeepSeek endpoint (primary)
@@ -310,13 +330,17 @@ Batch of 4 requests formed: [req1, req2, req3, req4]
 Result: <span class="hl">4× throughput, same GPU memory</span></div>
 <div class="note"><b>What we learned:</b> static capacity planning fails at this scale — <b>scheduled scaling</b> (matching known daily/weekly patterns) combined with reactive <b>target-tracking</b> is what kept cost and latency both in check.</div>`},
 
+{sec:"aws",c:"violet",eyebrow:"AWS Infra · Recall",t:"q",q:`A production incident occurs and the system suddenly receives 5&times; normal traffic. <b>Walk through what should happen</b> from the first incoming request until additional GPU capacity becomes available.`},
+
 {sec:"aws",c:"violet",eyebrow:"AWS Infra · Recall",t:"r",h:"Quick recall: infrastructure",qs:[
 {q:`Recite the four subnet tiers and what lives in each.`,a:`<b>Public/DMZ</b>: ALBs. <b>Private app</b>: idfc-coder wrapper on ECS Fargate. <b>GPU compute</b>: SageMaker endpoints (DeepSeek on ml.p4d.24xlarge, Mistral on ml.g5.12xlarge). <b>Data/state</b>: ElastiCache Redis, DynamoDB, SQS, S3 model registry.`},
 {q:`Min/max instances and the two scaling triggers?`,a:`Min 4 off-peak, max 16 at peak; scale-out when invocations/instance &gt; 10 for 2 min, scale-in when &lt; 3 for 10 min, 300 s cool-down. Plus scheduled minimums: 12 at 8–10 AM, 8 during the day, 2 on weekends/nights.`},
 {q:`How does batching improve throughput without extra GPU memory?`,a:`A 50 ms SQS accumulation window forms a batch of 4, which goes through a <b>single forward pass</b>, then responses are split — 4× throughput, same memory.`}]},
 
 /* ---- WRAPPER + JIRA ---- */
-{sec:"wrap",c:"rose",eyebrow:"Wrapper · 04",t:"q",q:`Before a prompt ever reaches the model, <b>what three stages should it pass through</b>, and why is the "intelligence layer" as much about governance as prompting?`},
+{sec:"wrap",c:"rose",eyebrow:"Wrapper · 04",t:"q",q:`If you put a wrapper between developers and the LLM, <b>what responsibilities should belong there rather than inside the model itself?</b> Which of those responsibilities are security-critical?`},
+
+{sec:"wrap",c:"rose",eyebrow:"Wrapper · 04",t:"q",q:`Imagine a developer sends a prompt containing confidential source code and requests an expensive 100K-token generation. <b>What should happen before that request is allowed to reach the GPU?</b>`},
 
 {sec:"wrap",c:"rose",eyebrow:"Wrapper · 04",t:"a",h:"The idfc-coder wrapper: the intelligence layer",body:`
 <div class="ascii">IDFC-CODER WRAPPER
@@ -348,7 +372,9 @@ Result: <span class="hl">4× throughput, same GPU memory</span></div>
 +--------------------------------------------------------+</div>
 <div class="note"><b>What we learned:</b> every request goes through auth, quota, prompt engineering and caching before it reaches the model — the "intelligence layer" is as much about <b>governance</b> as it is about prompting.</div>`},
 
-{sec:"wrap",c:"rose",eyebrow:"Wrapper · 04b",t:"q",q:`Raw cost per request is $0.088. A commercial API charges $0.03–0.10. <b>So is self-hosting even cheaper per request?</b> Work out what changes the answer.`},
+{sec:"wrap",c:"rose",eyebrow:"Wrapper · 04b",t:"q",q:`If self-hosting costs more per raw request than a commercial API, <b>can self-hosting still be cheaper overall?</b> What mechanisms could change the economics?`},
+
+{sec:"wrap",c:"rose",eyebrow:"Wrapper · 04b",t:"q",q:`Where would you put caching in this architecture, and <b>what exactly would you cache?</b> What could go wrong if your cache key doesn't include the right context or model version?`},
 
 {sec:"wrap",c:"rose",eyebrow:"Wrapper · 04b",t:"a",h:"The token economy",body:`
 <div class="ascii">COST PER INFERENCE - DeepSeek 33B on A100 (with batching)
@@ -378,7 +404,9 @@ Team Beta (Mobile, 150 devs)
 Enforcement via API Gateway + wrapper layer</div>
 <div class="note"><b>What we learned:</b> caching isn't optional at this scale — a <b>40–55% effective hit rate</b> turns a marginally-competitive per-request cost into a clearly winning one. And hard token budgets are what make saying "no" to unlimited access defensible with data.</div>`},
 
-{sec:"wrap",c:"rose",eyebrow:"Jira Agent · 05",t:"q",q:`An autonomous agent turns Jira tickets into code. <b>How often should it poll, what should it query, and what are the three possible outputs?</b> Also: why can't it trust Jira's search results?`},
+{sec:"wrap",c:"rose",eyebrow:"Jira Agent · 05",t:"q",q:`You're building an autonomous agent that converts Jira tickets into code. <b>What should trigger the agent</b>: polling, webhooks, scheduled jobs, or events? What failure modes exist with each approach?`},
+
+{sec:"wrap",c:"rose",eyebrow:"Jira Agent · 05",t:"q",q:`The agent reads a ticket and generates code. <b>At what point should you require human approval</b>, and when—if ever—would you allow the agent to create a PR automatically?`},
 
 {sec:"wrap",c:"rose",eyebrow:"Jira Agent · 05",t:"a",h:"Jira integration: the autonomous agent",body:`
 <div class="ascii">JIRA AGENT CONTROLLER
@@ -401,6 +429,8 @@ Result Publisher - three output actions
  +- Option C: create pull request (via Bitbucket/GitHub API)</div>
 <div class="note"><b>What we learned:</b> turning tickets into code isn't a single API call — it's a full pipeline of polling, rate-limited fetching, prompt transformation, and a <b>deliberate choice of how to publish</b> the result.</div>`},
 
+{sec:"wrap",c:"rose",eyebrow:"Jira Agent · 05b",t:"q",q:`Suppose Jira search says ticket version 10 exists, but a direct GET returns version 11. <b>Which version should the AI process?</b> How would you design the system so the same ticket isn't processed twice?`},
+
 {sec:"wrap",c:"rose",eyebrow:"Jira Agent · 05b",t:"a",h:"Handling Jira's quirks: eventual consistency",body:`
 <div class="ascii">EVENTUAL CONSISTENCY PATTERN
 Problem: Jira's search index may be stale
@@ -418,13 +448,17 @@ RATE LIMIT EXHAUSTION HANDLING
  • Priority queue: urgent tickets first</div>
 <div class="note"><b>What we learned:</b> third-party SaaS APIs are <b>eventually consistent by default</b> — building dual verification (search + direct GET) was necessary just to avoid acting on stale data. Open question worth arguing: is auto-generating code from tickets helping developers, or just creating more review burden?</div>`},
 
+{sec:"wrap",c:"rose",eyebrow:"Wrapper &amp; Jira · Recall",t:"q",q:`If the AI-generated code is wrong, <b>where would you want to investigate first</b>: Jira extraction, prompt construction, model inference, post-processing, or publishing? Design the observability trail that lets you answer that in minutes.`},
+
 {sec:"wrap",c:"rose",eyebrow:"Wrapper &amp; Jira · Recall",t:"r",h:"Quick recall: wrapper &amp; agent",qs:[
 {q:`Two-tier cache: what are the tiers, TTLs and hit rates?`,a:`<b>L1 ElastiCache Redis</b>, TTL 1 hour, ~40% hit rate for repeated patterns. <b>L2 DynamoDB</b>, TTL 24 hours, +15% from cross-instance sharing. Key = MD5(prompt_hash + context_hash); invalidated on new model version.`},
 {q:`Raw, cached and blended cost per request?`,a:`Raw <b>$0.088</b>; with 40% cache hits <b>$0.053</b>; blended for our actual usage <b>$0.025</b> per developer request (vs Claude API $0.03–0.10).`},
 {q:`Describe the dual-verification pattern in two lines.`,a:`Fetch candidates from Jira <b>search</b> (fast, possibly stale), then <b>direct GET</b> each ticket (slow, current); if the search version is older, use the direct version, and skip anything already processed via idempotency key.`}]},
 
 /* ---- PRODUCTION ---- */
-{sec:"prod",c:"amber",eyebrow:"Production · 06",t:"q",q:`Your GPU endpoint slows down but doesn't error. <b>What trips the circuit breaker, what does it do while OPEN, and how does it recover?</b> Then: what's the retry sequence before a request is abandoned?`},
+{sec:"prod",c:"amber",eyebrow:"Production · 06",t:"q",q:`Your model endpoint isn't failing—it is simply becoming slower. <b>At what point should your system stop sending requests to it?</b> What should happen to requests already in flight?`},
+
+{sec:"prod",c:"amber",eyebrow:"Production · 06",t:"q",q:`How many times should you retry an AI request? <b>When does retrying improve reliability, and when does retrying actually make an outage worse?</b>`},
 
 {sec:"prod",c:"amber",eyebrow:"Production · 06",t:"a",h:"Resilience: circuit breaker &amp; retries",body:`
 <div class="ascii">CIRCUIT BREAKER STATE MACHINE
@@ -446,6 +480,8 @@ Attempt 5: 8s + random(0-1600ms)  [MAX]
 Then: Dead Letter Queue -&gt; SQS -&gt; Lambda -&gt; Alert -&gt; Slack</div>
 <div class="note"><b>What we learned:</b> circuit breakers and jittered retries aren't boilerplate — they're what stands between a slow GPU endpoint and a full outage, by <b>failing fast and falling back to cache</b> instead of queuing forever.</div>`},
 
+{sec:"prod",c:"amber",eyebrow:"Production · 06b",t:"q",q:`You have a new model version that is 10% better at code generation but 20% slower. <b>How would you safely introduce it into production</b> without risking all developers at once?`},
+
 {sec:"prod",c:"amber",eyebrow:"Production · 06b",t:"a",h:"Model deployment: canary with auto-rollback",body:`
 <div class="ascii">CANARY DEPLOYMENT FOR MODEL UPDATES
 Current: deepseek-v1.2 (tag: prod)   New: deepseek-v1.3 (tag: canary)
@@ -464,6 +500,8 @@ GRADUAL PROMOTION:
  Hour 4: 25%  |  Hour 8: 50%  |  Hour 12: 100%
  After 24h stable: decommission v1.2</div>
 <div class="note"><b>What we learned:</b> model updates need the same production rigor as code deploys — canary splitting with automatic rollback thresholds (latency, error rate, even <b>output length as a hallucination signal</b>) catches regressions before they reach everyone.</div>`},
+
+{sec:"prod",c:"amber",eyebrow:"Production · 06c",t:"q",q:`With thousands of developers sharing the same AI platform, <b>what would you monitor</b> to answer: "Who is consuming capacity, who is getting poor latency, and who is costing us the most?"`},
 
 {sec:"prod",c:"amber",eyebrow:"Production · 06c",t:"a",h:"Observability &amp; multi-tenancy",body:`
 <div class="ascii">CLOUDWATCH DASHBOARD
@@ -498,6 +536,8 @@ Option B: HARD MULTI-TENANCY  (REJECTED)
  Cons: 50 teams × 2 GPUs = $1.6M/month minimum</div>
 <div class="note"><b>What we learned:</b> business metrics (cost, adoption, code-accepted%) and technical metrics (latency, GPU utilization) must sit on the <b>same dashboard</b> — otherwise engineering optimizes for speed while the business case quietly erodes. And soft multi-tenancy was the pragmatic choice, not the ideal one: the team consciously accepted noisy-neighbour risk to avoid a 10× cost blowout, leaving a path open to harden isolation if regulators demand it.</div>`},
 
+{sec:"prod",c:"amber",eyebrow:"Production · Recall",t:"q",q:`If you were paged at 2 AM because developers couldn't generate code, <b>what are the first five metrics/logs/traces you would inspect</b> before touching the infrastructure?`},
+
 {sec:"prod",c:"amber",eyebrow:"Production · Recall",t:"r",h:"Quick recall: production concerns",qs:[
 {q:`Circuit breaker thresholds and states, from memory.`,a:`CLOSED &rarr; OPEN at <b>5 failures in 60 s</b>; OPEN fails fast and serves cache for <b>30 s</b>; then HALF-OPEN tests with 1 request — success returns to CLOSED, failure back to OPEN.`},
 {q:`Name the four automatic-rollback triggers for a canary model.`,a:`p95 latency &gt; 1200 ms, error rate &gt; 5%, token output length &lt; 50 (hallucination risk), user rejection rate &gt; 20%.`},
@@ -505,7 +545,9 @@ Option B: HARD MULTI-TENANCY  (REJECTED)
 {q:`Why was hard multi-tenancy rejected?`,a:`Cost: 50 teams × 2 GPUs = <b>$1.6M/month minimum</b>. Soft multi-tenancy gives queue-level isolation and per-team quotas at a fraction of that, accepting noisy-neighbour risk.`}]},
 
 /* ---- WAR STORIES ---- */
-{sec:"war",c:"rose",eyebrow:"War Story 1 · 07",t:"q",q:`Week 1: p50 1200 ms, p95 3500 ms, and users say "slower than Copilot". <b>Before blaming the model — list the architectural causes</b> you'd check first.`},
+{sec:"war",c:"rose",eyebrow:"War Story 1 · 07",t:"q",q:`p50 is 1.2 seconds and p95 is 3.5 seconds. <b>Before blaming the LLM, draw the entire request path</b> and identify every component that could contribute to tail latency.`},
+
+{sec:"war",c:"rose",eyebrow:"War Story 1 · 07",t:"q",q:`If the model itself is responsible for most of the latency, <b>what are your options besides replacing the model?</b> Which would you try first and why?`},
 
 {sec:"war",c:"rose",eyebrow:"War Story 1 · 07",t:"a",h:"Challenge 1 — the latency nightmare",body:`
 <div class="ascii">PHASE 1 - Unoptimized (Week 1)
@@ -535,7 +577,9 @@ Results:
  +- Throughput: 800 req/sec (from 200)</div>
 <div class="note"><b>What we learned:</b> the 3.5 s p95 wasn't a model problem — it was an <b>architecture problem</b> (cold starts, no batching, no streaming). Fixing the plumbing delivered a bigger win than any model swap would have.</div>`},
 
-{sec:"war",c:"rose",eyebrow:"War Story 2 · 07",t:"q",q:`33B parameters at FP16 = 2 bytes each. <b>Compute the weights alone against a 40 GB A100.</b> Then add KV cache, activations and CUDA overhead — what has to change for this to fit?`},
+{sec:"war",c:"rose",eyebrow:"War Story 2 · 07",t:"q",q:`A 33B model requires roughly 66 GB at FP16, but your GPU has 40 GB. <b>What exactly happens when you try to load it?</b> What architectural options exist before buying a larger GPU?`},
+
+{sec:"war",c:"rose",eyebrow:"War Story 2 · 07",t:"q",q:`Would you quantize the model, distribute it across GPUs, reduce context, reduce batch size, or choose another model? <b>How would you decide which lever to pull first?</b>`},
 
 {sec:"war",c:"rose",eyebrow:"War Story 2 · 07",t:"a",h:"Challenge 2 — the OOM crisis",body:`
 <p><strong>What happened:</strong> Tuesday 14:00, production outage — SageMaker returning 500s. Root cause: DeepSeek-33B OOM on the 40 GB A100 because the context window grew to 16K tokens.</p>
@@ -568,7 +612,9 @@ Also added automatic context window adjustment:
  +- Alert: if sustained &gt; 90% for 5 min</div>
 <div class="note"><b>What we learned:</b> back-of-envelope memory math (FP16 weights alone) is <b>dangerously misleading</b> — real GPU budgets must account for KV cache, activations and CUDA overhead together.</div>`},
 
-{sec:"war",c:"rose",eyebrow:"War Story 3 · 07",t:"q",q:`The model invents an internal API that doesn't exist, suggests a $10,000 fraud threshold when policy says $5,000, and writes string-concatenated SQL. <b>Can better prompting alone fix all three?</b>`},
+{sec:"war",c:"rose",eyebrow:"War Story 3 · 07",t:"q",q:`The AI invents an internal API and generates code using it. <b>Is this fundamentally a model problem, a prompt problem, a retrieval problem, or a governance problem?</b> How would you prevent it systematically?`},
+
+{sec:"war",c:"rose",eyebrow:"War Story 3 · 07",t:"q",q:`If the model doesn't know whether an internal API exists, <b>what evidence should you provide to the model</b> before allowing it to generate code?`},
 
 {sec:"war",c:"rose",eyebrow:"War Story 3 · 07",t:"a",h:"Challenge 3 — hallucination mitigation",body:`
 <ul class="pts">
@@ -605,6 +651,8 @@ CONTEXT INJECTION:
    +- inject correct values</div>
 <div class="note"><b>What we learned:</b> prompting alone can't be trusted to stop hallucinated APIs or wrong compliance thresholds — it took <b>explicit constraints, a "don't guess, ask" instruction, and a post-processing validation layer</b> to make outputs safe to ship.</div>`},
 
+{sec:"war",c:"rose",eyebrow:"War Story 4 · 07",t:"q",q:`You've proven the architecture with hundreds of developers. Now you're going to 10,000. <b>What is the first component you expect to become the bottleneck</b>, and why?`},
+
 {sec:"war",c:"rose",eyebrow:"War Story 4 · 07",t:"a",h:"Challenge 4 — the 10,000-user rollout",body:`
 <div class="ascii">PHASED ADOPTION STRATEGY
 Phase 1: Pioneers (Month 1, 100 users)
@@ -639,6 +687,8 @@ Phase 4: Laggards (Month 5-6, 10,000 users)
     fine-tune on our private code (with permissions)</div>
 <div class="note"><b>What we learned:</b> technology readiness and organizational readiness are two different problems — the phased pioneer &rarr; early adopter &rarr; majority &rarr; laggard rollout mattered as much as any latency or accuracy fix.</div>`},
 
+{sec:"war",c:"rose",eyebrow:"War Stories · Recall",t:"q",q:`Without looking back, <b>name four production problems you would expect</b> when taking an AI coding platform from prototype to enterprise scale.`},
+
 {sec:"war",c:"rose",eyebrow:"War Stories · Recall",t:"r",h:"Quick recall: the four war stories",qs:[
 {q:`Six changes that took p95 from 3500 ms to 720 ms?`,a:`ECS Fargate (no cold starts), dynamic batching (50 ms window), token streaming via SSE, quantization FP32&rarr;INT8 (2× speed), KV-cache optimization for repeated prefixes, cross-AZ placement groups. Throughput went 200 &rarr; 800 req/s.`},
 {q:`Three fixes that made 47 GB fit into 40 GB?`,a:`<b>Flash Attention 2</b> (KV cache 8 GB &rarr; 1.5 GB), <b>gradient checkpointing</b> (activations 4 GB &rarr; 1 GB), and <b>batch size 4 &rarr; 2</b> at peak. Final profile 37.5 GB — plus automatic context-window reduction above 85% utilization.`},
@@ -646,7 +696,9 @@ Phase 4: Laggards (Month 5-6, 10,000 users)
 {q:`Name the four adoption phases and their user counts.`,a:`Pioneers (100), Early Adopters (1,000), Majority (5,000), Laggards (10,000) — over six months.`}]},
 
 /* ---- SCORECARD ---- */
-{sec:"score",c:"ink",eyebrow:"Scorecard · 08",t:"q",q:`The business case projected 54–72% savings. <b>Predict what was actually realized</b> after six months — and what happened to acceptance rate and p95 latency.`},
+{sec:"score",c:"ink",eyebrow:"Scorecard · 08",t:"q",q:`The business case predicted 54–72% savings. Before seeing the results, <b>what percentage would you realistically expect after six months</b>—and what would cause the actual number to differ?`},
+
+{sec:"score",c:"ink",eyebrow:"Scorecard · 08",t:"q",q:`If you could report only six metrics to the CTO, <b>which six would prove that the platform is successful?</b> Avoid metrics that merely show activity; choose metrics that demonstrate business value.`},
 
 {sec:"score",c:"ink",eyebrow:"Scorecard · 08",t:"a",h:"Concrete metrics: the six-month scorecard",body:`
 <div class="ascii">HEADLINE RESULTS
@@ -676,6 +728,8 @@ Complex generations (200-1000 tokens): p50 450ms | p95 890ms
    p99 1400ms | streaming: first token in &lt;100ms
 Throughput: peak 1,200 req/s | average 450 req/s
    daily volume ~15M requests | GPU utilization 73% average</div>`},
+
+{sec:"score",c:"ink",eyebrow:"Scorecard · 08b",t:"q",q:`Developer adoption is high, but code acceptance is low. <b>Would you call the project successful?</b> Which metric should take precedence, and why?`},
 
 {sec:"score",c:"ink",eyebrow:"Scorecard · 08b",t:"a",h:"Quality, adoption &amp; business impact",body:`
 <div class="ascii">QUALITY vs HUMAN BASELINE (passes tests first try)
@@ -711,7 +765,9 @@ Security vulnerabilities: 12/month -&gt; 8/month
 Code review comments: +23% (AI catches patterns)</div>
 <div class="note"><b>What we learned:</b> real savings rarely match the projection exactly — tracking actuals against the original business case keeps the initiative honest and fundable. And the ultimate test of any platform investment is whether it shows up in <b>delivery velocity</b>, not just usage dashboards.</div>`},
 
-{sec:"score",c:"ink",eyebrow:"CTO Retrospective · 09",t:"q",q:`If you were rolling this out again, <b>which team would you onboard first</b> — the friendliest or the most skeptical? Justify it. Then: name the biggest thing you'd do differently.`},
+{sec:"score",c:"ink",eyebrow:"CTO Retrospective · 09",t:"q",q:`If you had to rebuild this platform from scratch, <b>what would you deliberately build smaller</b>, and what would you invest in earlier?`},
+
+{sec:"score",c:"ink",eyebrow:"CTO Retrospective · 09",t:"q",q:`Which architectural mistake is more dangerous: <b>under-engineering the first version or over-engineering it?</b> How would you design the smallest architecture that can still teach you the right things?`},
 
 {sec:"score",c:"ink",eyebrow:"CTO Retrospective · 09",t:"a",h:"What we got right, and what we'd change",body:`
 <div class="ascii">WHAT WE GOT RIGHT
@@ -744,6 +800,8 @@ Code review comments: +23% (AI catches patterns)</div>
    +- should show "this request cost $0.003"
    +- creates natural conservation behaviour</div>
 <div class="note"><b>The real question nobody asks:</b> "Are we actually making developers better, or just faster?" AI code generation can create <b>code debt at unprecedented speed</b>. Investments made in response: AI-generated code review tools (fighting fire with fire), mandatory test coverage thresholds for AI code, "explain the code" sessions in PR reviews, and tracking the long-term maintenance burden of AI-generated code. The goal isn't to replace developers — it's to remove the boring parts so they can focus on architecture, security and innovation, while staying vigilant that we're not creating a generation of developers who can't code without AI.</div>`},
+
+{sec:"score",c:"ink",eyebrow:"Appendix · 10",t:"q",q:`If every important architectural decision is encoded in configuration, <b>what should be configurable without redeploying the system</b>—and what should deliberately remain immutable?`},
 
 {sec:"score",c:"ink",eyebrow:"Appendix · 10",t:"a",h:"Appendix: the config files that encode every decision",body:`
 <div class="ascii">deepseek-coder-endpoint.yaml
@@ -785,6 +843,8 @@ class IDFCCoderConfig:
     JIRA_POLL_INTERVAL_MINUTES = 30
     JIRA_MAX_TICKETS_PER_POLL = 50</div>
 <div class="note"><b>What we learned:</b> team quotas, cache TTLs and circuit-breaker thresholds are just numbers in a config file — but they're the numbers that <b>encode every governance and cost decision</b> made earlier in this document. Auto-scaling policy lives in config, not documentation: the endpoint config is the actual source of truth for how the system behaves under load.</div>`},
+
+{sec:"score",c:"ink",eyebrow:"Final Recall",t:"q",q:`You are at the whiteboard with a CTO. Starting from a developer pressing "Generate Code", <b>reconstruct the entire production request path</b> from edge &rarr; application &rarr; governance &rarr; cache &rarr; queue &rarr; GPU &rarr; validation &rarr; response. Where are the five most important failure boundaries?`},
 
 {sec:"score",c:"ink",eyebrow:"Final Recall",t:"r",h:"Final recall: the whole system design",qs:[
 {q:`Walk the request path from developer to response, naming every layer.`,a:`Developer &rarr; WAF/Shield &rarr; Route53/CloudFront &rarr; ALB (public subnet) &rarr; idfc-coder wrapper on ECS Fargate (auth/RBAC &rarr; rate limiter &rarr; team quota &rarr; prompt engineering &rarr; L1 Redis / L2 DynamoDB cache &rarr; token counting) &rarr; SQS batching (50 ms) &rarr; SageMaker endpoint (DeepSeek 33B INT8 on p4d.24xlarge) &rarr; post-processing validation &rarr; response.`},
