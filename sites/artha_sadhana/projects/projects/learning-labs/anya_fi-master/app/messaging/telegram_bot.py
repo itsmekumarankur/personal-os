@@ -1,0 +1,320 @@
+"""Telegram bot with conversational interface."""
+
+import logging
+from typing import Optional
+from telegram import Update
+from telegram.constants import ParseMode
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    MessageHandler,
+    filters,
+    ContextTypes
+)
+
+from app.config import settings
+from app.db.database import get_db_context
+from app.agents.mcp import MCPAgent
+
+# Configure logging
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
+
+
+class TelegramBot:
+    """Telegram bot with MCP agent integration."""
+    
+    def __init__(self):
+        """Initialize the bot."""
+        if not settings.telegram_bot_token:
+            raise ValueError("TELEGRAM_BOT_TOKEN not configured")
+        
+        # Increase timeouts for better stability
+        from telegram.request import HTTPXRequest
+        request = HTTPXRequest(
+            connection_pool_size=8,
+            read_timeout=60.0,
+            write_timeout=60.0,
+            connect_timeout=60.0
+        )
+        
+        self.application = Application.builder().token(settings.telegram_bot_token).request(request).build()
+        self._setup_handlers()
+    
+    def _setup_handlers(self):
+        """Setup command and message handlers."""
+        # Command handlers
+        self.application.add_handler(CommandHandler("start", self.start_command))
+        self.application.add_handler(CommandHandler("help", self.help_command))
+        self.application.add_handler(CommandHandler("mystats", self.stats_command))
+        self.application.add_handler(CommandHandler("goals", self.goals_command))
+        self.application.add_handler(CommandHandler("dream", self.dream_command))
+        self.application.add_handler(CommandHandler("social", self.social_command))
+        self.application.add_handler(CommandHandler("dashboard", self.dashboard_command))
+        
+        # Message handler for all text messages
+        self.application.add_handler(
+            MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message)
+        )
+    
+    async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /start command."""
+        user = update.effective_user
+        welcome_message = (
+            f"Hey {user.first_name}! 👋 I'm Anya, your financial co-pilot.\n\n"
+            "I'm here to help you:\n"
+            "💰 Set and track savings goals\n"
+            "📊 Monitor your spending\n"
+            "🎯 Make smarter financial decisions\n\n"
+            "Just chat with me naturally! You can say things like:\n"
+            "• \"I want to save for a laptop\"\n"
+            "• \"How am I doing this month?\"\n"
+            "• \"Show me my spending\"\n\n"
+            "Let's start - what are you saving for? 🎯"
+        )
+        await update.message.reply_text(welcome_message)
+    
+    async def help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /help command."""
+        help_text = (
+            "🤖 **Anya Commands**\n\n"
+            "/start - Get started\n"
+            "/help - Show this help\n"
+            "/mystats - Check your budget status\n"
+            "/goals - View your active goals\n"
+            "/dashboard - View your visual dashboard\n\n"
+            "💬 **Or just chat with me!**\n"
+            "I understand natural language, so feel free to ask questions or share your goals.\n\n"
+            "Examples:\n"
+            "• \"I want to buy a MacBook for ₹1,20,000\"\n"
+            "• \"How much have I spent this month?\"\n"
+            "• \"Am I on track for my goal?\""
+        )
+        await update.message.reply_text(help_text, parse_mode='Markdown')
+    
+    async def stats_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /mystats command."""
+        user_id = str(update.effective_user.id)
+        
+        with get_db_context() as db:
+            agent = MCPAgent(db, user_id)
+            
+            # Get budget status
+            budget_status = agent.tools.check_budget_status()
+            
+            # Get active goals for progress info
+            goals = agent.tools.get_active_goals()
+            
+            if budget_status["verdict"] == "NO_GOAL":
+                response = (
+                    "You haven't set a goal yet! 🎯\n\n"
+                    "Tell me what you're saving for and I'll help you track it."
+                )
+            else:
+                verdict_emoji = {
+                    "GREEN": "🟢",
+                    "ORANGE": "🟠",
+                    "RED": "🔴"
+                }
+                emoji = verdict_emoji.get(budget_status["verdict"], "⚪")
+                
+                # Build response with goal progress
+                response = f"{emoji} **Budget Status**\n\n"
+                
+                # Add goal progress if available
+                if goals:
+                    goal = goals[0]  # Show first active goal
+                    progress_bar = self._create_progress_bar(goal['progress_percentage'])
+                    response += (
+                        f"**Goal Progress:**\n"
+                        f"{goal['title']}\n"
+                        f"{progress_bar} {goal['progress_percentage']:.0f}%\n"
+                        f"₹{goal['current_amount']:,.0f} / ₹{goal['target_amount']:,.0f}\n\n"
+                    )
+                
+                response += (
+                    f"**This Month:**\n"
+                    f"Spent: ₹{budget_status['total_spent']:,.0f}\n"
+                    f"Budget: ₹{budget_status['budget']:,.0f}\n"
+                    f"Remaining: ₹{budget_status['remaining']:,.0f}\n\n"
+                    f"Status: {budget_status['label'].title()}"
+                )
+        
+        await update.message.reply_text(response, parse_mode='Markdown')
+    
+    async def goals_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /goals command."""
+        user_id = str(update.effective_user.id)
+        
+        with get_db_context() as db:
+            agent = MCPAgent(db, user_id)
+            goals = agent.tools.get_active_goals()
+            
+            if not goals:
+                response = (
+                    "You don't have any active goals yet! 🎯\n\n"
+                    "Let's set one - what are you saving for?"
+                )
+            else:
+                response = "🎯 **Your Active Goals**\n\n"
+                for goal in goals:
+                    progress = goal['progress_percentage']
+                    progress_bar = self._create_progress_bar(progress)
+                    
+                    response += (
+                        f"**{goal['title']}**\n"
+                        f"{progress_bar} {progress:.0f}%\n"
+                        f"₹{goal['current_amount']:,.0f} / ₹{goal['target_amount']:,.0f}\n"
+                    )
+                    
+                    if goal['deadline']:
+                        response += f"Deadline: {goal['deadline'][:10]}\n"
+                    
+                    response += "\n"
+        
+        await update.message.reply_text(response, parse_mode='Markdown')
+
+    async def dream_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /dream command."""
+        # Expected format: /dream [location] [type]
+        args = context.args
+        if not args or len(args) < 1:
+            await update.message.reply_text(
+                "🔮 **Future-Self Synthesizer**\n\n"
+                "Visualize your dream home! Usage:\n"
+                "`/dream [City] [Type]`\n\n"
+                "Example:\n"
+                "`/dream Mumbai 2BHK`\n"
+                "`/dream Bangalore 3BHK`",
+                parse_mode='Markdown'
+            )
+            return
+
+        location = args[0]
+        property_type = args[1] if len(args) > 1 else "2BHK"
+        
+        await update.message.reply_text(f"🔮 Gazing into the crystal ball for a {property_type} in {location}...")
+        await update.message.chat.send_action("upload_photo")
+        
+        try:
+            from app.agents.future_self_agent import FutureSelfAgent
+            agent = FutureSelfAgent()
+            result = await agent.visualize_dream_home(location, property_type)
+            
+            # Send Photo with Caption
+            await update.message.reply_photo(
+                photo=result['image_url'],
+                caption=result['message'],
+                parse_mode='Markdown'
+            )
+        except Exception as e:
+            logger.error(f"Dream command failed: {e}")
+            await update.message.reply_text("😓 My crystal ball is a bit foggy right now. Please try again later.")
+
+    async def social_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /social command."""
+        # Expected format: /social [activity] [location]
+        args = context.args
+        if not args or len(args) < 2:
+            await update.message.reply_text(
+                "💡 **Social Currency Optimizer**\n\n"
+                "Find budget-friendly alternatives! Usage:\n"
+                "`/social [Activity] [Location]`\n\n"
+                "Example:\n"
+                "`/social drinks Bandra`\n"
+                "`/social dinner Indiranagar`",
+                parse_mode='Markdown'
+            )
+            return
+
+        activity = args[0]
+        location = " ".join(args[1:])
+        
+        await update.message.reply_text(f"🕵️ Looking for cool spots for {activity} in {location}...")
+        await update.message.chat.send_action("typing")
+        
+        try:
+            from app.agents.social_agent import SocialAgent
+            agent = SocialAgent()
+            result = await agent.suggest_social_hack(activity, location)
+            
+            await update.message.reply_text(result['message'], parse_mode='Markdown')
+            
+        except Exception as e:
+            logger.error(f"Social command failed: {e}")
+            await update.message.reply_text("😓 Couldn't find any spots right now. Maybe try a different area?")
+    
+    async def dashboard_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /dashboard command."""
+        user_id = str(update.effective_user.id)
+        dashboard_url = f"{settings.base_url}/dashboard?user_id={user_id}"
+        
+        # Log to console for debugging
+        print(f"🔗 Dashboard URL generated for user {user_id}: {dashboard_url}")
+        logger.info(f"Dashboard URL: {dashboard_url}")
+        
+        await update.message.reply_text(
+            f"📊 <b>Your Financial Dashboard</b>\n\n"
+            f"Click the link below to view your goals, budget, and transactions visually:\n\n"
+            f"<a href=\"{dashboard_url}\">Open Dashboard</a>\n\n"
+            f"<i>(If the link above is not clickable, try this raw link: {dashboard_url})</i>",
+            parse_mode=ParseMode.HTML
+        )
+    
+    async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle regular text messages."""
+        user_id = str(update.effective_user.id)
+        user_message = update.message.text
+        
+        logger.info(f"User {user_id}: {user_message}")
+        
+        # Show typing indicator
+        await update.message.chat.send_action("typing")
+        
+        # Process message through MCP agent
+        with get_db_context() as db:
+            agent = MCPAgent(db, user_id)
+            response = agent.process_message(user_message)
+        
+        logger.info(f"Bot: {response}")
+        
+        # Send response
+        await update.message.reply_text(response)
+    
+    def _create_progress_bar(self, percentage: float, length: int = 10) -> str:
+        """Create a visual progress bar."""
+        filled = int((percentage / 100) * length)
+        bar = "█" * filled + "░" * (length - filled)
+        return bar
+    
+    def run_polling(self):
+        """Run the bot in polling mode (for development)."""
+        logger.info("🤖 Starting Telegram bot in polling mode...")
+        self.application.run_polling(allowed_updates=Update.ALL_TYPES)
+    
+    async def set_webhook(self, webhook_url: str):
+        """Set webhook for production deployment."""
+        await self.application.bot.set_webhook(
+            url=webhook_url,
+            secret_token=settings.telegram_webhook_secret
+        )
+        logger.info(f"✅ Webhook set to: {webhook_url}")
+    
+    def get_webhook_handler(self):
+        """Get webhook handler for FastAPI integration."""
+        return self.application
+
+
+# Global bot instance
+_bot_instance: Optional[TelegramBot] = None
+
+
+def get_bot() -> TelegramBot:
+    """Get or create the global bot instance."""
+    global _bot_instance
+    if _bot_instance is None:
+        _bot_instance = TelegramBot()
+    return _bot_instance
