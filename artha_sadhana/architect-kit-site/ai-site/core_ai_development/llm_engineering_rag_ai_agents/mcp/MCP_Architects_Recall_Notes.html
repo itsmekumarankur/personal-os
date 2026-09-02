@@ -1,0 +1,1653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MCP — Architect's Recall Notes</title>
+<style>
+body { font-family: Georgia, 'Times New Roman', serif; max-width: 900px; margin: 40px auto; padding: 0 20px; line-height: 1.5; color: #1a1a1a; background: #fdfdfd; }
+pre { background: #f4f4f4; border: 1px solid #ddd; padding: 12px; overflow-x: auto; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.3; white-space: pre; }
+code { font-family: 'Courier New', monospace; }
+blockquote { border-left: 3px solid #999; margin-left: 0; padding-left: 12px; color: #333; }
+details.section { border: 1px solid #ccc; border-radius: 4px; margin: 12px 0; padding: 8px 14px; }
+details.section summary { font-weight: bold; font-size: 1.1em; cursor: pointer; padding: 6px 0; }
+.section-body { margin-top: 8px; }
+hr { display: none; }
+</style>
+</head>
+<body>
+<div class="intro"><blockquote>
+<p><strong>Goal:</strong> Don't memorize MCP as a list of APIs.
+Understand <strong>WHY it exists → HOW it works → WHERE it fits → WHAT can go wrong → HOW an architect designs it.</strong></p>
+</blockquote>
+<hr /></div>
+
+<details class="section">
+<summary>0. First Question — What problem is MCP actually solving?</summary>
+<div class="section-body">
+<p>Before learning MCP, ask yourself:</p>
+<blockquote>
+<p><strong>If an LLM already knows how to reason, why can't I simply give it an API and let it call the API?</strong></p>
+</blockquote>
+<p>The answer leads directly to MCP.</p>
+<p>Imagine:</p>
+<pre><code class="language-text">             WITHOUT STANDARDIZATION
+
+   AI App A ────────&gt; Slack API
+       │
+       ├────────────&gt; DB API
+       │
+       └────────────&gt; GitHub API
+
+
+   AI App B ────────&gt; Slack API
+       │
+       ├────────────&gt; DB API
+       │
+       └────────────&gt; GitHub API
+
+
+   AI App C ────────&gt; Slack API
+       │
+       ├────────────&gt; DB API
+       │
+       └────────────&gt; GitHub API
+</code></pre>
+<h3>🤔 Thought-provoking question</h3>
+<p><strong>What happens when I have 20 AI applications and 100 tools?</strong></p>
+<p>You don't have a "tool problem".</p>
+<p>You have an <strong>integration architecture problem</strong>.</p>
+<pre><code class="language-text">             AI APPLICATIONS
+          A       B       C       D
+          │       │       │       │
+          ├───────┼───────┼───────┤
+          │       │       │       │
+        Slack    DB     GitHub   APIs
+          │       │       │       │
+
+          CUSTOM ADAPTER HELL
+</code></pre>
+<p>The number of integrations grows rapidly.</p>
+<h3>🧠 Recall</h3>
+<p><strong>MCP = standardized interface between AI applications and external capabilities.</strong></p>
+<p>The source describes this as solving the <strong>N×M integration problem</strong>. </p>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>1. Why was MCP needed?</summary>
+<div class="section-body">
+<h3>🤔 Ask yourself</h3>
+<blockquote>
+<p><strong>What did early LLMs have?</strong></p>
+</blockquote>
+<p>They had:</p>
+<pre><code class="language-text">        ┌───────────────┐
+        │     LLM       │
+        │               │
+        │ Reason        │
+        │ Understand    │
+        │ Generate      │
+        └───────────────┘
+                 │
+                 X
+          Can't interact
+          with the world
+</code></pre>
+<p>They could <strong>think</strong>, but couldn't naturally:</p>
+<pre><code class="language-text">READ                  ACT
+────                  ───
+
+Database              Send email
+File                  Create ticket
+API                   Execute operation
+Documentation         Trigger workflow
+</code></pre>
+<p>So think:</p>
+<pre><code class="language-text">OLD AI
+
+        🧠
+      &quot;I know&quot;
+        │
+        X
+      no hands
+
+
+MCP-ERA AI
+
+        🧠
+       /│\
+      / │ \
+   READ ACT GUIDE
+    │    │    │
+    └────┼────┘
+         │
+       WORLD
+</code></pre>
+<h3>🧠 Recall</h3>
+<blockquote>
+<p><strong>MCP gives AI a standardized way to connect reasoning with external capabilities.</strong></p>
+</blockquote>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>2. The MOST important mental model</summary>
+<div class="section-body">
+<p>If you remember only one diagram, remember this:</p>
+<pre><code class="language-text">                  ┌───────────────┐
+                  │   AI MODEL    │
+                  │   🧠 Brain    │
+                  └───────┬───────┘
+                          │
+                          ▼
+                  ┌───────────────┐
+                  │  MCP CLIENT   │
+                  │   Connector   │
+                  └───────┬───────┘
+                          │
+                    JSON-RPC
+                          │
+                          ▼
+                  ┌───────────────┐
+                  │ MCP SERVER    │
+                  │ Hands + Eyes  │
+                  └───────┬───────┘
+                          │
+              ┌───────────┼───────────┐
+              ▼           ▼           ▼
+           Database      API        Files
+</code></pre>
+<h3>🤔 Critical question</h3>
+<p><strong>Does MCP replace my database?</strong></p>
+<p>No.</p>
+<p><strong>Does MCP replace my API?</strong></p>
+<p>No.</p>
+<p><strong>Does MCP replace my business logic?</strong></p>
+<p>Not necessarily.</p>
+<p>MCP provides the <strong>standardized interface through which the AI application can access capabilities exposed by those systems</strong>. </p>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>3. MCP Architecture — Can you explain every layer?</summary>
+<div class="section-body">
+<p>Try recalling this from top to bottom:</p>
+<pre><code class="language-text">┌───────────────────────────┐
+│         AI MODEL          │
+│                           │
+│ &quot;I need customer data&quot;    │
+└─────────────┬─────────────┘
+              │
+              ▼
+┌───────────────────────────┐
+│        MCP CLIENT         │
+│                           │
+│ Decides how to interact   │
+└─────────────┬─────────────┘
+              │
+              ▼
+┌───────────────────────────┐
+│        TRANSPORT          │
+│                           │
+│ stdio / HTTP / SSE        │
+└─────────────┬─────────────┘
+              │
+              ▼
+┌───────────────────────────┐
+│        MCP SERVER         │
+│                           │
+│ Exposes capabilities      │
+└─────────────┬─────────────┘
+              │
+       ┌──────┼──────┐
+       ▼      ▼      ▼
+      DB     API    Files
+</code></pre>
+<h3>🧠 Recall sentence</h3>
+<blockquote>
+<p><strong>Model decides → Client communicates → Transport carries → Server exposes → External system executes.</strong></p>
+</blockquote>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>4. Wait — what exactly is the MCP Client?</summary>
+<div class="section-body">
+<h3>🤔 Question</h3>
+<blockquote>
+<p><strong>Is the LLM itself the MCP client?</strong></p>
+</blockquote>
+<p>Think carefully.</p>
+<pre><code class="language-text">        AI APPLICATION
+   ┌──────────────────────┐
+   │                      │
+   │   ┌──────────────┐   │
+   │   │   AI MODEL   │   │
+   │   │   reasoning  │   │
+   │   └──────┬───────┘   │
+   │          │           │
+   │   ┌──────▼───────┐   │
+   │   │ MCP CLIENT   │   │
+   │   │ protocol     │   │
+   │   └──────────────┘   │
+   │                      │
+   └──────────────────────┘
+</code></pre>
+<p>The <strong>client is part of the AI application</strong> that manages communication with MCP servers.</p>
+<p>It can:</p>
+<ul>
+<li>initiate connections</li>
+<li>send requests</li>
+<li>process responses</li>
+<li>handle errors</li>
+<li>handle retries</li>
+<li>manage authentication</li>
+<li>communicate with multiple servers</li>
+</ul>
+<h3>🧠 Recall</h3>
+<p><strong>Client = protocol-side connector used by the AI application.</strong></p>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>5. Then what is the MCP Server?</summary>
+<div class="section-body">
+<h3>🤔 Question</h3>
+<blockquote>
+<p><strong>Why not allow the LLM to directly connect to the database?</strong></p>
+</blockquote>
+<p>Because you want a controlled capability boundary.</p>
+<pre><code class="language-text">             AI
+              │
+              │
+              ▼
+        ┌─────────────┐
+        │ MCP SERVER  │
+        │             │
+        │ validation  │
+        │ auth        │
+        │ access      │
+        │ business    │
+        │ rules       │
+        └──────┬──────┘
+               │
+               ▼
+          DATABASE/API
+</code></pre>
+<p>The server exposes capabilities such as:</p>
+<pre><code class="language-text">Resources
+Tools
+Prompts
+</code></pre>
+<h3>🧠 Recall</h3>
+<blockquote>
+<p><strong>Server = capability provider.</strong></p>
+</blockquote>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>6. The BIG THREE — Resources vs Tools vs Prompts</summary>
+<div class="section-body">
+<p>This is one of the most important things to remember.</p>
+<p>Ask:</p>
+<blockquote>
+<p><strong>Is the AI trying to READ, ACT, or GET GUIDANCE?</strong></p>
+</blockquote>
+<pre><code class="language-text">                    MCP SERVER
+                         │
+             ┌───────────┼───────────┐
+             │           │           │
+             ▼           ▼           ▼
+        RESOURCES      TOOLS      PROMPTS
+             │           │           │
+             ▼           ▼           ▼
+            READ        ACT       GUIDE
+</code></pre>
+<h2>📚 Resources</h2>
+<p>Think:</p>
+<blockquote>
+<p><strong>"Give me something."</strong></p>
+</blockquote>
+<p>Examples:</p>
+<pre><code class="language-text">Customer information
+Documentation
+Files
+Database information
+Configuration
+</code></pre>
+<hr />
+<h2>🔧 Tools</h2>
+<p>Think:</p>
+<blockquote>
+<p><strong>"Do something."</strong></p>
+</blockquote>
+<p>Examples:</p>
+<pre><code class="language-text">send_email()
+create_ticket()
+make_payment()
+query_database()
+</code></pre>
+<p>Tools can cause <strong>side effects</strong>.</p>
+<p>That makes them much more dangerous.</p>
+<hr />
+<h2>📝 Prompts</h2>
+<p>Think:</p>
+<blockquote>
+<p><strong>"Help structure how I should do this."</strong></p>
+</blockquote>
+<p>For example:</p>
+<pre><code class="language-text">sales_analysis
+       │
+       ▼
+&quot;You are a sales analyst.
+ Analyze this data.
+ Return:
+   1. Trends
+   2. Risks
+   3. Recommendations&quot;
+</code></pre>
+<h3>🧠 Golden recall</h3>
+<pre><code class="language-text">RESOURCE = READ
+
+TOOL     = ACT
+
+PROMPT   = GUIDE
+</code></pre>
+<p>Or:</p>
+<blockquote>
+<p><strong>Give me → Do something → Help me structure.</strong></p>
+</blockquote>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>7. Architect Question — Why separate Resources and Tools?</summary>
+<div class="section-body">
+<p>Suppose I expose:</p>
+<pre><code class="language-text">get_customer()
+delete_customer()
+</code></pre>
+<p>Are they equally risky?</p>
+<p>Obviously not.</p>
+<pre><code class="language-text">READ
+
+get_customer()
+     │
+     ▼
+  DATA
+     │
+     ▼
+ no side effect
+
+
+WRITE
+
+delete_customer()
+     │
+     ▼
+  DATA
+     │
+     ▼
+  💥 SIDE EFFECT
+</code></pre>
+<p>This distinction becomes extremely important for:</p>
+<ul>
+<li>authorization</li>
+<li>approval</li>
+<li>retries</li>
+<li>audit</li>
+<li>rate limiting</li>
+<li>risk management</li>
+</ul>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>8. MCP vs API — Are they competitors?</summary>
+<div class="section-body">
+<h3>🤔 Interview question</h3>
+<blockquote>
+<p><strong>"Why do we need MCP if REST APIs already exist?"</strong></p>
+</blockquote>
+<p>This is a very good architect question.</p>
+<p>REST answers:</p>
+<blockquote>
+<p><strong>How do systems communicate with each other?</strong></p>
+</blockquote>
+<p>MCP answers:</p>
+<blockquote>
+<p><strong>How does an AI application discover and interact with AI-accessible capabilities through a standardized protocol?</strong></p>
+</blockquote>
+<p>Think:</p>
+<pre><code class="language-text">          AI APPLICATION
+                │
+                ▼
+             MCP
+                │
+                ▼
+        ┌───────────────┐
+        │ API / DB /    │
+        │ Files / SaaS  │
+        └───────────────┘
+</code></pre>
+<p>MCP doesn't eliminate the underlying API.</p>
+<p>It provides an AI-oriented protocol layer over capabilities.</p>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>9. What is JSON-RPC doing here?</summary>
+<div class="section-body">
+<h3>🤔 Question</h3>
+<blockquote>
+<p><strong>If MCP is a protocol, how do client and server actually exchange messages?</strong></p>
+</blockquote>
+<p>The source uses <strong>JSON-RPC 2.0</strong>.</p>
+<p>Think:</p>
+<pre><code class="language-text">MCP CLIENT
+    │
+    │ JSON message
+    ▼
+MCP SERVER
+    │
+    │ JSON response
+    ▼
+MCP CLIENT
+</code></pre>
+<p>Example:</p>
+<pre><code class="language-json">{
+  &quot;jsonrpc&quot;: &quot;2.0&quot;,
+  &quot;id&quot;: 1,
+  &quot;method&quot;: &quot;tools/call&quot;,
+  &quot;params&quot;: {
+    &quot;name&quot;: &quot;send_email&quot;,
+    &quot;arguments&quot;: {}
+  }
+}
+</code></pre>
+<p>The important fields:</p>
+<pre><code class="language-text">jsonrpc
+   │
+   └── protocol version
+
+id
+   │
+   └── correlate request ↔ response
+
+method
+   │
+   └── what operation?
+
+params
+   │
+   └── input
+</code></pre>
+<h3>🧠 Recall</h3>
+<pre><code class="language-text">JSON-RPC
+
+&quot;What?&quot;
+   ↓
+method
+
+&quot;With what?&quot;
+   ↓
+params
+
+&quot;Which request?&quot;
+   ↓
+id
+</code></pre>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>10. What does `tools/call` actually mean?</summary>
+<div class="section-body">
+<p>Consider:</p>
+<pre><code class="language-text">tools/call
+     │
+     ├── name
+     │      │
+     │      └── send_email
+     │
+     └── arguments
+            │
+            ├── to
+            ├── subject
+            └── body
+</code></pre>
+<p>Conceptually:</p>
+<pre><code class="language-text">CLIENT
+
+&quot;I want to call
+ send_email
+ with these arguments.&quot;
+
+          │
+          ▼
+
+       SERVER
+
+&quot;Let me validate
+ and execute it.&quot;
+</code></pre>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>11. Discovery — How does the AI know what tools exist?</summary>
+<div class="section-body">
+<p>This is an architectically important question.</p>
+<p>Imagine the AI is connected to a server.</p>
+<p>How does it know:</p>
+<pre><code class="language-text">What tools exist?
+What resources exist?
+What prompts exist?
+What capabilities are supported?
+</code></pre>
+<p>The answer is <strong>discovery</strong>.</p>
+<pre><code class="language-text">CLIENT
+   │
+   │ &quot;What can you do?&quot;
+   ▼
+SERVER
+   │
+   ├── resources/list
+   ├── tools/list
+   └── prompts/list
+</code></pre>
+<h3>🧠 Recall</h3>
+<p>Before using a capability:</p>
+<pre><code class="language-text">DISCOVER
+    ↓
+DECIDE
+    ↓
+CALL
+</code></pre>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>12. The complete MCP request lifecycle</summary>
+<div class="section-body">
+<p>This should become automatic recall.</p>
+<pre><code class="language-text">       1. DISCOVER
+           │
+           ▼
+       2. DECIDE
+           │
+           ▼
+       3. CALL
+           │
+           ▼
+       4. EXECUTE
+           │
+           ▼
+       5. RESPOND
+           │
+           ▼
+       6. PRESENT
+</code></pre>
+<h3>Memory phrase</h3>
+<blockquote>
+<p><strong>DISCOVER → DECIDE → CALL → EXECUTE → RESPOND → PRESENT</strong></p>
+</blockquote>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>13. Let&#x27;s walk through a real example</summary>
+<div class="section-body">
+<p>User:</p>
+<blockquote>
+<p><strong>"Who are my top 10 customers?"</strong></p>
+</blockquote>
+<p>Don't jump immediately to SQL.</p>
+<p>Think architecturally.</p>
+<h3>Step 1 — Understand intent</h3>
+<pre><code class="language-text">User
+ │
+ ▼
+&quot;top customers&quot;
+ │
+ ▼
+Need customer data
+</code></pre>
+<h3>Step 2 — Discover capability</h3>
+<pre><code class="language-text">MCP SERVER
+    │
+    ├── customer resource
+    ├── customer query tool
+    └── ...
+</code></pre>
+<h3>Step 3 — Decide</h3>
+<pre><code class="language-text">Need:
+customer revenue ranking
+
+Choose:
+query capability
+</code></pre>
+<h3>Step 4 — Execute</h3>
+<pre><code class="language-sql">SELECT *
+FROM customers
+ORDER BY revenue DESC
+LIMIT 10;
+</code></pre>
+<h3>Step 5 — Return structured result</h3>
+<pre><code class="language-text">Server
+   │
+   ▼
+customer rows
+   │
+   ▼
+Client
+</code></pre>
+<h3>Step 6 — AI presents</h3>
+<pre><code class="language-text">1. Customer A
+2. Customer B
+3. Customer C
+...
+</code></pre>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>14. Transport — What carries the MCP message?</summary>
+<div class="section-body">
+<h3>🤔 Question</h3>
+<p>We know:</p>
+<pre><code class="language-text">MCP
+ │
+ └── JSON-RPC
+</code></pre>
+<p>But how does that message physically travel?</p>
+<p>That's the job of <strong>transport</strong>.</p>
+<pre><code class="language-text">              MCP
+               │
+          JSON-RPC
+               │
+       ┌───────┼────────┐
+       │       │        │
+      stdio    SSE     HTTP
+</code></pre>
+<p>Think:</p>
+<pre><code class="language-text">PROTOCOL
+   =
+&quot;What are we saying?&quot;
+
+TRANSPORT
+   =
+&quot;How do we carry it?&quot;
+</code></pre>
+<p>This distinction is extremely useful.</p>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>15. STDIO vs SSE vs HTTP</summary>
+<div class="section-body">
+<h3>🤔 Architect question</h3>
+<blockquote>
+<p><strong>Would I use the same transport for a local tool and a remote enterprise service?</strong></p>
+</blockquote>
+<p>Not necessarily.</p>
+<h3>Local</h3>
+<pre><code class="language-text">AI APP
+  │
+  │ stdin/stdout
+  ▼
+MCP SERVER
+</code></pre>
+<p>Good mental model:</p>
+<blockquote>
+<p><strong>STDIO = local process communication</strong></p>
+</blockquote>
+<hr />
+<h3>Network service</h3>
+<pre><code class="language-text">AI APP
+   │
+   │ HTTP
+   ▼
+MCP SERVER
+   │
+   ▼
+Database
+</code></pre>
+<hr />
+<h3>Streaming / persistent communication</h3>
+<pre><code class="language-text">CLIENT
+  │
+  │ persistent stream
+  ▼
+SERVER
+  │
+  ├── event
+  ├── event
+  ├── event
+  └── event
+</code></pre>
+<h3>🧠 Recall</h3>
+<pre><code class="language-text">LOCAL
+  ↓
+STDIO
+
+REMOTE
+  ↓
+HTTP / SSE
+</code></pre>
+<p>The source specifically frames STDIO as suited to local tools and SSE/HTTP to networked use cases. </p>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>16. SECURITY — Here&#x27;s where an architect should become suspicious</summary>
+<div class="section-body">
+<p>The most important security question:</p>
+<blockquote>
+<p><strong>If the LLM decides to call a tool, does that mean the user is authorized to perform the action?</strong></p>
+</blockquote>
+<h3>❌ NO.</h3>
+<p>This is a critical distinction.</p>
+<pre><code class="language-text">          MODEL DECISION
+                │
+                │
+                ▼
+        &quot;Call transfer_money&quot;
+                │
+                ▼
+       ┌──────────────────┐
+       │ AUTHORIZATION    │
+       │                  │
+       │ Is this actually │
+       │ permitted?       │
+       └────────┬─────────┘
+                │
+          YES ──┴── NO
+           │          │
+           ▼          ▼
+        Execute     Reject
+</code></pre>
+<h3>🧠 Golden rule</h3>
+<blockquote>
+<p><strong>Tool selection ≠ authorization.</strong></p>
+</blockquote>
+<p>The model can <strong>request</strong> an action.</p>
+<p>The security layer decides whether it is <strong>allowed</strong>.</p>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>17. Trust boundaries</summary>
+<div class="section-body">
+<p>Imagine a fintech system.</p>
+<pre><code class="language-text"> TRUSTED
+ ┌───────────────────────┐
+ │ AI APPLICATION        │
+ │                       │
+ │ Model + MCP Client    │
+ └───────────┬───────────┘
+             │
+             │ AUTH
+             ▼
+ ─────────────────────────
+          TRUST BOUNDARY
+ ─────────────────────────
+             │
+             ▼
+      ┌──────────────┐
+      │ MCP SERVER   │
+      └──────┬───────┘
+             │
+             ▼
+      External System
+</code></pre>
+<p>Every boundary deserves:</p>
+<pre><code class="language-text">Authentication
+Authorization
+Audit
+Validation
+</code></pre>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>18. Why MCP Tools are more dangerous than Resources</summary>
+<div class="section-body">
+<p>Think about these two operations:</p>
+<pre><code class="language-text">get_account_balance()
+        │
+        ▼
+       READ
+</code></pre>
+<p>versus:</p>
+<pre><code class="language-text">transfer_money()
+        │
+        ▼
+       WRITE
+        │
+        ▼
+      💰💥
+</code></pre>
+<p>The second one creates a real-world side effect.</p>
+<p>Therefore:</p>
+<pre><code class="language-text">READ
+ │
+ └── lower operational risk
+
+
+WRITE
+ │
+ ├── authorization
+ ├── approval
+ ├── audit
+ ├── idempotency
+ └── rate limiting
+</code></pre>
+<p>For financial/destructive actions, the source recommends considering a <strong>human approval gate</strong>. </p>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>19. The subtle distributed-systems problem: RETRIES</summary>
+<div class="section-body">
+<p>Now comes a very important architect question.</p>
+<p>Suppose:</p>
+<pre><code class="language-text">Client
+  │
+  │ tools/call
+  ▼
+Server
+  │
+  │ executes
+  ▼
+Payment successful
+</code></pre>
+<p>But the response is lost:</p>
+<pre><code class="language-text">Client ─────request────&gt; Server
+                         │
+                         ▼
+                     PAYMENT 💰
+                         │
+                         X
+                    response lost
+</code></pre>
+<p>Client thinks:</p>
+<blockquote>
+<p>"Maybe the server never executed."</p>
+</blockquote>
+<p>So it retries.</p>
+<pre><code class="language-text">Client ─────retry────&gt; Server
+                         │
+                         ▼
+                     PAYMENT 💰
+</code></pre>
+<h3>💥 Result</h3>
+<p>Potentially:</p>
+<pre><code class="language-text">₹1000
++
+₹1000
+=
+₹2000 charged
+</code></pre>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>20. What solves this?</summary>
+<div class="section-body">
+<h3>Idempotency.</h3>
+<p>Think:</p>
+<pre><code class="language-text">Request
+
+idempotency_key = ABC123
+</code></pre>
+<p>First request:</p>
+<pre><code class="language-text">ABC123
+   ↓
+execute
+   ↓
+SUCCESS
+</code></pre>
+<p>Retry:</p>
+<pre><code class="language-text">ABC123
+   ↓
+already processed
+   ↓
+don't execute again
+</code></pre>
+<p>Diagram:</p>
+<pre><code class="language-text">             Request
+                │
+                ▼
+       ┌─────────────────┐
+       │ Idempotency Key │
+       │     ABC123      │
+       └────────┬────────┘
+                │
+          ┌─────▼─────┐
+          │ Processed?│
+          └──┬─────┬──┘
+             │     │
+            YES    NO
+             │     │
+             ▼     ▼
+          Return   Execute
+          result     │
+                     ▼
+                  Record key
+</code></pre>
+<h3>🧠 Recall</h3>
+<blockquote>
+<p><strong>READ retry → generally safer.</strong>
+<strong>WRITE retry → potentially dangerous.</strong></p>
+</blockquote>
+<p>This is one of the most important production lessons in the source. </p>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>21. Another distributed-systems problem — TIMEOUT</summary>
+<div class="section-body">
+<p>Imagine:</p>
+<pre><code class="language-text">Client
+  │
+  ├──&gt; Server A ──&gt; 40ms
+  │
+  ├──&gt; Server B ──&gt; 900ms
+  │
+  └──&gt; Server C ──&gt; 55ms
+</code></pre>
+<p>Question:</p>
+<blockquote>
+<p><strong>How long should the user wait?</strong></p>
+</blockquote>
+<p>If your timeout is:</p>
+<pre><code class="language-text">500ms
+</code></pre>
+<p>then:</p>
+<pre><code class="language-text">A → SUCCESS
+B → TIMEOUT
+C → SUCCESS
+</code></pre>
+<p>Should you return nothing?</p>
+<p>Or:</p>
+<pre><code class="language-text">A ✓
+B ✗
+C ✓
+
+Partial answer
+</code></pre>
+<p>This is the architect's real problem.</p>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>22. Fan-out — the hidden complexity</summary>
+<div class="section-body">
+<p>Suppose one user question requires three MCP servers:</p>
+<pre><code class="language-text">                 User Question
+                      │
+                      ▼
+                   Client
+                  /   |   \
+                 /    |    \
+                ▼     ▼     ▼
+             Server A B     C
+              40ms 900ms  55ms
+</code></pre>
+<p>The overall response may be constrained by:</p>
+<pre><code class="language-text">MAX(A, B, C)
+</code></pre>
+<p>roughly:</p>
+<pre><code class="language-text">max(40, 900, 55)
+=
+900ms
+</code></pre>
+<p>unless you use timeouts, partial responses, asynchronous handling, etc.</p>
+<h3>Architect questions</h3>
+<p>Ask:</p>
+<pre><code class="language-text">What is my timeout budget?
+
+Can calls execute in parallel?
+
+What happens if one server fails?
+
+Can I return partial results?
+
+Which failures are fatal?
+
+Which failures are optional?
+</code></pre>
+<p>These are <strong>distributed systems questions</strong>, not merely MCP questions.</p>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>23. MCP Gateway — Why would we need one?</summary>
+<div class="section-body">
+<p>Imagine:</p>
+<pre><code class="language-text">Client A ─────&gt; Server 1
+Client A ─────&gt; Server 2
+Client A ─────&gt; Server 3
+
+Client B ─────&gt; Server 1
+Client B ─────&gt; Server 2
+Client B ─────&gt; Server 3
+
+Client C ─────&gt; Server 1
+Client C ─────&gt; Server 2
+Client C ─────&gt; Server 3
+</code></pre>
+<p>Now every client needs:</p>
+<pre><code class="language-text">server discovery
+credentials
+routing
+logging
+quotas
+security
+</code></pre>
+<p>Ugly.</p>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>24. Gateway pattern</summary>
+<div class="section-body">
+<p>Instead:</p>
+<pre><code class="language-text"> Client A ──┐
+ Client B ──┤
+ Client C ──┤
+             ▼
+       ┌─────────────┐
+       │ MCP GATEWAY │
+       │             │
+       │ Auth        │
+       │ Routing     │
+       │ Registry    │
+       │ Quota       │
+       │ Logging     │
+       └──────┬──────┘
+              │
+       ┌──────┼──────┐
+       ▼      ▼      ▼
+    Server1 Server2 Server3
+</code></pre>
+<p>Now:</p>
+<pre><code class="language-text">Many Clients
+      │
+      ▼
+  ONE CONTROL
+    POINT
+      │
+      ▼
+Many Servers
+</code></pre>
+<h3>🧠 Architect insight</h3>
+<p>A gateway becomes attractive when you need centralized:</p>
+<pre><code class="language-text">AUTH
+AUDIT
+ROUTING
+QUOTA
+REGISTRY
+OBSERVABILITY
+</code></pre>
+<p>The source suggests this pattern once an organization has more than a handful of internal MCP servers. </p>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>25. Governance — Who owns the tools?</summary>
+<div class="section-body">
+<p>This is often missed by developers.</p>
+<p>Imagine 50 MCP servers:</p>
+<pre><code class="language-text">MCP-01 → Customer
+MCP-02 → Payments
+MCP-03 → Wealth
+MCP-04 → Loans
+...
+MCP-50
+</code></pre>
+<p>Question:</p>
+<blockquote>
+<p><strong>Who knows what each tool does?</strong></p>
+</blockquote>
+<p>You need a registry.</p>
+<pre><code class="language-text">              MCP REGISTRY
+                   │
+       ┌───────────┼───────────┐
+       ▼           ▼           ▼
+    Tool name    Owner       SLA
+       │           │           │
+    Version     Team X       99.9%
+</code></pre>
+<p>Governance includes:</p>
+<pre><code class="language-text">✓ ownership
+✓ schema versions
+✓ SLA
+✓ lifecycle
+✓ deprecation
+✓ access policy
+</code></pre>
+<h3>🧠 Recall</h3>
+<blockquote>
+<p><strong>The registry becomes the organizational map of MCP capabilities.</strong></p>
+</blockquote>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>26. Build MCP or directly call the API?</summary>
+<div class="section-body">
+<p>Excellent architect interview question:</p>
+<blockquote>
+<p><strong>"Do we actually need MCP?"</strong></p>
+</blockquote>
+<p>Don't automatically say yes.</p>
+<p>Think:</p>
+<pre><code class="language-text">                    NEED MCP?
+                       │
+          ┌────────────┴────────────┐
+          ▼                         ▼
+      MANY TOOLS                FEW TOOLS
+      MANY CLIENTS              ONE CLIENT
+      GOVERNANCE                SIMPLE
+          │                         │
+          ▼                         ▼
+       MCP likely              Direct API
+       useful                  may suffice
+</code></pre>
+<p>Use MCP more strongly when:</p>
+<pre><code class="language-text">5+ tools / growing
+       +
+multiple AI clients
+       +
+governance requirements
+       +
+shared capabilities
+</code></pre>
+<p>Direct API may be simpler when:</p>
+<pre><code class="language-text">1–2 stable integrations
+       +
+single application
+       +
+low governance needs
+</code></pre>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>27. MCP Production Architecture</summary>
+<div class="section-body">
+<p>Now combine everything.</p>
+<pre><code class="language-text">                         AI SYSTEM
+                            │
+                            ▼
+                    ┌───────────────┐
+                    │   MCP CLIENT  │
+                    └───────┬───────┘
+                            │
+                            ▼
+                    ┌───────────────┐
+                    │ MCP GATEWAY   │
+                    │               │
+                    │ Auth          │
+                    │ Routing       │
+                    │ Audit         │
+                    │ Quota         │
+                    │ Registry      │
+                    └───────┬───────┘
+                            │
+              ┌─────────────┼──────────────┐
+              ▼             ▼              ▼
+         MCP SERVER     MCP SERVER     MCP SERVER
+          Customer        Payments       Wealth
+              │             │              │
+              ▼             ▼              ▼
+             DB            API            DB/API
+</code></pre>
+<p>Now put production controls around it:</p>
+<pre><code class="language-text">              MCP PRODUCTION
+                    │
+       ┌────────────┼────────────┐
+       ▼            ▼            ▼
+   SECURITY     RESILIENCE    GOVERNANCE
+       │            │            │
+     AuthZ       Timeout       Registry
+     PII         Retry         Owner
+     Approval    Circuit       Version
+     Audit       Idempotency   Deprecation
+       │            │            │
+       └────────────┴────────────┘
+                    │
+                    ▼
+               OPERATIONS
+                    │
+                    ▼
+                LOGGING
+                    │
+                    ▼
+               AUDITABLE AI
+</code></pre>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>28. Fintech Architect&#x27;s Question</summary>
+<div class="section-body">
+<p>If you were designing MCP for a bank, ask:</p>
+<blockquote>
+<p><strong>"What happens if an agent gets into a loop and repeatedly calls a financial tool?"</strong></p>
+</blockquote>
+<p>Example:</p>
+<pre><code class="language-text">Agent
+ │
+ ├── transfer()
+ │
+ ├── transfer()
+ │
+ ├── transfer()
+ │
+ ├── transfer()
+ │
+ └── transfer()
+</code></pre>
+<p>💥</p>
+<p>Therefore:</p>
+<pre><code class="language-text">Agent
+ │
+ ▼
+MCP Gateway
+ │
+ ├── Authentication
+ ├── Authorization
+ ├── Rate limiting
+ ├── Approval
+ ├── Audit
+ ├── Idempotency
+ └── Policy
+ │
+ ▼
+Financial Tool
+</code></pre>
+<p>The source specifically calls out <strong>runaway agent loops</strong> as a new failure class and recommends rate limiting per model/session. </p>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>29. Audit Trail — Especially important in banking</summary>
+<div class="section-body">
+<p>Ask:</p>
+<blockquote>
+<p><strong>"If an AI makes a transaction, can I reconstruct exactly why it happened?"</strong></p>
+</blockquote>
+<p>You should be able to trace:</p>
+<pre><code class="language-text">USER
+ │
+ ▼
+SESSION
+ │
+ ▼
+PROMPT
+ │
+ ▼
+MODEL DECISION
+ │
+ ▼
+MCP TOOL
+ │
+ ▼
+ARGUMENTS
+ │
+ ▼
+MCP SERVER
+ │
+ ▼
+DOWNSTREAM API
+ │
+ ▼
+RESULT
+</code></pre>
+<p>This becomes your audit chain.</p>
+<p>For regulated environments, the source emphasizes capturing the full chain:</p>
+<blockquote>
+<p>user/session → prompt → tool → arguments → downstream → result. </p>
+</blockquote>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>30. PII — Another architect question</summary>
+<div class="section-body">
+<p>Suppose:</p>
+<pre><code class="language-text">Resource:
+customer_profile
+</code></pre>
+<p>contains:</p>
+<pre><code class="language-text">Name
+PAN
+Account number
+Phone
+Email
+Address
+</code></pre>
+<p>Question:</p>
+<blockquote>
+<p><strong>Does exposing it through MCP make the data less sensitive?</strong></p>
+</blockquote>
+<p>Obviously not.</p>
+<pre><code class="language-text">              PII
+               │
+               ▼
+         MCP Resource
+               │
+               ▼
+        AI Application
+</code></pre>
+<p>The MCP layer must have appropriate:</p>
+<pre><code class="language-text">Access control
+Masking
+Authorization
+Audit
+</code></pre>
+<p>The source explicitly says PII-bearing Resources need the same masking/access-control discipline as other data APIs. </p>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>31. Dry-run — very useful for dangerous tools</summary>
+<div class="section-body">
+<p>Suppose:</p>
+<pre><code class="language-text">execute_payment()
+</code></pre>
+<p>Instead of immediately doing:</p>
+<pre><code class="language-text">₹50,000 transferred
+</code></pre>
+<p>you can conceptually support:</p>
+<pre><code class="language-text">dry_run = true
+</code></pre>
+<p>Result:</p>
+<pre><code class="language-text">Would transfer:
+
+From: Account A
+To: Account B
+Amount: ₹50,000
+
+No transaction executed.
+</code></pre>
+<p>Then:</p>
+<pre><code class="language-text">AI
+ │
+ ▼
+Preview
+ │
+ ▼
+Human Approval
+ │
+ ▼
+Execute
+</code></pre>
+<p>This is an excellent pattern for high-risk agentic workflows.</p>
+<p>The source recommends considering <strong>dry-run mode</strong> for write tools. </p>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>32. The 10-second MCP explanation</summary>
+<div class="section-body">
+<p>If an interviewer says:</p>
+<blockquote>
+<p><strong>"Explain MCP."</strong></p>
+</blockquote>
+<p>You should be able to say:</p>
+<blockquote>
+<p><strong>MCP is a standardized protocol that allows AI applications to discover and interact with external capabilities such as data, tools, and prompts. The AI application uses an MCP client to communicate with MCP servers, typically through JSON-RPC over an appropriate transport. Servers expose Resources for reading, Tools for actions, and Prompts for structured guidance.</strong></p>
+</blockquote>
+<p>Then draw:</p>
+<pre><code class="language-text">AI Model
+   │
+   ▼
+MCP Client
+   │
+   ▼
+JSON-RPC / Transport
+   │
+   ▼
+MCP Server
+   │
+ ┌─┼────────┐
+ ▼ ▼        ▼
+Data Tools Prompts
+</code></pre>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>33. The 60-second Architect explanation</summary>
+<div class="section-body">
+<blockquote>
+<p><strong>The value of MCP is less about replacing APIs and more about standardizing the AI-to-capability boundary. Instead of every AI application building custom integrations with every data source or tool, MCP provides a common protocol. At production scale, I would focus heavily on authorization, PII protection, auditability, timeouts, retries, idempotency, rate limiting, versioning, ownership, and potentially a gateway for centralized governance.</strong></p>
+</blockquote>
+<p>That answer sounds much more senior than:</p>
+<blockquote>
+<p>"MCP is a protocol for AI tools."</p>
+</blockquote>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>34. Seven diagrams you should be able to draw from memory</summary>
+<div class="section-body">
+<h2>Diagram #1 — Why MCP?</h2>
+<pre><code class="language-text">BEFORE
+
+AI A ──┬── Tool 1
+       ├── Tool 2
+       └── Tool 3
+
+AI B ──┬── Tool 1
+       ├── Tool 2
+       └── Tool 3
+
+        ↓
+
+CUSTOM ADAPTER HELL
+
+
+AFTER
+
+AI A ──┐
+AI B ──┼── MCP ──&gt; Tools
+AI C ──┘
+</code></pre>
+<p><strong>Recall:</strong> N×M → standardized interface</p>
+<hr />
+<h2>Diagram #2 — Architecture</h2>
+<pre><code class="language-text">MODEL
+  ↓
+CLIENT
+  ↓
+TRANSPORT
+  ↓
+SERVER
+  ↓
+SYSTEM
+</code></pre>
+<hr />
+<h2>Diagram #3 — Capabilities</h2>
+<pre><code class="language-text">             MCP
+              │
+       ┌──────┼──────┐
+       ▼      ▼      ▼
+   RESOURCE  TOOL  PROMPT
+      │       │       │
+     READ     ACT    GUIDE
+</code></pre>
+<hr />
+<h2>Diagram #4 — Lifecycle</h2>
+<pre><code class="language-text">DISCOVER
+   ↓
+DECIDE
+   ↓
+CALL
+   ↓
+EXECUTE
+   ↓
+RESPOND
+   ↓
+PRESENT
+</code></pre>
+<hr />
+<h2>Diagram #5 — Security</h2>
+<pre><code class="language-text">MODEL
+  │
+  ▼
+REQUEST
+  │
+  ▼
+AUTHZ ──── NO ───&gt; REJECT
+  │
+ YES
+  │
+  ▼
+EXECUTE
+</code></pre>
+<p><strong>Recall:</strong></p>
+<blockquote>
+<p>Model intent is not authorization.</p>
+</blockquote>
+<hr />
+<h2>Diagram #6 — Retry</h2>
+<pre><code class="language-text">READ
+ │
+ └── retry → usually safer
+
+
+WRITE
+ │
+ └── retry → dangerous
+              │
+              ▼
+         IDEMPOTENCY KEY
+</code></pre>
+<hr />
+<h2>Diagram #7 — Gateway</h2>
+<pre><code class="language-text">Client A ──┐
+Client B ──┼──&gt; Gateway ──┬──&gt; MCP Server 1
+Client C ──┘              ├──&gt; MCP Server 2
+                          └──&gt; MCP Server 3
+</code></pre>
+<p><strong>Recall:</strong></p>
+<blockquote>
+<p>Many clients → one control plane → many servers.</p>
+</blockquote>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>35. Final Mental Map 🧠</summary>
+<div class="section-body">
+<p>Don't memorize 50 individual facts.</p>
+<p>Remember this:</p>
+<pre><code class="language-text">                         MCP
+                          │
+              &quot;Connect AI to capabilities&quot;
+                          │
+          ┌───────────────┴────────────────┐
+          │                                │
+       WHY?                              HOW?
+          │                                │
+      N × M problem                  Client → Server
+          │                                │
+          │                          JSON-RPC
+          │                                │
+          │                            Transport
+          │                                │
+          │                                ▼
+          │                       ┌─────────────────┐
+          │                       │   CAPABILITIES  │
+          │                       │                 │
+          │                       │ Resources READ  │
+          │                       │ Tools ACT       │
+          │                       │ Prompts GUIDE   │
+          │                       └─────────────────┘
+          │
+          ▼
+      PRODUCTION
+          │
+    ┌─────┼──────┐
+    ▼     ▼      ▼
+ SECURITY RESILIENCE GOVERNANCE
+    │     │      │
+   Auth  Timeout Registry
+   PII   Retry   Ownership
+   Audit Idempot. Versioning
+   Approval Circuit Deprecation
+          │
+          ▼
+       GATEWAY
+          │
+          ▼
+   CENTRAL CONTROL
+</code></pre>
+</div>
+</details>
+
+<details class="section">
+<summary>🎯 The 12 things I would force myself to recall</summary>
+<div class="section-body">
+<p>Before looking back at the notes, answer these:</p>
+<ol>
+<li><strong>Why was MCP invented?</strong></li>
+<li><strong>What is the N×M problem?</strong></li>
+<li><strong>What exactly is the MCP Client?</strong></li>
+<li><strong>What exactly is the MCP Server?</strong></li>
+<li><strong>Resources vs Tools vs Prompts?</strong></li>
+<li><strong>Why is JSON-RPC involved?</strong></li>
+<li><strong>Protocol vs Transport — what's the difference?</strong></li>
+<li><strong>What are the six lifecycle stages?</strong></li>
+<li><strong>Why is authorization separate from model tool selection?</strong></li>
+<li><strong>Why are retries dangerous for write Tools?</strong></li>
+<li><strong>When would you introduce an MCP Gateway?</strong></li>
+<li><strong>What changes when you deploy MCP in a regulated fintech environment?</strong></li>
+</ol>
+<p>If you can answer those <strong>without looking</strong>, you understand MCP at an architect level rather than merely knowing MCP terminology.</p>
+</div>
+</details>
+</body>
+</html>

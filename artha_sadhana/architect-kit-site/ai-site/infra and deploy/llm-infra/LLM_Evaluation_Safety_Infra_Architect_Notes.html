@@ -1,0 +1,2412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>LLM Evaluation, Safety & AI Infrastructure — Architect Recall Notes</title>
+<style>
+body { font-family: Georgia, 'Times New Roman', serif; max-width: 900px; margin: 40px auto; padding: 0 20px; line-height: 1.5; color: #1a1a1a; background: #fdfdfd; }
+pre { background: #f4f4f4; border: 1px solid #ddd; padding: 12px; overflow-x: auto; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.3; white-space: pre; }
+code { font-family: 'Courier New', monospace; }
+blockquote { border-left: 3px solid #999; margin-left: 0; padding-left: 12px; color: #333; }
+table { border-collapse: collapse; margin: 12px 0; }
+th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
+details.section { border: 1px solid #ccc; border-radius: 4px; margin: 12px 0; padding: 8px 14px; }
+details.section summary { font-weight: bold; font-size: 1.1em; cursor: pointer; padding: 6px 0; }
+.section-body { margin-top: 8px; }
+h2.part-divider { margin-top: 40px; border-bottom: 2px solid #333; padding-bottom: 6px; }
+details { margin: 10px 0; }
+details summary { cursor: pointer; }
+details:not(.section) { border: 1px dashed #bbb; padding: 8px 12px; background: #fafafa; }
+details:not(.section) summary { font-weight: bold; }
+hr { display: none; }
+</style>
+</head>
+<body>
+<div class="intro"><h2>AI Architect Recall Notes</h2>
+<blockquote>
+<p><strong>Study rule</strong></p>
+<p>Don't read the answer first.</p>
+<p>Read:</p>
+<p><strong>QUESTION → THINK → DRAW → ANSWER → RECALL</strong></p>
+</blockquote>
+<hr /></div>
+
+<details class="section">
+<summary>0. THE BIG PICTURE</summary>
+<div class="section-body">
+<p>Before learning individual concepts, understand the complete production system.</p>
+<pre><code class="language-text">                         USER
+                           |
+                           v
+                  +----------------+
+                  | INPUT SAFETY   |
+                  | Guardrails     |
+                  +-------+--------+
+                          |
+                          v
+                  +----------------+
+                  |    ROUTER      |
+                  | Which model?   |
+                  +-------+--------+
+                          |
+             +------------+------------+
+             |                         |
+             v                         v
+          SMALL LLM                LARGE LLM
+             |                         |
+             +------------+------------+
+                          |
+                          v
+                     RAG / TOOLS
+                          |
+                          v
+                     GENERATION
+                          |
+                          v
+                  +----------------+
+                  | OUTPUT SAFETY  |
+                  | Validation     |
+                  +-------+--------+
+                          |
+                          v
+                        USER
+
+             Meanwhile...
+                    |
+        +-----------+-----------+
+        |           |           |
+        v           v           v
+     METRICS      TRACES      EVALS
+        |           |           |
+        +-----------+-----------+
+                    |
+                    v
+              CONTINUOUS
+               IMPROVEMENT
+</code></pre>
+<h3>🤔 Architect Question</h3>
+<p><strong>Where does the LLM actually sit?</strong></p>
+<h3>Answer</h3>
+<p>Not at the center of the entire system.</p>
+<p>It is one component inside a larger system containing:</p>
+<ul>
+<li>routing</li>
+<li>retrieval</li>
+<li>tools</li>
+<li>safety</li>
+<li>validation</li>
+<li>observability</li>
+<li>evaluation</li>
+<li>infrastructure</li>
+</ul>
+<p>That is the first major mindset shift.</p>
+<pre><code class="language-text">Beginner:
+
+USER → LLM → ANSWER
+
+
+Architect:
+
+USER
+ |
+ +--&gt; Safety
+ |
+ +--&gt; Routing
+ |
+ +--&gt; Retrieval
+ |
+ +--&gt; Tools
+ |
+ +--&gt; LLM
+ |
+ +--&gt; Validation
+ |
+ +--&gt; Observability
+ |
+ +--&gt; Evaluation
+ |
+ +--&gt; Answer
+</code></pre>
+<hr />
+</div>
+</details>
+
+<h2 class="part-divider">PART 1 — 🧪 LLM EVALUATION &amp; SAFETY</h2>
+
+<div class="part-divider-body"><hr /></div>
+
+<details class="section">
+<summary>10.1 WHY IS LLM EVALUATION HARD?</summary>
+<div class="section-body">
+<h2>🤔 Think first</h2>
+<p>You test your AI application:</p>
+<pre><code class="language-text">Question 1 → Correct ✓
+Question 2 → Correct ✓
+Question 3 → Correct ✓
+...
+Question 10 → Correct ✓
+</code></pre>
+<p>Can you conclude:</p>
+<blockquote>
+<p>"My LLM is good"?</p>
+</blockquote>
+<h3>❌ No.</h3>
+<p>Why?</p>
+<p>Because LLM behavior is not like a traditional deterministic function.</p>
+<hr />
+<h2>Traditional Software</h2>
+<pre><code class="language-text">INPUT
+  |
+  v
+FUNCTION
+  |
+  v
+OUTPUT
+
+Same input
+   ↓
+Same output
+</code></pre>
+<p>You can write:</p>
+<pre><code class="language-text">assert(actual == expected)
+</code></pre>
+<hr />
+<h2>LLM</h2>
+<pre><code class="language-text">             INPUT
+               |
+               v
+             LLM
+          /    |    \
+         /     |     \
+        v      v      v
+    Answer A Answer B Answer C
+</code></pre>
+<p>Different valid answers may exist.</p>
+<p>And even the same prompt can produce different outputs under stochastic decoding.</p>
+<hr />
+<h2>🤔 Question</h2>
+<p>If:</p>
+<pre><code class="language-text">Prompt A → 90% accuracy
+Prompt B → 91% accuracy
+</code></pre>
+<p>Is B automatically better?</p>
+<h3>Not necessarily.</h3>
+<p>Maybe:</p>
+<pre><code class="language-text">                100 test cases
+                     |
+          +----------+----------+
+          |                     |
+          v                     v
+       Prompt A              Prompt B
+       90 correct             91 correct
+                             |
+                             v
+                       But what changed?
+                             |
+                 +-----------+-----------+
+                 |                       |
+                 v                       v
+              +1 easy case          3 critical
+                                    fintech cases
+                                    regressed
+</code></pre>
+<p>In fintech, <strong>which cases fail</strong> can matter more than aggregate accuracy.</p>
+<hr />
+<h2>🎯 THE THREE EVALUATION LAYERS</h2>
+<pre><code class="language-text">                 EVALUATION
+                     |
+       +-------------+-------------+
+       |             |             |
+       v             v             v
+  BENCHMARKS     LLM-AS-JUDGE    HUMANS
+       |             |             |
+       v             v             v
+   Cheap/Fast      Scalable       Gold signal
+   Generic         Flexible       Expensive
+</code></pre>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>10.2 BENCHMARKS</summary>
+<div class="section-body">
+<h2>🤔 Question</h2>
+<p>A model scores 95% on a public benchmark.</p>
+<p>Should you deploy it for:</p>
+<blockquote>
+<p>"Answer our bank's internal compliance questions."</p>
+</blockquote>
+<h3>❌ Not automatically.</h3>
+<p>Because:</p>
+<pre><code class="language-text">PUBLIC BENCHMARK
+       |
+       v
+&quot;What can this model generally do?&quot;
+
+YOUR EVAL SET
+       |
+       v
+&quot;What can this model do
+for MY application?&quot;
+</code></pre>
+<hr />
+<h2>Common Benchmarks</h2>
+<table>
+<thead>
+<tr>
+<th>Benchmark</th>
+<th>Main purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MMLU</td>
+<td>Broad knowledge</td>
+</tr>
+<tr>
+<td>GSM8K</td>
+<td>Mathematical reasoning</td>
+</tr>
+<tr>
+<td>MATH</td>
+<td>Advanced mathematics</td>
+</tr>
+<tr>
+<td>HumanEval</td>
+<td>Code generation</td>
+</tr>
+<tr>
+<td>MBPP</td>
+<td>Code generation</td>
+</tr>
+<tr>
+<td>HellaSwag</td>
+<td>Commonsense reasoning</td>
+</tr>
+<tr>
+<td>TruthfulQA</td>
+<td>Truthfulness</td>
+</tr>
+<tr>
+<td>MT-Bench</td>
+<td>Conversational/instruction quality</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>🤔 Why can benchmarks mislead?</h2>
+<p>Remember:</p>
+<pre><code class="language-text">BENCHMARK SCORE
+      |
+      +--&gt; Contamination
+      |
+      +--&gt; Task mismatch
+      |
+      +--&gt; Saturation
+      |
+      +--&gt; Static snapshot
+      |
+      v
+NOT EQUAL TO
+PRODUCTION QUALITY
+</code></pre>
+<hr />
+<h2>⭐ Architect Recall</h2>
+<h2>Public benchmark answers:</h2>
+<blockquote>
+<p><strong>"How capable is this model generally?"</strong></p>
+</blockquote>
+<h2>Private evaluation set answers:</h2>
+<blockquote>
+<p><strong>"How useful is this model for MY application?"</strong></p>
+</blockquote>
+<hr />
+<h2>🧪 BUILD YOUR OWN EVAL SET</h2>
+<p>Even:</p>
+<pre><code class="language-text">50–100 carefully selected examples
+</code></pre>
+<p>can be extremely valuable.</p>
+<p>Example:</p>
+<pre><code class="language-text">Internal Wealth Assistant
+
+                 EVAL DATASET
+                      |
+       +--------------+--------------+
+       |              |              |
+       v              v              v
+   Easy cases     Normal cases    Edge cases
+       |              |              |
+       v              v              v
+   30 cases        40 cases       30 cases
+</code></pre>
+<p>Don't only test the happy path.</p>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>10.3 LLM-AS-JUDGE</summary>
+<div class="section-body">
+<h2>🤔 Question</h2>
+<p>You have:</p>
+<pre><code class="language-text">100,000 generated responses
+</code></pre>
+<p>Can humans evaluate all of them?</p>
+<h3>❌ No.</h3>
+<p>So:</p>
+<pre><code class="language-text">100,000 answers
+       |
+       v
+     LLM
+    JUDGE
+       |
+       v
+Scores / comparisons
+</code></pre>
+<p>This gives scalable evaluation.</p>
+<hr />
+<h2>What can an LLM judge do?</h2>
+<h3>1. Pointwise</h3>
+<pre><code class="language-text">Answer
+  |
+  v
+Judge
+  |
+  v
+Score = 4/5
+</code></pre>
+<h3>2. Pairwise</h3>
+<pre><code class="language-text">Question
+   |
+   +--------&gt; Answer A
+   |
+   +--------&gt; Answer B
+                  |
+                  v
+                Judge
+                  |
+            +-----+-----+
+            |     |     |
+            v     v     v
+            A     B    TIE
+</code></pre>
+<h3>3. Reference-based</h3>
+<pre><code class="language-text">Generated Answer
+       +
+Expected Answer
+       |
+       v
+      Judge
+       |
+       v
+ Alignment?
+</code></pre>
+<h3>4. Rubric-based</h3>
+<pre><code class="language-text">             ANSWER
+                |
+       +--------+--------+
+       |        |        |
+       v        v        v
+    Correct? Grounded? Safe?
+       |        |        |
+       +--------+--------+
+                |
+                v
+              SCORE
+</code></pre>
+<hr />
+<h2>🤔 Why is pairwise comparison powerful?</h2>
+<p>Suppose I ask:</p>
+<blockquote>
+<p>Rate this answer from 1–10.</p>
+</blockquote>
+<p>Different judges may interpret "7" differently.</p>
+<p>Instead:</p>
+<blockquote>
+<p>Which answer is better?</p>
+</blockquote>
+<pre><code class="language-text">A vs B
+ |
+ v
+&quot;Which is better?&quot;
+</code></pre>
+<p>Relative judgment can be easier to calibrate.</p>
+<hr />
+<h2>⚠️ BUT THE JUDGE CAN ALSO BE WRONG</h2>
+<p>This is critical.</p>
+<pre><code class="language-text">             GENERATOR
+                 |
+                 v
+             Answer
+                 |
+                 v
+              JUDGE
+                 |
+                 v
+              SCORE
+</code></pre>
+<p>The judge itself is another probabilistic model.</p>
+<p>Therefore:</p>
+<pre><code class="language-text">Judge says GOOD
+       ≠
+Actually GOOD
+</code></pre>
+<hr />
+<h2>LLM JUDGE BIASES</h2>
+<p>Remember:</p>
+<pre><code class="language-text">P
+|
++-- Position bias
+|
++-- Verbosity bias
+|
++-- Self-preference bias
+|
++-- Style-over-substance
+|
+v
+Judge can be fooled
+</code></pre>
+<h3>Example</h3>
+<pre><code class="language-text">Answer A
+&quot;Correct answer.&quot;
+
+Answer B
+&quot;Here is a beautifully structured,
+detailed and confident 800-word explanation...&quot;
+
+</code></pre>
+<p>A weak judge may prefer B simply because it <strong>looks better</strong>.</p>
+<p>Even if:</p>
+<pre><code class="language-text">A = factually correct
+B = beautifully wrong
+</code></pre>
+<hr />
+<h2>⭐ GOLDEN RULE</h2>
+<blockquote>
+<p><strong>Never assume your LLM judge is ground truth.</strong></p>
+</blockquote>
+<p>Calibrate it.</p>
+<pre><code class="language-text">              HUMAN GOLD SET
+                    |
+                    v
+             +-------------+
+             | LLM JUDGE   |
+             +-------------+
+                    |
+                    v
+              Compare with
+                humans
+                    |
+                    v
+             Judge agreement
+</code></pre>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>10.4 HUMAN EVALUATION</summary>
+<div class="section-body">
+<h2>🤔 Question</h2>
+<p>If LLM judges are cheap and scalable, why do we still need humans?</p>
+<p>Because humans can detect:</p>
+<pre><code class="language-text">Subtle domain errors
+        +
+Cultural problems
+        +
+Novel failures
+        +
+Real user satisfaction
+</code></pre>
+<hr />
+<h2>Example</h2>
+<p>AI says:</p>
+<blockquote>
+<p>"The regulatory requirement allows X."</p>
+</blockquote>
+<p>Sounds perfect.</p>
+<p>But a financial expert knows:</p>
+<blockquote>
+<p>❌ The statement is subtly wrong.</p>
+</blockquote>
+<p>A generic LLM judge might miss it.</p>
+<hr />
+<h2>HUMAN EVAL DESIGN</h2>
+<p>Bad:</p>
+<blockquote>
+<p>Rate answer from 1–5.</p>
+</blockquote>
+<p>Better:</p>
+<pre><code class="language-text">                HUMAN REVIEW
+                     |
+       +-------------+-------------+
+       |             |             |
+       v             v             v
+   Correct?       Grounded?      Safe?
+       |             |             |
+       +-------------+-------------+
+                     |
+                     v
+                   Score
+</code></pre>
+<hr />
+<h2>INTER-RATER RELIABILITY</h2>
+<h2>🤔 Question</h2>
+<p>Two reviewers disagree constantly.</p>
+<p>Is the problem necessarily the reviewers?</p>
+<h3>Maybe not.</h3>
+<p>It could mean:</p>
+<pre><code class="language-text">Ambiguous rubric
+      |
+      v
+Reviewer A → interpretation 1
+Reviewer B → interpretation 2
+      |
+      v
+Low agreement
+</code></pre>
+<p>So:</p>
+<blockquote>
+<p><strong>Low agreement can indicate a poorly defined evaluation rubric.</strong></p>
+</blockquote>
+<p>Cohen's Kappa is one way to measure agreement.</p>
+<hr />
+<h2>STRATEGIC HUMAN SAMPLING</h2>
+<p>Don't review everything.</p>
+<p>Focus on:</p>
+<pre><code class="language-text">                 PRODUCTION
+                     |
+       +-------------+-------------+
+       |             |             |
+       v             v             v
+  Low confidence  Complaints    Edge cases
+       |             |             |
+       +-------------+-------------+
+                     |
+                     v
+               HUMAN REVIEW
+</code></pre>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>10.5 HALLUCINATION</summary>
+<div class="section-body">
+<h2>🤔 Most important question</h2>
+<p>What is more dangerous?</p>
+<pre><code class="language-text">&quot;I don't know.&quot;
+</code></pre>
+<p>or:</p>
+<pre><code class="language-text">&quot;I am absolutely certain...&quot;
+</code></pre>
+<p>when the answer is wrong?</p>
+<h3>Obviously the second.</h3>
+<p>Hallucination becomes dangerous because:</p>
+<pre><code class="language-text">WRONG
+ +
+CONFIDENT
+ +
+FLUENT
+ =
+DANGEROUS
+</code></pre>
+<hr />
+<h2>TWO IMPORTANT TYPES</h2>
+<h2>Intrinsic hallucination</h2>
+<p>The answer contradicts the provided source.</p>
+<pre><code class="language-text">SOURCE:
+&quot;Exit load = 1%&quot;
+
+MODEL:
+&quot;Exit load = 2%&quot;
+</code></pre>
+<p>That is a <strong>faithfulness failure</strong>.</p>
+<hr />
+<h2>Extrinsic hallucination</h2>
+<p>The answer makes a claim that the source does not support.</p>
+<pre><code class="language-text">SOURCE:
+&quot;Exit load is applicable.&quot;
+
+MODEL:
+&quot;Exit load is exactly 1%.&quot;
+
+</code></pre>
+<p>The source never said 1%.</p>
+<hr />
+<h2>HALLUCINATION DETECTION</h2>
+<pre><code class="language-text">                  ANSWER
+                     |
+       +-------------+-------------+
+       |             |             |
+       v             v             v
+ Self-consistency    NLI       Citation check
+       |             |             |
+       v             v             v
+Multiple outputs   Entailment    Source exists?
+       |             |             |
+       +-------------+-------------+
+                     |
+                     v
+              RISK SIGNAL
+</code></pre>
+<hr />
+<h2>SELF-CONSISTENCY</h2>
+<p>Ask the same question several times:</p>
+<pre><code class="language-text">              SAME QUESTION
+                    |
+       +------------+------------+
+       |            |            |
+       v            v            v
+    Answer 1     Answer 2     Answer 3
+       |            |            |
+       +------------+------------+
+                    |
+                    v
+               Agreement?
+</code></pre>
+<p>Example:</p>
+<pre><code class="language-text">A → 1%
+A → 1%
+A → 1%
+A → 1.5%
+A → 1%
+
+       ↓
+
+4 / 5 agree
+</code></pre>
+<p>The outlier deserves investigation.</p>
+<h3>⚠️ Important</h3>
+<p>Consistency is a <strong>signal</strong>, not proof of truth.</p>
+<p>A model can consistently repeat the same wrong answer.</p>
+<hr />
+<h2>NLI / ENTAILMENT</h2>
+<p>For RAG:</p>
+<pre><code class="language-text">Retrieved Context
+       |
+       v
+&quot;Exit load is 1%.&quot;
+       |
+       +
+       |
+       v
+Generated Answer
+&quot;Exit load is 1%.&quot;
+       |
+       v
+ENTAILMENT CHECK
+       |
+       v
+SUPPORTED ✓
+</code></pre>
+<p>If:</p>
+<pre><code class="language-text">Generated:
+&quot;Exit load is 3%.&quot;
+
+       ↓
+
+NOT ENTAILED ✗
+</code></pre>
+<hr />
+<h2>CITATION VERIFICATION</h2>
+<p>Never trust:</p>
+<pre><code class="language-text">&quot;According to Policy.pdf...&quot;
+</code></pre>
+<p>just because a citation exists.</p>
+<p>Verify:</p>
+<pre><code class="language-text">Claim
+ |
+ v
+Citation
+ |
+ v
+Source
+ |
+ v
+Does source actually support claim?
+ |
+ +---- YES → ✓
+ |
+ +---- NO  → ⚠
+</code></pre>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>10.6 HALLUCINATION MITIGATION</summary>
+<div class="section-body">
+<h2>🤔 Question</h2>
+<p>How do we reduce hallucinations?</p>
+<p>Don't think:</p>
+<blockquote>
+<p>"Find one magic prompt."</p>
+</blockquote>
+<p>Think:</p>
+<pre><code class="language-text">                HALLUCINATION
+                      |
+       +--------------+--------------+
+       |              |              |
+       v              v              v
+   Grounding       Prompting       Verification
+       |              |              |
+       v              v              v
+      RAG        &quot;Don't guess&quot;   Second pass
+       |              |              |
+       +--------------+--------------+
+                      |
+                      v
+               Lower risk
+</code></pre>
+<hr />
+<h2>THE LAYERED DEFENSE</h2>
+<pre><code class="language-text">USER
+ |
+ v
++---------------------+
+| RETRIEVAL           |
+| Get correct context |
++----------+----------+
+           |
+           v
++---------------------+
+| GENERATION          |
+| Answer from context |
++----------+----------+
+           |
+           v
++---------------------+
+| VERIFICATION        |
+| Is claim supported? |
++----------+----------+
+           |
+           v
++---------------------+
+| FINAL RESPONSE      |
++---------------------+
+</code></pre>
+<hr />
+<h2>MITIGATION TECHNIQUES</h2>
+<h3>RAG</h3>
+<p>Ground answer in authoritative context.</p>
+<h3>Explicit abstention</h3>
+<pre><code class="language-text">&quot;If information is unavailable,
+say 'I don't know'.&quot;
+</code></pre>
+<h3>Citation</h3>
+<p>Make claims traceable.</p>
+<h3>Lower temperature</h3>
+<p>Can reduce variance for factual tasks.</p>
+<h3>Structured output</h3>
+<p>Reduce free-form generation.</p>
+<h3>Verification</h3>
+<p>Use another model/pass to check claims.</p>
+<h3>Fine-tuning</h3>
+<p>Train examples of appropriate abstention.</p>
+<hr />
+<h2>⭐ Architect Insight</h2>
+<p>The goal is not:</p>
+<pre><code class="language-text">Hallucination = 0%
+</code></pre>
+<p>The practical engineering goal is:</p>
+<pre><code class="language-text">REDUCE
+   +
+DETECT
+   +
+CONTAIN
+   +
+RECOVER
+</code></pre>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>10.7 GUARDRAILS</summary>
+<div class="section-body">
+<h2>🤔 Question</h2>
+<p>Should we trust the LLM itself to keep the system safe?</p>
+<h3>❌ No.</h3>
+<p>Think of the LLM as:</p>
+<pre><code class="language-text">             UNTRUSTED PROCESSING ENGINE
+                        |
+                        v
+                 +-------------+
+INPUT ----------&gt;|     LLM     |----------&gt; OUTPUT
+                 +-------------+
+                        ^
+                        |
+                Safety layers
+                outside model
+</code></pre>
+<hr />
+<h2>PRODUCTION GUARDRAIL ARCHITECTURE</h2>
+<pre><code class="language-text">USER
+ |
+ v
++--------------------+
+| INPUT GUARDRAIL    |
+|                    |
+| PII                |
+| Injection          |
+| Scope              |
+| Rate limit         |
++---------+----------+
+          |
+          v
+       +------+
+       | LLM  |
+       +--+---+
+          |
+          v
++--------------------+
+| OUTPUT GUARDRAIL   |
+|                    |
+| PII leakage        |
+| Toxicity           |
+| Fact checking      |
+| Schema validation  |
+| Policy validation  |
++---------+----------+
+          |
+          v
+        USER
+</code></pre>
+<hr />
+<h2>THREE TYPES</h2>
+<h2>1. INPUT</h2>
+<pre><code class="language-text">PII detection
+Injection detection
+Topic restriction
+Rate limiting
+</code></pre>
+<h2>2. OUTPUT</h2>
+<pre><code class="language-text">PII leakage
+Toxicity
+Fact verification
+Schema validation
+Regulatory restrictions
+</code></pre>
+<h2>3. STRUCTURAL</h2>
+<pre><code class="language-text">Untrusted RAG content
+        +
+Tool permissions
+        +
+Least privilege
+        +
+Sandboxing
+</code></pre>
+<hr />
+<h2>🏦 FINTECH EXAMPLE</h2>
+<p>Imagine:</p>
+<blockquote>
+<p>"Transfer ₹10 lakh from account A to account B."</p>
+</blockquote>
+<p>Never let:</p>
+<pre><code class="language-text">LLM → directly execute transaction
+</code></pre>
+<p>Instead:</p>
+<pre><code class="language-text">LLM
+ |
+ v
+Intent extraction
+ |
+ v
+Structured command
+ |
+ v
+AUTHORIZATION SERVICE
+ |
+ v
+POLICY ENGINE
+ |
+ v
+TRANSACTION SERVICE
+ |
+ v
+AUDIT LOG
+</code></pre>
+<p>The LLM should not become the authorization boundary.</p>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>10.8 RED TEAMING</summary>
+<div class="section-body">
+<h2>🤔 Question</h2>
+<p>Your QA team tested 500 normal questions.</p>
+<p>Is your AI secure?</p>
+<h3>❌ No.</h3>
+<p>QA asks:</p>
+<blockquote>
+<p>"Does it work?"</p>
+</blockquote>
+<p>Red team asks:</p>
+<blockquote>
+<p><strong>"How can I break it?"</strong></p>
+</blockquote>
+<hr />
+<h2>RED TEAM MINDSET</h2>
+<pre><code class="language-text">NORMAL QA
+
+USER
+ |
+ v
+Expected input
+ |
+ v
+Expected output
+</code></pre>
+<p>versus:</p>
+<pre><code class="language-text">RED TEAM
+
+ATTACKER
+ |
+ +--&gt; Jailbreak
+ |
+ +--&gt; Injection
+ |
+ +--&gt; Data extraction
+ |
+ +--&gt; Goal hijacking
+ |
+ +--&gt; Multi-turn manipulation
+ |
+ v
+SYSTEM FAILURE?
+</code></pre>
+<hr />
+<h2>ATTACK CATEGORIES</h2>
+<h3>Jailbreaking</h3>
+<p>Try to bypass safety.</p>
+<h3>Prompt injection</h3>
+<p>Malicious instructions inside:</p>
+<ul>
+<li>documents</li>
+<li>websites</li>
+<li>RAG results</li>
+<li>tool responses</li>
+</ul>
+<h3>Data extraction</h3>
+<p>Try to retrieve:</p>
+<ul>
+<li>system prompts</li>
+<li>secrets</li>
+<li>other users' information</li>
+</ul>
+<h3>Goal hijacking</h3>
+<p>Especially dangerous for agents.</p>
+<pre><code class="language-text">User request
+    |
+    v
+Agent
+    |
+    +----&gt; Tool A ✓
+    |
+    +----&gt; Tool B ✓
+    |
+    +----&gt; Dangerous Tool ✗
+</code></pre>
+<h3>Multi-turn erosion</h3>
+<p>The attack happens gradually.</p>
+<pre><code class="language-text">Turn 1 → harmless
+   |
+Turn 2 → harmless
+   |
+Turn 3 → slightly suspicious
+   |
+Turn 4 → dangerous
+</code></pre>
+<p>The system must evaluate the <strong>conversation trajectory</strong>, not only individual messages.</p>
+<hr />
+<h2>MANUAL VS AUTOMATED RED TEAM</h2>
+<pre><code class="language-text">             RED TEAM
+                |
+       +--------+--------+
+       |                 |
+       v                 v
+     HUMAN             AI
+       |                 |
+ Creative attacks    Massive scale
+ Novel patterns      Regression
+       |                 |
+       v                 v
+    Expensive         Fast
+</code></pre>
+<p>Tools mentioned in the source include:</p>
+<ul>
+<li>PyRIT</li>
+<li>garak</li>
+</ul>
+<hr />
+<h2>⭐ IMPORTANT</h2>
+<p>Red teaming isn't:</p>
+<pre><code class="language-text">Launch
+  ↓
+One security test
+  ↓
+Done
+</code></pre>
+<p>It is:</p>
+<pre><code class="language-text">Model update
+     ↓
+Prompt update
+     ↓
+Tool update
+     ↓
+RAG update
+     ↓
+RED TEAM
+     ↓
+Regression testing
+</code></pre>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>10.9 ALIGNMENT</summary>
+<div class="section-body">
+<h2>🤔 Question</h2>
+<p>A pretrained LLM knows language.</p>
+<p>Does that automatically mean it knows:</p>
+<blockquote>
+<p>"What should I do?"</p>
+</blockquote>
+<h3>No.</h3>
+<hr />
+<h2>BASE MODEL</h2>
+<pre><code class="language-text">Internet-scale data
+       |
+       v
+   PRETRAINING
+       |
+       v
+&quot;Predict next token&quot;
+</code></pre>
+<p>That creates capability.</p>
+<p>But capability ≠ alignment.</p>
+<hr />
+<h2>ALIGNMENT PIPELINE</h2>
+<pre><code class="language-text">BASE MODEL
+    |
+    v
++----------------+
+| SFT            |
+| Learn examples |
++-------+--------+
+        |
+        v
++----------------+
+| Preference     |
+| Optimization  |
++-------+--------+
+        |
+        v
++----------------+
+| RLHF / DPO /   |
+| RLAIF etc.     |
++-------+--------+
+        |
+        v
+ALIGNED ASSISTANT
+</code></pre>
+<hr />
+<h2>SFT</h2>
+<p><strong>Supervised Fine-Tuning</strong></p>
+<p>Teach:</p>
+<pre><code class="language-text">Instruction
+     ↓
+Good response
+</code></pre>
+<p>The model learns the shape of instruction following.</p>
+<hr />
+<h2>RLHF</h2>
+<pre><code class="language-text">Human
+  |
+  v
+Compare outputs
+  |
+  v
+Preference data
+  |
+  v
+Reward model
+  |
+  v
+Reinforcement learning
+  |
+  v
+Better preferred behavior
+</code></pre>
+<hr />
+<h2>DPO</h2>
+<p>Think:</p>
+<pre><code class="language-text">Preferred response
+        +
+Rejected response
+        |
+        v
+      DPO
+        |
+        v
+Direct preference optimization
+</code></pre>
+<p>The source emphasizes that DPO avoids the separate reward-model/full-RL pipeline used in classic RLHF.</p>
+<hr />
+<h2>RLAIF</h2>
+<p>Instead of:</p>
+<pre><code class="language-text">Human → preference
+</code></pre>
+<p>use:</p>
+<pre><code class="language-text">AI → preference
+</code></pre>
+<p>Advantages:</p>
+<pre><code class="language-text">Lower labeling cost
+Higher scale
+</code></pre>
+<p>But introduces dependence on AI judgment.</p>
+<hr />
+<h2>CONSTITUTIONAL AI</h2>
+<p>Think:</p>
+<pre><code class="language-text">Written principles
+       |
+       v
+Model critiques response
+       |
+       v
+Model revises response
+       |
+       v
+Training data
+       |
+       v
+Better aligned behavior
+</code></pre>
+<hr />
+<h2>🔥 KEY ALIGNMENT RECALL</h2>
+<pre><code class="language-text">PRETRAINING
+    =
+&quot;What can the model do?&quot;
+
+SFT
+    =
+&quot;How should it follow instructions?&quot;
+
+PREFERENCE OPTIMIZATION
+    =
+&quot;Which behaviors are preferred?&quot;
+
+GUARDRAILS
+    =
+&quot;What is allowed in this application?&quot;
+
+RED TEAMING
+    =
+&quot;How can we break it?&quot;
+
+EVALUATION
+    =
+&quot;Is it actually working?&quot;
+</code></pre>
+<hr />
+</div>
+</details>
+
+<h2 class="part-divider">PART 2 — 🏗️ AI INFRASTRUCTURE &amp; OPS</h2>
+
+<div class="part-divider-body"><p>Now we move from:</p>
+<blockquote>
+<p><strong>"Is the AI good and safe?"</strong></p>
+</blockquote>
+<p>to:</p>
+<blockquote>
+<p><strong>"Can I run it reliably at production scale?"</strong></p>
+</blockquote>
+<hr /></div>
+
+<details class="section">
+<summary>11.1 WHY LLM SERVING IS DIFFERENT</summary>
+<div class="section-body">
+<h2>🤔 Think about your normal REST API</h2>
+<pre><code class="language-text">Request
+   |
+   v
+Service
+   |
+   v
+Response
+</code></pre>
+<p>Usually:</p>
+<pre><code class="language-text">100 ms
+300 ms
+500 ms
+</code></pre>
+<p>But an LLM:</p>
+<pre><code class="language-text">Request
+   |
+   v
+Prefill
+   |
+   v
+Token 1
+   |
+   v
+Token 2
+   |
+   v
+Token 3
+   |
+   v
+...
+   |
+   v
+Token N
+</code></pre>
+<hr />
+<h2>AUTOREGRESSIVE GENERATION</h2>
+<p>The model generates sequentially.</p>
+<pre><code class="language-text">&quot;I&quot;
+ ↓
+&quot;I am&quot;
+ ↓
+&quot;I am an&quot;
+ ↓
+&quot;I am an AI&quot;
+ ↓
+&quot;I am an AI architect&quot;
+</code></pre>
+<p>Each next token depends on previous context.</p>
+<hr />
+<h2>THREE BIG DIFFERENCES</h2>
+<pre><code class="language-text">LLM SERVING
+    |
+    +--&gt; Autoregressive generation
+    |
+    +--&gt; KV cache
+    |
+    +--&gt; Dynamic/continuous batching
+</code></pre>
+<hr />
+<h2>KV CACHE</h2>
+<h2>🤔 Why do we need it?</h2>
+<p>Without caching, the model could repeatedly recompute attention over previous tokens.</p>
+<p>Instead:</p>
+<pre><code class="language-text">Previous tokens
+      |
+      v
++-------------+
+| K / V cache |
++-------------+
+      |
+      v
+Reuse previous computation
+</code></pre>
+<hr />
+<h2>KV CACHE MEMORY</h2>
+<p>Longer conversation:</p>
+<pre><code class="language-text">Short request
+[========]
+
+Long request
+[==============================]
+
+Very long request
+[================================================]
+</code></pre>
+<p>The KV cache consumes GPU memory.</p>
+<p>Therefore:</p>
+<pre><code class="language-text">GPU MEMORY
+    |
+    +--&gt; Model weights
+    |
+    +--&gt; KV cache
+    |
+    +--&gt; Activations / runtime overhead
+</code></pre>
+<p>This is why GPU memory management becomes central.</p>
+<hr />
+<h2>🤔 WHY NAIVE BATCHING FAILS</h2>
+<p>Suppose:</p>
+<pre><code class="language-text">Batch
+
+Request A → 5 tokens
+Request B → 100 tokens
+Request C → 10 tokens
+</code></pre>
+<p>Static batching:</p>
+<pre><code class="language-text">A ───── DONE
+B ───────────────────────────────
+C ───────── DONE
+
+GPU waits for B
+</code></pre>
+<p>Waste.</p>
+<hr />
+<h2>CONTINUOUS BATCHING</h2>
+<pre><code class="language-text">A ───── DONE
+         |
+         +----&gt; Request D enters
+
+B ───────────────────────────────
+
+C ───────── DONE
+            |
+            +----&gt; Request E enters
+</code></pre>
+<p>Instead of waiting for the entire batch:</p>
+<blockquote>
+<p><strong>Finished requests are continuously replaced by new requests.</strong></p>
+</blockquote>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>11.2 SERVING ENGINES</summary>
+<div class="section-body">
+<p>Now ask:</p>
+<h2>🤔 Why not simply do this?</h2>
+<pre><code class="language-text">Flask
+  |
+  v
+PyTorch model
+  |
+  v
+GPU
+</code></pre>
+<p>Because production LLM serving requires sophisticated:</p>
+<ul>
+<li>batching</li>
+<li>memory management</li>
+<li>parallelism</li>
+<li>scheduling</li>
+<li>streaming</li>
+<li>GPU utilization</li>
+</ul>
+<hr />
+<h2>vLLM</h2>
+<p>Core ideas:</p>
+<pre><code class="language-text">vLLM
+ |
+ +--&gt; PagedAttention
+ |
+ +--&gt; Continuous batching
+ |
+ +--&gt; Efficient KV-cache management
+</code></pre>
+<hr />
+<h2>PAGEDATTENTION</h2>
+<p>Borrow the operating-system mental model.</p>
+<p>Traditional:</p>
+<pre><code class="language-text">Request
+ |
+ v
++-----------------------------+
+| Large contiguous KV memory |
++-----------------------------+
+</code></pre>
+<p>Paged:</p>
+<pre><code class="language-text">Request
+ |
+ +--&gt; Page 1
+ |
+ +--&gt; Page 2
+ |
+ +--&gt; Page 7
+ |
+ +--&gt; Page 11
+</code></pre>
+<p>Memory can be managed more flexibly.</p>
+<p>Think:</p>
+<pre><code class="language-text">Virtual memory
+      ↓
+PagedAttention
+      ↓
+KV cache pages
+</code></pre>
+<hr />
+<h2>TGI</h2>
+<p>Think:</p>
+<pre><code class="language-text">Hugging Face ecosystem
+        |
+        v
+       TGI
+        |
+        +--&gt; Model serving
+        +--&gt; Continuous batching
+        +--&gt; Quantization
+        +--&gt; Tensor parallelism
+</code></pre>
+<hr />
+<h2>TRITON</h2>
+<p>NVIDIA Triton is broader.</p>
+<pre><code class="language-text">                  TRITON
+                     |
+       +-------------+-------------+
+       |             |             |
+       v             v             v
+    PyTorch        ONNX         TensorFlow
+       |             |             |
+       +-------------+-------------+
+                     |
+                     v
+              MODEL SERVING
+</code></pre>
+<p>For LLMs it is commonly paired with optimized backends such as TensorRT-LLM.</p>
+<hr />
+<h2>QUICK RECALL</h2>
+<pre><code class="language-text">vLLM
+ ↓
+LLM-focused serving
+ ↓
+PagedAttention + continuous batching
+
+TGI
+ ↓
+Hugging Face ecosystem
+
+Triton
+ ↓
+General multi-model serving
+</code></pre>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>11.3 COST &amp; LATENCY OPTIMIZATION</summary>
+<div class="section-body">
+<h2>🤔 Architect Question</h2>
+<p>Your LLM system costs ₹10 lakh/month.</p>
+<p>What should you optimize first?</p>
+<p>Many engineers immediately say:</p>
+<blockquote>
+<p>"Buy better GPUs."</p>
+</blockquote>
+<p>But ask:</p>
+<pre><code class="language-text">WHY ARE WE SPENDING SO MUCH?
+</code></pre>
+<hr />
+<h2>COST TREE</h2>
+<pre><code class="language-text">                 LLM COST
+                    |
+       +------------+------------+
+       |            |            |
+       v            v            v
+    Model        Tokens        Traffic
+     cost          |             |
+       |           |             |
+       v           v             v
+    GPU/API     Input/output   Requests
+</code></pre>
+<hr />
+<h2>LEVER 1 — QUANTIZATION</h2>
+<pre><code class="language-text">FP16
+ ↓
+INT8
+ ↓
+INT4
+</code></pre>
+<p>Fewer bits:</p>
+<pre><code class="language-text">smaller weights
+      +
+lower memory
+      +
+potentially faster inference
+</code></pre>
+<p>But:</p>
+<pre><code class="language-text">Compression
+    |
+    v
+Possible quality loss
+</code></pre>
+<hr />
+<h2>METHODS</h2>
+<h3>GPTQ</h3>
+<p>Post-training quantization.</p>
+<h3>AWQ</h3>
+<p>Activation-aware quantization.</p>
+<h3>GGUF</h3>
+<p>Popular model format in llama.cpp-style local inference.</p>
+<h3>bitsandbytes</h3>
+<p>Common 8-bit / 4-bit quantization tooling.</p>
+<hr />
+<h2>LEVER 2 — SPECULATIVE DECODING</h2>
+<p>This is a beautiful concept.</p>
+<h2>🤔 Question</h2>
+<p>Why make a huge model generate:</p>
+<pre><code class="language-text">Token 1
+Token 2
+Token 3
+Token 4
+</code></pre>
+<p>one by one?</p>
+<p>What if a smaller model guesses ahead?</p>
+<pre><code class="language-text">              SMALL MODEL
+                  |
+                  v
+        &quot;The quick brown fox&quot;
+                  |
+                  v
+             BIG MODEL
+                  |
+                  v
+             VERIFY
+</code></pre>
+<hr />
+<h2>SPECULATIVE DECODING</h2>
+<pre><code class="language-text">Small model
+    |
+    v
+Draft several tokens
+    |
+    v
+Large model
+    |
+    v
+Verify tokens in fewer expensive steps
+    |
+    v
+Accept/reject
+</code></pre>
+<p>If many guesses are accepted:</p>
+<pre><code class="language-text">Generation speed ↑
+</code></pre>
+<hr />
+<h2>LEVER 3 — MODEL ROUTING</h2>
+<p>This is often one of the biggest opportunities.</p>
+<h2>🤔 Does every question need your biggest model?</h2>
+<pre><code class="language-text">&quot;What is 2 + 2?&quot;
+</code></pre>
+<p>Probably not.</p>
+<pre><code class="language-text">&quot;Analyze this complex regulatory architecture
+across 20 documents.&quot;
+</code></pre>
+<p>Probably yes.</p>
+<hr />
+<h2>ROUTER</h2>
+<pre><code class="language-text">                    USER QUERY
+                         |
+                         v
+                 +---------------+
+                 |   ROUTER      |
+                 +-------+-------+
+                         |
+              +----------+----------+
+              |                     |
+              v                     v
+          SIMPLE                  COMPLEX
+              |                     |
+              v                     v
+         SMALL MODEL           LARGE MODEL
+              |                     |
+              v                     v
+          CHEAP/FAST             EXPENSIVE
+</code></pre>
+<hr />
+<h2>⭐ ARCHITECT INSIGHT</h2>
+<p>Instead of asking:</p>
+<blockquote>
+<p>"How do I make the expensive model cheaper?"</p>
+</blockquote>
+<p>Ask:</p>
+<blockquote>
+<p><strong>"How often do I actually need the expensive model?"</strong></p>
+</blockquote>
+<p>That is a much more powerful architectural question.</p>
+<hr />
+<h2>OTHER OPTIMIZATIONS</h2>
+<pre><code class="language-text">Batching
+   ↓
+Higher GPU utilization
+
+Streaming
+   ↓
+Better perceived latency
+
+Max output tokens
+   ↓
+Lower unnecessary generation
+
+Stop sequences
+   ↓
+Prevent runaway output
+</code></pre>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>11.4 CACHING</summary>
+<div class="section-body">
+<h2>🤔 Traditional cache</h2>
+<pre><code class="language-text">GET /customer/123
+        |
+        v
+      CACHE
+        |
+   +----+----+
+   |         |
+ HIT       MISS
+   |         |
+   v         v
+Response   Database
+</code></pre>
+<p>Exact key matching.</p>
+<hr />
+<h2>But LLM queries are different</h2>
+<p>These:</p>
+<pre><code class="language-text">&quot;What is the exit load?&quot;
+
+&quot;What penalty applies for early redemption?&quot;
+
+&quot;How much do I pay if I redeem early?&quot;
+</code></pre>
+<p>are different strings.</p>
+<p>But semantically similar.</p>
+<hr />
+<h2>SEMANTIC CACHE</h2>
+<pre><code class="language-text">                 USER QUERY
+                     |
+                     v
+                 EMBEDDING
+                     |
+                     v
+              Similarity search
+                     |
+            +--------+--------+
+            |                 |
+          Similar            Not similar
+            |                 |
+            v                 v
+      Cached answer         LLM call
+</code></pre>
+<hr />
+<h2>THREE CACHE TYPES</h2>
+<pre><code class="language-text">CACHE
+ |
+ +--&gt; Exact-match
+ |
+ +--&gt; Semantic
+ |
+ +--&gt; KV / Prefix reuse
+</code></pre>
+<hr />
+<h2>EXACT MATCH</h2>
+<pre><code class="language-text">&quot;What's exit load?&quot;
+       |
+       v
+Exact same question?
+       |
+      YES
+       |
+       v
+Cached response
+</code></pre>
+<p>High precision.</p>
+<p>Low hit rate for paraphrases.</p>
+<hr />
+<h2>SEMANTIC CACHE</h2>
+<pre><code class="language-text">Question A
+     |
+     v
+Embedding A
+
+Question B
+     |
+     v
+Embedding B
+
+       ↓
+
+Similarity = 0.95
+       |
+       v
+Potential cache hit
+</code></pre>
+<hr />
+<h2>⚠️ DANGEROUS EXAMPLE</h2>
+<pre><code class="language-text">&quot;What is interest rate for 1 year?&quot;
+
+&quot;What is interest rate for 5 years?&quot;
+</code></pre>
+<p>Very similar semantically.</p>
+<p>But answer differs.</p>
+<pre><code class="language-text">Semantic similarity
+       ≠
+Business equivalence
+</code></pre>
+<p>Therefore:</p>
+<pre><code class="language-text">Semantic cache
+      +
+Entity/parameter validation
+      +
+Threshold
+</code></pre>
+<hr />
+<h2>KV CACHE REUSE</h2>
+<p>This operates deeper inside serving.</p>
+<pre><code class="language-text">Shared system prompt
+       |
+       v
+Compute once
+       |
+       v
+Reuse KV state
+       |
+       +------&gt; Request A
+       |
+       +------&gt; Request B
+       |
+       +------&gt; Request C
+</code></pre>
+<p>Potentially saves repeated computation.</p>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>11.5 OBSERVABILITY</summary>
+<div class="section-body">
+<h2>🤔 Critical production question</h2>
+<p>Your RAG system gives the wrong answer.</p>
+<p>Who is responsible?</p>
+<pre><code class="language-text">Query rewrite?
+Retrieval?
+Reranker?
+Prompt?
+LLM?
+Post-processing?
+</code></pre>
+<p>Without tracing:</p>
+<pre><code class="language-text">Wrong answer
+     |
+     v
+??????????????
+</code></pre>
+<p>With tracing:</p>
+<pre><code class="language-text">Wrong answer
+     |
+     v
+TRACE
+     |
+     +--&gt; Query rewrite ✓
+     +--&gt; Embedding ✓
+     +--&gt; Retrieval ✗
+     +--&gt; Reranking ✓
+     +--&gt; Prompt ✓
+     +--&gt; Generation ✓
+</code></pre>
+<p>Now you know where to investigate.</p>
+<hr />
+<h2>LLM OBSERVABILITY</h2>
+<p>Traditional:</p>
+<pre><code class="language-text">Latency
+Errors
+CPU
+Memory
+</code></pre>
+<p>LLM systems additionally need:</p>
+<pre><code class="language-text">Prompt
+Completion
+Tokens
+Cost
+Model
+Latency breakdown
+Retrieval
+Evaluation
+User feedback
+</code></pre>
+<hr />
+<h2>COMPLETE TRACE</h2>
+<pre><code class="language-text">trace_id = ABC123
+
+query rewrite       12ms ✓
+embedding            45ms ✓
+vector search        38ms ✓
+reranking           180ms ✓
+prompt assembly       3ms ✓
+LLM generation      2.1s ✓
+faithfulness check  340ms ⚠
+</code></pre>
+<p>Now:</p>
+<pre><code class="language-text">TOTAL LATENCY
+      |
+      +--&gt; Where?
+      |
+      +--&gt; Why?
+      |
+      +--&gt; Which component?
+</code></pre>
+<hr />
+<h2>🔥 THE SIX THINGS TO OBSERVE</h2>
+<p>Memorize:</p>
+<pre><code class="language-text">1. TRACE
+2. PROMPT / COMPLETION
+3. TOKENS / COST
+4. LATENCY
+5. QUALITY / EVAL
+6. USER FEEDBACK
+</code></pre>
+<hr />
+<h2>TOKEN + COST OBSERVABILITY</h2>
+<pre><code class="language-text">Request
+   |
+   +--&gt; Input tokens
+   |
+   +--&gt; Output tokens
+   |
+   +--&gt; Model
+   |
+   +--&gt; Cost
+   |
+   +--&gt; User / tenant
+</code></pre>
+<p>This enables:</p>
+<pre><code class="language-text">Cost per request
+Cost per customer
+Cost per model
+Cost per feature
+</code></pre>
+<hr />
+<h2>LATENCY IS NOT ONE NUMBER</h2>
+<p>Traditional:</p>
+<pre><code class="language-text">Request → Response
+       = 2 seconds
+</code></pre>
+<p>LLM:</p>
+<pre><code class="language-text">Request
+ |
+ +--&gt; Retrieval       100ms
+ |
+ +--&gt; Reranking       200ms
+ |
+ +--&gt; TTFT            700ms
+ |
+ +--&gt; Generation     1500ms
+ |
+ v
+TOTAL
+</code></pre>
+<hr />
+<h2>TTFT</h2>
+<p><strong>Time To First Token</strong></p>
+<p>Important for user experience.</p>
+<pre><code class="language-text">Request
+   |
+   | 700ms
+   v
+First token
+   |
+   | 1.5 sec
+   v
+Complete answer
+</code></pre>
+<p>Therefore:</p>
+<pre><code class="language-text">TTFT
+   ≠
+Total latency
+</code></pre>
+<hr />
+<h2>USER FEEDBACK</h2>
+<p>Your best production signal may be:</p>
+<pre><code class="language-text">👍
+👎
+Regenerate
+Edit
+Correction
+Abandon
+</code></pre>
+<p>Tie feedback to:</p>
+<pre><code class="language-text">trace_id
+</code></pre>
+<p>Then you can ask:</p>
+<blockquote>
+<p>Which prompt/model/retrieval version generated the bad response?</p>
+</blockquote>
+<hr />
+<h2>LANGSMITH vs LANGFUSE</h2>
+<p>From the source:</p>
+<pre><code class="language-text">LangSmith
+ |
+ +--&gt; LangChain ecosystem
+ +--&gt; Strong tracing
+ +--&gt; Dataset/eval tooling
+ +--&gt; Prompt experimentation
+
+
+Langfuse
+ |
+ +--&gt; Open-source-first
+ +--&gt; Framework agnostic
+ +--&gt; Self-hosting
+ +--&gt; Cost / usage analytics
+</code></pre>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>🧠 COMPLETE AI PRODUCTION LOOP</summary>
+<div class="section-body">
+<p>Now combine everything.</p>
+<pre><code class="language-text">                         USER
+                           |
+                           v
+                    INPUT GUARDRAIL
+                           |
+                           v
+                       ROUTER
+                           |
+             +-------------+-------------+
+             |                           |
+             v                           v
+         SMALL MODEL                LARGE MODEL
+             |                           |
+             +-------------+-------------+
+                           |
+                           v
+                     RAG / TOOLS
+                           |
+                           v
+                        LLM
+                           |
+                           v
+                    OUTPUT GUARDRAIL
+                           |
+                           v
+                         USER
+                           |
+                           v
+                     FEEDBACK
+                           |
+                           v
+                    OBSERVABILITY
+                           |
+             +-------------+-------------+
+             |                           |
+             v                           v
+          METRICS                       EVAL
+             |                           |
+             +-------------+-------------+
+                           |
+                           v
+                    IMPROVEMENT
+                           |
+                           +--------&gt; NEW VERSION
+</code></pre>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>🚨 AI ARCHITECT&#x27;S FAILURE-MODE MAP</summary>
+<div class="section-body">
+<p>When something goes wrong, ask:</p>
+<pre><code class="language-text">                     FAILURE
+                        |
+      +-----------------+------------------+
+      |                 |                  |
+      v                 v                  v
+   QUALITY            SAFETY             COST
+      |                 |                  |
+      v                 v                  v
+Hallucination       Injection          Too many tokens
+Bad retrieval       Jailbreak          Big model
+Wrong answer        PII leak           No caching
+Bad judge           Tool abuse         Poor batching
+</code></pre>
+<p>Then:</p>
+<pre><code class="language-text">FAILURE
+  |
+  v
+OBSERVE
+  |
+  v
+DIAGNOSE
+  |
+  v
+MITIGATE
+  |
+  v
+EVALUATE
+  |
+  v
+RED-TEAM
+  |
+  v
+DEPLOY
+</code></pre>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>🎯 INTERVIEW RECALL SECTION</summary>
+<div class="section-body">
+<h2>Q1 — Your LLM gives different answers for the same question. Is it broken?</h2>
+<h3>Answer</h3>
+<p>Not necessarily.</p>
+<p>LLM generation can be stochastic. Evaluate <strong>quality distributions and task-specific metrics</strong>, not exact string equality.</p>
+<hr />
+<h2>Q2 — Is MMLU enough to select your banking model?</h2>
+<h3>Answer</h3>
+<p>No.</p>
+<p>Use public benchmarks for broad comparison, then create a <strong>domain-specific evaluation dataset</strong> representing your real workload.</p>
+<hr />
+<h2>Q3 — Why use LLM-as-judge?</h2>
+<h3>Answer</h3>
+<p>To evaluate large numbers of outputs automatically and consistently enough for regression testing.</p>
+<p>But calibrate the judge against human labels.</p>
+<hr />
+<h2>Q4 — Why can LLM-as-judge fail?</h2>
+<pre><code class="language-text">Judge
+ |
+ +--&gt; Position bias
+ +--&gt; Verbosity bias
+ +--&gt; Self-preference
+ +--&gt; Style bias
+</code></pre>
+<hr />
+<h2>Q5 — What is hallucination?</h2>
+<h3>Answer</h3>
+<p>An unsupported or incorrect generated claim.</p>
+<p>For RAG, distinguish:</p>
+<pre><code class="language-text">Contradicts source
+      ↓
+Intrinsic / faithfulness failure
+
+Not supported by source
+      ↓
+Extrinsic / unsupported claim
+</code></pre>
+<hr />
+<h2>Q6 — How would you reduce hallucination?</h2>
+<pre><code class="language-text">RAG
++
+Abstention
++
+Citations
++
+Verification
++
+Structured output
++
+Appropriate decoding
+</code></pre>
+<hr />
+<h2>Q7 — Why do we need guardrails if the model is aligned?</h2>
+<h3>Answer</h3>
+<p>Alignment reduces risk but is not a sufficient application security boundary.</p>
+<p>Use independent input/output/structural controls.</p>
+<hr />
+<h2>Q8 — What is prompt injection?</h2>
+<h3>Answer</h3>
+<p>Untrusted content attempts to manipulate the model into following unintended instructions.</p>
+<p>Especially important in:</p>
+<pre><code class="language-text">RAG
++
+Agents
++
+Tool outputs
++
+Web content
++
+Uploaded documents
+</code></pre>
+<hr />
+<h2>Q9 — Why is red teaming different from QA?</h2>
+<h3>Answer</h3>
+<p>QA asks:</p>
+<blockquote>
+<p>Does expected behavior work?</p>
+</blockquote>
+<p>Red teaming asks:</p>
+<blockquote>
+<p>How can I deliberately make the system fail?</p>
+</blockquote>
+<hr />
+<h2>Q10 — Why is LLM serving different from REST serving?</h2>
+<h3>Answer</h3>
+<p>Because LLM inference is:</p>
+<pre><code class="language-text">Autoregressive
++
+GPU-memory intensive
++
+KV-cache dependent
++
+Variable-length
++
+Streaming
+</code></pre>
+<hr />
+<h2>Q11 — Why is KV cache important?</h2>
+<h3>Answer</h3>
+<p>It stores attention key/value tensors from previous tokens so they don't need to be recomputed repeatedly, but consumes GPU memory and becomes a major serving resource.</p>
+<hr />
+<h2>Q12 — Why does continuous batching matter?</h2>
+<h3>Answer</h3>
+<p>Requests finish at different times. Continuous batching allows newly available capacity to be immediately used by waiting requests rather than waiting for an entire static batch to finish.</p>
+<hr />
+<h2>Q13 — Why use vLLM?</h2>
+<h3>Answer</h3>
+<p>For efficient LLM serving, particularly through mechanisms such as PagedAttention and continuous batching that improve GPU utilization and KV-cache management.</p>
+<hr />
+<h2>Q14 — What is model routing?</h2>
+<h3>Answer</h3>
+<p>Sending each query to an appropriately sized model instead of using the most expensive model for every request.</p>
+<pre><code class="language-text">Simple → Small model
+Complex → Large model
+</code></pre>
+<hr />
+<h2>Q15 — What is semantic caching?</h2>
+<h3>Answer</h3>
+<p>Caching based on semantic similarity rather than exact string equality.</p>
+<p>But beware:</p>
+<pre><code class="language-text">Similar meaning
+      ≠
+Same business answer
+</code></pre>
+<hr />
+<h2>Q16 — What is the most important observability difference for LLMs?</h2>
+<h3>Answer</h3>
+<p>You need to observe not only infrastructure health but also <strong>model behavior and quality</strong>.</p>
+<pre><code class="language-text">Traditional:
+CPU / Memory / Latency / Errors
+
+LLM:
++
+Prompt
++
+Completion
++
+Tokens
++
+Cost
++
+Retrieval
++
+Quality
++
+User feedback
+</code></pre>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>🧠 FINAL ARCHITECT MEMORY MAP</summary>
+<div class="section-body">
+<p>If you forget everything else, remember this:</p>
+<pre><code class="language-text">                 PRODUCTION LLM
+                       |
+      +----------------+----------------+
+      |                |                |
+      v                v                v
+   EVALUATE          PROTECT          SERVE
+      |                |                |
+      v                v                v
+ Benchmarks         Guardrails        vLLM
+ LLM Judge          Red team          TGI
+ Humans             Injection         Triton
+      |                |                |
+      +----------------+----------------+
+                       |
+                       v
+                   OPTIMIZE
+                       |
+       +---------------+---------------+
+       |               |               |
+       v               v               v
+   Quantization     Routing         Caching
+       |               |               |
+       +---------------+---------------+
+                       |
+                       v
+                  OBSERVE
+                       |
+       +---------------+---------------+
+       |               |               |
+       v               v               v
+     Trace           Cost            Quality
+       |               |               |
+       +---------------+---------------+
+                       |
+                       v
+                  IMPROVE
+                       |
+                       +---------&gt; LOOP
+</code></pre>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>🏆 THE 10 QUESTIONS AN AI ARCHITECT SHOULD ALWAYS ASK</summary>
+<div class="section-body">
+<p>When someone says:</p>
+<blockquote>
+<p><strong>"We want to build an LLM application."</strong></p>
+</blockquote>
+<p>Don't immediately ask:</p>
+<blockquote>
+<p>"Which model?"</p>
+</blockquote>
+<p>Ask:</p>
+<pre><code class="language-text">1. What does GOOD mean?
+        ↓
+2. How will we EVALUATE it?
+        ↓
+3. What can go WRONG?
+        ↓
+4. How will we DETECT hallucinations?
+        ↓
+5. What SAFETY boundaries exist?
+        ↓
+6. What happens if the model is ATTACKED?
+        ↓
+7. Which model is actually REQUIRED?
+        ↓
+8. What is our LATENCY target?
+        ↓
+9. What is our COST per request?
+        ↓
+10. How will we OBSERVE production behavior?
+</code></pre>
+<p>That is the difference between:</p>
+<pre><code class="language-text">             LLM USER
+                |
+                v
+       &quot;Which model should I use?&quot;
+</code></pre>
+<p>and:</p>
+<pre><code class="language-text">             AI ARCHITECT
+                  |
+                  v
+      +-------------------------+
+      | Quality                 |
+      | Safety                  |
+      | Reliability             |
+      | Cost                    |
+      | Latency                 |
+      | Scalability             |
+      | Observability           |
+      | Governance              |
+      +-------------------------+
+                  |
+                  v
+            SYSTEM DESIGN
+</code></pre>
+<hr />
+</div>
+</details>
+
+<details class="section">
+<summary>🔥 ONE-LINE RECALL FOR EACH CONCEPT</summary>
+<div class="section-body">
+<pre><code class="language-text">EVALUATION
+→ &quot;How do I know it's actually good?&quot;
+
+BENCHMARK
+→ &quot;How good is it generally?&quot;
+
+LLM-AS-JUDGE
+→ &quot;Can I evaluate thousands automatically?&quot;
+
+HUMAN EVAL
+→ &quot;What does real expert judgment say?&quot;
+
+HALLUCINATION
+→ &quot;Did the model invent or unsupportedly claim something?&quot;
+
+RAG
+→ &quot;Can I ground the answer in trusted information?&quot;
+
+GUARDRAILS
+→ &quot;What safety controls surround the model?&quot;
+
+RED TEAM
+→ &quot;How can I deliberately break the system?&quot;
+
+ALIGNMENT
+→ &quot;How was model behavior shaped toward preferred behavior?&quot;
+
+KV CACHE
+→ &quot;What previous attention state can I reuse?&quot;
+
+CONTINUOUS BATCHING
+→ &quot;Can I keep the GPU busy as requests finish?&quot;
+
+PAGEDATTENTION
+→ &quot;Can I manage KV memory like pages?&quot;
+
+QUANTIZATION
+→ &quot;Can I use fewer bits?&quot;
+
+SPECULATIVE DECODING
+→ &quot;Can a small model draft while a big model verifies?&quot;
+
+MODEL ROUTING
+→ &quot;Does every request really need the biggest model?&quot;
+
+SEMANTIC CACHE
+→ &quot;Have I answered a meaningfully similar question before?&quot;
+
+OBSERVABILITY
+→ &quot;Can I explain exactly what happened in production?&quot;
+</code></pre>
+</div>
+</details>
+
+<details class="section">
+<summary>🧠 THE FINAL MENTAL MODEL</summary>
+<div class="section-body">
+<pre><code class="language-text">                 ┌───────────────────┐
+                 │      QUALITY      │
+                 │  &quot;Does it work?&quot;  │
+                 └─────────┬─────────┘
+                           │
+                           v
+                 ┌───────────────────┐
+                 │      SAFETY       │
+                 │ &quot;Can it hurt us?&quot; │
+                 └─────────┬─────────┘
+                           │
+                           v
+                 ┌───────────────────┐
+                 │   INFRASTRUCTURE  │
+                 │ &quot;Can it scale?&quot;   │
+                 └─────────┬─────────┘
+                           │
+                           v
+                 ┌───────────────────┐
+                 │       COST       │
+                 │ &quot;Can we afford it?&quot;│
+                 └─────────┬─────────┘
+                           │
+                           v
+                 ┌───────────────────┐
+                 │  OBSERVABILITY    │
+                 │ &quot;Can we operate it?&quot;│
+                 └─────────┬─────────┘
+                           │
+                           v
+                 ┌───────────────────┐
+                 │    CONTINUOUS     │
+                 │    IMPROVEMENT    │
+                 └───────────────────┘
+</code></pre>
+<blockquote>
+<p><strong>The real AI Architect question is never simply "Can the LLM answer?"</strong></p>
+<p>It is:</p>
+<p><strong>"Can I build a system around the LLM that is accurate, safe, scalable, observable, cost-efficient, and continuously improvable?"</strong></p>
+</blockquote>
+</div>
+</details>
+</body>
+</html>
