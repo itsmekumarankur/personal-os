@@ -3,1262 +3,482 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sankalp</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Space+Grotesk:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<title>सर्वं शिवमयं — Everything is Energy, Energy is Shiva</title>
 <style>
-  /* ---- Kriya Ring (Today view) ---- */
-  .ring-wrap{ text-align:center; padding: 8px 0 4px; }
-  .ring-svg{ width: 100%; max-width: 640px; height: auto; }
-  .ring-track{ fill:none; stroke: var(--line); stroke-width: 2; stroke-dasharray: 2 8; stroke-linecap: round; }
-  .node-hit{ cursor:pointer; }
-  .node-circle{ fill: var(--panel-raise); stroke: var(--line); stroke-width: 2; transition: all 0.25s ease; }
-  .node-hit.done .node-circle{ fill: var(--saffron); stroke: var(--saffron); filter: drop-shadow(0 0 10px rgba(232,151,61,0.55)); }
-  .node-hit:hover .node-circle{ stroke: var(--saffron); }
-  .node-icon{ fill: var(--ink-dim); font-size: 15px; font-family: var(--font-mono); pointer-events:none; }
-  .node-hit.done .node-icon{ fill: #1A1206; }
-  .node-label{ fill: var(--ink); font-family: var(--font-body); font-size: 13px; font-weight: 500; pointer-events:none; }
-  .node-sub{ fill: var(--ink-faint); font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.03em; pointer-events:none; }
-
-  .ring-meta{
-    display:flex; justify-content:center; gap: 40px; margin-top: 6px;
-    font-family: var(--font-mono); font-size: 12px; color: var(--ink-dim);
+  :root{
+    --void:#050308;
+    --deep:#0c0816;
+    --ember:#c9622b;
+    --gold:#e8a94c;
+    --spark:#f4e4c8;
+    --eye:#ff5a36;
   }
-  .ring-meta b{ color: var(--saffron); font-size: 18px; display:block; font-family: var(--font-display); font-weight:600; }
-  .ring-meta span{ display:block; margin-top: 4px; letter-spacing: 0.05em; text-transform: uppercase; font-size: 10px; }
-
-  .vow-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
-  @media (max-width: 640px){ .vow-grid{ grid-template-columns: 1fr; } }
-  .vow-item{
-    background: var(--void); border: 1px solid var(--line); border-radius: var(--radius);
-    padding: 18px 20px; position:relative;
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{
+    width:100%;height:100%;
+    background:radial-gradient(ellipse at 50% 40%, var(--deep) 0%, var(--void) 70%);
+    overflow:hidden;
+    font-family:'Georgia', 'Times New Roman', serif;
   }
-  .vow-item .num{ font-family: var(--font-mono); font-size: 11px; color: var(--teal); letter-spacing: 0.08em; }
-  .vow-item p{ margin: 8px 0 0; font-size: 14px; color: var(--ink); line-height: 1.55; }
-  .vow-item p em{ color: var(--saffron); font-style: normal; font-weight: 600; }
-
-  .hero-greet{ font-family: var(--font-mono); font-size: 12px; color: var(--teal); letter-spacing: 0.1em; text-transform: uppercase; margin: 0 0 6px; }
-
-  /* ---- Thoughts view ---- */
-  .composer{ display:flex; flex-direction:column; gap: 12px; }
-  .composer-foot{ display:flex; justify-content: space-between; align-items:center; }
-  .hint{ font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); }
-
-  .entry{
-    border-left: 2px solid var(--line);
-    padding: 4px 0 4px 20px;
-    margin-bottom: 26px;
-    position: relative;
+  canvas{display:block;position:fixed;inset:0;}
+  .veil{
+    position:fixed;inset:0;
+    pointer-events:none;
+    background:radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.55) 100%);
+    z-index:2;
   }
-  .entry::before{
-    content:""; position:absolute; left:-5px; top:8px;
-    width:8px; height:8px; border-radius:50%; background: var(--teal);
+  .caption{
+    position:fixed;
+    bottom:6%;
+    left:0;right:0;
+    text-align:center;
+    z-index:3;
+    pointer-events:none;
+    color:var(--spark);
+    letter-spacing:0.35em;
+    text-transform:uppercase;
+    font-size:13px;
+    opacity:0;
+    transition:opacity 2.2s ease;
+    text-shadow:0 0 18px rgba(232,169,76,0.5);
   }
-  .entry .ts{ font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); }
-  .entry p{ margin: 8px 0 0; font-size: 15px; line-height: 1.6; white-space: pre-wrap; }
-  .entry .del{
-    background:none; border:none; color: var(--ink-faint); font-family: var(--font-mono);
-    font-size: 11px; cursor:pointer; margin-top: 8px; padding: 0;
+  .caption .dev{
+    display:block;
+    font-family:'Noto Sans Devanagari','Nirmala UI',serif;
+    font-size:22px;
+    letter-spacing:0.08em;
+    margin-bottom:8px;
+    text-transform:none;
+    color:var(--gold);
   }
-  .entry .del:hover{ color: var(--danger); }
-
-  /* ---- Gallery view ---- */
-  .composer-row{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  @media (max-width: 640px){ .composer-row{ grid-template-columns: 1fr; } }
-
-  .grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-  @media (max-width: 640px){ .grid{ grid-template-columns: 1fr; } }
-
-  .card{ background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow:hidden; }
-  .thumb{ position:relative; aspect-ratio: 16/9; background: var(--void); display:block; }
-  .thumb img{ width:100%; height:100%; object-fit: cover; display:block; }
-  .thumb .play{
-    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    background: rgba(11,14,22,0.15); transition: background 0.15s;
-  }
-  .thumb .play::after{
-    content:"▶"; color:#fff; font-size: 15px; width:46px; height:46px; border-radius:50%;
-    background: rgba(11,14,22,0.55); display:flex; align-items:center; justify-content:center;
-    padding-left: 3px; border: 1px solid rgba(255,255,255,0.3);
-  }
-  .thumb:hover .play{ background: rgba(11,14,22,0.35); }
-
-  .card-body{ padding: 16px 18px; }
-  .card-body p{ margin:0; font-size: 13.5px; line-height: 1.5; color: var(--ink); }
-  .card-foot{ display:flex; justify-content: space-between; align-items:center; margin-top: 12px; }
-  .card-foot .ts{ font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-faint); }
-  .del{ background:none; border:none; color: var(--ink-faint); font-family: var(--font-mono); font-size: 10.5px; cursor:pointer; padding:0; }
-  .del:hover{ color: var(--danger); }
-
-  /* ---- Journal view ---- */
-  .journal-phase{
-    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em;
-    text-transform: uppercase; color: var(--teal); margin-bottom: 20px; display: block;
-  }
-  .journal-phase.evening{ color: var(--saffron); }
-  .field-group{ margin-bottom: 16px; }
-  .field-group:last-child{ margin-bottom: 0; }
-  .field-label{
-    display:block; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.06em;
-    text-transform: uppercase; color: var(--ink-faint); margin-bottom: 7px;
-  }
-  .rating-row{ display:flex; gap: 8px; margin-top: 2px; }
-  .rating-btn{
-    width: 38px; height: 38px; background: var(--void); border: 1px solid var(--line);
-    border-radius: var(--radius); color: var(--ink-dim); font-family: var(--font-mono);
-    font-size: 13px; cursor: pointer; transition: border-color 0.15s, color 0.15s, background 0.15s;
-  }
-  .rating-btn:hover{ border-color: var(--saffron); color: var(--saffron); }
-  .rating-btn.selected{ background: var(--saffron); border-color: var(--saffron); color: #1A1206; font-weight: 600; }
-
-  .j-entry{
-    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
-    padding: 18px 20px; margin-bottom: 12px; cursor: pointer; transition: border-color 0.15s;
-  }
-  .j-entry:hover{ border-color: var(--line-soft); }
-  .j-entry-head{ display:flex; align-items:flex-start; justify-content:space-between; gap: 12px; }
-  .j-entry-date{ font-family: var(--font-mono); font-size: 12px; color: var(--teal); letter-spacing: 0.05em; }
-  .j-entry-day{ font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); }
-  .j-entry-meta{ display:flex; align-items:center; gap: 10px; flex-shrink: 0; }
-  .j-entry-rating{ font-family: var(--font-mono); font-size: 11px; color: var(--saffron); }
-  .j-sync-pill{
-    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em;
-    padding: 2px 7px; border-radius: 20px; border: 1px solid;
-  }
-  .j-sync-pill.synced{ color: var(--teal); border-color: var(--teal-dim); }
-  .j-sync-pill.local{ color: var(--ink-faint); border-color: var(--line); }
-  .j-entry-sankalp{ margin: 8px 0 0; font-size: 13.5px; color: var(--ink-dim); font-style: italic; }
-  .j-entry-body{
-    display: none; margin-top: 18px; border-top: 1px solid var(--line);
-    padding-top: 18px;
-  }
-  .j-entry.open .j-entry-body{ display: block; }
-  .j-field{ margin-bottom: 14px; }
-  .j-field .lbl{
-    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em;
-    text-transform: uppercase; color: var(--ink-faint); margin-bottom: 4px;
-  }
-  .j-field .val{ font-size: 13.5px; color: var(--ink); line-height: 1.6; white-space: pre-wrap; }
-  .j-field-row{ display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
-  @media (max-width: 640px){ .j-field-row{ grid-template-columns: 1fr; } }
-
-  /* ---- Library view ---- */
-  .lib-filter-bar{
-    display:flex; align-items:center; gap: 10px; flex-wrap:wrap; margin-bottom: 28px;
-  }
-  .lib-search{
-    flex: 1; min-width: 180px; max-width: 320px;
-    background: var(--void); border: 1px solid var(--line); border-radius: var(--radius);
-    color: var(--ink); font-family: var(--font-mono); font-size: 12px;
-    padding: 8px 12px; outline: none; transition: border-color 0.15s;
-  }
-  .lib-search:focus{ border-color: var(--teal); }
-  .lib-filter-chips{ display:flex; gap: 6px; flex-wrap:wrap; }
-  .lib-chip{
-    font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.04em;
-    padding: 5px 12px; border-radius: 20px; border: 1px solid var(--line);
-    background: var(--void); color: var(--ink-dim); cursor: pointer;
-    transition: border-color 0.15s, color 0.15s, background 0.15s;
-  }
-  .lib-chip:hover{ border-color: var(--teal); color: var(--ink); }
-  .lib-chip.active{ background: var(--teal); border-color: var(--teal); color: #0B1018; }
-
-  .lib-cat-label{
-    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em;
-    text-transform: uppercase; color: var(--ink-faint); margin: 28px 0 12px; display:block;
-  }
-  .lib-grid{
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
-  }
-  @media(max-width:860px){ .lib-grid{ grid-template-columns: repeat(2,1fr); } }
-  @media(max-width:540px){ .lib-grid{ grid-template-columns: 1fr; } }
-
-  .lib-card{
-    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
-    padding: 14px 16px; cursor: pointer; transition: border-color 0.15s, background 0.15s;
-    display:flex; align-items:flex-start; gap: 12px;
-  }
-  .lib-card:hover{ border-color: var(--teal); background: var(--panel-raise); }
-  .lib-card-icon{
-    font-size: 22px; flex-shrink: 0; line-height: 1; margin-top: 2px;
-  }
-  .lib-card-body{ min-width: 0; }
-  .lib-card-name{
-    font-family: var(--font-body); font-size: 13px; color: var(--ink); font-weight: 500;
-    line-height: 1.4; margin: 0 0 6px; overflow: hidden; text-overflow: ellipsis;
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-  }
-  .lib-card-meta{ display:flex; gap: 6px; align-items:center; flex-wrap:wrap; }
-  .lib-type-pill{
-    font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.05em;
-    padding: 2px 7px; border-radius: 10px; border: 1px solid; text-transform: uppercase;
-  }
-  .lib-type-pill.pdf{ color: var(--teal); border-color: var(--teal-dim); }
-  .lib-type-pill.pptx{ color: var(--saffron); border-color: rgba(232,151,61,0.3); }
-  .lib-type-pill.slides{ color: #a78bfa; border-color: rgba(167,139,250,0.3); }
-
-  /* ---- document viewer modal ---- */
-  .docviewer-overlay{
-    display:none; position:fixed; inset:0; background: rgba(5,6,10,0.88);
-    flex-direction:column; z-index: 200; padding: 0;
-  }
-  .docviewer-overlay.open{ display:flex; }
-  .docviewer-head{
-    display:flex; align-items:center; justify-content:space-between;
-    padding: 12px 20px; border-bottom: 1px solid var(--line);
-    background: var(--panel); flex-shrink:0; gap: 12px;
-  }
-  .docviewer-title{
-    font-family: var(--font-mono); font-size: 12px; color: var(--ink); letter-spacing: 0.02em;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;
-  }
-  .docviewer-actions{ display:flex; gap: 8px; flex-shrink:0; }
-  .docviewer-close{
-    background: none; border: 1px solid var(--line); color: var(--ink-dim);
-    font-family: var(--font-mono); font-size: 12px; padding: 6px 14px;
-    border-radius: var(--radius); cursor: pointer; transition: border-color 0.15s, color 0.15s;
-  }
-  .docviewer-close:hover{ border-color: var(--danger); color: var(--danger); }
-  .docviewer-open-btn{
-    background: var(--panel-raise); border: 1px solid var(--line); color: var(--ink-dim);
-    font-family: var(--font-mono); font-size: 12px; padding: 6px 14px;
-    border-radius: var(--radius); cursor: pointer; text-decoration: none; display:inline-flex;
-    align-items:center; transition: border-color 0.15s, color 0.15s;
-  }
-  .docviewer-open-btn:hover{ border-color: var(--teal); color: var(--teal); }
-  .docviewer-body{
-    flex: 1; overflow: hidden; position:relative; background: #1a1c24;
-  }
-  .docviewer-body iframe{
-    width:100%; height:100%; border:none; display:block;
-  }
-  .docviewer-msg{
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    height:100%; gap: 16px; padding: 40px; text-align:center;
-  }
-  .docviewer-msg .msg-icon{ font-size: 48px; }
-  .docviewer-msg .msg-title{
-    font-family: var(--font-display); font-size: 18px; color: var(--ink); font-weight:500;
-  }
-  .docviewer-msg .msg-sub{
-    font-family: var(--font-mono); font-size: 12px; color: var(--ink-dim); max-width: 400px; line-height: 1.6;
-  }
-  .docviewer-msg .msg-btn{
-    background: var(--panel-raise); border: 1px solid var(--teal); color: var(--teal);
-    font-family: var(--font-mono); font-size: 12px; padding: 10px 22px;
-    border-radius: var(--radius); cursor: pointer; text-decoration: none; display:inline-block;
-    transition: background 0.15s;
-  }
-  .docviewer-msg .msg-btn:hover{ background: var(--teal); color: #0B1018; }
-
-  /* ---- view switching ---- */
-  .view{ display:none; }
-  .view.active{ display:block; }
-
-  /* ---- sync controls ---- */
-  .sync-cluster{ display:flex; align-items:center; gap: 10px; }
-  .sync-status{
-    font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-faint);
-    letter-spacing: 0.03em; white-space: nowrap;
-  }
-  .sync-status.ok{ color: var(--teal); }
-  .sync-status.err{ color: var(--danger); }
-  .sync-status.busy{ color: var(--saffron); }
-  .icon-btn{
-    background: var(--panel-raise); border: 1px solid var(--line); color: var(--ink-dim);
-    width: 34px; height: 34px; border-radius: var(--radius); cursor:pointer;
-    display:flex; align-items:center; justify-content:center; font-size: 14px;
-    transition: border-color 0.15s, color 0.15s;
-  }
-  .icon-btn:hover{ border-color: var(--saffron); color: var(--saffron); }
-  .btn.sync{
-    display:flex; align-items:center; gap: 8px;
-  }
-  .btn.sync .dot{ width:6px; height:6px; border-radius:50%; background: var(--ink-faint); }
-  .btn.sync.has-new .dot{ background: var(--saffron); box-shadow: 0 0 6px rgba(232,151,61,0.7); }
-
-  /* ---- domain bar ---- */
-  .domain-bar{
-    display:flex; align-items:center; gap: 12px; flex-wrap: wrap;
-    padding: 10px 0 6px;
-    border-bottom: 1px solid var(--line);
-    margin-bottom: 32px;
-  }
-  .domain-bar-label{
-    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em;
-    text-transform: uppercase; color: var(--ink-faint); flex-shrink: 0; margin-right: 4px;
-  }
-  .domain-chip{
-    display:flex; align-items:center; gap: 8px;
-    background: var(--panel); border: 1px solid var(--line);
-    border-radius: 6px; padding: 7px 14px;
-    text-decoration: none; transition: border-color 0.18s, background 0.18s;
-    flex-shrink: 0;
-  }
-  .domain-chip:hover{ border-color: var(--teal); background: var(--panel-raise); }
-  .domain-chip .chip-dot{
-    width: 6px; height: 6px; border-radius: 50%; background: var(--teal);
-    box-shadow: 0 0 5px rgba(79,193,166,0.6); flex-shrink: 0;
-  }
-  .domain-chip .chip-name{
-    font-family: var(--font-mono); font-size: 11.5px; color: var(--ink); letter-spacing: 0.02em;
-  }
-  .domain-chip .chip-sub{
-    font-family: var(--font-mono); font-size: 9.5px; color: var(--ink-faint); margin-left: 2px;
+  .caption.show{opacity:1;}
+  .mark{
+    position:fixed;
+    top:86px;
+    left:0;right:0;
+    text-align:center;
+    z-index:3;
+    pointer-events:none;
+    color:rgba(244,228,200,0.35);
+    font-size:11px;
+    letter-spacing:0.5em;
+    text-transform:uppercase;
   }
 
-  /* ---- modal ---- */
-  .modal-overlay{
-    display:none; position:fixed; inset:0; background: rgba(5,6,10,0.72);
-    align-items:center; justify-content:center; z-index: 100; padding: 20px;
+  /* ---- Diya navigation row ---- */
+  .diya-row{
+    position:fixed;
+    top:16px;
+    left:0;right:0;
+    z-index:6;
+    display:flex;
+    justify-content:center;
+    align-items:flex-end;
+    gap:clamp(6px, 1.6vw, 18px);
+    padding:0 12px;
+    pointer-events:none;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
   }
-  .modal-overlay.open{ display:flex; }
-  .modal{
-    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
-    padding: 28px; max-width: 440px; width:100%; max-height: 90vh; overflow-y: auto;
+  .diya-row::-webkit-scrollbar{ display:none; }
+  .diya{
+    pointer-events:auto;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    flex-shrink:0;
+    width:clamp(56px, 8vw, 76px);
+    text-decoration:none;
+    cursor:pointer;
+    background:none;
+    border:none;
+    transition:transform 0.3s ease;
   }
-  .modal h2{ font-family: var(--font-display); font-size: 20px; font-weight:500; margin: 0 0 8px; }
-  .modal .desc{ color: var(--ink-dim); font-size: 13px; line-height: 1.55; margin: 0 0 22px; }
-  .field{ margin-bottom: 14px; }
-  .field label{
-    display:block; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.06em;
-    text-transform: uppercase; color: var(--ink-faint); margin-bottom: 6px;
+  .diya:hover, .diya:focus-visible{
+    transform:translateY(-3px) scale(1.08);
   }
-  .field .fhint{ font-size: 11px; color: var(--ink-faint); margin-top: 5px; line-height:1.4; }
-  .modal-divider{
-    border: none; border-top: 1px solid var(--line); margin: 20px 0;
+  .diya .flame{
+    width:9px;
+    height:15px;
+    margin-bottom:-3px;
+    border-radius:50% 50% 50% 50% / 62% 62% 38% 38%;
+    background:radial-gradient(circle at 50% 32%, #fff6dc 0%, #ffd066 38%, #ff8c3f 72%, rgba(255,110,40,0) 100%);
+    box-shadow:
+      0 0 8px 2px rgba(255,180,90,0.85),
+      0 0 22px 8px rgba(255,140,60,0.45),
+      0 0 40px 14px rgba(255,110,40,0.2);
+    transform-origin:50% 100%;
+    animation:flicker 2.6s ease-in-out infinite;
+    animation-delay:var(--d, 0s);
   }
-  .modal-section-label{
-    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em;
-    text-transform: uppercase; color: var(--ink-faint); margin-bottom: 14px;
+  .diya:hover .flame{
+    box-shadow:
+      0 0 10px 3px rgba(255,190,110,0.95),
+      0 0 28px 10px rgba(255,150,70,0.6),
+      0 0 50px 18px rgba(255,120,50,0.3);
   }
-  .modal-foot{ display:flex; justify-content: space-between; align-items:center; margin-top: 22px; }
-  .warn-box{
-    background: rgba(194,84,80,0.08); border: 1px solid rgba(194,84,80,0.3); border-radius: var(--radius);
-    padding: 12px 14px; font-size: 12px; color: var(--ink-dim); line-height: 1.5; margin-bottom: 18px;
+  .diya svg{
+    width:100%;
+    height:auto;
+    display:block;
+    filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));
   }
-  .warn-box b{ color: var(--danger); }
+  .diya-label{
+    margin-top:6px;
+    font-size:8px;
+    letter-spacing:0.07em;
+    text-transform:uppercase;
+    color:rgba(244,228,200,0.55);
+    white-space:nowrap;
+    transition:color 0.3s ease;
+  }
+  .diya:hover .diya-label, .diya:focus-visible .diya-label{
+    color:var(--gold);
+  }
+  @keyframes flicker{
+    0%,100%{ transform:scaleY(1) scaleX(1) rotate(0deg); opacity:1; }
+    20%{ transform:scaleY(1.1) scaleX(0.92) rotate(-3deg); opacity:0.9; }
+    45%{ transform:scaleY(0.9) scaleX(1.06) rotate(2deg); opacity:1; }
+    70%{ transform:scaleY(1.06) scaleX(0.95) rotate(-2deg); opacity:0.93; }
+    85%{ transform:scaleY(0.96) scaleX(1.02) rotate(1deg); opacity:1; }
+  }
+  @media (max-width:480px){
+    .diya-label{ display:none; }
+    .diya-row{ top:10px; gap:8px; }
+  }
 </style>
 </head>
 <body>
-<div class="shell">
+<canvas id="scene"></canvas>
 
-  <div class="topnav">
-    <div class="wordmark">&#2360;&#2306;&#2325;&#2354;&#2381;&#2346; <small>SANKALP</small></div>
-    <div class="navlinks">
-      <a href="#today" data-view="today" class="active">Today</a>
-      <a href="#journal" data-view="journal">Journal</a>
-      <a href="#thoughts" data-view="thoughts">Thoughts</a>
-      <a href="#gallery" data-view="gallery">Gallery</a>
-      <a href="#library" data-view="library">Library</a>
-    </div>
-    <div class="sync-cluster">
-      <span class="sync-status" id="syncStatus">not synced yet</span>
-      <button class="btn small sync" id="syncBtn"><span class="dot"></span>Sync to GitHub</button>
-      <button class="icon-btn" id="settingsBtn" title="GitHub connection settings">&#9881;</button>
-    </div>
-  </div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="diyaGold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f3d086"/>
+      <stop offset="55%" stop-color="#c98a3a"/>
+      <stop offset="100%" stop-color="#6f4118"/>
+    </linearGradient>
+  </defs>
+</svg>
 
-  <!-- ===================== DOMAIN BAR ===================== -->
-  <div class="domain-bar">
-    <span class="domain-bar-label">also live</span>
-    <a class="domain-chip" href="sites/index.html">
-      <span class="chip-dot"></span>
-      <span class="chip-name">sites</span>
-      <span class="chip-sub">/ index</span>
-    </a>
-    <a class="domain-chip" href="https://antarmukh.shivmarg.in" target="_blank" rel="noopener">
-      <span class="chip-dot"></span>
-      <span class="chip-name">antarmukh</span>
-      <span class="chip-sub">.shivmarg.in</span>
-    </a>
-    <a class="domain-chip" href="https://architects.shivmarg.in" target="_blank" rel="noopener">
-      <span class="chip-dot"></span>
-      <span class="chip-name">architects</span>
-      <span class="chip-sub">.shivmarg.in</span>
-    </a>
-    <a class="domain-chip" href="https://stock.shivmarg.in" target="_blank" rel="noopener">
-      <span class="chip-dot"></span>
-      <span class="chip-name">stock</span>
-      <span class="chip-sub">.shivmarg.in</span>
-    </a>
-    <a class="domain-chip" href="https://leadership-kit.shivawithin.in" target="_blank" rel="noopener">
-      <span class="chip-dot"></span>
-      <span class="chip-name">leadership-kit</span>
-      <span class="chip-sub">.shivawithin.in</span>
-    </a>
-    <a class="domain-chip" href="https://shivawithin.in" target="_blank" rel="noopener">
-      <span class="chip-dot"></span>
-      <span class="chip-name">shivawithin</span>
-      <span class="chip-sub">.in</span>
-    </a>
-  </div>
+<!--
+  Each diya below is a link — replace the href with the real destination page
+  (e.g. "about.html", "gallery.html") and edit the visible label / title text.
+-->
+<nav class="diya-row" aria-label="Site navigation">
+  <a class="diya" href="nitya_sadhana/dinacharya.html" title="Nitya Sadhana — Daily Practice" style="--d:0.0s">
+    <span class="flame"></span>
+    <svg viewBox="0 0 40 16"><path d="M0 9C2 4 10 2 20 2C30 2 36 3 40 8C40 8.6 39.6 9.3 38 10C30 13 10 13 2 11C0.6 10.6 0 9.7 0 9Z" fill="url(#diyaGold)"/></svg>
+    <span class="diya-label">Nitya Sadhana</span>
+  </a>
+  <a class="diya" href="ahara_vrata/sadhana.html" title="Ahara Vrata — Food Practice" style="--d:0.3s">
+    <span class="flame"></span>
+    <svg viewBox="0 0 40 16"><path d="M0 9C2 4 10 2 20 2C30 2 36 3 40 8C40 8.6 39.6 9.3 38 10C30 13 10 13 2 11C0.6 10.6 0 9.7 0 9Z" fill="url(#diyaGold)"/></svg>
+    <span class="diya-label">Ahara Vrata</span>
+  </a>
+  <a class="diya" href="artha_sadhana/index.html" title="Artha Sadhana — Work & Craft" style="--d:0.6s">
+    <span class="flame"></span>
+    <svg viewBox="0 0 40 16"><path d="M0 9C2 4 10 2 20 2C30 2 36 3 40 8C40 8.6 39.6 9.3 38 10C30 13 10 13 2 11C0.6 10.6 0 9.7 0 9Z" fill="url(#diyaGold)"/></svg>
+    <span class="diya-label">Artha Sadhana</span>
+  </a>
+  <a class="diya" href="satya_sanga/index.html" title="Satya Sanga — Truth & Learning" style="--d:0.9s">
+    <span class="flame"></span>
+    <svg viewBox="0 0 40 16"><path d="M0 9C2 4 10 2 20 2C30 2 36 3 40 8C40 8.6 39.6 9.3 38 10C30 13 10 13 2 11C0.6 10.6 0 9.7 0 9Z" fill="url(#diyaGold)"/></svg>
+    <span class="diya-label">Satya Sanga</span>
+  </a>
+</nav>
 
-  <!-- ===================== TODAY ===================== -->
-  <section class="view active" id="view-today">
-    <p class="hero-greet" id="greet"></p>
-    <h1 class="page-title">The arc of the day</h1>
-    <p class="page-sub">Five practices, dawn to dusk. Mark what's done — the ring holds the rest.</p>
-
-    <div class="panel">
-      <div class="ring-wrap">
-        <svg class="ring-svg" viewBox="0 0 700 250" xmlns="http://www.w3.org/2000/svg">
-          <path class="ring-track" d="M60,220 Q350,10 640,220"></path>
-          <g id="nodes"></g>
-        </svg>
-      </div>
-      <div class="ring-meta">
-        <div><b id="doneCount">0/5</b><span>today</span></div>
-        <div><b id="streakCount">0</b><span>day streak</span></div>
-      </div>
-    </div>
-
-    <div class="section-label">Who I am in the room</div>
-
-    <div class="panel">
-      <p style="margin:0; color:var(--ink-dim); font-size:13px;">The version of me that walks into any meeting.</p>
-      <div class="vow-grid">
-        <div class="vow-item">
-          <div class="num">01</div>
-          <p>I am the <em>most humble</em> person in the room — no title precedes the listening.</p>
-        </div>
-        <div class="vow-item">
-          <div class="num">02</div>
-          <p>I ask <em>more questions</em> than anyone else — clarity before opinion.</p>
-        </div>
-        <div class="vow-item">
-          <div class="num">03</div>
-          <p>I am the one who <em>opens the sheet</em> — the notepad, the Excel — and makes the invisible visible for everyone.</p>
-        </div>
-        <div class="vow-item">
-          <div class="num">04</div>
-          <p>I <em>bring the room to a close</em> — not by talking longest, but by naming what we now agree on.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== JOURNAL ===================== -->
-  <section class="view" id="view-journal">
-    <p class="eyebrow">Daily Journal</p>
-    <h1 class="page-title">The day, examined</h1>
-    <p class="page-sub">Write your morning plan and evening reflection. Syncs to GitHub as markdown — one file per day.</p>
-
-    <div class="section-label" id="journalTodayLabel">Today</div>
-
-    <!-- Morning plan -->
-    <div class="panel">
-      <span class="journal-phase">Morning — Plan</span>
-      <div class="field-group">
-        <label class="field-label">Sadhana practice</label>
-        <textarea id="j_sadhana_plan" rows="2" placeholder="Practice, duration, time of day…"></textarea>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Learning focus</label>
-        <textarea id="j_learning_plan" rows="2" placeholder="Topic, source, why today…"></textarea>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Work priority</label>
-        <textarea id="j_work_plan" rows="2" placeholder="Top priority, secondary…"></textarea>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Sankalp — intention for the day</label>
-        <input type="text" id="j_sankalp" placeholder="One line. The thread you'll hold all day.">
-      </div>
-    </div>
-
-    <!-- Evening reflection -->
-    <div class="panel" style="margin-top: 16px;">
-      <span class="journal-phase evening">Evening — Reflection</span>
-      <div class="field-group">
-        <label class="field-label">Sadhana — did it happen? How did it feel?</label>
-        <textarea id="j_sadhana_ref" rows="2" placeholder=""></textarea>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Learning — what actually got learned?</label>
-        <textarea id="j_learning_ref" rows="2" placeholder=""></textarea>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Work — what shipped / moved / got stuck?</label>
-        <textarea id="j_work_ref" rows="2" placeholder=""></textarea>
-      </div>
-      <div class="j-field-row">
-        <div class="field-group" style="margin:0;">
-          <label class="field-label">Gratitude — one thing</label>
-          <input type="text" id="j_gratitude" placeholder="">
-        </div>
-        <div class="field-group" style="margin:0;">
-          <label class="field-label">Tomorrow's first move</label>
-          <input type="text" id="j_tomorrow" placeholder="Before checking phone / Slack">
-        </div>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Friction — what pulled you off-plan today?</label>
-        <textarea id="j_friction" rows="2" placeholder=""></textarea>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Self-rating</label>
-        <div class="rating-row" id="j_rating_row">
-          <button class="rating-btn" data-v="1">1</button>
-          <button class="rating-btn" data-v="2">2</button>
-          <button class="rating-btn" data-v="3">3</button>
-          <button class="rating-btn" data-v="4">4</button>
-          <button class="rating-btn" data-v="5">5</button>
-        </div>
-      </div>
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 20px;">
-        <span class="hint" id="journalSaveHint"></span>
-        <button class="btn primary" id="saveJournalBtn">Save entry</button>
-      </div>
-    </div>
-
-    <!-- Past entries -->
-    <div class="section-label" style="margin-top: 44px;">Past entries</div>
-    <div id="journalPastList"></div>
-  </section>
-
-  <!-- ===================== THOUGHTS ===================== -->
-  <section class="view" id="view-thoughts">
-    <p class="eyebrow">Journal</p>
-    <h1 class="page-title">Where the thinking lands</h1>
-    <p class="page-sub">No structure required. Write what's actually on your mind — it saves the moment you set it down.</p>
-
-    <div class="panel">
-      <div class="composer">
-        <textarea id="entryText" rows="4" placeholder="What are you thinking right now?"></textarea>
-        <div class="composer-foot">
-          <span class="hint">saved to this browser only</span>
-          <button class="btn primary" id="addThoughtBtn">Capture thought</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="section-label">Entries</div>
-    <div id="thoughtsList"></div>
-  </section>
-
-  <!-- ===================== GALLERY ===================== -->
-  <section class="view" id="view-gallery">
-    <p class="eyebrow">Ideas &amp; sources</p>
-    <h1 class="page-title">What's shaping the thinking</h1>
-    <p class="page-sub">Drop a YouTube link, pin the one idea it gave you. Over time this becomes a map of your influences.</p>
-
-    <div class="panel">
-      <div class="composer-row">
-        <input type="url" id="urlInput" placeholder="https://youtube.com/watch?v=...">
-        <input type="text" id="noteInput" placeholder="The one idea this gave you">
-      </div>
-      <div class="composer-foot" style="margin-top:12px;">
-        <span class="hint">saved to this browser only</span>
-        <button class="btn primary" id="addGalleryBtn">Add to gallery</button>
-      </div>
-    </div>
-
-    <div class="section-label">Collection</div>
-    <div id="galleryGrid" class="grid"></div>
-  </section>
-
-  <!-- ===================== LIBRARY ===================== -->
-  <section class="view" id="view-library">
-    <p class="eyebrow">Files &amp; Slides</p>
-    <h1 class="page-title">Library</h1>
-    <p class="page-sub">All PDFs and presentations across the project — click any card to view inline.</p>
-
-    <div class="lib-filter-bar">
-      <input class="lib-search" id="libSearch" type="search" placeholder="Search files…" autocomplete="off">
-      <div class="lib-filter-chips">
-        <button class="lib-chip active" data-filter="all">All</button>
-        <button class="lib-chip" data-filter="pdf">PDF</button>
-        <button class="lib-chip" data-filter="pptx">PPTX</button>
-      </div>
-    </div>
-
-    <div id="libContent"></div>
-  </section>
-
-  <div class="footnote">Sankalp · a private practice · saved locally, synced to GitHub on demand</div>
+<div class="veil"></div>
+<div class="mark">Neti Neti — Not This, Not This</div>
+<div class="caption" id="caption">
+  <span class="dev">सर्वं शिवमयं जगत्</span>
+  everything in this universe is Shiva
 </div>
 
-<!-- ===================== DOCUMENT VIEWER ===================== -->
-<div class="docviewer-overlay" id="docViewerOverlay">
-  <div class="docviewer-head">
-    <span class="docviewer-title" id="dvTitle"></span>
-    <div class="docviewer-actions">
-      <a class="docviewer-open-btn" id="dvOpenBtn" target="_blank" rel="noopener">↗ Open</a>
-      <button class="docviewer-close" id="dvClose">✕ Close</button>
-    </div>
-  </div>
-  <div class="docviewer-body" id="dvBody"></div>
-</div>
-
-<!-- ===================== SETTINGS MODAL ===================== -->
-<div class="modal-overlay" id="settingsOverlay">
-  <div class="modal">
-    <h2>Connect GitHub</h2>
-    <p class="desc">Entries save here instantly as you go. Hitting "Sync to GitHub" pushes a snapshot JSON and individual journal markdown files to your repo.</p>
-
-    <div class="warn-box">
-      <b>Note:</b> your token is stored only in this browser's localStorage. Use a <b>fine-grained token</b> scoped to just this one repo with "Contents: Read and write" permission — nothing more — and revoke it anytime from GitHub.
-    </div>
-
-    <div class="modal-section-label">Repository</div>
-    <div class="field">
-      <label>GitHub username</label>
-      <input type="text" id="cfgOwner" placeholder="ankur-xxxx">
-    </div>
-    <div class="field">
-      <label>Repository name</label>
-      <input type="text" id="cfgRepo" placeholder="sankalp">
-      <div class="fhint">The repo must already exist on GitHub.</div>
-    </div>
-    <div class="field">
-      <label>Snapshot file path</label>
-      <input type="text" id="cfgPath" placeholder="sankalp-data.json">
-      <div class="fhint">Full JSON backup committed here on every sync. Defaults to <code>sankalp-data.json</code>.</div>
-    </div>
-    <div class="field">
-      <label>Personal access token</label>
-      <input type="password" id="cfgToken" placeholder="github_pat_...">
-      <div class="fhint">Settings → Developer settings → Fine-grained tokens.</div>
-    </div>
-
-    <hr class="modal-divider">
-    <div class="modal-section-label">Journal</div>
-    <div class="field">
-      <label>Journal entries path</label>
-      <input type="text" id="cfgJournalPath" placeholder="journal/entries">
-      <div class="fhint">Journal entries are committed as <code>{path}/YYYY/MM/YYYY-MM-DD.md</code>. Defaults to <code>journal/entries</code>.</div>
-    </div>
-
-    <div class="modal-foot">
-      <button class="btn ghost small" id="cfgClear">Disconnect</button>
-      <div style="display:flex; gap:10px;">
-        <button class="btn small" id="cfgCancel">Cancel</button>
-        <button class="btn primary small" id="cfgSave">Save connection</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script src="app.js"></script>
 <script>
-  /* ---------- view switching ---------- */
-  const VIEWS = ['today', 'journal', 'thoughts', 'gallery', 'library'];
+(function(){
+  const canvas = document.getElementById('scene');
+  const ctx = canvas.getContext('2d');
+  const captionEl = document.getElementById('caption');
+  let W, H, DPR;
 
-  function setView(name){
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.querySelectorAll('.navlinks a').forEach(a => a.classList.remove('active'));
-    document.getElementById('view-' + name).classList.add('active');
-    document.querySelector(`.navlinks a[data-view="${name}"]`).classList.add('active');
-    history.replaceState(null, '', '#' + name);
+  function resize(){
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    buildShape();
   }
-  document.querySelectorAll('.navlinks a').forEach(a=>{
-    a.addEventListener('click', (e)=>{
-      e.preventDefault();
-      setView(a.dataset.view);
-    });
-  });
-  const startView = (location.hash || '#today').slice(1);
-  setView(VIEWS.includes(startView) ? startView : 'today');
 
-  /* ---------- Today: Kriya Ring ---------- */
-  document.getElementById('greet').textContent = timeOfDayGreeting() + ', Ankur';
+  // ---------- Silhouette definition (Dhyanalinga: tall smooth ovoid on a simple round base) ----------
+  function drawSilhouette(c){
+    c.save();
+    c.fillStyle = '#fff';
 
-  const NODE_POS = [
-    {x:60,  y:220}, {x:205, y:141}, {x:350, y:115}, {x:495, y:141}, {x:640, y:220}
-  ];
-  const ICONS = ['◈','∿','☉','♡','✎'];
+    // Simple grounding base — two soft, flat tiers, no spout, no ornament
+    c.beginPath(); c.ellipse(0,238,190,36,0,0,Math.PI*2); c.fill();
+    c.beginPath(); c.ellipse(0,208,168,38,0,0,Math.PI*2); c.fill();
 
-  function renderRing(){
-    const today = getSadhanaToday();
-    const g = document.getElementById('nodes');
-    g.innerHTML = '';
-    let doneN = 0;
-
-    PRACTICES.forEach((p, i)=>{
-      const pos = NODE_POS[i];
-      const isDone = !!today[p.key];
-      if(isDone) doneN++;
-
-      const node = document.createElementNS('http://www.w3.org/2000/svg','g');
-      node.setAttribute('class', 'node-hit' + (isDone ? ' done' : ''));
-      node.setAttribute('transform', `translate(${pos.x},${pos.y})`);
-      node.innerHTML = `
-        <circle class="node-circle" r="26"></circle>
-        <text class="node-icon" text-anchor="middle" dy="6">${ICONS[i]}</text>
-        <text class="node-label" text-anchor="middle" y="46">${p.label}</text>
-        <text class="node-sub" text-anchor="middle" y="60">${p.note}</text>
-      `;
-      node.addEventListener('click', ()=>{
-        toggleSadhana(p.key);
-        renderRing();
-      });
-      g.appendChild(node);
-    });
-
-    document.getElementById('doneCount').textContent = doneN + '/5';
-    document.getElementById('streakCount').textContent = getStreak().count;
-  }
-  renderRing();
-
-  /* ---------- Journal ---------- */
-  let journalRating = null;
-
-  function journalTodayLabel(){
-    const d = new Date();
-    const day = d.toLocaleDateString('en-IN', { weekday: 'long' });
-    const date = todayKey();
-    document.getElementById('journalTodayLabel').textContent = `Today — ${date} · ${day}`;
-  }
-  journalTodayLabel();
-
-  function loadTodayJournal(){
-    const entry = getJournalEntry(todayKey());
-    if(!entry) return;
-    document.getElementById('j_sadhana_plan').value  = entry.sadhana_plan  || '';
-    document.getElementById('j_learning_plan').value = entry.learning_plan || '';
-    document.getElementById('j_work_plan').value     = entry.work_plan     || '';
-    document.getElementById('j_sankalp').value       = entry.sankalp      || '';
-    document.getElementById('j_sadhana_ref').value   = entry.sadhana_ref  || '';
-    document.getElementById('j_learning_ref').value  = entry.learning_ref || '';
-    document.getElementById('j_work_ref').value      = entry.work_ref     || '';
-    document.getElementById('j_gratitude').value     = entry.gratitude    || '';
-    document.getElementById('j_friction').value      = entry.friction     || '';
-    document.getElementById('j_tomorrow').value      = entry.tomorrow     || '';
-    if(entry.self_rating != null){
-      setRating(entry.self_rating);
+    // The linga itself — one continuous, smooth, elongated ovoid
+    function half(){
+      c.beginPath();
+      c.moveTo(0,-382);                              // apex, gently rounded
+      c.quadraticCurveTo(66,-330, 96,-224);           // upper taper widening
+      c.quadraticCurveTo(114,-140, 112,-56);          // approaching the widest point
+      c.quadraticCurveTo(110,30, 92,110);             // easing back inward
+      c.quadraticCurveTo(78,160, 42,182);              // settling into the base
+      c.lineTo(0,182);
+      c.closePath();
+      c.fill();
     }
-    const hint = document.getElementById('journalSaveHint');
-    if(entry.updatedAt){
-      hint.textContent = 'last saved ' + formatDate(entry.updatedAt);
-    }
+    half();
+    c.save(); c.scale(-1,1); half(); c.restore();
+
+    c.restore();
   }
 
-  function setRating(v){
-    journalRating = v;
-    document.querySelectorAll('.rating-btn').forEach(btn => {
-      btn.classList.toggle('selected', Number(btn.dataset.v) === v);
-    });
-  }
+  // Sample the silhouette into a point cloud (once, on resize)
+  let shapePoints = [];
+  let thirdEyePoint = {x:0, y:-382};
+  function buildShape(){
+    const off = document.createElement('canvas');
+    const S = 1200;
+    off.width = S; off.height = S;
+    const octx = off.getContext('2d');
+    octx.translate(S/2, S/2 + 40);
+    drawSilhouette(octx);
 
-  document.querySelectorAll('.rating-btn').forEach(btn => {
-    btn.addEventListener('click', () => setRating(Number(btn.dataset.v)));
-  });
-
-  document.getElementById('saveJournalBtn').addEventListener('click', ()=>{
-    const fields = {
-      sadhana_plan:  document.getElementById('j_sadhana_plan').value.trim(),
-      learning_plan: document.getElementById('j_learning_plan').value.trim(),
-      work_plan:     document.getElementById('j_work_plan').value.trim(),
-      sankalp:       document.getElementById('j_sankalp').value.trim(),
-      sadhana_ref:   document.getElementById('j_sadhana_ref').value.trim(),
-      learning_ref:  document.getElementById('j_learning_ref').value.trim(),
-      work_ref:      document.getElementById('j_work_ref').value.trim(),
-      gratitude:     document.getElementById('j_gratitude').value.trim(),
-      friction:      document.getElementById('j_friction').value.trim(),
-      tomorrow:      document.getElementById('j_tomorrow').value.trim(),
-      self_rating:   journalRating,
-    };
-    saveJournalEntry(todayKey(), fields);
-    const hint = document.getElementById('journalSaveHint');
-    hint.textContent = 'saved just now';
-    refreshSyncUI();
-    renderJournalPast();
-  });
-
-  function renderJournalPast(){
-    const all = getJournalAll();
-    const entries = Object.values(all)
-      .filter(e => e.date && e.date !== todayKey())
-      .sort((a, b) => b.date.localeCompare(a.date));
-
-    const container = document.getElementById('journalPastList');
-    if(entries.length === 0){
-      container.innerHTML = '<div class="empty">No past entries yet. Save today\'s entry to start the archive.</div>';
-      return;
-    }
-
-    container.innerHTML = entries.map(e => {
-      const day = journalDayName(e.date);
-      const fields = [
-        ['Sadhana plan', e.sadhana_plan],
-        ['Learning', e.learning_plan],
-        ['Work plan', e.work_plan],
-        ['Sadhana reflection', e.sadhana_ref],
-        ['Learning reflection', e.learning_ref],
-        ['Work reflection', e.work_ref],
-        ['Gratitude', e.gratitude],
-        ['Friction', e.friction],
-        ["Tomorrow's first move", e.tomorrow],
-      ].filter(([, v]) => v && v.trim());
-
-      const bodyHtml = fields.length
-        ? fields.map(([k, v]) => `
-            <div class="j-field">
-              <div class="lbl">${k}</div>
-              <div class="val">${v.replace(/</g,'&lt;')}</div>
-            </div>`).join('')
-        : '<div class="empty" style="padding:16px 0 0">Nothing recorded.</div>';
-
-      return `
-        <div class="j-entry" data-date="${e.date}">
-          <div class="j-entry-head">
-            <div>
-              <span class="j-entry-date">${e.date}</span>
-              <span class="j-entry-day"> — ${day}</span>
-            </div>
-            <div class="j-entry-meta">
-              ${e.self_rating != null ? `<span class="j-entry-rating">${e.self_rating}/5</span>` : ''}
-              <span class="j-sync-pill ${e.synced ? 'synced' : 'local'}">${e.synced ? 'synced' : 'local'}</span>
-            </div>
-          </div>
-          ${e.sankalp ? `<div class="j-entry-sankalp">"${e.sankalp.replace(/</g,'&lt;')}"</div>` : ''}
-          <div class="j-entry-body">${bodyHtml}</div>
-        </div>`;
-    }).join('');
-
-    container.querySelectorAll('.j-entry').forEach(el => {
-      el.addEventListener('click', () => el.classList.toggle('open'));
-    });
-  }
-
-  loadTodayJournal();
-  renderJournalPast();
-
-  /* ---------- Thoughts ---------- */
-  const thoughtsList = document.getElementById('thoughtsList');
-  const entryText = document.getElementById('entryText');
-
-  function renderThoughts(){
-    const items = getThoughts();
-    if(items.length === 0){
-      thoughtsList.innerHTML = '<div class="empty">Nothing captured yet. The first thought is usually the truest one.</div>';
-      return;
-    }
-    thoughtsList.innerHTML = items.map(t => `
-      <div class="entry">
-        <div class="ts">${formatDate(t.ts)}</div>
-        <p>${t.text.replace(/</g,'&lt;')}</p>
-        <button class="del" data-id="${t.id}">remove</button>
-      </div>
-    `).join('');
-    thoughtsList.querySelectorAll('.del').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        deleteThought(btn.dataset.id);
-        renderThoughts();
-      });
-    });
-  }
-  document.getElementById('addThoughtBtn').addEventListener('click', ()=>{
-    const val = entryText.value.trim();
-    if(!val) return;
-    addThought(val);
-    entryText.value = '';
-    renderThoughts();
-    refreshSyncUI();
-  });
-  entryText.addEventListener('keydown', (e)=>{
-    if(e.key === 'Enter' && (e.metaKey || e.ctrlKey)) document.getElementById('addThoughtBtn').click();
-  });
-  renderThoughts();
-
-  /* ---------- Gallery ---------- */
-  const galleryGrid = document.getElementById('galleryGrid');
-  const urlInput = document.getElementById('urlInput');
-  const noteInput = document.getElementById('noteInput');
-
-  function renderGallery(){
-    const items = getGallery();
-    if(items.length === 0){
-      galleryGrid.className = '';
-      galleryGrid.innerHTML = '<div class="empty">No videos yet. Paste a link above to start the collection.</div>';
-      return;
-    }
-    galleryGrid.className = 'grid';
-    galleryGrid.innerHTML = items.map(g => `
-      <div class="card">
-        <a class="thumb" href="${g.url}" target="_blank" rel="noopener">
-          <img src="${g.videoId ? 'https://img.youtube.com/vi/'+g.videoId+'/hqdefault.jpg' : ''}" alt="" onerror="this.style.display='none'">
-          <span class="play"></span>
-        </a>
-        <div class="card-body">
-          <p>${(g.note || '').replace(/</g,'&lt;') || '<span style="color:var(--ink-faint)">no note added</span>'}</p>
-          <div class="card-foot">
-            <span class="ts">${formatDate(g.ts)}</span>
-            <button class="del" data-id="${g.id}">remove</button>
-          </div>
-        </div>
-      </div>
-    `).join('');
-    galleryGrid.querySelectorAll('.del').forEach(btn=>{
-      btn.addEventListener('click', (e)=>{
-        e.preventDefault();
-        deleteGalleryItem(btn.dataset.id);
-        renderGallery();
-      });
-    });
-  }
-  document.getElementById('addGalleryBtn').addEventListener('click', ()=>{
-    const url = urlInput.value.trim();
-    const note = noteInput.value.trim();
-    if(!url) return;
-    addGalleryItem(url, note);
-    urlInput.value = '';
-    noteInput.value = '';
-    renderGallery();
-    refreshSyncUI();
-  });
-  renderGallery();
-
-  /* ---------- GitHub sync UI ---------- */
-  const syncBtn = document.getElementById('syncBtn');
-  const syncStatusEl = document.getElementById('syncStatus');
-  const settingsOverlay = document.getElementById('settingsOverlay');
-
-  function hasUnsyncedWork(){
-    const lastSync = getLastSync();
-    const newThoughts = getThoughts().filter(t => new Date(t.ts).getTime() > lastSync).length;
-    const newGallery = getGallery().filter(g => new Date(g.ts).getTime() > lastSync).length;
-    const doneToday = PRACTICES.filter(p => getSadhanaToday()[p.key]).length;
-    const unsyncedJournal = getUnsyncedJournal().length;
-    return (newThoughts + newGallery + doneToday + unsyncedJournal) > 0;
-  }
-
-  function relativeTime(ms){
-    if(!ms) return null;
-    const diff = Date.now() - ms;
-    const mins = Math.floor(diff / 60000);
-    if(mins < 1) return 'just now';
-    if(mins < 60) return mins + 'm ago';
-    const hrs = Math.floor(mins / 60);
-    if(hrs < 24) return hrs + 'h ago';
-    return Math.floor(hrs / 24) + 'd ago';
-  }
-
-  function refreshSyncUI(){
-    const last = getLastSync();
-    syncBtn.classList.toggle('has-new', hasUnsyncedWork());
-    if(!getGithubConfig()){
-      syncStatusEl.textContent = 'not connected';
-      syncStatusEl.className = 'sync-status';
-    } else if(last){
-      syncStatusEl.textContent = 'synced ' + relativeTime(last);
-      syncStatusEl.className = 'sync-status ok';
-    } else {
-      syncStatusEl.textContent = 'not synced yet';
-      syncStatusEl.className = 'sync-status';
-    }
-  }
-
-  function openSettings(){
-    const cfg = getGithubConfig() || {};
-    document.getElementById('cfgOwner').value       = cfg.owner       || '';
-    document.getElementById('cfgRepo').value        = cfg.repo        || '';
-    document.getElementById('cfgPath').value        = cfg.path        || 'sankalp-data.json';
-    document.getElementById('cfgToken').value       = cfg.token       || '';
-    document.getElementById('cfgJournalPath').value = cfg.journalPath || 'journal/entries';
-    settingsOverlay.classList.add('open');
-  }
-  function closeSettings(){ settingsOverlay.classList.remove('open'); }
-
-  document.getElementById('settingsBtn').addEventListener('click', openSettings);
-  document.getElementById('cfgCancel').addEventListener('click', closeSettings);
-  settingsOverlay.addEventListener('click', (e)=>{ if(e.target === settingsOverlay) closeSettings(); });
-
-  document.getElementById('cfgSave').addEventListener('click', ()=>{
-    const owner       = document.getElementById('cfgOwner').value.trim();
-    const repo        = document.getElementById('cfgRepo').value.trim();
-    const path        = document.getElementById('cfgPath').value.trim()        || 'sankalp-data.json';
-    const token       = document.getElementById('cfgToken').value.trim();
-    const journalPath = document.getElementById('cfgJournalPath').value.trim() || 'journal/entries';
-    if(!owner || !repo || !token){
-      alert('Username, repo, and token are all required.');
-      return;
-    }
-    saveGithubConfig({ owner, repo, path, token, journalPath });
-    closeSettings();
-    refreshSyncUI();
-  });
-
-  document.getElementById('cfgClear').addEventListener('click', ()=>{
-    if(confirm('Remove the saved GitHub connection from this browser?')){
-      clearGithubConfig();
-      closeSettings();
-      refreshSyncUI();
-    }
-  });
-
-  syncBtn.addEventListener('click', async ()=>{
-    if(!getGithubConfig()){ openSettings(); return; }
-
-    syncBtn.disabled = true;
-    syncStatusEl.textContent = 'syncing…';
-    syncStatusEl.className = 'sync-status busy';
-    try{
-      await syncToGithub();
-      syncStatusEl.textContent = 'synced just now';
-      syncStatusEl.className = 'sync-status ok';
-      renderJournalPast(); // refresh sync pills
-    }catch(e){
-      if(e.message === 'NOTHING_NEW'){
-        syncStatusEl.textContent = 'nothing new to sync';
-        syncStatusEl.className = 'sync-status';
-      } else if(e.message === 'NO_CONFIG'){
-        openSettings();
-      } else {
-        syncStatusEl.textContent = 'sync failed — check settings';
-        syncStatusEl.className = 'sync-status err';
-        console.error(e);
-      }
-    }finally{
-      syncBtn.disabled = false;
-      refreshSyncUI();
-    }
-  });
-
-  refreshSyncUI();
-  setInterval(refreshSyncUI, 60000);
-
-  /* ---------- Library ---------- */
-  const LIBRARY_FILES = [
-    // Resume
-    { id:'res-1', cat:'Resume', name:'Ankur Resume — AI Leadership', type:'pdf',
-      path:'sites/cto-notes-site/resume/Ankur_Resume_AI_Leadership.pdf' },
-
-    // GitHub Copilot
-    { id:'cop-1', cat:'GitHub Copilot', name:'Meet the GitHub Copilot Coding Agent', type:'pdf',
-      path:'sites/architect-kit-site/ai-site/vibe/github-copilot-coding-agent/Meet+the+GitHub+Copilot+Coding+Agent.pdf' },
-
-    // AWS AI Practitioner
-    { id:'aws-1', cat:'AWS AI Practitioner', name:'AWS Certified AI Practitioner Slides (v19)', type:'pdf',
-      path:'sites/architect-kit-site/ai-site/infra and deploy/ultimate_aws_certified_ai_practitioner_AIF-C01/AWS Certified AI Practitioner Slides v19.pdf' },
-
-    // Docker for AI
-    { id:'dkr-1', cat:'Docker for AI', name:'AI and ML with Docker', type:'pdf',
-      path:'sites/architect-kit-site/ai-site/infra and deploy/ultimate_docker_for_ai/AI-and-ML-with-Docker.pdf' },
-    { id:'dkr-2', cat:'Docker for AI', name:'Running ML Containers — JupyterLabs & MLFlow', type:'pdf',
-      path:'sites/architect-kit-site/ai-site/infra and deploy/ultimate_docker_for_ai/📘+Project+1+Running+ML+Containers+like+JupyterLabs+and+MLFlow+with+Docker.pdf' },
-    { id:'dkr-3', cat:'Docker for AI', name:'AI & ML Concepts Slides', type:'slides',
-      path:'sites/architect-kit-site/ai-site/infra and deploy/ultimate_docker_for_ai/docker-ai-ml-concepts-slides.html' },
-    { id:'dkr-4', cat:'Docker for AI', name:'MLFlow & JupyterLabs Project Slides', type:'slides',
-      path:'sites/architect-kit-site/ai-site/infra and deploy/ultimate_docker_for_ai/docker-mlflow-jupyter-project-slides.html' },
-
-    // AI Prod Deployment
-    { id:'apd-w1d1', cat:'AI Prod Deployment', name:'Week 1 · Day 1', type:'pptx',
-      path:'sites/architect-kit-site/ai-site/infra and deploy/ai-prod-deployment/week-1/day-1/Day-1.pptx' },
-    { id:'apd-w1d2', cat:'AI Prod Deployment', name:'Week 1 · Day 2', type:'pptx',
-      path:'sites/architect-kit-site/ai-site/infra and deploy/ai-prod-deployment/week-1/day-2/week1-day2.pptx' },
-    { id:'apd-w2d2', cat:'AI Prod Deployment', name:'Week 2 · Day 2', type:'pptx',
-      path:'sites/architect-kit-site/ai-site/infra and deploy/ai-prod-deployment/week-2/day-2/week2-day2.pptx' },
-    { id:'apd-w2d3', cat:'AI Prod Deployment', name:'Week 2 · Day 3', type:'pptx',
-      path:'sites/architect-kit-site/ai-site/infra and deploy/ai-prod-deployment/week-2/day-3/week2-day3.pptx' },
-    { id:'apd-w2d4', cat:'AI Prod Deployment', name:'Week 2 · Day 4', type:'pptx',
-      path:'sites/architect-kit-site/ai-site/infra and deploy/ai-prod-deployment/week-2/day-4/week2-day4.pptx' },
-    { id:'apd-w2d5', cat:'AI Prod Deployment', name:'Week 2 · Day 5', type:'pptx',
-      path:'sites/architect-kit-site/ai-site/infra and deploy/ai-prod-deployment/week-2/day-5/week2-day5.pptx' },
-
-    // Build 10 AI Agents
-    { id:'b10-m0', cat:'Build 10 AI Agents', name:'Module 0', type:'pptx',
-      path:'sites/architect-kit-site/ai-site/vibe/build_10_ai_agents_with_claude_code_cowork/Masterclass+Materials/Module 0.pptx' },
-    { id:'b10-m1', cat:'Build 10 AI Agents', name:'Module 1', type:'pptx',
-      path:'sites/architect-kit-site/ai-site/vibe/build_10_ai_agents_with_claude_code_cowork/Masterclass+Materials/Module 1.pptx' },
-    { id:'b10-m2', cat:'Build 10 AI Agents', name:'Module 2', type:'pptx',
-      path:'sites/architect-kit-site/ai-site/vibe/build_10_ai_agents_with_claude_code_cowork/Masterclass+Materials/Module 2.pptx' },
-    { id:'b10-m3', cat:'Build 10 AI Agents', name:'Module 3', type:'pptx',
-      path:'sites/architect-kit-site/ai-site/vibe/build_10_ai_agents_with_claude_code_cowork/Masterclass+Materials/Module 3.pptx' },
-    { id:'b10-m4', cat:'Build 10 AI Agents', name:'Module 4', type:'pptx',
-      path:'sites/architect-kit-site/ai-site/vibe/build_10_ai_agents_with_claude_code_cowork/Masterclass+Materials/Module 4.pptx' },
-    { id:'b10-m5', cat:'Build 10 AI Agents', name:'Module 5', type:'pptx',
-      path:'sites/architect-kit-site/ai-site/vibe/build_10_ai_agents_with_claude_code_cowork/Masterclass+Materials/Module 5.pptx' },
-    { id:'b10-m6', cat:'Build 10 AI Agents', name:'Module 6', type:'pptx',
-      path:'sites/architect-kit-site/ai-site/vibe/build_10_ai_agents_with_claude_code_cowork/Masterclass+Materials/Module 6.pptx' },
-    { id:'b10-m7', cat:'Build 10 AI Agents', name:'Module 7', type:'pptx',
-      path:'sites/architect-kit-site/ai-site/vibe/build_10_ai_agents_with_claude_code_cowork/Masterclass+Materials/Module 7.pptx' },
-    { id:'b10-aa', cat:'Build 10 AI Agents', name:'Appendix A', type:'pptx',
-      path:'sites/architect-kit-site/ai-site/vibe/build_10_ai_agents_with_claude_code_cowork/Masterclass+Materials/Appendix Materials/Appendix A Materials.pptx' },
-    { id:'b10-ab', cat:'Build 10 AI Agents', name:'Appendix B', type:'pptx',
-      path:'sites/architect-kit-site/ai-site/vibe/build_10_ai_agents_with_claude_code_cowork/Masterclass+Materials/Appendix Materials/Appendix B Materials.pptx' },
-    { id:'b10-bank', cat:'Build 10 AI Agents', name:'Sample Data — Bank Statement Mar 2026', type:'pdf',
-      path:'sites/architect-kit-site/ai-site/vibe/build_10_ai_agents_with_claude_code_cowork/Masterclass+Materials/prompts/08-expense-wrangler/sample-data/bank-statement-march-2026.pdf' },
-    { id:'b10-r1', cat:'Build 10 AI Agents', name:'Sample Data — Receipt Anthropic Apr 1', type:'pdf',
-      path:'sites/architect-kit-site/ai-site/vibe/build_10_ai_agents_with_claude_code_cowork/Masterclass+Materials/prompts/08-expense-wrangler/sample-data/receipt-anthropic-apr1.pdf' },
-    { id:'b10-r2', cat:'Build 10 AI Agents', name:'Sample Data — Receipt Lunch Kinka', type:'pdf',
-      path:'sites/architect-kit-site/ai-site/vibe/build_10_ai_agents_with_claude_code_cowork/Masterclass+Materials/prompts/08-expense-wrangler/sample-data/receipt-lunch-kinka.pdf' },
-    { id:'b10-r3', cat:'Build 10 AI Agents', name:'Sample Data — Receipt Uber Apr 5', type:'pdf',
-      path:'sites/architect-kit-site/ai-site/vibe/build_10_ai_agents_with_claude_code_cowork/Masterclass+Materials/prompts/08-expense-wrangler/sample-data/receipt-uber-apr5.pdf' },
-
-    // LLM Agentic AI Engineer 2025
-    { id:'llm-m0', cat:'LLM Agentic AI Engineer', name:'Module 0 — Course Introduction', type:'pptx',
-      path:'projects/projects/learning-labs/ai-courses/llm-agentic-ai-engineer-2025/Module 0 - Course Introduction/Module 0.pptx' },
-    { id:'llm-tesla', cat:'LLM Agentic AI Engineer', name:'Reference — Tesla 10-K Report', type:'pdf',
-      path:'projects/projects/learning-labs/ai-courses/llm-agentic-ai-engineer-2025/Module 0 - Course Introduction/Tesla-10K-Report.pdf' },
-    { id:'llm-m1', cat:'LLM Agentic AI Engineer', name:'Module 1 — Text GPT', type:'pptx',
-      path:'projects/projects/learning-labs/ai-courses/llm-agentic-ai-engineer-2025/Module1-Text-GPT/Module 1.pptx' },
-    { id:'llm-m2', cat:'LLM Agentic AI Engineer', name:'Module 2 — Vision GPT', type:'pptx',
-      path:'projects/projects/learning-labs/ai-courses/llm-agentic-ai-engineer-2025/Module 2 - Vision GPT/Module 2.pptx' },
-    { id:'llm-m3', cat:'LLM Agentic AI Engineer', name:'Module 3 — Gradio and Streaming', type:'pptx',
-      path:'projects/projects/learning-labs/ai-courses/llm-agentic-ai-engineer-2025/Module 3 - Gradio and Streaming/Module 3.pptx' },
-    { id:'llm-m4', cat:'LLM Agentic AI Engineer', name:'Module 4 — Benchmarking LLMs', type:'pptx',
-      path:'projects/projects/learning-labs/ai-courses/llm-agentic-ai-engineer-2025/Module 4 - Benchmarking LLMs/Module 4.pptx' },
-    { id:'llm-m5', cat:'LLM Agentic AI Engineer', name:'Module 5 — HuggingFace 1', type:'pptx',
-      path:'projects/projects/learning-labs/ai-courses/llm-agentic-ai-engineer-2025/Module 5 - HuggingFace 1/Module 5.pptx' },
-    { id:'llm-google', cat:'LLM Agentic AI Engineer', name:'Reference — Google Earnings Transcript', type:'pdf',
-      path:'projects/projects/learning-labs/ai-courses/llm-agentic-ai-engineer-2025/Module 5 - HuggingFace 1/google_earning_transcript.pdf' },
-    { id:'llm-m6', cat:'LLM Agentic AI Engineer', name:'Module 6 — HuggingFace 2', type:'pptx',
-      path:'projects/projects/learning-labs/ai-courses/llm-agentic-ai-engineer-2025/Module 6 - HuggingFace 2/Module 6.pptx' },
-    { id:'llm-m7', cat:'LLM Agentic AI Engineer', name:'Module 7 — RAG & Langchain', type:'pptx',
-      path:'projects/projects/learning-labs/ai-courses/llm-agentic-ai-engineer-2025/Module 7 - RAG & Langchain/Module 7.pptx' },
-    { id:'llm-m8', cat:'LLM Agentic AI Engineer', name:'Module 8 — Pydantic', type:'pptx',
-      path:'projects/projects/learning-labs/ai-courses/llm-agentic-ai-engineer-2025/Module 8 - Pydantic/Module 8.pptx' },
-    { id:'llm-m9', cat:'LLM Agentic AI Engineer', name:'Module 9 — Fine Tuning', type:'pptx',
-      path:'projects/projects/learning-labs/ai-courses/llm-agentic-ai-engineer-2025/Module 9 - FineTuning/Module 9.pptx' },
-    { id:'llm-m10', cat:'LLM Agentic AI Engineer', name:'Module 10 — AI Agents AutoGen', type:'pptx',
-      path:'projects/projects/learning-labs/ai-courses/llm-agentic-ai-engineer-2025/Module 10 - AI Agents AutoGen/Module 10.pptx' },
-    { id:'llm-m11', cat:'LLM Agentic AI Engineer', name:'Module 11 — AI Agents LangGraph', type:'pptx',
-      path:'projects/projects/learning-labs/ai-courses/llm-agentic-ai-engineer-2025/Module 11 - AI Agents LangGraph/Module 11.pptx' },
-    { id:'llm-m12a', cat:'LLM Agentic AI Engineer', name:'Module 12 — AI Agents CrewAI (Part A)', type:'pptx',
-      path:'projects/projects/learning-labs/ai-courses/llm-agentic-ai-engineer-2025/Module 12 - AI Agents CrewAI/Module 12 - Part A.pptx' },
-    { id:'llm-m12b', cat:'LLM Agentic AI Engineer', name:'Module 12 — AI Agents CrewAI (Part B)', type:'pptx',
-      path:'projects/projects/learning-labs/ai-courses/llm-agentic-ai-engineer-2025/Module 12 - AI Agents CrewAI/Module 12 - Part B.pptx' },
-    { id:'llm-m13', cat:'LLM Agentic AI Engineer', name:'Module 13 — AI Agents N8N', type:'pptx',
-      path:'projects/projects/learning-labs/ai-courses/llm-agentic-ai-engineer-2025/Module 13 - AI Agents N8N/Module 13.pptx' },
-    { id:'llm-m14', cat:'LLM Agentic AI Engineer', name:'Module 14 — MCP Servers', type:'pptx',
-      path:'projects/projects/learning-labs/ai-courses/llm-agentic-ai-engineer-2025/Module 14 - MCP Servers/Module 14.pptx' },
-  ];
-
-  const LIB_ICONS = { pdf: '📄', pptx: '📊', slides: '🖥️' };
-
-  let libFilter = 'all';
-  let libSearch = '';
-
-  function buildOfficeViewerUrl(filePath) {
-    const base = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/');
-    return 'https://view.officeapps.live.com/op/embed.aspx?src=' + encodeURIComponent(base + filePath);
-  }
-
-  function isLocalHost() {
-    const h = window.location.hostname;
-    return h === 'localhost' || h === '127.0.0.1' || h === '' || h.startsWith('192.168.') || h.startsWith('10.');
-  }
-
-  function openDocViewer(file) {
-    const overlay = document.getElementById('docViewerOverlay');
-    const dvTitle = document.getElementById('dvTitle');
-    const dvBody = document.getElementById('dvBody');
-    const dvOpen = document.getElementById('dvOpenBtn');
-
-    const typeLabel = { pdf: 'PDF', pptx: 'PPTX', slides: 'Slides' }[file.type] || file.type.toUpperCase();
-    dvTitle.textContent = file.name + ' · ' + typeLabel;
-    dvOpen.href = file.path;
-
-    dvBody.innerHTML = '';
-
-    if (file.type === 'pdf' || file.type === 'slides') {
-      const fr = document.createElement('iframe');
-      fr.src = file.path;
-      fr.title = file.name;
-      dvBody.appendChild(fr);
-    } else {
-      if (!isLocalHost()) {
-        const fr = document.createElement('iframe');
-        fr.src = buildOfficeViewerUrl(file.path);
-        fr.title = file.name;
-        fr.allow = 'fullscreen';
-        dvBody.appendChild(fr);
-      } else {
-        dvBody.innerHTML = `
-          <div class="docviewer-msg">
-            <div class="msg-icon">📊</div>
-            <div class="msg-title">${file.name}</div>
-            <div class="msg-sub">
-              PowerPoint files require the Microsoft Office Online viewer, which needs a public URL.<br>
-              When this site is deployed online, slides will embed here automatically.<br><br>
-              Running locally — open the file directly instead.
-            </div>
-            <a class="msg-btn" href="${file.path}" target="_blank" rel="noopener">Open file locally ↗</a>
-          </div>`;
+    const img = octx.getImageData(0,0,S,S).data;
+    const pts = [];
+    const step = 2;
+    for(let y=0;y<S;y+=step){
+      for(let x=0;x<S;x+=step){
+        const idx = (y*S+x)*4;
+        if(img[idx+3] > 120){
+          pts.push({x: x - S/2, y: y - S/2 - 40});
+        }
       }
     }
-
-    overlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
+    shapePoints = pts;
   }
 
-  function closeDocViewer() {
-    document.getElementById('docViewerOverlay').classList.remove('open');
-    document.getElementById('dvBody').innerHTML = '';
-    document.body.style.overflow = '';
+  // ---------- Particle system ----------
+  const MAX_PARTICLES = 5200;
+  let particles = [];
+
+  function rand(a,b){ return a + Math.random()*(b-a); }
+
+  function initParticles(){
+    particles = [];
+    for(let i=0;i<MAX_PARTICLES;i++){
+      const angle = Math.random()*Math.PI*2;
+      const radius = rand(0.2,1)*Math.max(W,H)*0.65;
+      particles.push({
+        // scatter/energy-state orbit params
+        orbitAngle: angle,
+        orbitRadius: radius,
+        orbitSpeed: rand(0.05,0.25) * (Math.random()<0.5?-1:1),
+        noiseSeed: Math.random()*1000,
+        // current drawn position
+        x:0, y:0,
+        // target shape point (assigned below)
+        tx:0, ty:0,
+        size: rand(0.7,2.2),
+        hueMix: Math.random(), // 0 = ember, 1 = gold/spark
+        isSpark: false
+      });
+    }
+    assignTargets();
   }
 
-  document.getElementById('dvClose').addEventListener('click', closeDocViewer);
-  document.getElementById('docViewerOverlay').addEventListener('click', function(e) {
-    if (e.target === this) closeDocViewer();
-  });
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeDocViewer();
-  });
+  function assignTargets(){
+    if(shapePoints.length === 0) return;
+    for(let i=0;i<particles.length;i++){
+      const p = shapePoints[Math.floor(Math.random()*shapePoints.length)];
+      particles[i].tx = p.x;
+      particles[i].ty = p.y;
+    }
+    // Designate a few particles as the eternal "spark" (third eye) that never fully scatters
+    for(let i=0;i<10;i++){
+      particles[i].isSpark = true;
+      particles[i].tx = thirdEyePoint.x + rand(-3,3);
+      particles[i].ty = thirdEyePoint.y + rand(-3,3);
+    }
+  }
 
-  function renderLibrary() {
-    const q = libSearch.toLowerCase();
-    const filtered = LIBRARY_FILES.filter(f => {
-      const typeMatch = libFilter === 'all' || f.type === libFilter;
-      const searchMatch = !q || f.name.toLowerCase().includes(q) || f.cat.toLowerCase().includes(q);
-      return typeMatch && searchMatch;
-    });
+  // ---------- Glow sprite for cheap additive rendering ----------
+  const sprite = document.createElement('canvas');
+  sprite.width = sprite.height = 64;
+  (function makeSprite(){
+    const sctx = sprite.getContext('2d');
+    const g = sctx.createRadialGradient(32,32,0,32,32,32);
+    g.addColorStop(0,'rgba(255,255,255,1)');
+    g.addColorStop(0.4,'rgba(255,255,255,0.5)');
+    g.addColorStop(1,'rgba(255,255,255,0)');
+    sctx.fillStyle = g;
+    sctx.fillRect(0,0,64,64);
+  })();
 
-    const cats = [];
-    const bycat = {};
-    filtered.forEach(f => {
-      if (!bycat[f.cat]) { bycat[f.cat] = []; cats.push(f.cat); }
-      bycat[f.cat].push(f);
-    });
+  function lerp(a,b,t){ return a + (b-a)*t; }
+  function easeInOutCubic(t){ return t<0.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2; }
 
-    const container = document.getElementById('libContent');
-    if (filtered.length === 0) {
-      container.innerHTML = '<div class="empty">No files match. Try a different search or filter.</div>';
-      return;
+  // ---------- Cycle timing ----------
+  const CYCLE = 20000; // ms, full loop
+  const T_CONVERGE_END   = 0.28;
+  const T_HOLD_END       = 0.62;
+  const T_DIVERGE_END    = 0.85;
+  // after T_DIVERGE_END -> pure energy phase until loop restarts
+
+  let startTime = performance.now();
+
+  function currentPhase(tNorm){
+    if(tNorm < T_CONVERGE_END) return 'converge';
+    if(tNorm < T_HOLD_END) return 'hold';
+    if(tNorm < T_DIVERGE_END) return 'diverge';
+    return 'energy';
+  }
+
+  let lastCaptionPhase = '';
+  function updateCaption(phase, tNorm){
+    if(phase === 'hold' && lastCaptionPhase !== 'hold'){
+      captionEl.innerHTML = '<span class="dev">सर्वं शिवमयं जगत्</span>everything in this universe is Shiva';
+      captionEl.classList.add('show');
+    } else if(phase === 'energy' && lastCaptionPhase !== 'energy'){
+      captionEl.innerHTML = '<span class="dev">ज्ञानं बन्धः</span>Limited knowledge creates bondage.';
+      captionEl.classList.add('show');
+    } else if(phase === 'converge' || phase === 'diverge'){
+      captionEl.classList.remove('show');
+    }
+    lastCaptionPhase = phase;
+  }
+
+  function draw(now){
+    const elapsed = (now - startTime) % CYCLE;
+    const tNorm = elapsed / CYCLE;
+    const phase = currentPhase(tNorm);
+    updateCaption(phase, tNorm);
+
+    ctx.clearRect(0,0,W,H);
+
+    // faint static starfield backdrop
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = '#ffffff';
+    for(let i=0;i<starField.length;i++){
+      const s = starField[i];
+      const tw = 0.5 + 0.5*Math.sin(now*0.0006 + s.phase);
+      ctx.globalAlpha = s.a * tw;
+      ctx.fillRect(s.x, s.y, s.r, s.r);
+    }
+    ctx.restore();
+
+    const cx = W/2;
+    const cy = H/2 + H*0.03;
+    const shapeScale = Math.min(W, H) / 1000;
+
+    ctx.globalCompositeOperation = 'lighter';
+
+    let convergeT = 0, divergeT = 0;
+    if(phase === 'converge'){
+      convergeT = easeInOutCubic(tNorm / T_CONVERGE_END);
+    } else if(phase === 'hold'){
+      convergeT = 1;
+    } else if(phase === 'diverge'){
+      divergeT = easeInOutCubic((tNorm - T_HOLD_END) / (T_DIVERGE_END - T_HOLD_END));
+      convergeT = 1 - divergeT;
+    } else {
+      convergeT = 0;
     }
 
-    container.innerHTML = cats.map(cat => `
-      <span class="lib-cat-label">${cat} <span style="color:var(--teal);margin-left:4px">${bycat[cat].length}</span></span>
-      <div class="lib-grid">
-        ${bycat[cat].map(f => `
-          <div class="lib-card" data-id="${f.id}">
-            <div class="lib-card-icon">${LIB_ICONS[f.type]}</div>
-            <div class="lib-card-body">
-              <div class="lib-card-name">${f.name}</div>
-              <div class="lib-card-meta">
-                <span class="lib-type-pill ${f.type}">${f.type}</span>
-              </div>
-            </div>
-          </div>`).join('')}
-      </div>
-    `).join('');
+    const breathe = phase === 'hold' ? Math.sin(now*0.0012)*0.01 : 0;
 
-    container.querySelectorAll('.lib-card').forEach(card => {
-      card.addEventListener('click', () => {
-        const file = LIBRARY_FILES.find(f => f.id === card.dataset.id);
-        if (file) openDocViewer(file);
-      });
-    });
+    for(let i=0;i<particles.length;i++){
+      const p = particles[i];
+
+      // orbit / energy position (chaotic state)
+      const t = now*0.001 + p.noiseSeed;
+      const wobble = Math.sin(t*1.7)*14 + Math.cos(t*1.1)*14;
+      const ang = p.orbitAngle + t*p.orbitSpeed;
+      const orbX = cx + Math.cos(ang) * (p.orbitRadius) + wobble;
+      const orbY = cy + Math.sin(ang) * (p.orbitRadius*0.6) + wobble*0.6;
+
+      // shape position
+      const shpX = cx + p.tx * shapeScale * (1+breathe);
+      const shpY = cy + p.ty * shapeScale * (1+breathe);
+
+      let px, py, alphaBoost = 0;
+      if(p.isSpark){
+        // the eternal spark: always at least dimly present at the third eye
+        const settle = Math.max(convergeT, 0.18);
+        px = lerp(orbX, shpX, settle);
+        py = lerp(orbY, shpY, settle);
+        alphaBoost = 0.6;
+      } else {
+        px = lerp(orbX, shpX, convergeT);
+        py = lerp(orbY, shpY, convergeT);
+      }
+
+      p.x = px; p.y = py;
+
+      const glowSize = (p.size * 7 + alphaBoost*10) * (1 + convergeT*0.3);
+      const baseAlpha = (0.18 + p.hueMix*0.25 + convergeT*0.35 + alphaBoost);
+
+      // color mix: ember -> gold -> spark white
+      let r,g,b;
+      if(p.isSpark){
+        r=255; g=90; b=54;
+      } else {
+        const m = p.hueMix;
+        r = lerp(201, 244, m);
+        g = lerp(98, 228, m);
+        b = lerp(43, 200, m);
+      }
+
+      ctx.globalAlpha = Math.min(baseAlpha, 1);
+      ctx.drawImage(sprite, px - glowSize/2, py - glowSize/2, glowSize, glowSize);
+      // tint pass
+      ctx.globalAlpha = Math.min(baseAlpha*0.55, 1);
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      ctx.beginPath();
+      ctx.arc(px, py, p.size*(1+convergeT), 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+
+    requestAnimationFrame(draw);
   }
 
-  document.getElementById('libSearch').addEventListener('input', function() {
-    libSearch = this.value;
-    renderLibrary();
-  });
+  // static twinkling starfield
+  let starField = [];
+  function buildStars(){
+    starField = [];
+    const count = Math.floor((W*H)/9000);
+    for(let i=0;i<count;i++){
+      starField.push({
+        x: Math.random()*W,
+        y: Math.random()*H,
+        r: rand(0.4,1.4),
+        a: rand(0.15,0.7),
+        phase: Math.random()*Math.PI*2
+      });
+    }
+  }
 
-  document.querySelectorAll('.lib-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      document.querySelectorAll('.lib-chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      libFilter = chip.dataset.filter;
-      renderLibrary();
-    });
-  });
+  window.addEventListener('resize', () => { resize(); buildStars(); assignTargets(); });
 
-  renderLibrary();
+  resize();
+  buildStars();
+  initParticles();
+  requestAnimationFrame(draw);
+})();
 </script>
 </body>
 </html>
