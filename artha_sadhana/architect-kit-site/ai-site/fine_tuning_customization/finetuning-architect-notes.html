@@ -1,0 +1,1474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Fine-Tuning & Customization — Complete Architect Notes</title>
+<style>
+body { font-family: Georgia, 'Times New Roman', serif; max-width: 900px; margin: 40px auto; padding: 0 20px; line-height: 1.55; color: #1a1a1a; background: #fdfdfd; }
+h1 { font-size: 1.6rem; margin-bottom: 6px; }
+.subtitle { color: #555; font-size: 0.95rem; margin-bottom: 24px; }
+pre { background: #f4f4f4; border: 1px solid #ddd; padding: 12px; overflow-x: auto; font-family: 'Courier New', monospace; font-size: 12.5px; line-height: 1.35; white-space: pre; border-radius: 4px; }
+code { font-family: 'Courier New', monospace; background:#eee; padding:1px 4px; border-radius:3px; }
+blockquote { border-left: 3px solid #999; margin: 10px 0; padding-left: 12px; color: #333; font-style: italic; }
+details.section { border: 1px solid #ccc; border-radius: 4px; margin: 12px 0; padding: 8px 14px; }
+details.section summary { font-weight: bold; font-size: 1.1em; cursor: pointer; padding: 6px 0; }
+.section-body { margin-top: 8px; }
+h3 { font-size: 1.05rem; margin: 18px 0 8px; color:#333; }
+h4 { font-size: 0.98rem; margin: 14px 0 6px; color:#444; }
+table { width:100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92rem; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; text-align:left; vertical-align: top; }
+th { background:#f0f0f0; }
+.concept-intro { background: #eef3f7; border-left: 4px solid #4a7fa5; padding: 10px 14px; margin: 10px 0 16px; border-radius: 3px; }
+.concept-intro p { margin: 6px 0; }
+</style>
+</head>
+<body>
+<h1>🧠 Fine-Tuning &amp; Customization — Complete Architect Notes</h1>
+<p class="subtitle">Architect thinking notes with layman explanations, key learnings, and thought-provoking takeaways.</p>
+<details class="section">
+<summary>0. First: Don't Start With "How Do I Fine-Tune?"</summary>
+<div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ Layman Explanation:</strong> Before jumping to solutions, first figure out what's actually broken. It's like a doctor diagnosing before prescribing medicine - you wouldn't give antibiotics for a broken leg.</p>
+<p><strong>🏛️ Architect's Gist:</strong> Most teams rush to fine-tuning because it sounds sophisticated. But often, the problem is simpler: either the model lacks current information (needs RAG) or doesn't follow instructions well (needs better prompting).</p>
+<p><strong>💡 Key Learning:</strong> The most expensive solution is rarely the right first solution.</p>
+<p><strong>🤔 Thought-Provoking:</strong> If you're a surgeon, you don't start with &quot;let's operate&quot; - you start with &quot;what's wrong?&quot; Same with AI. The technology choice is the LAST decision, not the first.</p>
+</div>
+<p>An architect should <strong>not</strong> start here:</p>
+<pre>"We have an LLM problem"
+        |
+        v
+"Let's fine-tune it"</pre>
+<p>Instead:</p>
+<pre>             AI PROBLEM
+                 |
+                 v
+        +-------------------+
+        | What is actually  |
+        | going wrong?      |
+        +-------------------+
+                 |
+       +---------+---------+
+       |                   |
+       v                   v
+   KNOWLEDGE            BEHAVIOR
+   problem?             problem?
+       |                   |
+       v                   v
+      RAG             Prompt / FT</pre>
+<h4>Architect Question</h4>
+<p><strong>Before choosing a technology, what should I diagnose?</strong></p>
+<h4>Answer</h4>
+<p>You need to determine:</p>
+<pre>Is the model missing INFORMATION?
+              OR
+Is the model behaving incorrectly?</pre>
+<p>This single question prevents a huge number of bad AI architecture decisions.</p>
+</div>
+</details>
+<details class="section">
+<summary>1. Why Do We Need Fine-Tuning?</summary>
+<div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ Layman Explanation:</strong> Instead of telling the model HOW to behave every single time (which is like giving instructions to a new employee every morning), you train it once so it &quot;just knows&quot; how to behave.</p>
+<p><strong>🏛️ Architect's Gist:</strong> Fine-tuning bakes behavior into the model's weights. Prompt engineering is like giving verbal instructions each time - it works but costs more tokens and is less consistent.</p>
+<p><strong>💡 Key Learning:</strong> Prompting = telling. Fine-tuning = teaching.</p>
+<p><strong>🤔 Thought-Provoking:</strong> If you have 1 million requests per day, even saving 100 tokens per request adds up to 100 million tokens daily - that's real money. Sometimes fine-tuning pays for itself.</p>
+</div>
+<h3>Think First</h3>
+<p>Suppose you have a powerful general-purpose LLM.</p>
+<p>It can:</p>
+<pre>✓ summarize
+✓ translate
+✓ write code
+✓ answer questions
+✓ reason
+✓ generate JSON
+✓ explain concepts</pre>
+<p>Why would you train it again?</p>
+<p>If prompting can tell it what to do, why spend money training it?</p>
+<h3>Answer</h3>
+<p>Because sometimes we don't want to <strong>tell the model repeatedly</strong>.</p>
+<p>We want the behavior to become part of its learned behavior.</p>
+<h4>Prompt Engineering</h4>
+<pre>Every request
+
+User
+ |
+ v
++----------------------+
+| Huge System Prompt   |
+| + Examples           |
+| + Rules              |
++----------------------+
+ |
+ v
+LLM
+ |
+ v
+Response</pre>
+<p>Every request pays the cost.</p>
+<h4>Fine-Tuning</h4>
+<pre>                TRAINING
+                   |
+                   v
+             +-----------+
+             | Base LLM  |
+             +-----------+
+                   |
+             Fine-tuning
+                   |
+                   v
+          +----------------+
+          | Adapted Model  |
+          +----------------+
+
+Every request:
+
+User
+ |
+ v
+Adapted Model
+ |
+ v
+Desired behavior</pre>
+<p>The behavior becomes more <strong>baked into the model</strong>.</p>
+</div>
+</details>
+<details class="section">
+<summary>2. The Most Important Architect Distinction</summary>
+<div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ Layman Explanation:</strong> Think of it this way: RAG is like giving someone a reference book to look things up. Fine-tuning is like training them to speak in a particular style or follow specific procedures.</p>
+<p><strong>🏛️ Architect's Gist:</strong> <code>KNOWLEDGE (facts) → RAG</code> and <code>BEHAVIOR (style/method) → Fine-tuning/Prompting</code></p>
+<p><strong>💡 Key Learning:</strong> RAG changes WHAT the model knows. Fine-tuning changes HOW the model thinks.</p>
+<p><strong>🤔 Thought-Provoking:</strong> If you fine-tune for knowledge, you're essentially &quot;baking in&quot; facts that will become outdated. If you RAG for knowledge, you can update your database without retraining. Always separate facts from behavior.</p>
+</div>
+<p>Memorize this:</p>
+<pre>               LLM CUSTOMIZATION
+                       |
+             +---------+---------+
+             |                   |
+             v                   v
+         KNOWLEDGE            BEHAVIOR
+         "What?"              "How?"
+             |                   |
+             v                   v
+            RAG             Fine-tuning
+                                 |
+                                 v
+                          Prompt Engineering
+                          may be enough first</pre>
+<h4>Knowledge</h4>
+<p>Examples:</p>
+<pre>What is today's NAV?
+What is today's interest rate?
+What is the latest policy?
+What is the customer's current balance?</pre>
+<p>These are <strong>facts</strong>.</p>
+<h4>Behavior</h4>
+<p>Examples:</p>
+<pre>Always answer in compliance tone
+Always produce this JSON format
+Always follow this reasoning pattern
+Always include a particular response structure</pre>
+<p>These are <strong>behaviors</strong>.</p>
+<h3>Architect Mental Model</h3>
+<blockquote><p><strong>RAG changes what the model can see.</strong></p></blockquote>
+<blockquote><p><strong>Fine-tuning changes how the model behaves.</strong></p></blockquote>
+<blockquote><p><strong>Prompting tells the model what to do right now.</strong></p></blockquote>
+<p>That distinction is foundational.</p>
+</div>
+</details>
+<details class="section">
+<summary>3. Full Fine-Tuning</summary>
+<div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ Layman Explanation:</strong> Imagine needing to change one lightbulb in a skyscraper. Full fine-tuning is like rewiring the entire building. It works, but it's massive overkill for most problems.</p>
+<p><strong>🏛️ Architect's Gist:</strong> Full fine-tuning updates ALL 7+ billion parameters. The memory requirements aren't just the model weights - you need gradients (for learning), optimizer state (for tracking updates), and activations (for forward passes).</p>
+<p><strong>💡 Key Learning:</strong> Memory = Weights + Gradients + Optimizer State + Activations</p>
+<p><strong>🤔 Thought-Provoking:</strong> For a 7B model in FP16: Weights: 14GB, Gradients: 14GB, Adam optimizer: 56GB, Activations: several GB. Total: ~85GB+ per GPU. That's why you need expensive A100/H100 GPUs. Most teams can't afford this.</p>
+</div>
+<h3>Think</h3>
+<p>Imagine a model has:</p>
+<pre>7,000,000,000 parameters</pre>
+<p>Your requirement is:</p>
+<blockquote><p>"Always generate our specific JSON format."</p></blockquote>
+<p>Would you modify all 7 billion parameters?</p>
+<p>Probably not.</p>
+<p>That's like:</p>
+<pre>Need to change one room
+        |
+        v
+Renovate entire building
+        |
+        v
+💰💰💰</pre>
+<h3>Full Fine-Tuning Architecture</h3>
+<pre>                 BASE MODEL
+              7B parameters
+                    |
+                    v
+        +------------------------+
+        | Update ALL parameters  |
+        +------------------------+
+                    |
+                    v
+             New model</pre>
+<p>Every parameter can change.</p>
+<h3>Why Is It Expensive?</h3>
+<p>This is where an architect should think beyond:</p>
+<blockquote><p>"The model is 7B parameters."</p></blockquote>
+<p>Training memory is much more than model weights.</p>
+<pre>              GPU MEMORY
+                  |
+     +------------+-------------+
+     |            |             |
+     v            v             v
+  Weights      Gradients     Optimizer
+    14 GB         14 GB        56 GB
+                                  |
+                                  v
+                         HUGE MEMORY COST
+
+              +
+          Activations</pre>
+<p>Approximate 7B fp16 example:</p>
+<pre>Weights       ~14 GB
+Gradients     ~14 GB
+Adam state    ~56 GB
+Activations   several GB
+--------------------------
+Total         ~85 GB+</pre>
+<p>The important architect insight:</p>
+<blockquote><p><strong>The model size is NOT the training memory requirement.</strong></p></blockquote>
+<h3>Why Does Optimizer State Matter?</h3>
+<p>Adam needs information about previous updates.</p>
+<p>Conceptually:</p>
+<pre>Weight
+  |
+  +--&gt; Gradient
+  |
+  +--&gt; Momentum
+  |
+  +--&gt; Variance</pre>
+<p>So training requires much more state than simply storing:</p>
+<pre>W</pre>
+<p>You are effectively maintaining:</p>
+<pre>W + gradients + optimizer state + activations</pre>
+<h3>Architect Decision</h3>
+<p>Full fine-tuning makes sense when:</p>
+<pre>             FULL FT
+                |
+       +--------+---------+
+       |        |         |
+       v        v         v
+Huge data   Major       Foundation
+            capability   model work
+            shift</pre>
+<p>Otherwise:</p>
+<pre>Task-specific customization
+            |
+            v
+        Prefer PEFT
+            |
+            v
+       LoRA / QLoRA</pre>
+</div>
+</details>
+<details class="section">
+<summary>4. LoRA — The Big Idea</summary>
+<div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ Layman Explanation:</strong> Instead of changing the entire model, LoRA is like adding a small sticky note with instructions on top of the original text. The original text stays unchanged, but the sticky note modifies how you read it.</p>
+<p><strong>🏛️ Architect's Gist:</strong> Instead of updating W (the full weight matrix), LoRA learns ΔW = B × A, where A and B are tiny matrices. The original W stays frozen - you only train these small adapters.</p>
+<p><strong>💡 Key Learning:</strong> W_new = W + (B × A) where B and A are tiny compared to W</p>
+<p><strong>🤔 Thought-Provoking:</strong> A 4096×4096 matrix has 16.7 million parameters. With LoRA rank=8, you only train: A: 8×4096 = 32,768, B: 4096×8 = 32,768. Total: ~65K parameters. That's a 99.6% reduction in trainable parameters!</p>
+</div>
+<h3>Architect Question</h3>
+<p>Instead of changing:</p>
+<pre>W</pre>
+<p>Can we learn only:</p>
+<pre>ΔW</pre>
+<p>?</p>
+<p>And even better:</p>
+<p>Can ΔW be represented using much smaller matrices?</p>
+<p>That's the key insight behind LoRA.</p>
+<h3>Traditional Fine-Tuning</h3>
+<pre>W
+|
+|  Update everything
+v
+W'</pre>
+<h3>LoRA</h3>
+<pre>              Frozen
+                W
+                |
+                |
+                v
+              +---+
+              | + |
+              +---+
+                ^
+                |
+              ΔW
+                |
+           +----+----+
+           |         |
+           A         B
+        small      small</pre>
+<p>Mathematically:</p>
+<pre>ΔW = B × A
+
+W_new = W + B×A</pre>
+<h3>Example</h3>
+<p>Original:</p>
+<pre>W = 4096 × 4096
+
+≈ 16.7 million parameters</pre>
+<p>LoRA:</p>
+<pre>A = 8 × 4096
+B = 4096 × 8
+
+A + B ≈ 65K parameters</pre>
+<p>So instead of training:</p>
+<pre>16.7M</pre>
+<p>you train approximately:</p>
+<pre>65K</pre>
+<p>That's an enormous reduction.</p>
+<h3>What Is "Rank"?</h3>
+<p>The key LoRA parameter:</p>
+<pre>r = rank</pre>
+<p>For example:</p>
+<pre>r = 4
+r = 8
+r = 16
+r = 32
+r = 64</pre>
+<p>Think:</p>
+<pre>Low rank
+   |
+   v
+Less capacity
+Less memory
+Lower complexity
+
+Higher rank
+   |
+   v
+More capacity
+More parameters
+Potentially more overfitting</pre>
+<h3>Architect Thought</h3>
+<p>Don't memorize:</p>
+<blockquote><p>"LoRA uses two matrices."</p></blockquote>
+<p>Understand:</p>
+<blockquote><p><strong>LoRA assumes the useful change required by fine-tuning can often be represented as a low-dimensional update.</strong></p></blockquote>
+<p>That is the architectural idea.</p>
+</div>
+</details>
+<details class="section">
+<summary>5. Why LoRA Is So Powerful</summary>
+<div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ Layman Explanation:</strong> Think of LoRA like having one powerful engine (the base model) that can be customized for different vehicles (adapters). You don't build a new engine for each car - you just add different attachments.</p>
+<p><strong>🏛️ Architect's Gist:</strong> One base model can serve multiple fine-tuned behaviors by swapping small LoRA adapters. This is perfect for multi-tenant systems where different customers need different behaviors.</p>
+<p><strong>💡 Key Learning:</strong> One base model + Many adapters = Massive cost savings</p>
+<p><strong>🤔 Thought-Provoking:</strong> Imagine a platform serving: Banking customers (compliance tone), Trading customers (precision, numbers), Insurance customers (empathy, clarity). With LoRA, you store ONE 7B model (14GB) and three adapters (~65KB each). Without LoRA, you'd need three 14GB models. That's 42GB vs 14GB - huge difference!</p>
+</div>
+<p>Traditional:</p>
+<pre>Customer A
+   |
+   v
+FULL MODEL A
+
+Customer B
+   |
+   v
+FULL MODEL B
+
+Customer C
+   |
+   v
+FULL MODEL C</pre>
+<p>Very expensive.</p>
+<p>With LoRA:</p>
+<pre>                   BASE MODEL
+                       |
+             +---------+---------+
+             |         |         |
+             v         v         v
+          LoRA A    LoRA B    LoRA C
+          Banking   Insurance  Trading</pre>
+<p>One base model.</p>
+<p>Many adapters.</p>
+<h3>Multi-Tenant Architecture</h3>
+<pre>                    Request
+                       |
+                       v
+                +-------------+
+                | Router      |
+                +-------------+
+                  /    |    \
+                 /     |     \
+                v      v      v
+             LoRA-A  LoRA-B  LoRA-C
+                \      |      /
+                 \     |     /
+                  +----+----+
+                       |
+                       v
+                  Base Model</pre>
+<p>This is particularly interesting from a platform architecture perspective.</p>
+<p>You can potentially support:</p>
+<pre>Tenant A → Adapter A
+Tenant B → Adapter B
+Tenant C → Adapter C</pre>
+<p>without maintaining an entirely separate model for each tenant.</p>
+</div>
+</details>
+<details class="section">
+<summary>6. LoRA Merge</summary>
+<div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ Layman Explanation:</strong> After training, you can &quot;merge&quot; the sticky note into the original book. Once merged, it's just one book - no extra notes needed. This makes deployment simpler and faster.</p>
+<p><strong>🏛️ Architect's Gist:</strong> Before inference, you can compute W_new = W + B×A and merge the adapter into the base weights. This eliminates the adapter computation during inference, reducing latency.</p>
+<p><strong>💡 Key Learning:</strong> Merge = Trade flexibility for efficiency</p>
+<p><strong>🤔 Thought-Provoking:</strong> During training: Base (frozen) + Adapter (trainable) → extra computation. After merging: Merged Model → normal inference (no overhead). This matters because: Before merge, each request loads base + adapter; after merge, each request loads just the merged model. For high-volume production, merged models are faster. But you lose the ability to quickly swap adapters.</p>
+</div>
+<p>One of the biggest advantages:</p>
+<p>During training:</p>
+<pre>W frozen
+   +
+B × A
+   |
+   v
+trained adapter</pre>
+<p>After training:</p>
+<pre>W_new = W + B×A</pre>
+<p>You can merge the update into the base weights.</p>
+<p>Therefore:</p>
+<pre>Before merge
+
+Base
+ +
+LoRA
+ |
+ v
+extra adapter computation
+
+
+After merge
+
+Merged Model
+ |
+ v
+normal inference</pre>
+<h3>Architect Insight</h3>
+<p>This matters because architecture is not just about training.</p>
+<p>Ask:</p>
+<pre>How do I TRAIN it?
+       |
+       v
+How do I STORE it?
+       |
+       v
+How do I DEPLOY it?
+       |
+       v
+How do I SCALE it?
+       |
+       v
+How do I OPERATE it?</pre>
+<p>LoRA performs very well across these dimensions.</p>
+</div>
+</details>
+<details class="section">
+<summary>7. QLoRA</summary>
+<div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ Layman Explanation:</strong> QLoRA takes the LoRA idea further - it's like compressing the original book to 1/4 its size while still keeping the sticky note instructions. The book becomes much smaller, so you can fit it on cheaper, smaller devices.</p>
+<p><strong>🏛️ Architect's Gist:</strong> QLoRA compresses the frozen base model to 4-bit precision (from 16-bit) and keeps the LoRA adapter in higher precision. This reduces memory by ~4x for the base model.</p>
+<p><strong>💡 Key Learning:</strong> 4-bit quantization = ~75% memory savings</p>
+<p><strong>🤔 Thought-Provoking:</strong> 7B model: FP16 = 14GB, 4-bit = 3.5GB. This means you can fine-tune a 7B model on a consumer GPU with 8GB VRAM! This democratizes fine-tuning. But wait - the adapter still needs gradients and optimizer state in high precision. So total memory is still more than 3.5GB, but significantly less than 14GB.</p>
+</div>
+<h3>Next Architect Question</h3>
+<p>LoRA solves:</p>
+<blockquote><p>"I don't want to update the whole model."</p></blockquote>
+<p>But the frozen model still consumes memory.</p>
+<p>So ask:</p>
+<blockquote><p>"If the weights are frozen, why must they occupy full fp16 precision?"</p></blockquote>
+<p>That leads to QLoRA.</p>
+<h3>QLoRA Architecture</h3>
+<pre>                 BASE MODEL
+                    |
+              Quantize to 4-bit
+                    |
+                    v
+              +-----------+
+              | 4-bit NF4 |
+              |  Frozen   |
+              +-----------+
+                    |
+                    |
+                    +------+
+                           |
+                      LoRA Adapter
+                           |
+                     bf16 / fp16
+                           |
+                           v
+                       Training</pre>
+<p>So:</p>
+<pre>LoRA
+
+Base = fp16
+Adapter = fp16
+
+
+QLoRA
+
+Base = 4-bit NF4
+Adapter = higher precision</pre>
+<h3>Memory Intuition</h3>
+<p>7B model:</p>
+<pre>FP16
+
+7B × 2 bytes
+       |
+       v
+    ~14 GB</pre>
+<p>4-bit:</p>
+<pre>7B × 0.5 bytes
+       |
+       v
+    ~3.5 GB</pre>
+<p>So roughly:</p>
+<pre>FP16
+████████████████████
+
+4-bit
+█████</pre>
+<p>Approximately 4× compression for the raw weights.</p>
+<h3>QLoRA Adds</h3>
+<p>Two important techniques:</p>
+<h4>1. Double Quantization</h4>
+<pre>Quantization
+     |
+     v
+Quantization constants
+     |
+     v
+quantize those too</pre>
+<p>Saves additional memory.</p>
+<h4>2. Paged Optimizers</h4>
+<pre>GPU memory
+    |
+    | full
+    v
+GPU
+ |
+ | memory pressure
+ v
+CPU / Unified Memory</pre>
+<p>This helps avoid GPU OOM during spikes, at a possible performance cost.</p>
+<h3>Architect View</h3>
+<p>Think of LoRA and QLoRA as solving <strong>different layers of the memory problem</strong>:</p>
+<pre>Full FT
+│
+├── Train all weights
+├── Gradients for all
+├── Optimizer state for all
+└── Huge memory
+       ↓
+     LoRA
+       ↓
+Freeze base
+Train tiny adapter
+       ↓
+     QLoRA
+       ↓
+Also compress frozen base</pre>
+</div>
+</details>
+<details class="section">
+<summary>8. PEFT — The Bigger Family</summary>
+<div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ Layman Explanation:</strong> LoRA is one way to add sticky notes. There are other ways too - you can add virtual tokens that guide the model, insert small modules between layers, or scale activations. LoRA is just the most popular one.</p>
+<p><strong>🏛️ Architect's Gist:</strong> PEFT (Parameter-Efficient Fine-Tuning) includes: LoRA (low-rank matrices), Prefix Tuning (virtual tokens before input), Prompt Tuning (trainable embeddings), Adapter Layers (inserted modules), IA³ (activation scaling vectors), DoRA (separates magnitude and direction).</p>
+<p><strong>💡 Key Learning:</strong> Default to LoRA/QLoRA unless you have a specific constraint</p>
+<p><strong>🤔 Thought-Provoking:</strong> Different PEFT methods trade off: Memory usage, Latency, Capacity, Training stability. For 90% of use cases, LoRA is the best balance. Don't overcomplicate unless you have a specific reason.</p>
+</div>
+<p>LoRA is not the only approach.</p>
+<p>Think:</p>
+<pre>                 PEFT
+                  |
+      +-----------+-----------+
+      |           |           |
+     LoRA       Prompt      Adapter
+      |          Tuning       |
+      |           |           |
+     DoRA      Prefix       IA³</pre>
+<p>Different methods modify different parts of the model.</p>
+<h3>Prefix Tuning</h3>
+<pre>Input
+ |
+ v
+[Virtual tokens]
+ |
+ v
+Transformer layers</pre>
+<p>Virtual trainable representations guide the model.</p>
+<h3>Prompt Tuning</h3>
+<pre>Input
+ |
+ v
+[Trainable embeddings]
+ |
+ v
+Transformer</pre>
+<p>Similar idea but generally simpler.</p>
+<h3>Adapter Layers</h3>
+<pre>Transformer
+   |
+   v
+Adapter
+   |
+   v
+Transformer
+   |
+   v
+Adapter</pre>
+<p>You're inserting trainable modules.</p>
+<h3>IA³</h3>
+<p>Conceptually:</p>
+<pre>Activation
+    |
+    v
+Scaling vector
+    |
+    v
+Rescaled activation</pre>
+<p>Extremely parameter efficient.</p>
+<h3>DoRA</h3>
+<p>LoRA decomposes updates.</p>
+<p>DoRA additionally separates:</p>
+<pre>Weight
+ |
+ +----------------+
+ |                |
+Magnitude       Direction</pre>
+<p>This can improve learning capacity in some settings.</p>
+<h3>Architect Decision</h3>
+<p>Don't memorize five PEFT algorithms.</p>
+<p>Ask:</p>
+<pre>What constraint am I optimizing?
+             |
+     +-------+-------+
+     |       |       |
+     v       v       v
+Memory   Latency   Capacity
+     |       |       |
+     +-------+-------+
+             |
+             v
+      Choose PEFT method</pre>
+<p>For most practical systems:</p>
+<pre>DEFAULT
+   |
+   v
+LoRA / QLoRA</pre>
+</div>
+</details>
+<details class="section">
+<summary>9. Instruction Tuning</summary>
+<div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ Layman Explanation:</strong> Raw LLMs are like brilliant but awkward savants - they know facts but don't know how to &quot;talk to people.&quot; Instruction tuning teaches them the conversation rules: listen to the user, understand the task, and respond helpfully.</p>
+<p><strong>🏛️ Architect's Gist:</strong> Base models are trained to predict the next token. Instruction-tuned models are trained to follow instructions. This transforms the model from a &quot;text completer&quot; to an &quot;assistant.&quot;</p>
+<p><strong>💡 Key Learning:</strong> Instruction tuning = &quot;How to be helpful&quot; training</p>
+<p><strong>🤔 Thought-Provoking:</strong> Base model: &quot;The capital of France is...&quot; → &quot;The capital of France is Paris.&quot; Instruction-tuned: User: &quot;What's the capital of France?&quot; → Model: &quot;The capital of France is Paris.&quot; It's not just about the answer - it's about recognizing that the user ASKED a question and expects a direct response, not a continuation.</p>
+</div>
+<h3>Important Thought Experiment</h3>
+<p>A pretrained model has consumed huge amounts of text.</p>
+<p>But what was its objective?</p>
+<pre>Predict next token</pre>
+<p>Not necessarily:</p>
+<pre>Understand request
+        +
+Execute request
+        +
+Return useful answer</pre>
+<h3>Pretraining</h3>
+<pre>"The capital of France is"
+
+             ↓
+
+          "Paris"</pre>
+<p>The model learns:</p>
+<pre>P(next token | previous tokens)</pre>
+<h3>Instruction Tuning</h3>
+<p>Now provide:</p>
+<pre>Instruction
+     +
+Desired Response</pre>
+<p>Example:</p>
+<pre>Instruction:
+"Summarize this paragraph in one sentence."
+
+Response:
+"........."</pre>
+<p>Thousands/millions of examples teach:</p>
+<pre>REQUEST
+  |
+  v
+Understand task
+  |
+  v
+Execute task
+  |
+  v
+Generate appropriate response</pre>
+<h3>What Does Instruction Tuning Teach?</h3>
+<pre>Instruction Tuning
+        |
+        +--&gt; Task recognition
+        |
+        +--&gt; Format compliance
+        |
+        +--&gt; Generalization
+        |
+        +--&gt; Conversation structure</pre>
+<h3>Base Model vs Instruct Model</h3>
+<h4>Base</h4>
+<pre>User:
+"Summarize this paragraph..."
+
+Model:
+"Summarize the following..."
+"Summarize the next..."
+"Here is another example..."</pre>
+<p>It may continue the pattern.</p>
+<h4>Instruction Tuned</h4>
+<pre>User:
+"Summarize this paragraph..."
+
+Model:
+Actual summary</pre>
+<p>The fundamental behavior has changed.</p>
+</div>
+</details>
+<details class="section">
+<summary>10. Instruction Tuning vs Alignment</summary>
+<div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ Layman Explanation:</strong> Instruction tuning teaches &quot;how to respond to requests.&quot; Alignment teaches &quot;what kind of responses are good.&quot; The first is about capability, the second about values and preferences.</p>
+<p><strong>🏛️ Architect's Gist:</strong> Pretraining → Learn language patterns. Instruction Tuning → Learn request-response patterns. Preference Optimization → Learn preferred responses among good ones.</p>
+<p><strong>💡 Key Learning:</strong> Instruction tuning = Capability. Alignment = Values.</p>
+<p><strong>🤔 Thought-Provoking:</strong> Imagine asking about a controversial topic. A base model might generate a neutral text. An instruction-tuned model might generate a helpful answer. An aligned model might additionally consider safety, helpfulness, and honesty before responding.</p>
+</div>
+<p>Another important architecture concept:</p>
+<pre>             PRETRAINING
+                  |
+                  v
+             BASE MODEL
+                  |
+                  v
+        INSTRUCTION TUNING
+               / SFT
+                  |
+                  v
+        Instruction Following
+                  |
+                  v
+          RLHF / DPO
+                  |
+                  v
+       Preference / Alignment</pre>
+<p>Think:</p>
+<pre>Pretraining
+"What language patterns exist?"
+
+        ↓
+
+Instruction tuning
+"How should I respond to requests?"
+
+        ↓
+
+Preference optimization
+"Which valid response is preferred?"</pre>
+</div>
+</details>
+<details class="section">
+<summary>11. Dataset Design</summary>
+<div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ Layman Explanation:</strong> If you train a model on only perfect, well-written examples, it will fail in the real world where users write messy, incomplete queries. Your training data should mirror reality - typos, sloppy grammar, incomplete sentences, and all.</p>
+<p><strong>🏛️ Architect's Gist:</strong> A good dataset must be: Diverse (many task types), High-quality (accurate labels), Realistic (matches production inputs), Consistent (same pattern across examples), With held-out evaluation data.</p>
+<p><strong>💡 Key Learning:</strong> Garbage in = Garbage out. Your model learns patterns, not intentions.</p>
+<p><strong>🤔 Thought-Provoking:</strong> Bad dataset: 1000 examples of perfectly formatted requests. Real world: &quot;hey need help with my acct plz&quot;. Your model won't understand because it was trained on a different reality. Always sample real production traffic to build your dataset. Or at least simulate realistic user behavior.</p>
+</div>
+<h3>Architect Question</h3>
+<p>Suppose I give the model:</p>
+<pre>100,000 examples</pre>
+<p>Is that automatically good?</p>
+<p>No.</p>
+<p>The model doesn't learn:</p>
+<blockquote><p>"This is a good dataset."</p></blockquote>
+<p>It learns patterns from what you give it.</p>
+<h3>Garbage In → Garbage Out</h3>
+<pre>Poor Dataset
+     |
+     v
+Poor Training Signal
+     |
+     v
+Poor Model Behavior</pre>
+<p>Whereas:</p>
+<pre>High-quality
+Diverse
+Realistic
+Consistent
+Examples
+     |
+     v
+Better Training Signal
+     |
+     v
+Better Generalization</pre>
+<h3>What Makes a Good Dataset?</h3>
+<pre>             DATASET
+                |
+      +---------+---------+
+      |         |         |
+      v         v         v
+ Diversity   Quality   Realism
+      |         |         |
+      +---------+---------+
+                |
+                v
+          Consistency
+                |
+                v
+          Held-out Eval</pre>
+<h3>Diversity</h3>
+<p>Bad:</p>
+<pre>Example 1: "Summarize..."
+Example 2: "Summarize..."
+Example 3: "Summarize..."
+Example 4: "Summarize..."</pre>
+<p>Good:</p>
+<pre>Summarization
+Translation
+Extraction
+Classification
+Reasoning
+Messy inputs
+Short inputs
+Long inputs
+Different phrasings
+Edge cases</pre>
+<h3>Why Realistic Inputs?</h3>
+<p>Production users don't say:</p>
+<pre>"Please extract the scheme code from the following
+well-formatted financial statement."</pre>
+<p>They say:</p>
+<pre>"hey i invested 20k in that abc fund
+folio 12345 what is scheme code??"</pre>
+<p>Your training data should represent reality.</p>
+<h3>Held-Out Evaluation</h3>
+<p>Never:</p>
+<pre>Train
+ |
+ v
+Test on same data
+ |
+ v
+"Wow! 99% accuracy!"</pre>
+<p>That's meaningless.</p>
+<p>Instead:</p>
+<pre>             DATASET
+                |
+        +-------+-------+
+        |               |
+        v               v
+     TRAIN             EVAL
+        |               |
+        v               |
+     Model              |
+        |               |
+        +-------&gt;&lt;------+
+                |
+                v
+          Generalization?</pre>
+<p>The evaluation data must remain unseen during training.</p>
+</div>
+</details>
+<details class="section">
+<summary>12. Training Loss ≠ Business Success</summary>
+<div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ Layman Explanation:</strong> A student can ace practice tests by memorizing answers but fail the real exam because they didn't understand the concepts. Same with AI - low training loss just means it memorized the training examples, not that it'll work in production.</p>
+<p><strong>🏛️ Architect's Gist:</strong> Models can overfit to training data, achieving low loss but poor generalization. Always evaluate on held-out test data that was never seen during training.</p>
+<p><strong>💡 Key Learning:</strong> Low training loss = Memorization. Good test performance = Learning.</p>
+<p><strong>🤔 Thought-Provoking:</strong> If your model gets 99% on training data but 60% on test data, it's severely overfitting. The model hasn't learned the underlying pattern - it's just memorizing examples. Always reserve a separate test set that you only touch ONCE - at the end. If you use it for tuning, you're cheating.</p>
+</div>
+<p>This is a very important architect lesson.</p>
+<p>You can have:</p>
+<pre>Training Loss
+     ↓
+     ↓
+     ↓
+  very low</pre>
+<p>while:</p>
+<pre>Production Performance
+          ↓
+        poor</pre>
+<p>Why?</p>
+<p>Because the model may have memorized superficial patterns.</p>
+<pre>Training examples
+       |
+       v
+Memorization
+       |
+       v
+Low training loss
+       |
+       X
+       |
+Poor real-world generalization</pre>
+<p>Therefore:</p>
+<blockquote><p><strong>Always evaluate behavior on realistic held-out data.</strong></p></blockquote>
+</div>
+</details>
+<details class="section">
+<summary>13. The BIG Architecture Decision</summary>
+<div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ Layman Explanation:</strong> If someone asks &quot;should I fine-tune?&quot; - STOP. First ask: Is the problem about facts (what's true) or behavior (how to act)? This single question saves millions in wasted engineering.</p>
+<p><strong>🏛️ Architect's Gist:</strong> Facts/Knowledge → RAG or Prompting. Behavior → Prompting first, then Fine-tuning if needed.</p>
+<p><strong>💡 Key Learning:</strong> Facts change → retrieve. Behavior changes → teach.</p>
+<p><strong>🤔 Thought-Provoking:</strong> If you're building a customer service bot for a bank: Questions about interest rates → RAG (they change daily); Questions about account types → RAG (can change); Tone/personality → Fine-tuning (stable, learnable behavior); Response format → Prompting (easy to specify).</p>
+</div>
+<p>Now we reach the most important section.</p>
+<p>Suppose someone says:</p>
+<blockquote><p>"Our AI gives the wrong NAV."</p></blockquote>
+<p>What do you do?</p>
+<p>Don't immediately say:</p>
+<pre>Fine-tune!</pre>
+<p>Think.</p>
+<h3>Decision Framework</h3>
+<pre>                    PROBLEM
+                       |
+                       v
+              +----------------+
+              | FACT or        |
+              | BEHAVIOR?      |
+              +----------------+
+                /            \
+               /              \
+             FACT           BEHAVIOR
+              |                |
+              v                v
+        Is fact changing?   Can prompt
+              |             describe it?
+          +---+---+              |
+         YES      NO             v
+          |        |         Prompt first
+          v        v
+         RAG    Prompt
+                   |
+                   | insufficient?
+                   v
+                Fine-tune</pre>
+<h3>FACT Problem</h3>
+<p>Example:</p>
+<pre>"What is today's NAV?"</pre>
+<p>Architecture:</p>
+<pre>Customer
+   |
+   v
+AI Application
+   |
+   v
+Retrieve current NAV
+   |
+   v
+Live API / DB
+   |
+   v
+LLM
+   |
+   v
+Answer</pre>
+<p>Not:</p>
+<pre>Customer
+   |
+   v
+Fine-tuned model
+   |
+   v
+Old NAV ❌</pre>
+<h3>Why Fine-Tuning Is Bad for Volatile Facts</h3>
+<p>Imagine:</p>
+<pre>Monday
+NAV = ₹100</pre>
+<p>Fine-tune model.</p>
+<p>Then:</p>
+<pre>Tuesday
+NAV = ₹102</pre>
+<p>Your model still has a learned association around ₹100.</p>
+<p>Then:</p>
+<pre>Wednesday
+NAV = ₹97</pre>
+<p>Now what?</p>
+<p>Retrain?</p>
+<pre>Monday → Train
+Tuesday → Train
+Wednesday → Train
+Thursday → Train
+...</pre>
+<p>Architecturally absurd.</p>
+<h3>RAG Is Designed for This</h3>
+<pre>                USER
+                  |
+                  v
+              Question
+                  |
+                  v
+             Retriever
+                  |
+          +-------+-------+
+          |               |
+          v               v
+       Vector DB       Live API
+          |               |
+          +-------+-------+
+                  |
+                  v
+             Context
+                  |
+                  v
+                 LLM
+                  |
+                  v
+               Answer</pre>
+<p>The model doesn't need to <strong>memorize</strong> the current fact.</p>
+<p>It receives it at inference time.</p>
+</div>
+</details>
+<details class="section">
+<summary>14. Behavior Problem</summary>
+<div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ Layman Explanation:</strong> When the model doesn't follow your rules, try telling it the rules more clearly first (better prompts). Only if that consistently fails, then teach it through fine-tuning.</p>
+<p><strong>🏛️ Architect's Gist:</strong> Start with prompting. If that's insufficient, consider fine-tuning. The behavior must be: 1. Demonstrable with examples, 2. Stable over time, 3. Important enough to justify training.</p>
+<p><strong>💡 Key Learning:</strong> Prompt → If fails → Fine-tune</p>
+<p><strong>🤔 Thought-Provoking:</strong> If the prompt &quot;Always respond in a professional tone&quot; doesn't work, ask: Is the prompt clear enough? Does it have examples? Is the model capable of professional tone (base model limitation)? If it's a base model limitation, fine-tuning might help. But often, it's just poorly written prompts.</p>
+</div>
+<p>Suppose:</p>
+<blockquote><p>"The model doesn't consistently use our compliance-approved tone."</p></blockquote>
+<p>Now this is different.</p>
+<pre>Problem:
+HOW should the model respond?</pre>
+<p>Not:</p>
+<pre>WHAT fact should it know?</pre>
+<p>Start:</p>
+<pre>Prompt
+  |
+  v
+Few-shot examples
+  |
+  v
+Measure compliance</pre>
+<p>If insufficient:</p>
+<pre>Prompt
+   |
+   X
+Still inconsistent
+   |
+   v
+Fine-tuning</pre>
+</div>
+</details>
+<details class="section">
+<summary>15. Structured Extraction Example</summary>
+<div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ Layman Explanation:</strong> If you need to extract data from messy text into neat JSON, fine-tuning is a good choice - BUT always add validation guards. Fine-tuning gets you 80% of the way, but validation ensures 100% correctness.</p>
+<p><strong>🏛️ Architect's Gist:</strong> Fine-tuning is excellent for structured extraction, but production architecture should include: Schema validation, Business rule checks, Fallback mechanisms, Monitoring for drift.</p>
+<p><strong>💡 Key Learning:</strong> Fine-tuning = 80% solution. Validation = 100% reliability.</p>
+<p><strong>🤔 Thought-Provoking:</strong> Even with the best fine-tuning, the model WILL make mistakes on edge cases. If your system depends on 100% accuracy, you need: 1. Output parsing with validation, 2. Rejection of invalid outputs, 3. Retry with different prompting, 4. Fallback to human review. Always plan for the model to be wrong sometimes.</p>
+</div>
+<p>This is a strong fine-tuning candidate.</p>
+<p>Input:</p>
+<pre>"i want to invest 20k in abc fund
+folio 12345"</pre>
+<p>Desired:</p>
+<pre>{
+  "scheme_code": "ABC123",
+  "folio_number": "12345",
+  "amount": 20000
+}</pre>
+<p>Architecture:</p>
+<pre>Messy Customer Text
+        |
+        v
+   Fine-tuned LLM
+        |
+        v
+Structured JSON
+        |
+        v
+Schema Validator
+        |
+        v
+Downstream Service</pre>
+<p>Notice something important:</p>
+<h4>Fine-tuning is not the only protection.</h4>
+<p>Use:</p>
+<pre>Fine-tuning
+     +
+Structured Output
+     +
+Schema Validation
+     +
+Business Rules</pre>
+<p>This is much stronger production architecture.</p>
+</div>
+</details>
+<details class="section">
+<summary>16. Fintech Example — Three Problems</summary>
+<div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ Layman Explanation:</strong> Different problems need different solutions. One size doesn't fit all. Mix and match based on the specific problem.</p>
+<p><strong>🏛️ Architect's Gist:</strong> Wrong NAV → Knowledge freshness → RAG/Live API. Wrong tone → Behavior → Prompt → Fine-tune. Bad JSON → Task skill → LoRA + validation.</p>
+<p><strong>💡 Key Learning:</strong> Use the right tool for the right problem</p>
+<p><strong>🤔 Thought-Provoking:</strong> In a real fintech system, you might use: RAG for market data, Prompt engineering for regulatory disclosures, LoRA for extracting trade details, Guardrails for safety checks. The system is a composition of techniques, not a single approach.</p>
+</div>
+<p>Let's put everything together.</p>
+<table><tr><th>Problem</th><th>Diagnosis</th><th>Preferred solution</th></tr><tr><td>Wrong today's NAV</td><td>Knowledge/freshness</td><td>RAG / live API</td></tr><tr><td>Wrong compliance tone</td><td>Behavior</td><td>Prompt → LoRA if needed</td></tr><tr><td>Bad JSON extraction</td><td>Task skill</td><td>LoRA/QLoRA + validation</td></tr></table>
+</div>
+</details>
+<details class="section">
+<summary>17. Production Architecture</summary>
+<div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ Layman Explanation:</strong> In production, you don't just send user queries to the model. You have a whole pipeline: pre-processing, fetching context, routing to the right model, validating outputs, and logging everything.</p>
+<p><strong>🏛️ Architect's Gist:</strong> User → Gateway → Orchestrator → [Prompt/RAG/Model] → LLM → Guardrails → Response. Each component has a specific job: Orchestrator routes and coordinates; Prompt adds instructions; RAG fetches context; Fine-tuned Model does the heavy lifting; Guardrails validates output.</p>
+<p><strong>💡 Key Learning:</strong> Architecture = Composition of specialized components</p>
+<p><strong>🤔 Thought-Provoking:</strong> Most teams focus on the model and forget about: Monitoring (how do you know if the model degraded?), Logging (how do you debug failures?), Caching (how do you avoid repeated expensive calls?), A/B testing (how do you test new models?), Rollback (how do you quickly revert bad changes?)</p>
+</div>
+<p>The real answer isn't always:</p>
+<pre>RAG OR Fine-tuning OR Prompt</pre>
+<p>Often it is:</p>
+<pre>                    USER
+                      |
+                      v
+                API Gateway
+                      |
+                      v
+               AI Orchestrator
+                      |
+          +-----------+-----------+
+          |           |           |
+          v           v           v
+       Prompt        RAG      Fine-tuned
+       Rules        Context       Model
+          |           |           |
+          +-----------+-----------+
+                      |
+                      v
+                     LLM
+                      |
+                      v
+                Guardrails
+                      |
+             +--------+--------+
+             |                 |
+             v                 v
+        Schema check      Safety check
+             |                 |
+             +--------+--------+
+                      |
+                      v
+                   Response</pre>
+<p>This is how an architect should think.</p>
+</div>
+</details>
+<details class="section">
+<summary>18. The Ultimate Mental Model</summary>
+<div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ Layman Explanation:</strong> Think of AI architecture as a stack: Start with clear instructions (prompting). Add context when needed (RAG). Only teach behaviors that are repetitive and important (fine-tuning). And always have safety checks (guardrails).</p>
+<p><strong>🏛️ Architect's Gist:</strong> User Query → Prompt Engineering → RAG → Fine-tuned LLM → Guardrails → Response. Each layer adds complexity but also capability. Start simple and add layers only when needed.</p>
+<p><strong>💡 Key Learning:</strong> Start with prompting. Add RAG for knowledge. Add fine-tuning for behavior. Add guardrails for safety.</p>
+<p><strong>🤔 Thought-Provoking:</strong> The best architecture is the SIMPLEST one that solves the problem. Don't add RAG if prompts work. Don't fine-tune if RAG works. Don't add guardrails if the model is already safe. Complexity is a cost, not a virtue.</p>
+</div>
+<p>Remember this:</p>
+<pre>                ┌─────────────────────┐
+                │      USER QUERY     │
+                └──────────┬──────────┘
+                           |
+                           v
+                ┌─────────────────────┐
+                │   PROMPT ENGINEER   │
+                │ "What should happen?"│
+                └──────────┬──────────┘
+                           |
+                           v
+                ┌─────────────────────┐
+                │        RAG          │
+                │ "What does model    │
+                │  need to know now?" │
+                └──────────┬──────────┘
+                           |
+                           v
+                ┌─────────────────────┐
+                │   FINE-TUNED LLM    │
+                │ "How should model   │
+                │  behave by default?"│
+                └──────────┬──────────┘
+                           |
+                           v
+                ┌─────────────────────┐
+                │     GUARDRAILS      │
+                │ "Is output valid?"  │
+                └──────────┬──────────┘
+                           |
+                           v
+                       RESPONSE</pre>
+</div>
+</details>
+<details class="section">
+<summary>19. Architect's Diagnostic Questions</summary>
+<div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ Layman Explanation:</strong> Before approving any fine-tuning project, ask these 10 questions. They'll save you from costly mistakes and help you design better systems.</p>
+<p><strong>🏛️ Architect's Gist:</strong> <strong>Q1:</strong> What exact problem are we solving? &quot;We need fine-tuning&quot; is NOT an answer. &quot;The model fails to extract scheme code in 15% of requests&quot; IS an answer. <strong>Q2:</strong> Knowledge or behavior? Facts → RAG. Behavior → Prompt/Fine-tuning. <strong>Q3:</strong> Can prompting solve it? If yes, DON'T train. Prompting is cheaper, faster, and easier to change. <strong>Q4:</strong> Is prompt engineering insufficient? Try better prompts and few-shot examples first. Measure consistently. <strong>Q5:</strong> Is behavior easier to demonstrate than describe? This is the sweet spot for fine-tuning. Show, don't tell. <strong>Q6:</strong> Is information changing frequently? If yes, DON'T bake it into weights. Retrieve it. <strong>Q7:</strong> Do we need auditability? RAG provides source attribution. Fine-tuning is a black box. <strong>Q8:</strong> What's the request volume? High volume + repetitive behavior = Fine-tuning economics. <strong>Q9:</strong> How will we evaluate success? &quot;Training completed&quot; is not success. &quot;Error rate dropped from 15% to 3%&quot; is success. <strong>Q10:</strong> How do we roll back? Always have a rollback plan. LoRA makes rollbacks easy.</p>
+<p><strong>💡 Key Learning:</strong> The right question prevents the wrong solution.</p>
+<p><strong>🤔 Thought-Provoking:</strong> Most architecture failures aren't technical - they're decision failures. We choose the wrong solution because we asked the wrong question.</p>
+</div>
+<p>When someone proposes fine-tuning, ask these <strong>before approving the architecture</strong>:</p>
+<h4>Q1</h4>
+<blockquote><p><strong>What exact problem are we solving?</strong></p></blockquote>
+<p>Not:</p>
+<blockquote><p>"We need a customized model."</p></blockquote>
+<p>But:</p>
+<blockquote><p>"The model fails X in Y% of production requests."</p></blockquote>
+<h4>Q2</h4>
+<blockquote><p><strong>Is this knowledge or behavior?</strong></p></blockquote>
+<pre>Knowledge → RAG
+Behavior  → Prompt / Fine-tuning</pre>
+<h4>Q3</h4>
+<blockquote><p><strong>Can prompt engineering solve it?</strong></p></blockquote>
+<p>If yes:</p>
+<pre>Don't train.</pre>
+<p>Why?</p>
+<pre>Prompt
+↓
+Cheap
+↓
+Fast iteration
+↓
+Easy rollback</pre>
+<h4>Q4</h4>
+<blockquote><p><strong>Is the behavior easy to describe but the prompt isn't being followed?</strong></p></blockquote>
+<p>Try:</p>
+<pre>Better prompt
++
+Few-shot examples</pre>
+<p>Then measure.</p>
+<h4>Q5</h4>
+<blockquote><p><strong>Is the behavior easier to demonstrate than describe?</strong></p></blockquote>
+<p>Now fine-tuning becomes interesting.</p>
+<pre>Input
+  +
+Correct output
+  +
+Hundreds/thousands examples
+       |
+       v
+Fine-tune</pre>
+<h4>Q6</h4>
+<blockquote><p><strong>Is the underlying information changing frequently?</strong></p></blockquote>
+<p>If yes:</p>
+<pre>Don't bake it into weights.
+Retrieve it.</pre>
+<h4>Q7</h4>
+<blockquote><p><strong>Do we need auditability/source attribution?</strong></p></blockquote>
+<p>If yes, RAG is generally much more appropriate than trying to encode facts into model weights.</p>
+<h4>Q8</h4>
+<blockquote><p><strong>What is the expected request volume?</strong></p></blockquote>
+<p>Fine-tuning becomes more attractive when:</p>
+<pre>High volume
+    +
+Repeated behavior
+    +
+Prompt tokens expensive
+    |
+    v
+Fine-tuning economics improve</pre>
+<h4>Q9</h4>
+<blockquote><p><strong>How will we evaluate success?</strong></p></blockquote>
+<p>Never accept:</p>
+<blockquote><p>"Training completed successfully."</p></blockquote>
+<p>Ask:</p>
+<pre>What metric improved?
+
+Before → 72%
+After  → 94%</pre>
+<h4>Q10</h4>
+<blockquote><p><strong>How do we roll back?</strong></p></blockquote>
+<p>An architect should always think:</p>
+<pre>Model v1
+   |
+   v
+Model v2
+   |
+   X
+Performance regression
+   |
+   v
+Rollback v1</pre>
+<p>LoRA makes this particularly attractive because adapters are small and swappable.</p>
+</div>
+</details>
+<details class="section">
+<summary>20. Interview Recall — Architect Level</summary>
+<div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ Layman Explanation:</strong> These are the questions that separate good architects from great ones. If you can answer these, you understand AI systems, not just models.</p>
+<p><strong>🏛️ Architect's Gist:</strong> <strong>Q1:</strong> RAG vs Fine-tuning? RAG = context. Fine-tuning = behavior. Use both when needed. <strong>Q2:</strong> Why is full fine-tuning expensive? Memory = Weights + Gradients + Optimizer + Activations. 7B model needs 85GB+. <strong>Q3:</strong> Why does LoRA work? Because ΔW = B×A, a low-rank approximation. Most learning is low-dimensional. <strong>Q4:</strong> Why does LoRA reduce memory? Only adapter trains. Base is frozen → no gradients or optimizer state. <strong>Q5:</strong> QLoRA vs LoRA? QLoRA = LoRA + 4-bit quantization of base. More memory efficient. <strong>Q6:</strong> Why is rank important? Higher rank = More capacity = More memory = More overfitting risk. <strong>Q7:</strong> What does instruction tuning solve? It teaches &quot;recognize requests and fulfill them&quot; - not just predict next token. <strong>Q8:</strong> Why dataset diversity? Diverse examples → Diverse patterns → Better generalization. <strong>Q9:</strong> Why isn't low training loss sufficient? Low loss can indicate memorization, not learning. Always test on held-out data. <strong>Q10:</strong> Wrong NAV - fine-tune or RAG? RAG. Facts change. Don't bake volatile data into weights.</p>
+<p><strong>💡 Key Learning:</strong> Understand the WHY, not just the WHAT.</p>
+<p><strong>🤔 Thought-Provoking:</strong> Great architects don't know all the answers - they know the right questions to ask.</p>
+</div>
+<p>Cover the answers and try to answer yourself.</p>
+<h4>Q1</h4>
+<p><strong>What is the fundamental difference between RAG and fine-tuning?</strong></p>
+<p><strong>Answer:</strong></p>
+<pre>RAG          → changes available context
+Fine-tuning  → changes learned behavior</pre>
+<h4>Q2</h4>
+<p><strong>Why is full fine-tuning expensive?</strong></p>
+<p>Think:</p>
+<pre>Weights
++
+Gradients
++
+Optimizer
++
+Activations
++
+Distributed infrastructure</pre>
+<h4>Q3</h4>
+<p><strong>Why does LoRA work?</strong></p>
+<p>Because useful fine-tuning updates can often be represented efficiently using a low-rank update.</p>
+<pre>ΔW = B × A</pre>
+<h4>Q4</h4>
+<p><strong>Why does LoRA reduce memory?</strong></p>
+<p>Because:</p>
+<pre>Base weights → frozen
+             ↓
+No gradients
+No optimizer state</pre>
+<p>Only the small adapter is trained.</p>
+<h4>Q5</h4>
+<p><strong>Why is QLoRA different from LoRA?</strong></p>
+<pre>LoRA
+Base = fp16
+
+QLoRA
+Base = 4-bit NF4
+Adapter = higher precision</pre>
+<h4>Q6</h4>
+<p><strong>Why is rank important?</strong></p>
+<pre>Higher rank
+    ↓
+More expressive
+    ↓
+More parameters
+    ↓
+More memory
+    ↓
+Potential overfitting</pre>
+<h4>Q7</h4>
+<p><strong>What does instruction tuning solve?</strong></p>
+<p>It teaches:</p>
+<pre>"Recognize this as a request"
+             +
+"Fulfill the request"</pre>
+<h4>Q8</h4>
+<p><strong>Why is dataset diversity important?</strong></p>
+<p>Because:</p>
+<pre>Diverse training data
+       ↓
+Broader learned patterns
+       ↓
+Better generalization</pre>
+<h4>Q9</h4>
+<p><strong>Why isn't low training loss sufficient?</strong></p>
+<p>Because:</p>
+<pre>Low training loss
+       ≠
+Good production performance</pre>
+<p>The model may have overfit.</p>
+<h4>Q10</h4>
+<p><strong>A wealth assistant gives the wrong current NAV. Fine-tune or RAG?</strong></p>
+<pre>Current NAV
+    |
+    v
+Volatile fact
+    |
+    v
+RAG / Live API</pre>
+</div>
+</details>
+<details class="section">
+<summary>🧠 Final Architect Cheat Sheet</summary>
+<div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ Layman Explanation:</strong> Keep this simple rule in your head: Facts = retrieve them. Behavior = tell them or teach them. Skills = fine-tune them. Scale = optimize them. Risk = guardrail them.</p>
+<p><strong>🏛️ Architect's Gist:</strong> FACT → RETRIEVE IT (RAG). BEHAVIOR → PROMPT IT (Prompt Engineering). SKILL → FINE-TUNE IT (LoRA/QLoRA). SCALE → OPTIMIZE IT (Production Engineering). RISK → GUARDRAIL IT (Safety &amp; Validation).</p>
+<p><strong>💡 Key Learning:</strong> The best AI architect knows when NOT to use AI.</p>
+<p><strong>🤔 Thought-Provoking:</strong> Sometimes the best solution isn't AI at all. Sometimes it's a simple rule-based system, a database lookup, or even a human. AI is a tool, not the answer. The answer is solving the user's problem - with whatever tool works best.</p>
+</div>
+<pre>                         AI PROBLEM
+                             |
+              +--------------+--------------+
+              |                             |
+          KNOWLEDGE                      BEHAVIOR
+              |                             |
+              v                             v
+       "What is true?"              "How should it act?"
+              |                             |
+              v                             v
+             RAG                      Prompt Engineering
+                                            |
+                                      Still insufficient?
+                                            |
+                                            v
+                                        Fine-Tuning
+                                            |
+                                  +---------+---------+
+                                  |                   |
+                                  v                   v
+                                LoRA                QLoRA
+                                  |                   |
+                              PEFT                  4-bit
+                                  |                   |
+                         Efficient adapter      Memory efficient</pre>
+<p>And the most important principle:</p>
+<blockquote><p><strong>The best AI architect is not the person who knows how to fine-tune a model. It is the person who knows when NOT to fine-tune one.</strong></p></blockquote>
+<h4>One-line memory hook</h4>
+<pre>FACT      → RETRIEVE IT
+BEHAVIOR  → PROMPT IT
+SKILL     → FINE-TUNE IT
+SCALE     → OPTIMIZE IT
+RISK      → GUARDRAIL IT</pre>
+</div>
+</details>
+</body>
+</html>
