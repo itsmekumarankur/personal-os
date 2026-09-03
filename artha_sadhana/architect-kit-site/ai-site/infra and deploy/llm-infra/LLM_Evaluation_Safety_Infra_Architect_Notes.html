@@ -19,6 +19,8 @@ details summary { cursor: pointer; }
 details:not(.section) { border: 1px dashed #bbb; padding: 8px 12px; background: #fafafa; }
 details:not(.section) summary { font-weight: bold; }
 hr { display: none; }
+.concept-intro { background: #eef3f7; border-left: 4px solid #4a7fa5; padding: 10px 14px; margin: 10px 0; border-radius: 3px; }
+.concept-intro p { margin: 6px 0; }
 </style>
 </head>
 <body>
@@ -34,6 +36,11 @@ hr { display: none; }
 <details class="section">
 <summary>0. THE BIG PICTURE</summary>
 <div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ The Layman's Gist:</strong> Most people think an AI system is just the &quot;brain&quot; (the LLM). In reality, the brain is just one small part of a much larger, complex body. A production AI system is like a high-tech factory. The LLM is the main machine, but it needs conveyor belts (input safety), quality control (output safety), a supervisor (router), a library (RAG), and a maintenance crew (observability). A beginner focuses on the machine; an architect focuses on the entire factory floor.</p>
+<p><strong>🏛️ Architect's Insight:</strong> The biggest mindset shift is realizing the LLM is a <strong>component</strong>, not the entire system. As an architect, you must design for failure, safety, and scale <em>around</em> the LLM, knowing the LLM itself is an unpredictable black box.</p>
+<p><strong>💡 Thought-Provoking Point:</strong> An engineer asks, &quot;Which model should I use?&quot; An architect asks, &quot;What problem are we solving, and what is the <strong>safest and most cost-effective way</strong> to solve it, even if the model fails?&quot;</p>
+</div>
 <p>Before learning individual concepts, understand the complete production system.</p>
 <pre><code class="language-text">                         USER
                            |
@@ -138,6 +145,11 @@ USER
 <details class="section">
 <summary>10.1 WHY IS LLM EVALUATION HARD?</summary>
 <div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ The Layman's Gist:</strong> Testing an AI is not like testing a calculator. In a calculator, you ask <code>2+2</code>, you always get <code>4</code>. With an AI, you can ask &quot;What's the capital of France?&quot; and it might say &quot;Paris&quot;, &quot;Paris, France&quot;, or even &quot;The city of lights&quot;. All are correct, but different. This means you can't use a simple test like <code>assert(answer == "Paris")</code>. You need a more sophisticated way to judge if the answer is &quot;good enough.&quot;</p>
+<p><strong>🏛️ Architect's Insight:</strong> Traditional software is <strong>deterministic</strong> (same input = same output). LLMs are <strong>probabilistic</strong> (same input = a distribution of possible outputs). Therefore, traditional QA is insufficient. You must evaluate across a <em>distribution</em> of possible outputs, not just a single one.</p>
+<p><strong>💡 Thought-Provoking Point:</strong> If Prompt A gives you 90% accuracy and Prompt B gives you 91% accuracy, is B better? Not necessarily. Prompt B might have gotten 1 more easy question right, but failed 3 critical financial questions that Prompt A got correct. <strong>Where</strong> the model fails often matters more than <strong>how often</strong> it fails.</p>
+</div>
 <h2>🤔 Think first</h2>
 <p>You test your AI application:</p>
 <pre><code class="language-text">Question 1 → Correct ✓
@@ -231,6 +243,11 @@ Prompt B → 91% accuracy
 <details class="section">
 <summary>10.2 BENCHMARKS</summary>
 <div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ The Layman's Gist:</strong> Benchmarks are like standardized tests for AI models (e.g., MMLU, GSM8K). They tell you how smart the model is in general. A high score means the model is a good student. But just because someone is a great history student doesn't mean they're good at your specific job&mdash;like being an accountant for your company.</p>
+<p><strong>🏛️ Architect's Insight:</strong> Public benchmarks are great for comparing models <em>before</em> you buy them. However, they are often &quot;contaminated&quot; (the model might have seen the questions during training) or are a mismatch for your specific task. <strong>The only evaluation that truly matters is on your own data.</strong></p>
+<p><strong>💡 Thought-Provoking Point:</strong> A model can get 95% on MMLU and still be useless for your application. The secret weapon is a <strong>private evaluation set</strong> of just 50-100 examples from your own real-world use cases (including edge cases). This is your &quot;canary in the coal mine.&quot; If your model fails here, it doesn't matter what its benchmark score is.</p>
+</div>
 <h2>🤔 Question</h2>
 <p>A model scores 95% on a public benchmark.</p>
 <p>Should you deploy it for:</p>
@@ -348,6 +365,11 @@ PRODUCTION QUALITY
 <details class="section">
 <summary>10.3 LLM-AS-JUDGE</summary>
 <div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ The Layman's Gist:</strong> You have a million answers from your AI and only a few human reviewers. What do you do? You use a <em>different</em>, more powerful AI to act as a &quot;supervisor&quot; to grade all the answers. It can give a score, or compare two answers and say which one is better. It's a scalable but imperfect way to get feedback.</p>
+<p><strong>🏛️ Architect's Insight:</strong> LLM-as-Judge is a powerful &quot;poor man's&quot; evaluation system for large-scale testing. It's cheap, fast, and consistent (for a given prompt). It's the <strong>only</strong> way to evaluate millions of outputs in a CI/CD pipeline.</p>
+<p><strong>💡 Thought-Provoking Point:</strong> LLM judges have their own biases. They can be tricked by longer, more confident-sounding answers, even if they are factually wrong. A golden rule: <strong>Never assume your LLM judge is the ground truth.</strong> Always calibrate your judge by checking its score against a small set of human-labeled data. If the judge disagrees with human experts, you can't trust it.</p>
+</div>
 <h2>🤔 Question</h2>
 <p>You have:</p>
 <pre><code class="language-text">100,000 generated responses
@@ -509,6 +531,11 @@ B = beautifully wrong
 <details class="section">
 <summary>10.4 HUMAN EVALUATION</summary>
 <div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ The Layman's Gist:</strong> If AI judges are cheap and scalable, why bother with humans? Because humans are the ultimate quality check. An AI might produce a perfectly grammatical answer that's subtly wrong in a way a human expert would immediately spot, like a non-accountant missing a critical tax regulation.</p>
+<p><strong>🏛️ Architect's Insight:</strong> The human is the &quot;gold standard.&quot; Use them strategically. Don't have them review every answer. Instead, have them focus on the &quot;danger zones&quot;: low-confidence answers, user complaints, or tricky edge cases. The goal is to use human insight to improve your automated systems and spot failures your AI judge missed.</p>
+<p><strong>💡 Thought-Provoking Point:</strong> If two human reviewers constantly disagree on a score, the problem is likely the <strong>rubric</strong> (the set of rules you gave them), not the humans. This is a fantastic insight! It means you need to go back and create a clearer, more objective scoring guide. Low agreement is a signal of a poorly defined evaluation system.</p>
+</div>
 <h2>🤔 Question</h2>
 <p>If LLM judges are cheap and scalable, why do we still need humans?</p>
 <p>Because humans can detect:</p>
@@ -595,6 +622,11 @@ Low agreement
 <details class="section">
 <summary>10.5 HALLUCINATION</summary>
 <div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ The Layman's Gist:</strong> This is when the AI confidently tells you something that is completely made up. It's not just a &quot;wrong answer&quot;; it's a <strong>confidently wrong answer</strong> presented as fact. In a bank, a hallucination could be quoting a fictitious interest rate. The danger isn't the mistake; it's the confidence and fluency with which the mistake is delivered.</p>
+<p><strong>🏛️ Architect's Insight:</strong> Hallucination is a core architectural flaw. It's when the model's objective (to be helpful and fluent) overrides its objective (to be truthful). This is why you cannot treat an LLM as a database. The model is a <strong>generation engine</strong>, not a <strong>truth engine</strong>.</p>
+<p><strong>💡 Thought-Provoking Point:</strong> The most dangerous hallucination is an <strong>Extrinsic Hallucination</strong>. The AI says, &quot;According to the 2023 Company Policy, the exit load is 1%.&quot; The company policy says <em>nothing</em> about exit load. The AI has invented a source and a fact. This is far more insidious than just contradicting a known source.</p>
+</div>
 <h2>🤔 Most important question</h2>
 <p>What is more dangerous?</p>
 <pre><code class="language-text">&quot;I don't know.&quot;
@@ -739,6 +771,11 @@ Does source actually support claim?
 <details class="section">
 <summary>10.6 HALLUCINATION MITIGATION</summary>
 <div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ The Layman's Gist:</strong> You can't stop the AI from ever making things up, but you can build a system to catch it. The strategy is a layered defense: 1) <strong>Ground it:</strong> Give it the right information (RAG). 2) <strong>Instruct it:</strong> Tell it to say &quot;I don't know&quot; when unsure. 3) <strong>Verify it:</strong> Use another system to check the answer (e.g., a citation check, or another AI to fact-check the first AI).</p>
+<p><strong>🏛️ Architect's Insight:</strong> The goal is not <code>Hallucination = 0%</code>. That's impossible. The goal is to <strong>REDUCE</strong> the chance of it happening, <strong>DETECT</strong> it when it does, <strong>CONTAIN</strong> the damage, and <strong>RECOVER</strong> by giving the user a corrected answer. It's a risk management strategy, not a bug-fix.</p>
+<p><strong>💡 Thought-Provoking Point:</strong> A powerful mitigation technique is <strong>Self-Consistency</strong>. Ask the same question 5 times to the model. If 4 answers are the same and one is different, you should investigate the outlier. Consistent answers are more likely to be correct. It's a &quot;wisdom of the crowd&quot; approach, but with a single AI.</p>
+</div>
 <h2>🤔 Question</h2>
 <p>How do we reduce hallucinations?</p>
 <p>Don't think:</p>
@@ -827,6 +864,11 @@ RECOVER
 <details class="section">
 <summary>10.7 GUARDRAILS</summary>
 <div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ The Layman's Gist:</strong> Never trust the AI to keep itself safe. Guardrails are the safety boundaries you place <em>around</em> the AI. It's like having a security guard at the factory entrance (Input Guardrail) and a quality inspector at the exit (Output Guardrail). The guard at the entrance checks for weapons (PII, injection attacks). The guard at the exit checks for theft (PII leakage) or hazardous materials (toxicity, hallucinations).</p>
+<p><strong>🏛️ Architect's Insight:</strong> The LLM is an <strong>untrusted processing engine</strong>. You must treat its output as potentially dangerous. The guardrails are your &quot;zero-trust&quot; architecture. They are independent systems that sit between the user and the model, and between the model and the user. They are non-negotiable.</p>
+<p><strong>💡 Thought-Provoking Point:</strong> For critical actions like financial transactions, never let the LLM execute them directly. The LLM should <em>recommend</em> an action. A separate, deterministic authorization service should <em>approve</em> and <em>execute</em> it. This is the difference between a self-driving car that can decide where to go and a self-driving car that can hit the gas pedal. The latter is a disaster waiting to happen.</p>
+</div>
 <h2>🤔 Question</h2>
 <p>Should we trust the LLM itself to keep the system safe?</p>
 <h3>❌ No.</h3>
@@ -937,6 +979,11 @@ AUDIT LOG
 <details class="section">
 <summary>10.8 RED TEAMING</summary>
 <div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ The Layman's Gist:</strong> QA teams ask, &quot;Does it work?&quot; Red teams ask, &quot;How can I break it?&quot; It's like trying to hack your own system before the bad guys do. They try to jailbreak the AI, inject malicious code into its inputs, or trick it into revealing its secrets. It's a security test, not a performance test.</p>
+<p><strong>🏛️ Architect's Insight:</strong> Red teaming is a continuous process, not a one-time check. Every time you update the model, the prompts, or the tools, you must re-run your red teaming tests to ensure you haven't introduced a new vulnerability. It's a form of regression testing for security.</p>
+<p><strong>💡 Thought-Provoking Point:</strong> A sophisticated attack is <strong>Multi-turn Erosion</strong>. The attack isn't in one message; it's spread out over many messages. &quot;Turn 1: Hello, how are you?&quot; &quot;Turn 2: I'm writing a story...&quot; &quot;Turn 3: ...and I need to know how to bypass the login.&quot; The system must evaluate the conversation trajectory, not just individual messages. It's like a long-term con artist.</p>
+</div>
 <h2>🤔 Question</h2>
 <p>Your QA team tested 500 normal questions.</p>
 <p>Is your AI secure?</p>
@@ -1071,6 +1118,11 @@ Regression testing
 <details class="section">
 <summary>10.9 ALIGNMENT</summary>
 <div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ The Layman's Gist:</strong> A base model knows language. It can predict the next word after &quot;The capital of France is...&quot;. But it doesn't know <em>how</em> to be helpful, harmless, and honest. Alignment is the process of teaching the model the &quot;rules of the road.&quot; This is done through Supervised Fine-Tuning (teaching it good examples) and Reinforcement Learning from Human Feedback (RLHF), where humans reward good behavior and punish bad behavior.</p>
+<p><strong>🏛️ Architect's Insight:</strong> The equation is: <strong>Pretraining = Capability</strong>. <strong>Alignment = Obedience</strong>. A highly capable but unaligned model is like a genius psychopath&mdash;incredibly powerful, but extremely dangerous. Alignment is the process of teaching the model to &quot;behave.&quot;</p>
+<p><strong>💡 Thought-Provoking Point:</strong> <strong>Constitutional AI</strong> is a fascinating approach where you write a &quot;constitution&quot; (a list of principles). The AI then critiques its own responses based on the constitution and revises them. This allows for an AI that is aligned by a set of principles, not just human feedback, making the process more scalable and transparent.</p>
+</div>
 <h2>🤔 Question</h2>
 <p>A pretrained LLM knows language.</p>
 <p>Does that automatically mean it knows:</p>
@@ -1232,6 +1284,11 @@ EVALUATION
 <details class="section">
 <summary>11.1 WHY LLM SERVING IS DIFFERENT</summary>
 <div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ The Layman's Gist:</strong> A normal REST API is like a fast-food drive-thru: you order (request), and you get your food (response) in 100-500ms. An LLM is like a chef writing a long, complex recipe from scratch, one word at a time. It can't just &quot;send&quot; the whole answer at once. It generates the response token by token, which takes a lot of time and memory.</p>
+<p><strong>🏛️ Architect's Insight:</strong> The core challenge is <strong>Autoregressive Generation</strong>. To generate a single word, the model must re-read the entire previous conversation. To avoid this, it stores the previous conversation's context in a memory space called the <strong>KV Cache</strong>. This makes inference a memory-bound problem, not just a compute-bound one.</p>
+<p><strong>💡 Thought-Provoking Point:</strong> The length of the input and the expected output directly dictate the memory and time required. A short question with a long answer is very expensive because you're generating many tokens. A long question with a short answer is also expensive because the input takes up a lot of memory in the KV cache. There's no &quot;one-size-fits-all&quot; latency metric.</p>
+</div>
 <h2>🤔 Think about your normal REST API</h2>
 <pre><code class="language-text">Request
    |
@@ -1369,6 +1426,11 @@ C ───────── DONE
 <details class="section">
 <summary>11.2 SERVING ENGINES</summary>
 <div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ The Layman's Gist:</strong> You can't just put a big AI model in a standard web server. You need a specialized engine designed to handle its unique needs. Think of vLLM, TGI, and Triton as different types of high-performance race car engines built for different types of racetracks. <strong>vLLM:</strong> Known for PagedAttention, a very efficient way to manage memory (like virtual memory in an OS). <strong>TGI:</strong> Built by Hugging Face for the wider AI ecosystem. <strong>Triton:</strong> NVIDIA's general-purpose, multi-model serving engine.</p>
+<p><strong>🏛️ Architect's Insight:</strong> A serving engine's main job is to maximize GPU utilization. They do this through: 1. <strong>Continuous Batching:</strong> If a request finishes early, its spot is immediately given to a new request, keeping the GPU busy. 2. <strong>PagedAttention (vLLM):</strong> Treats KV cache memory like pages, minimizing fragmentation.</p>
+<p><strong>💡 Thought-Provoking Point:</strong> <strong>Continuous Batching</strong> is a complete game-changer. With static batching, you wait for the slowest request in a batch to finish before processing the next. With continuous batching, you process requests dynamically. It's like a supermarket checkout with a single queue (continuous) versus multiple queues (static). The single queue is always more efficient.</p>
+</div>
 <p>Now ask:</p>
 <h2>🤔 Why not simply do this?</h2>
 <pre><code class="language-text">Flask
@@ -1481,6 +1543,11 @@ General multi-model serving
 <details class="section">
 <summary>11.3 COST &amp; LATENCY OPTIMIZATION</summary>
 <div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ The Layman's Gist:</strong> An LLM application can be incredibly expensive. You're paying for compute time. The best way to save money isn't to make the big, expensive model faster, but to ask: &quot;Do I even <em>need</em> the expensive model for this request?&quot; This is where model routing, quantization, and speculative decoding come in.</p>
+<p><strong>🏛️ Architect's Insight:</strong> Cost optimization is a series of strategic questions: <strong>Model Routing:</strong> &quot;Is this simple question going to the giant, expensive model?&quot; (Send it to a small, cheap model). <strong>Quantization:</strong> &quot;Can we make the model 'lighter' by using smaller numbers (INT8 instead of FP16), even if we lose a tiny bit of quality?&quot; <strong>Speculative Decoding:</strong> &quot;Can a smaller, faster model draft a few words, and the big model just verify them, saving time?&quot;</p>
+<p><strong>💡 Thought-Provoking Point:</strong> The classic architect's question is: <strong>&quot;How often do I actually need the expensive model?&quot;</strong> Instead of optimizing a $100M supercomputer to be 10% faster, you route 90% of your traffic to a $100 laptop. The cost savings are orders of magnitude larger. This is a far more impactful architectural decision.</p>
+</div>
 <h2>🤔 Architect Question</h2>
 <p>Your LLM system costs ₹10 lakh/month.</p>
 <p>What should you optimize first?</p>
@@ -1644,6 +1711,11 @@ Prevent runaway output
 <details class="section">
 <summary>11.4 CACHING</summary>
 <div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ The Layman's Gist:</strong> In normal web apps, you cache exact URLs. For LLMs, it's more nuanced. You can cache: 1. <strong>Exact Matches:</strong> Cache &quot;What is the exit load?&quot; 2. <strong>Semantic Matches:</strong> Cache the answer to &quot;What is the exit load?&quot; and also serve it for &quot;What penalty applies for early redemption?&quot; because they are similar in meaning. 3. <strong>KV Cache Reuse:</strong> If every request starts with the same system prompt (&quot;You are a helpful banking assistant&quot;), you can save its computed state and reuse it for every new user, saving significant compute.</p>
+<p><strong>🏛️ Architect's Insight:</strong> Exact and semantic caches can dramatically reduce latency and cost. But semantic caching is dangerous. &quot;What is the interest rate for 1 year?&quot; and &quot;What is the interest rate for 5 years?&quot; are semantically similar but have different answers. You need to combine semantic similarity with entity validation (checking the year) to ensure you don't serve the wrong cached answer.</p>
+<p><strong>💡 Thought-Provoking Point:</strong> Semantic similarity &ne; Business equivalence. This is a crucial distinction. A semantic cache can think two questions are the same, but for your business, they are completely different and require different answers. This is why a naive semantic cache can be a recipe for disaster.</p>
+</div>
 <h2>🤔 Traditional cache</h2>
 <pre><code class="language-text">GET /customer/123
         |
@@ -1773,6 +1845,11 @@ Reuse KV state
 <details class="section">
 <summary>11.5 OBSERVABILITY</summary>
 <div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ The Layman's Gist:</strong> The system gives a wrong answer. Who do you blame? The RAG? The LLM? The prompt? Without observability, you're just guessing. Observability is having a detailed flight recorder (a trace) for every single request. It shows you exactly what happened at each step, so you can pinpoint where the failure occurred.</p>
+<p><strong>🏛️ Architect's Insight:</strong> Traditional observability (CPU, memory, error rates) is insufficient for LLMs. You must observe the <strong>model's behavior</strong>: <strong>Trace:</strong> What happened in each step? <strong>Prompt/Completion:</strong> What was the exact input and output? <strong>Tokens/Cost:</strong> How much did it cost? <strong>Latency:</strong> Time to First Token (TTFT) vs. total latency? <strong>Quality/Evaluation:</strong> Is the output good? <strong>User Feedback:</strong> Did the user upvote/downvote it?</p>
+<p><strong>💡 Thought-Provoking Point:</strong> Linking user feedback (👍/👎) to a <code>trace_id</code> is the ultimate source of truth. You can ask, &quot;Which prompt version, model, or retrieval chain generated the bad responses that users downvoted last week?&quot; This is how you achieve continuous, data-driven improvement. The user is your best production signal.</p>
+</div>
 <h2>🤔 Critical production question</h2>
 <p>Your RAG system gives the wrong answer.</p>
 <p>Who is responsible?</p>
@@ -1954,6 +2031,10 @@ Langfuse
 <details class="section">
 <summary>🧠 COMPLETE AI PRODUCTION LOOP</summary>
 <div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ The Layman's Gist:</strong> This is the final, all-encompassing workflow. It shows the entire lifecycle of a production AI from the user's query, through safety checks, model routing, RAG, generation, output safety, feedback, and finally, to continuous improvement. It's the full picture.</p>
+<p><strong>🏛️ Architect's Insight:</strong> This is the blueprint. Every component has a purpose. The system is not a pipeline; it's a <strong>loop</strong>. Production feedback flows back into metrics and evaluation, which then drives improvement, which creates a new version. This is the engine of a successful AI application.</p>
+</div>
 <p>Now combine everything.</p>
 <pre><code class="language-text">                         USER
                            |
@@ -2007,6 +2088,10 @@ Langfuse
 <details class="section">
 <summary>🚨 AI ARCHITECT&#x27;S FAILURE-MODE MAP</summary>
 <div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ The Layman's Gist:</strong> When your system fails (and it will), don't panic. Follow this simple diagnostic tree. Is it a quality failure (hallucination)? A safety failure (injection)? Or a cost failure (too expensive)? Once you identify the category, you can look at the specific symptoms and start debugging.</p>
+<p><strong>🏛️ Architect's Insight:</strong> Diagnosis is the first step to recovery. This map provides a structured way to triage failures. It forces you to ask &quot;What <em>type</em> of failure is this?&quot; before you start randomly changing things.</p>
+</div>
 <p>When something goes wrong, ask:</p>
 <pre><code class="language-text">                     FAILURE
                         |
@@ -2049,6 +2134,31 @@ DEPLOY
 <details class="section">
 <summary>🎯 INTERVIEW RECALL SECTION</summary>
 <div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ The Layman's Gist:</strong> This is your cheat sheet for common interview questions. It breaks down the answers into simple, memorable concepts and technical explanations.</p>
+<p><strong>🏛️ Architect's Insight:</strong> These questions cover the breadth of AI architecture. Being able to answer them clearly and concisely demonstrates a deep understanding of the entire system. Practice explaining these concepts to a non-technical person to solidify your understanding.</p>
+</div>
+<div class="concept-intro">
+<p><strong>💡 Thought-Provoking Points (per question)</strong>:</p>
+<ul>
+<li><strong>Q1 (Different Answers):</strong> It's stochastic, not broken. Evaluate distribution, not exact match.</li>
+<li><strong>Q2 (MMLU):</strong> MMLU is a general test. You need a <em>private</em> test set for your domain.</li>
+<li><strong>Q3 (LLM-as-Judge):</strong> It's for scale, not truth. It's a scalable, cheap, but imperfect proxy.</li>
+<li><strong>Q4 (LLM Judge Fails):</strong> Position, verbosity, self-preference, and style biases.</li>
+<li><strong>Q5 (Hallucination):</strong> An unsupported/incorrect claim. Intrinsic (contradicts source) vs. Extrinsic (source doesn't support).</li>
+<li><strong>Q6 (Reduce Hallucination):</strong> Ground, instruct, verify, structure, decode appropriately.</li>
+<li><strong>Q7 (Guardrails vs. Alignment):</strong> Alignment is a risk reducer; guardrails are the security boundary. Trust, but verify.</li>
+<li><strong>Q8 (Prompt Injection):</strong> Untrusted content manipulating the model to follow unintended instructions.</li>
+<li><strong>Q9 (Red Teaming vs QA):</strong> QA asks &quot;Does it work?&quot; Red teaming asks &quot;How do I break it?&quot;</li>
+<li><strong>Q10 (Serving Difference):</strong> Autoregressive, GPU-memory, KV-cache, variable-length, streaming.</li>
+<li><strong>Q11 (KV Cache):</strong> Memory for previous tokens, allowing for faster generation but consuming GPU memory.</li>
+<li><strong>Q12 (Continuous Batching):</strong> Keeps GPU busy by replacing finished requests immediately.</li>
+<li><strong>Q13 (vLLM):</strong> PagedAttention for efficient KV-cache management and continuous batching.</li>
+<li><strong>Q14 (Model Routing):</strong> Send simple queries to small models, complex queries to large models.</li>
+<li><strong>Q15 (Semantic Cache):</strong> Caching based on meaning, but beware of non-equivalence.</li>
+<li><strong>Q16 (LLM Observability):</strong> Need to observe model behavior (prompts, completions, cost), not just infrastructure.</li>
+</ul>
+</div>
 <h2>Q1 — Your LLM gives different answers for the same question. Is it broken?</h2>
 <h3>Answer</h3>
 <p>Not necessarily.</p>
@@ -2202,6 +2312,9 @@ User feedback
 <details class="section">
 <summary>🧠 FINAL ARCHITECT MEMORY MAP</summary>
 <div class="section-body">
+<div class="concept-intro">
+<p><strong>🗣️ The Layman's Gist:</strong> If you remember nothing else, remember this: Every AI system must do three things: <strong>EVALUATE</strong> (is it good?), <strong>PROTECT</strong> (is it safe?), and <strong>SERVE</strong> (can it run?). Then, you must <strong>OPTIMIZE</strong> it (make it cheaper/faster), <strong>OBSERVE</strong> it (can we operate it?), and <strong>IMPROVE</strong> it (a continuous loop).</p>
+</div>
 <p>If you forget everything else, remember this:</p>
 <pre><code class="language-text">                 PRODUCTION LLM
                        |
