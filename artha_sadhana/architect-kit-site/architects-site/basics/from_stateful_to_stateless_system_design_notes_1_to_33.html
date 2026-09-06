@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>From Stateful to Stateless — System Design Notes</title>
+<style>
+  :root {
+    --bg: #f7f8fa;
+    --card: #ffffff;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --accent: #2563eb;
+    --border: #e5e7eb;
+    --code: #111827;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.6;
+  }
+  header {
+    background: #111827; color: white; padding: 42px 24px;
+  }
+  header .wrap, main { max-width: 1050px; margin: auto; }
+  h1 { margin: 0 0 8px; font-size: 34px; }
+  .subtitle { color: #d1d5db; margin: 0; }
+  main { padding: 28px 20px 60px; }
+  section {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 24px; margin: 18px 0; box-shadow: 0 2px 8px rgba(0,0,0,.04);
+  }
+  h2 { margin-top: 0; color: var(--accent); font-size: 25px; }
+  h3 { margin-bottom: 8px; }
+  pre {
+    background: var(--code); color: #f9fafb; padding: 18px; border-radius: 9px;
+    overflow-x: auto; font-size: 14px; line-height: 1.45;
+  }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .key {
+    border-left: 4px solid var(--accent); background: #eff6ff; padding: 12px 16px;
+    margin: 14px 0; border-radius: 6px;
+  }
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; }
+  th, td { border: 1px solid var(--border); padding: 10px; text-align: left; vertical-align: top; }
+  th { background: #f3f4f6; }
+  ul { padding-left: 22px; }
+  .tag {
+    display: inline-block; background: #eef2ff; color: #3730a3; padding: 3px 8px;
+    border-radius: 999px; font-size: 12px; margin-right: 5px;
+  }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  @media print {
+    body { background: white; }
+    section { box-shadow: none; break-inside: avoid; }
+    header { color: black; background: white; border-bottom: 2px solid #111; }
+    .subtitle { color: #444; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>From Stateful to Stateless</h1>
+    <p class="subtitle">Complete System Design Notes — Points 1 to 33</p>
+    <p><span class="tag">Scalability</span><span class="tag">Distributed Systems</span><span class="tag">Web Architecture</span><span class="tag">Interview Prep</span></p>
+  </div>
+</header>
+
+<main>
+<section class="toc">
+<h2>Contents</h2>
+<ol>
+<li><a href="#p1">The Core Problem</a></li>
+<li><a href="#p2">Stateful Architecture</a></li>
+<li><a href="#p3">Stateless Architecture</a></li>
+<li><a href="#p4">What Exactly Is State?</a></li>
+<li><a href="#p5">HTTP Sessions</a></li>
+<li><a href="#p6">Cookie Sessions</a></li>
+<li><a href="#p7">Centralized Session Store</a></li>
+<li><a href="#p8">Sticky Sessions</a></li>
+<li><a href="#p9">Session Strategy Comparison</a></li>
+<li><a href="#p10">JWT and Stateless Authentication</a></li>
+<li><a href="#p11">Files as Hidden State</a></li>
+<li><a href="#p12">Local Disk</a></li>
+<li><a href="#p13">Object Storage</a></li>
+<li><a href="#p14">Better Upload Architecture</a></li>
+<li><a href="#p15">User-Generated vs System-Generated Files</a></li>
+<li><a href="#p16">Temporary Files</a></li>
+<li><a href="#p17">Local Cache</a></li>
+<li><a href="#p18">In-Memory State</a></li>
+<li><a href="#p19">Background Jobs</a></li>
+<li><a href="#p20">Locks</a></li>
+<li><a href="#p21">WebSockets</a></li>
+<li><a href="#p22">Rate Limiting</a></li>
+<li><a href="#p23">Configuration</a></li>
+<li><a href="#p24">Deployment</a></li>
+<li><a href="#p25">Autoscaling</a></li>
+<li><a href="#p26">Failure Handling</a></li>
+<li><a href="#p27">Stateless Frontend Architecture</a></li>
+<li><a href="#p28">Don't Make Everything Stateless</a></li>
+<li><a href="#p29">State Classification Framework</a></li>
+<li><a href="#p30">State Decision Tree</a></li>
+<li><a href="#p31">Interview Mental Model</a></li>
+<li><a href="#p32">Golden Rule</a></li>
+<li><a href="#p33">Final Architecture Cheat Sheet</a></li>
+</ol>
+</section>
+
+<section id="p1"><h2>1. The Core Problem</h2>
+<p>The central architectural question is:</p>
+<div class="key"><strong>Can any request be handled by any application server?</strong></div>
+<p>If yes → stateless architecture. If no → state is tied to a particular server.</p>
+</section>
+
+<section id="p2"><h2>2. Stateful Architecture</h2>
+<pre><code>                    User
+                      |
+                      v
+                +-----------+
+                |    LB     |
+                +-----------+
+                      |
+             +--------+--------+
+             |                 |
+             v                 v
+        +---------+       +---------+
+        | Server A|       | Server B|
+        +---------+       +---------+
+        | Session |       | Session |
+        | Cart    |       | Cart    |
+        | Files   |       | Files   |
+        +---------+       +---------+
+
+User ---> Server A
+User ---> Server B  X</code></pre>
+<p>Server A knows something Server B does not. The load balancer may therefore need sticky sessions.</p>
+</section>
+
+<section id="p3"><h2>3. Stateless Architecture</h2>
+<pre><code>                       +-------------+
+                       |    Client   |
+                       +-------------+
+                              |
+                              v
+                       +-------------+
+                       | LoadBalancer|
+                       +-------------+
+                         /     |     \
+                        v      v      v
+                    +-----+ +-----+ +-----+
+                    | App | | App | | App |
+                    |  A  | |  B  | |  C  |
+                    +-----+ +-----+ +-----+
+                       \       |       /
+                        \      |      /
+                         v     v     v
+                    +-------------------+
+                    | External State    |
+                    | Redis / DB / S3    |
+                    | Kafka              |
+                    +-------------------+</code></pre>
+<p>Now App A, B and C are interchangeable clones. Any instance can process any request.</p>
+<ul>
+<li>Horizontal scalability</li><li>Easier autoscaling</li><li>Simpler failover</li>
+<li>Easier deployments</li><li>Better fault isolation</li><li>Easier container orchestration</li>
+</ul>
+</section>
+
+<section id="p4"><h2>4. What Exactly Is State?</h2>
+<p><strong>State is information that must survive from one request/process execution to another in order to maintain application behavior.</strong></p>
+<pre><code>STATE
+ |
+ +-- HTTP Session
+ +-- Authentication
+ +-- Shopping Cart
+ +-- Uploaded Files
+ +-- Generated Files
+ +-- Local Cache
+ +-- Local Database
+ +-- In-memory objects
+ +-- WebSocket connections
+ +-- Background jobs
+ +-- Locks
+ +-- Temporary processing data
+ +-- Rate-limit counters
+ +-- Feature flags
+ +-- Configuration</code></pre>
+<p>Not all state must disappear. The goal is to remove <strong>instance-local state</strong> from horizontally scaled application servers.</p>
+</section>
+
+<section id="p5"><h2>5. HTTP Sessions</h2>
+<p>HTTP is stateless. Each request is independent:</p>
+<pre><code>Request 1: GET /login
+Request 2: GET /account
+Request 3: GET /portfolio</code></pre>
+<p>Applications use cookies/tokens to create continuity across requests.</p>
+<pre><code>Browser
+   |
+   | session_id
+   v
+App Server
+   |
+   +--> Find session
+   +--> Identify user
+   +--> Load preferences/cart/etc.</code></pre>
+<p>If session data lives in one server's memory, the user becomes tied to that server.</p>
+</section>
+
+<section id="p6"><h2>6. Cookie Sessions</h2>
+<p>Instead of storing only a session ID, the cookie can contain small session data, usually serialized and protected.</p>
+<pre><code>Application data
+       |
+       v
+Serialize
+       |
+       v
+Encrypt / Sign
+       |
+       v
+Cookie
+       |
+       v
+Browser</code></pre>
+<p><strong>Good for:</strong> small session data such as user ID, token, and a few preferences.</p>
+<p><strong>Problem:</strong> cookies are sent with requests, so large session data creates network overhead.</p>
+<pre><code>5 KB cookie × 100 requests = 500 KB transferred per user session</code></pre>
+<p>Also remember:</p>
+<div class="key"><strong>Encoding ≠ Encryption ≠ Signing</strong></div>
+<p>Use appropriate cookie protections such as Secure, HttpOnly and SameSite.</p>
+</section>
+
+<section id="p7"><h2>7. Centralized Session Store</h2>
+<pre><code>                 Browser
+                    |
+                    | session_id
+                    v
+             +-------------+
+             | Load Balancer|
+             +-------------+
+               /    |    \
+              v     v     v
+           App A  App B  App C
+              \     |     /
+               \    |    /
+                  Redis
+                     |
+          user/session information</code></pre>
+<p>The cookie carries a small session ID; Redis holds the actual session.</p>
+<ul><li>Small cookie</li><li>Large session data possible</li><li>Any app instance can serve the user</li></ul>
+<p>Trade-off: Redis becomes critical infrastructure and must be highly available, monitored and capacity-planned.</p>
+<div class="key"><strong>Statelessness often means relocating state to a purpose-built state store.</strong></div>
+</section>
+
+<section id="p8"><h2>8. Sticky Sessions</h2>
+<pre><code>User
+ |
+ v
+Load Balancer
+ |
+ +----> Server A
+          |
+          +--- Local Session
+
+User X ---> Server A
+User X ---> Server A
+User X ---> Server A</code></pre>
+<p>The load balancer keeps a user attached to a particular server.</p>
+<p><strong>Problems:</strong></p>
+<ul>
+<li>Poor load distribution</li>
+<li>Harder autoscaling</li>
+<li>Bad failure behavior</li>
+<li>Harder server replacement</li>
+<li>Session may be lost when a server crashes</li>
+</ul>
+<p>Sticky sessions preserve statefulness; they do not eliminate it.</p>
+</section>
+
+<section id="p9"><h2>9. Session Strategy Comparison</h2>
+<table>
+<tr><th>Approach</th><th>Stateless App</th><th>Scalability</th><th>Complexity</th><th>Main Problem</th></tr>
+<tr><td>Cookie session</td><td>Yes</td><td>High</td><td>Low</td><td>Cookie size / bandwidth</td></tr>
+<tr><td>Redis/session store</td><td>Yes</td><td>High</td><td>Medium</td><td>Redis becomes critical dependency</td></tr>
+<tr><td>Sticky sessions</td><td>No</td><td>Medium</td><td>Low</td><td>Poor failover / rebalancing</td></tr>
+</table>
+<p><strong>Typical choice:</strong> small immutable information → signed/encrypted cookie/token; larger mutable session information → Redis/distributed store.</p>
+</section>
+
+<section id="p10"><h2>10. JWT and Stateless Authentication</h2>
+<pre><code>Login
+  |
+  v
+Authentication Service
+  |
+  v
+JWT
+  |
+  v
+Client
+  |
+  | Authorization: Bearer JWT
+  v
+Any App Server
+  |
+  +--> Validate signature
+  +--> Read claims
+  +--> Process request</code></pre>
+<p>No session lookup is necessarily required.</p>
+<p>JWT introduces trade-offs around token revocation, token size, key rotation, expiration, compromised tokens and refresh-token management.</p>
+<div class="key"><strong>JWT is a mechanism for carrying claims; it is not automatically the best authentication architecture.</strong></div>
+</section>
+
+<section id="p11"><h2>11. Files Are Another Hidden Source of State</h2>
+<pre><code>User
+ |
+ v
+Server A
+ |
+ +--> /uploads/user123.pdf
+
+Later:
+
+User
+ |
+ v
+Server B
+ |
+ +--> File doesn't exist!</code></pre>
+<p>Local files make application instances stateful because Server A's filesystem is not Server B's filesystem.</p>
+</section>
+
+<section id="p12"><h2>12. Local Disk Creates Stateful Servers</h2>
+<pre><code>             Load Balancer
+                  |
+          +-------+-------+
+          |               |
+          v               v
+       Server A        Server B
+       /data           /data
+       file.pdf       EMPTY</code></pre>
+<p>Persistent user data on local disk prevents requests from being freely routed to any instance.</p>
+</section>
+
+<section id="p13"><h2>13. Solution — Object Storage</h2>
+<pre><code>                 +-------------+
+                 | App Server A |
+                 +-------------+
+                        |
+                        v
+                 +-------------+
+                 | Object Store|
+                 +-------------+
+                        |
+                 +------+------+
+                 |             |
+             document.pdf   image.jpg</code></pre>
+<p>Use durable object storage such as S3-compatible storage for user-generated files and large system-generated artifacts.</p>
+<p>The application stores metadata and access information; it does not make the application instance the owner of the file.</p>
+</section>
+
+<section id="p14"><h2>14. Better Upload Architecture</h2>
+<pre><code>                1. Request upload URL
+Client ------------------------> API
+                                  |
+                                  v
+                           Generate pre-signed URL
+                                  |
+                <-----------------+
+                2. URL
+Client ------------------------> Object Storage
+                3. Upload</code></pre>
+<p>For large uploads, direct client-to-object-storage transfer reduces application-server bandwidth and improves scalability.</p>
+<p>For processing:</p>
+<pre><code>Object Storage
+      |
+      | Event
+      v
+ Queue / Kafka
+      |
+      v
+Document Processing Workers</code></pre>
+</section>
+
+<section id="p15"><h2>15. User-Generated vs System-Generated Files</h2>
+<h3>User-generated</h3>
+<ul><li>Profile photos</li><li>PDF/KYC documents</li><li>Videos</li><li>Customer uploads</li></ul>
+<p>→ Object Storage</p>
+<h3>System-generated</h3>
+<ul><li>Reports</li><li>Statements</li><li>Exports</li><li>Invoices</li></ul>
+<pre><code>Request
+   |
+   v
+API
+   |
+   v
+Job Queue
+   |
+   v
+Worker
+   |
+   v
+Generate file
+   |
+   v
+Object Storage
+   |
+   v
+Download URL</code></pre>
+<p>Avoid making an API server synchronously generate very large files.</p>
+</section>
+
+<section id="p16"><h2>16. Temporary Files</h2>
+<p>Temporary files can also cause hidden coupling:</p>
+<pre><code>Server A
+ |
+ +-- /tmp/report.csv
+
+Another request
+ |
+ v
+Server B
+ |
+ +-- /tmp/report.csv --> NOT FOUND</code></pre>
+<p>Use object storage or ephemeral local storage only when losing the data is safe.</p>
+<div class="key"><strong>Distinguish ephemeral state from durable state.</strong></div>
+</section>
+
+<section id="p17"><h2>17. Local Cache Is Also State</h2>
+<pre><code>Server A: user123 -> balance = ₹10,000
+Server B: user123 -> balance = ₹8,000</code></pre>
+<p>Caching is not inherently bad. The key question is whether the cache is the authoritative source of truth.</p>
+<pre><code>Database = Source of Truth
+        |
+        v
+Redis / local cache = Derived data
+
+Cache miss
+   |
+   v
+Database
+   |
+   v
+Rebuild cache</code></pre>
+<div class="key"><strong>A cache should generally be disposable and reconstructible.</strong></div>
+</section>
+
+<section id="p18"><h2>18. In-Memory State</h2>
+<pre><code>Server A:
+Map&lt;UserId, Session&gt;
+       |
+       +-- Session X
+
+Server B:
+       |
+       +-- No Session X</code></pre>
+<p>Local in-memory maps, session objects and mutable process variables break horizontal scaling when they affect correctness.</p>
+<p>Move critical state to Redis, a database or another distributed state store.</p>
+</section>
+
+<section id="p19"><h2>19. Background Jobs</h2>
+<p>Do not keep critical job state only in application memory.</p>
+<pre><code>API
+ |
+ v
+Queue
+ |
+ +--> Worker A
+ +--> Worker B
+ +--> Worker C</code></pre>
+<p>Job state can live in a database, Redis, queue, or workflow engine depending on requirements.</p>
+<p>This allows workers to be added, removed or restarted without losing the job's authoritative state.</p>
+</section>
+
+<section id="p20"><h2>20. Locks Are State Too</h2>
+<pre><code>Server A holds:
+Lock(Order123)
+
+Server A crashes
+       |
+       v
+Who releases the lock?</code></pre>
+<p>Distributed systems may use database locks, Redis-based coordination or dedicated coordination systems.</p>
+<p>However, consider whether distributed locks can be replaced with:</p>
+<ul><li>Idempotency</li><li>Optimistic concurrency</li><li>Database constraints</li></ul>
+<p>These approaches can often be safer and simpler.</p>
+</section>
+
+<section id="p21"><h2>21. WebSockets and Stateful Connections</h2>
+<pre><code>Client
+  |
+  | WebSocket
+  v
+Server A
+
+Server A dies
+       |
+       X
+Connection lost</code></pre>
+<p>WebSocket connections are inherently connection-stateful. At scale, events may need Pub/Sub, Kafka or another messaging mechanism.</p>
+<pre><code>User A connected to Server B
+
+Server C receives event
+        |
+        v
+      Pub/Sub
+        |
+        v
+    Server B
+        |
+        v
+      User A</code></pre>
+</section>
+
+<section id="p22"><h2>22. Rate Limiting Is State</h2>
+<p>Suppose a user is allowed 100 requests/minute. Local counters can be inconsistent:</p>
+<pre><code>Server A: 95 requests
+Server B: 95 requests
+
+User can effectively make ~190 requests.</code></pre>
+<p>Use a distributed counter/store or gateway-level distributed rate limiting.</p>
+<pre><code>Requests
+   |
+   v
+ Redis / Distributed Counter
+   |
+   +--> request count
+   +--> TTL/window
+   +--> decision</code></pre>
+</section>
+
+<section id="p23"><h2>23. Configuration Is Also a Form of State</h2>
+<pre><code>Server A: featureX = ON
+Server B: featureX = OFF</code></pre>
+<p>Different configuration across instances can create inconsistent behavior.</p>
+<pre><code>Configuration / Feature Flag Service
+              |
+       +------+------+ 
+       |      |      |
+       v      v      v
+       A      B      C</code></pre>
+<p>Use centralized configuration or feature-flag mechanisms where consistency matters.</p>
+</section>
+
+<section id="p24"><h2>24. Deployment Becomes Much Easier</h2>
+<p>Stateful instances are difficult to terminate because users may depend on local state.</p>
+<pre><code>Stateless deployment:
+
+Old: A B C
+New: D E
+
+Shift traffic to D/E
+
+Terminate A/B/C</code></pre>
+<p>This enables rolling deployments, blue/green deployments, canary releases and rapid rollback.</p>
+</section>
+
+<section id="p25"><h2>25. Autoscaling</h2>
+<pre><code>Traffic:
+100 RPS → 200 RPS → 500 RPS
+
+Autoscaler:
+3 instances → 8 instances</code></pre>
+<p>Because stateless instances are interchangeable, autoscaling can add capacity without needing to migrate user state between servers.</p>
+<div class="key"><strong>Horizontal scaling works best when compute instances are disposable.</strong></div>
+</section>
+
+<section id="p26"><h2>26. Failure Handling</h2>
+<h3>Stateless</h3>
+<pre><code>Request
+   |
+   v
+Server A
+   X CRASH
+   |
+   v
+Retry / new request
+   |
+   v
+Server B
+   |
+   v
+Success</code></pre>
+<h3>Stateful</h3>
+<pre><code>Request
+   |
+   v
+Server A
+   |
+   +-- Local Session
+   |
+   X CRASH
+   |
+   v
+Session LOST</code></pre>
+<p>Statelessness improves failure recovery and fault tolerance because another instance can take over.</p>
+</section>
+
+<section id="p27"><h2>27. The Stateless Frontend Architecture</h2>
+<pre><code>                         INTERNET
+                            |
+                            v
+                     +-------------+
+                     | CDN / WAF   |
+                     +-------------+
+                            |
+                            v
+                     +-------------+
+                     | LoadBalancer|
+                     +-------------+
+                            |
+              +-------------+-------------+
+              |             |             |
+              v             v             v
+          +-------+     +-------+     +-------+
+          | App A |     | App B |     | App C |
+          +-------+     +-------+     +-------+
+              |             |             |
+              +-------------+-------------+
+                            |
+              +-------------+-------------+
+              |             |             |
+              v             v             v
+          +-------+      +-------+     +-------+
+          | Redis |      |  DB   |     |  S3   |
+          +-------+      +-------+     +-------+
+                            |
+                            v
+                       +---------+
+                       | Kafka   |
+                       +---------+</code></pre>
+<p>The application tier becomes disposable while the state layer provides the required durability and coordination.</p>
+</section>
+
+<section id="p28"><h2>28. But Don't Make Everything Stateless</h2>
+<p>Statelessness has costs: network calls, latency, infrastructure complexity, operational cost and consistency concerns.</p>
+<pre><code>Local memory
+     |
+     | very fast
+     v
+Application
+
+versus
+
+Application
+     |
+     | network
+     v
+Redis</code></pre>
+<div class="key"><strong>Keep instance-local state only when losing it is acceptable and it does not affect correctness or scalability.</strong></div>
+</section>
+
+<section id="p29"><h2>29. State Classification Framework</h2>
+<pre><code>                    STATE
+                      |
+       +--------------+--------------+
+       |              |              |
+   Durable         Temporary       Derived
+       |              |              |
+      DB          ephemeral       Cache
+       |
+       v
+  Must survive
+  failure?</code></pre>
+<h3>Ask these questions</h3>
+<ol>
+<li>Does this data need to survive server failure?</li>
+<li>Can another instance reconstruct it?</li>
+<li>Must every request see exactly the same value?</li>
+<li>Can the client safely carry it?</li>
+<li>Is the data large?</li>
+</ol>
+</section>
+
+<section id="p30"><h2>30. Architecture Decision Tree</h2>
+<pre><code>             Do I need state?
+                    |
+              +-----+-----+
+              |           |
+             NO          YES
+              |           |
+          Stateless       |
+                          v
+                  Must survive failure?
+                       |
+                 +-----+-----+
+                 |           |
+                NO          YES
+                 |           |
+              Local       External
+              memory      storage
+                 |           |
+              Cache?      +---+---+
+                          |       |
+                         DB     Object
+                                Store</code></pre>
+</section>
+
+<section id="p31"><h2>31. Interview Mental Model</h2>
+<p>When asked, <strong>"How would you make this application horizontally scalable?"</strong>, do not immediately answer "add more servers."</p>
+<div class="key"><strong>Ask: Can I add server N without changing system behavior?</strong></div>
+<p>Inspect these sources of hidden state:</p>
+<ol>
+<li>Sessions</li><li>Authentication</li><li>Local files</li><li>Local cache</li>
+<li>Local database</li><li>In-memory maps</li><li>Locks</li><li>Background jobs</li>
+<li>WebSockets</li><li>Rate limits</li><li>Configuration</li><li>Temporary files</li>
+</ol>
+<p>For every one ask:</p>
+<div class="key"><strong>"What happens if this server disappears right now?"</strong></div>
+<p>This single question exposes many hidden scalability problems.</p>
+</section>
+
+<section id="p32"><h2>32. The Golden Rule</h2>
+<pre><code>                    SERVER
+                      |
+        +-------------+-------------+
+        |             |             |
+      CPU           Memory         Disk
+        |             |             |
+      GOOD          CAREFUL         BAD
+    ephemeral      derived       persistent
+    computation     cache          state</code></pre>
+<p>A scalable application server should ideally behave like:</p>
+<pre><code>CREATE
+   |
+   v
+USE
+   |
+   v
+DESTROY</code></pre>
+<p>Critical information should not be trapped inside an application instance.</p>
+</section>
+
+<section id="p33"><h2>33. Final Architecture Cheat Sheet</h2>
+<table>
+<tr><th>State Type</th><th>Typical Location</th></tr>
+<tr><td>User session</td><td>Redis / token / cookie</td></tr>
+<tr><td>Authentication</td><td>Token + authentication service</td></tr>
+<tr><td>User profile</td><td>Database</td></tr>
+<tr><td>Shopping cart</td><td>Redis / Database</td></tr>
+<tr><td>Uploaded files</td><td>Object Storage</td></tr>
+<tr><td>Generated reports</td><td>Object Storage</td></tr>
+<tr><td>Temporary processing</td><td>Ephemeral disk</td></tr>
+<tr><td>Cache</td><td>Redis / local cache</td></tr>
+<tr><td>Jobs</td><td>Queue + Database</td></tr>
+<tr><td>Job status</td><td>Database / Redis</td></tr>
+<tr><td>Rate limits</td><td>Redis / API gateway</td></tr>
+<tr><td>Locks</td><td>Database / distributed coordination</td></tr>
+<tr><td>WebSocket events</td><td>Pub/Sub / Kafka</td></tr>
+<tr><td>Configuration</td><td>Configuration service</td></tr>
+<tr><td>Feature flags</td><td>Feature flag service</td></tr>
+<tr><td>Audit trail</td><td>Durable database/storage</td></tr>
+</table>
+<div class="key">
+<strong>Golden takeaway:</strong> Don't eliminate state from the system; eliminate unnecessary state from the application instances.
+</div>
+</section>
+
+<section>
+<h2>One Diagram to Remember</h2>
+<pre><code>                 ┌──────────────────┐
+                 │      CLIENT      │
+                 └────────┬─────────┘
+                          │
+                          ▼
+                 ┌──────────────────┐
+                 │ CDN / WAF / LB   │
+                 └────────┬─────────┘
+                          │
+             ┌────────────┼────────────┐
+             │            │            │
+             ▼            ▼            ▼
+        ┌────────┐   ┌────────┐   ┌────────┐
+        │ App A  │   │ App B  │   │ App C  │
+        │STATELESS│  │STATELESS│  │STATELESS│
+        └────┬───┘   └────┬───┘   └────┬───┘
+             │            │            │
+             └────────────┼────────────┘
+                          │
+           ┌──────────────┼──────────────┐
+           │              │              │
+           ▼              ▼              ▼
+       ┌────────┐    ┌─────────┐    ┌──────────┐
+       │ Redis  │    │Database │    │Object    │
+       │        │    │         │    │Storage   │
+       └────────┘    └─────────┘    └──────────┘
+                          │
+                          ▼
+                    DURABLE STATE</code></pre>
+</section>
+
+</main>
+</body>
+</html>

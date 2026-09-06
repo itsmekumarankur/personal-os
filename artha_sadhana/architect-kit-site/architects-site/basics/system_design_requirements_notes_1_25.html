@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Design — Requirements Notes</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f5f7fa;color:#1f2937;line-height:1.6}
+.container{max-width:1100px;margin:40px auto;padding:0 24px 60px}
+header{background:#111827;color:white;padding:40px;border-radius:16px;margin-bottom:30px}
+header h1{margin:0 0 10px;font-size:34px}header p{margin:0;color:#d1d5db;font-size:17px}
+.principle,.success,.warning,.memory{padding:20px 24px;border-radius:10px;margin-bottom:22px}
+.principle{background:#fff;border-left:5px solid #2563eb}.success{background:#f0fdf4;border-left:4px solid #16a34a}.warning{background:#fff7ed;border-left:4px solid #f97316}.memory{background:#eef2ff}
+section{background:white;padding:28px;margin-bottom:22px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+h2{margin-top:0;color:#111827;font-size:24px;border-bottom:2px solid #e5e7eb;padding-bottom:10px}
+h3{color:#374151;margin-top:24px}.question{font-weight:bold;font-size:18px;color:#2563eb;margin:15px 0}
+ul{padding-left:25px}li{margin:6px 0}code{background:#f3f4f6;padding:2px 6px;border-radius:4px;font-family:Consolas,monospace}
+pre{background:#111827;color:#e5e7eb;padding:20px;border-radius:10px;overflow-x:auto;font-family:Consolas,Monaco,monospace;line-height:1.5}
+.tag{display:inline-block;padding:5px 10px;margin:3px;border-radius:20px;background:#eef2ff;color:#3730a3;font-size:14px;font-weight:bold}
+table{width:100%;border-collapse:collapse;margin-top:15px}th,td{padding:12px;border:1px solid #e5e7eb;text-align:left}th{background:#f3f4f6}
+.footer{text-align:center;color:#6b7280;margin-top:40px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="container">
+<header><h1>System Design: Requirements</h1><p>Requirements are the foundation of good system design.</p></header>
+<div class="principle"><strong>Golden Rule:</strong><br>Do not start with Kafka, Redis, databases or microservices. Start with requirements.</div>
+
+<section><h2>1. Core Principle</h2><pre>VAGUE PROBLEM
+      |
+      v
+CLARIFY REQUIREMENTS
+      |
+ +----+----+
+ |         |
+ v         v
+FUNCTIONAL     NON-FUNCTIONAL
+ "WHAT?"        "HOW WELL?"
+ |              |
+ +------+-------+
+        |
+        v
+CAPACITY ESTIMATE
+        |
+        v
+CONSTRAINTS
+        |
+        v
+TRADE-OFFS
+        |
+        v
+ARCHITECTURE</pre><p><strong>Key idea:</strong> Requirements → Constraints → Trade-offs → Architecture.</p></section>
+
+<section><h2>2. Functional Requirements</h2><div class="question">What should the system do?</div><pre>USER
+ |
+ +--> Send Message
+ |
+ +--> Receive Message
+ |
+ +--> Create Group
+ |
+ +--> View History
+ |
+ +--> Get Notification</pre><p>Functional requirements describe the actual behavior and features of the system.</p><ul><li>Messaging: send, receive, group chat, history</li><li>YouTube: upload, watch, search, like/comment</li><li>Payment: initiate, validate, process, view transaction</li></ul></section>
+
+<section><h2>3. Identify Actors</h2><div class="question">Who interacts with the system?</div><pre>SYSTEM
+ /     |      \
+/      |       \
+v      v        v
+Customer Admin External System</pre><p>Actors may include customers, administrators, internal teams, external systems, and other services.</p></section>
+
+<section><h2>4. User Journey</h2><p>Don't just list features. Understand the workflow.</p><pre>User
+ |
+ v
+Select Product
+ |
+ v
+Validate
+ |
+ v
+Create Order
+ |
+ v
+Payment
+ |
+ v
+External System
+ |
+ v
+Update Status
+ |
+ v
+Notify User</pre><div class="success"><strong>Key takeaway:</strong> User journeys reveal system boundaries.</div></section>
+
+<section><h2>5. Scope</h2><p>Do not try to design the entire product.</p><pre>REQUIREMENTS
+     |
+     +--> MUST HAVE
+     |
+     +--> NICE TO HAVE
+     |
+     +--> OUT OF SCOPE</pre><h3>Example: Messaging</h3><p><strong>Must:</strong> Send, Receive, History</p><p><strong>Nice:</strong> Typing indicator, Read receipt, Reactions</p><p><strong>Out:</strong> Video calling, Voice calling</p></section>
+
+<section><h2>6. APIs</h2><p>Once functionality is clear, express it through APIs.</p><pre>Functional Requirement
+          |
+          v
+         API</pre><pre>POST /messages
+
+GET /users/{id}/messages
+
+POST /conversations
+
+GET /conversations/{id}/messages</pre><div class="warning">Do not start with APIs before understanding the user journey.</div></section>
+
+<section><h2>7. Non-Functional Requirements</h2><div class="question">How well should the system work?</div><div><span class="tag">Scalability</span><span class="tag">Performance</span><span class="tag">Availability</span><span class="tag">Reliability</span><span class="tag">Durability</span><span class="tag">Consistency</span><span class="tag">Security</span><span class="tag">Maintainability</span><span class="tag">Observability</span><span class="tag">Cost</span></div><p>NFRs describe system qualities and constraints rather than features.</p></section>
+
+<section><h2>8. Quantify Everything</h2><p>Avoid vague statements.</p><pre>"System should be fast"
+"System should scale"
+"Highly available"</pre><p>Instead:</p><pre>Users        = 10M
+Messages     = 100M/day
+Latency      = p95 &lt; 200ms
+Availability = 99.99%
+RPO          = 0</pre><div class="success">Senior architects convert adjectives into measurable targets.</div></section>
+
+<section><h2>9. Scalability</h2><div class="question">Can the system handle growth?</div><pre>Users
+ |
+ +--> 1M → 10M → 100M
+
+Traffic
+ |
+ +--> 1K → 10K → 100K RPS
+
+Data
+ |
+ +--> GB → TB → PB
+
+Geography
+ |
+ +--> India → Asia → Global</pre><h3>Horizontal Scaling</h3><pre>          Load Balancer
+          /     |      \
+         v      v       v
+      Server  Server  Server</pre><p>Horizontal scaling means adding more instances rather than continuously making one server bigger.</p></section>
+
+<section><h2>10. Capacity Estimation</h2><p>Example: 10 million messages/day.</p><pre>10,000,000
+-----------
+  86,400
+
+≈ 116 messages/sec</pre><p>Then estimate peak traffic.</p><pre>Average = 116/sec
+
+Peak = Average × Peak Factor
+
+If peak factor = 10
+
+Peak ≈ 1,160/sec</pre><p>Then ask: servers, DB writes, queue partitions, storage, bandwidth.</p></section>
+
+<section><h2>11. Performance</h2><p>Performance is not just average latency.</p><pre>p50 &lt; 50ms
+p95 &lt; 200ms
+p99 &lt; 500ms</pre><pre>99 users → 20ms
+1 user   → 10 seconds
+
+Average can hide the problem.
+p99 exposes it.</pre><div class="success">Tail latency matters.</div></section>
+
+<section><h2>12. Availability</h2><div class="question">How often must the system be operational?</div><table><tr><th>Availability</th><th>Approx. Downtime / Year</th></tr><tr><td>99%</td><td>3.65 days</td></tr><tr><td>99.9%</td><td>8.76 hours</td></tr><tr><td>99.99%</td><td>52.6 minutes</td></tr><tr><td>99.999%</td><td>5.26 minutes</td></tr></table><h3>High Availability Usually Requires</h3><pre>High Availability
+       |
+       +--> Replication
+       +--> Redundancy
+       +--> Failover
+       +--> Multi-AZ
+       +--> Health Checks</pre></section>
+
+<section><h2>13. Availability vs Reliability</h2><pre>AVAILABILITY
+     |
+     v
+"Can I access the system?"</pre><pre>RELIABILITY
+     |
+     v
+"Does the system do the correct thing?"</pre><h3>Example</h3><pre>Payment API → HTTP 200
+       |
+       v
+Transaction NOT persisted
+       |
+       v
+Available = YES
+Reliable  = NO</pre></section>
+
+<section><h2>14. Durability</h2><div class="question">Once data is successfully written, can we lose it?</div><pre>WRITE
+  |
+  v
+DURABLE STORAGE
+  |
+  +--> Replication
+  +--> Backup
+  +--> Persistence
+  +--> Recovery</pre><h3>RPO</h3><p><strong>Recovery Point Objective:</strong> Maximum acceptable data loss.</p><pre>RPO = 5 minutes
+→ Potentially lose up to 5 minutes of data</pre><p>For financial transactions, the target may be close to zero data loss.</p></section>
+
+<section><h2>15. RTO</h2><p><strong>Recovery Time Objective:</strong> How quickly must the system recover?</p><pre>System Failure
+      |
+      v
+    10 min
+      |
+      v
+System Restored
+
+RTO = 10 min</pre><div class="memory"><strong>Remember:</strong><br>RPO → How much data can I lose?<br>RTO → How much time can I be down?</div></section>
+
+<section><h2>16. Consistency</h2><div class="question">When multiple copies exist, when should they agree?</div><pre>           Database
+          /        \
+         v          v
+     Replica 1   Replica 2
+         |          |
+         +----?-----+
+              |
+         Consistency</pre><h3>Strong Consistency</h3><pre>WRITE
+  |
+  v
+Reads see latest committed value</pre><h3>Eventual Consistency</h3><pre>WRITE
+  |
+  +--> Replica A updated
+  |
+  +--> Replica B updates later
+              |
+              v
+       Eventually consistent</pre></section>
+
+<section><h2>17. Consistency Trade-off</h2><pre>        STRONG CONSISTENCY
+                |
+                v
+        More coordination
+                |
+                v
+        Potential latency
+                |
+                v
+      Availability trade-off</pre><h3>Strong consistency</h3><ul><li>Bank balance</li><li>Payment state</li><li>Account ownership</li></ul><h3>Eventual consistency</h3><ul><li>Likes</li><li>Views</li><li>Social counters</li><li>Recommendations</li></ul></section>
+
+<section><h2>18. Reliability / Failure Handling</h2><p>Assume everything can fail.</p><pre>Server       → FAIL
+Database     → FAIL
+Network      → FAIL
+Kafka        → FAIL
+Dependency   → TIMEOUT
+Deployment   → FAIL
+Region       → FAIL</pre><pre>Failure
+  |
+  +--> Timeout
+  +--> Retry
+  +--> Circuit Breaker
+  +--> Failover
+  +--> Idempotency
+  +--> Dead Letter Queue</pre></section>
+
+<section><h2>19. Idempotency</h2><p>Especially important for payment systems.</p><pre>Client
+  |
+  | Payment ₹1000
+  v
+Server
+  |
+  X Timeout</pre><p>The client may retry, potentially charging twice.</p><h3>Solution</h3><pre>Request
+  |
+  +--> Idempotency-Key: ABC123
+                    |
+                    v
+              Process ONCE</pre><div class="success">Same request repeated → same result, no duplicate side effect.</div></section>
+
+<section><h2>20. Maintainability</h2><div class="question">Can engineers safely change this system later?</div><pre>Maintainability
+      |
+      +--> Modularity
+      +--> Testing
+      +--> Documentation
+      +--> Automation
+      +--> Clean APIs
+      +--> Observability
+      +--> CI/CD</pre><div class="warning">More microservices ≠ better architecture.</div></section>
+
+<section><h2>21. Security</h2><pre>SECURITY
+   |
+   +--> Authentication
+   |       "Who are you?"
+   |
+   +--> Authorization
+   |       "What can you do?"
+   |
+   +--> Encryption
+   |       "Can others read it?"
+   |
+   +--> Audit
+   |       "Who did what?"
+   |
+   +--> Abuse Protection
+           "Can someone misuse it?"</pre><h3>Security Layers</h3><pre>Data in Transit → TLS
+Data at Rest    → Encryption
+Sensitive Data  → Masking / Tokenization
+APIs            → Auth + Rate Limiting</pre></section>
+
+<section><h2>22. Observability</h2><pre>              OBSERVABILITY
+                   |
+       +-----------+-----------+
+       |           |           |
+      Logs       Metrics     Traces
+       |           |           |
+   What?        How much?    Where?</pre><h3>Useful Metrics</h3><pre>RPS
+Error Rate
+Latency
+CPU
+Memory
+DB Connections
+Queue Depth</pre><h3>Distributed Trace</h3><pre>API
+ |
+ | 20ms
+ v
+Order Service
+ |
+ | 30ms
+ v
+Payment Service
+ |
+ | 200ms
+ v
+Bank</pre><p>Tracing identifies where a request spends its time.</p></section>
+
+<section><h2>23. Cost</h2><p>Architecture is also economics.</p><pre>             BUSINESS
+                |
+                v
+       Required SLA / SLO
+                |
+                v
+          Architecture
+                |
+                v
+              COST</pre><div class="warning">Build for the required SLA, not an imaginary SLA.</div></section>
+
+<section><h2>24. Requirements → Architecture</h2><table><tr><th>Requirement</th><th>Architectural Consequence</th></tr><tr><td>High Traffic</td><td>Horizontal Scaling</td></tr><tr><td>High Availability</td><td>Replication + Redundancy</td></tr><tr><td>Low Latency</td><td>Cache + Efficient Communication</td></tr><tr><td>High Writes</td><td>Partitioning / Sharding</td></tr><tr><td>Heavy Reads</td><td>Cache + Read Replicas</td></tr><tr><td>Strong Consistency</td><td>Transactions / Coordination</td></tr><tr><td>Eventual Consistency OK</td><td>Async / Event Driven</td></tr><tr><td>Zero Data Loss</td><td>Durable Storage + Replication</td></tr><tr><td>Global Users</td><td>Multi-Region</td></tr><tr><td>Security</td><td>Auth + Encryption + IAM + Audit</td></tr><tr><td>Easy Operations</td><td>Automation + Observability</td></tr><tr><td>Low Cost</td><td>Right-size Infrastructure</td></tr></table></section>
+
+<section><h2>25. Architecture Decision Chain</h2><p>When choosing a technology, think in this order:</p><pre>Requirement
+     |
+     v
+Constraint
+     |
+     v
+Trade-off
+     |
+     v
+Pattern
+     |
+     v
+Technology</pre><h3>Example</h3><pre>Need:
+High write throughput
+       |
+       v
+Constraint:
+Single DB cannot handle writes
+       |
+       v
+Trade-off:
+Partition data
+       |
+       v
+Pattern:
+Sharding / Partitioning
+       |
+       v
+Technology:
+Choose appropriate DB / Queue</pre><div class="success"><strong>Technology is the final decision, not the starting point.</strong></div></section>
+
+<section><h2>Quick Revision — 25 Points</h2><ol>
+<li>Start with requirements, not technology.</li><li>Functional requirements = WHAT the system does.</li><li>Identify all important actors.</li><li>Understand user journeys.</li><li>Clearly define scope.</li><li>Translate core functions into APIs.</li><li>NFRs = HOW WELL the system works.</li><li>Quantify NFRs wherever possible.</li><li>Understand scalability dimensions.</li><li>Estimate average and peak capacity.</li><li>Use latency percentiles such as p95/p99.</li><li>Define availability targets.</li><li>Understand availability vs reliability.</li><li>Define durability and RPO.</li><li>Define recovery time using RTO.</li><li>Choose an appropriate consistency model.</li><li>Understand consistency trade-offs.</li><li>Design explicitly for failures.</li><li>Use idempotency for retryable operations.</li><li>Design for maintainability.</li><li>Build security into the architecture.</li><li>Make the system observable.</li><li>Consider infrastructure/business cost.</li><li>Map requirements directly to architecture.</li><li>Choose technology only after requirements, constraints, trade-offs and patterns are clear.</li>
+</ol></section>
+
+<div class="memory"><h2>Ultimate Mental Model</h2><pre>WHAT?
+  |
+Functional
+  |
+  v
+HOW WELL?
+  |
+Non-Functional
+  |
+  v
+HOW MUCH?
+  |
+Capacity
+  |
+  v
+WHAT IF?
+  |
+Failure
+  |
+  v
+WHAT TRADE-OFF?
+  |
+  v
+ARCHITECTURE</pre><p><strong>Requirements → Constraints → Trade-offs → Architecture</strong></p></div>
+<div class="footer">System Design — Requirements | Interview Revision Notes</div>
+</div>
+</body>
+</html>

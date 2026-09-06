@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Design Notes — From a Single Server to Global Scale</title>
+<style>
+  :root {
+    --bg: #f7f8fa;
+    --card: #ffffff;
+    --text: #172033;
+    --muted: #5d6678;
+    --border: #dfe3ea;
+    --accent: #315efb;
+    --code: #f1f3f7;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    line-height: 1.65;
+  }
+  .container { max-width: 1100px; margin: 0 auto; padding: 36px 22px 70px; }
+  header {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 30px; margin-bottom: 24px;
+  }
+  h1 { margin: 0 0 8px; font-size: 34px; }
+  .subtitle { color: var(--muted); font-size: 17px; }
+  nav {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px 24px; margin-bottom: 24px;
+  }
+  nav strong { display: block; margin-bottom: 10px; }
+  nav a { color: var(--accent); text-decoration: none; display: inline-block; margin: 4px 12px 4px 0; }
+  section {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 28px; margin: 18px 0;
+  }
+  h2 { margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+  h3 { margin-top: 24px; }
+  code, pre {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  }
+  pre {
+    background: var(--code); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px; overflow-x: auto;
+    line-height: 1.35;
+  }
+  .callout {
+    border-left: 4px solid var(--accent);
+    background: #f5f7ff; padding: 14px 18px; margin: 18px 0;
+  }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+  th, td { border: 1px solid var(--border); padding: 10px 12px; text-align: left; vertical-align: top; }
+  th { background: var(--code); }
+  ul { padding-left: 24px; }
+  .tag { display: inline-block; background: var(--code); border: 1px solid var(--border); border-radius: 999px; padding: 3px 10px; margin: 2px; font-size: 13px; }
+  footer { color: var(--muted); text-align: center; margin-top: 35px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>From a Single Server to Global Scale</h1>
+  <div class="subtitle">Complete System Design &amp; Software Architecture Notes — Sections 1–67</div>
+  <p><strong>Core principle:</strong> Don't add architecture because it is fashionable. Add it because a measurable bottleneck or reliability requirement demands it.</p>
+</header>
+
+<nav>
+<strong>Contents</strong>
+<a href="#1">1. Requirements</a>
+<a href="#2">2. Capacity Estimation</a>
+<a href="#3">3. Single Server</a>
+<a href="#4">4. Vertical Scaling</a>
+<a href="#5">5. Separate Concerns</a>
+<a href="#6">6. Functional Partitioning</a>
+<a href="#7">7. Load Balancer</a>
+<a href="#8">8. Load-Balancing Algorithms</a>
+<a href="#9">9. Sticky Sessions</a>
+<a href="#10">10. Stateless</a>
+<a href="#11">11. Health Checks</a>
+<a href="#12">12. DB Bottleneck</a>
+<a href="#13">13. Primary–Replica</a>
+<a href="#14">14. Why Replicas Help</a>
+<a href="#15">15. Replication Lag</a>
+<a href="#16">16. Read-After-Write</a>
+<a href="#17">17. Failover</a>
+<a href="#18">18. Cache Layer</a>
+<a href="#19">19. Cache-Aside</a>
+<a href="#20">20. Cache Invalidation</a>
+<a href="#21">21. Cache Failure</a>
+<a href="#22">22. Cache Eviction</a>
+<a href="#23">23. What to Cache</a>
+<a href="#24">24. Cache vs DB</a>
+<a href="#25">25. Sharding</a>
+<a href="#26">26. Shard Key</a>
+<a href="#27">27. Range Sharding</a>
+<a href="#28">28. Hash Sharding</a>
+<a href="#29">29. Consistent Hashing</a>
+<a href="#30">30. Sharding Problems</a>
+<a href="#31">31. Good Shard Key</a>
+<a href="#32">32. Static Content</a>
+<a href="#33">33. Object Storage</a>
+<a href="#34">34. CDN</a>
+<a href="#35">35. CDN Cache Hit</a>
+<a href="#36">36. CDN Cache Miss</a>
+<a href="#37">37. Cache-Control</a>
+<a href="#38">38. CDN Invalidation</a>
+<a href="#39">39. Microservices</a>
+<a href="#40">40. Why Microservices</a>
+<a href="#41">41. Microservices Trade-offs</a>
+<a href="#42">42. DB per Service</a>
+<a href="#43">43. Distributed Transactions</a>
+<a href="#44">44. Saga</a>
+<a href="#45">45. Sync vs Async</a>
+<a href="#46">46. Message Queues</a>
+<a href="#47">47. Backpressure</a>
+<a href="#48">48. Retries</a>
+<a href="#49">49. Idempotency</a>
+<a href="#50">50. GeoDNS</a>
+<a href="#51">51. Multi-Region</a>
+<a href="#52">52. DB Strategies</a>
+<a href="#53">53. Active-Passive</a>
+<a href="#54">54. Active-Active</a>
+<a href="#55">55. Edge Servers</a>
+<a href="#56">56. WAF</a>
+<a href="#57">57. API Gateway</a>
+<a href="#58">58. Rate Limiting</a>
+<a href="#59">59. Reliability</a>
+<a href="#60">60. Circuit Breaker</a>
+<a href="#61">61. Observability</a>
+<a href="#62">62. Distributed Tracing</a>
+<a href="#63">63. Latency Budget</a>
+<a href="#64">64. Availability</a>
+<a href="#65">65. CAP</a>
+<a href="#66">66. Consistency</a>
+<a href="#67">67. Final Architecture</a>
+</nav>
+
+<section id="1"><h2>1. Requirements Come First</h2>
+<p>Before designing anything, establish what the system must do and how well it must perform.</p>
+<h3>Functional requirements</h3>
+<pre>User
+ |
+ +-- Register
+ +-- Login
+ +-- Browse products
+ +-- Add to cart
+ +-- Checkout
+ +-- Payment
+ +-- View order</pre>
+<h3>Non-functional requirements</h3>
+<div><span class="tag">Availability</span><span class="tag">Scalability</span><span class="tag">Latency</span><span class="tag">Consistency</span><span class="tag">Durability</span><span class="tag">Security</span><span class="tag">Observability</span><span class="tag">Disaster Recovery</span><span class="tag">Cost</span></div>
+<pre>10 million users
+1 million DAU
+100K requests/sec peak
+p99 latency &lt; 300 ms
+99.99% availability
+RPO &lt; 5 minutes
+RTO &lt; 30 minutes</pre>
+<div class="callout"><strong>Architectural rule:</strong> Architecture follows requirements.</div>
+</section>
+
+<section id="2"><h2>2. Capacity Estimation</h2>
+<p>Before adding infrastructure, estimate the workload.</p>
+<pre>Users                  = 10M
+Daily active users     = 1M
+Requests/user/day      = 100
+
+Daily requests
+= 1M × 100
+= 100M requests/day
+
+Average RPS
+= 100M / 86,400
+≈ 1,157 RPS
+
+Assume peak is 10× average:
+Peak RPS ≈ 11,570</pre>
+<p>Capacity estimates give quantitative justification for architectural decisions.</p>
+</section>
+
+<section id="3"><h2>3. Stage 1 — Single Server</h2>
+<pre>             Internet
+                 |
+                 v
+              DNS
+                 |
+                 v
+       +-------------------+
+       |    Single Server  |
+       |                   |
+       |  Web Application  |
+       |  Database         |
+       |  Static Files     |
+       +-------------------+</pre>
+<p>Everything runs on one machine. This is simple and can be perfectly reasonable for small workloads.</p>
+<h3>Advantages</h3><ul><li>Extremely simple</li><li>Cheap</li><li>Easy deployment</li><li>Easy debugging</li><li>No distributed-system complexity</li></ul>
+<h3>Problems</h3><pre>          SINGLE POINT OF FAILURE
+                    |
+        +-----------+-----------+
+        |           |           |
+       App         DB        Storage
+        |
+        v
+     Server dies
+        |
+        v
+   EVERYTHING DOWN</pre>
+</section>
+
+<section id="4"><h2>4. Vertical Scaling</h2>
+<pre>Small Server
+     |
+     v
+Bigger Server
+     |
+     v
+Even Bigger Server</pre>
+<p>Increase CPU, RAM, disk, or network capacity.</p>
+<h3>Advantages</h3><ul><li>Simple</li><li>No application changes</li><li>No distributed coordination</li><li>Easy operational model</li></ul>
+<h3>Problems</h3><ul><li>Hardware ceiling</li><li>Increasing cost</li><li>Still one failure domain</li><li>Scaling is not instantaneous</li><li>Cannot provide unlimited capacity</li></ul>
+<div class="callout"><strong>Key lesson:</strong> Vertical scaling buys time; horizontal scaling changes the scalability model.</div>
+</section>
+
+<section id="5"><h2>5. Stage 2 — Separate Concerns</h2>
+<pre>                  Internet
+                     |
+                     v
+               +-----------+
+               | App Server|
+               +-----+-----+
+                     |
+                     v
+               +-----------+
+               | Database  |
+               +-----------+</pre>
+<p>Application and database workloads often need different resources. The application may be CPU-heavy, while the database may need RAM and fast storage.</p>
+</section>
+
+<section id="6"><h2>6. Functional Partitioning</h2>
+<pre>                 Users
+                   |
+          +--------+--------+
+          |                 |
+          v                 v
+      Main App          Admin App
+          |                 |
+          v                 v
+       Main DB          Admin DB</pre>
+<p>Partition by feature or user type when workloads have different traffic, performance, or reliability requirements.</p>
+</section>
+
+<section id="7"><h2>7. Stage 3 — Load Balancer</h2>
+<pre>                    Users
+                      |
+                      v
+              +---------------+
+              | Load Balancer |
+              +-------+-------+
+                      |
+          +-----------+-----------+
+          |           |           |
+          v           v           v
+       App-1       App-2       App-3</pre>
+<p>When one application server cannot handle traffic, introduce multiple servers behind a load balancer.</p>
+</section>
+
+<section id="8"><h2>8. Load-Balancing Algorithms</h2>
+<h3>Round Robin</h3><pre>Request 1 → App-1
+Request 2 → App-2
+Request 3 → App-3
+Request 4 → App-1
+Request 5 → App-2</pre>
+<h3>Weighted Round Robin</h3><pre>App-1 → weight 5
+App-2 → weight 3
+App-3 → weight 2</pre>
+<h3>Other approaches</h3><ul><li>Least Connections</li><li>Least Response Time</li><li>Consistent Hashing</li></ul>
+</section>
+
+<section id="9"><h2>9. Sticky Sessions vs Stateless Servers</h2>
+<pre>User A ─────────→ App-1
+                   ^
+                   |
+User A always -----+</pre>
+<p>Sticky sessions keep a user attached to one server, but create uneven load and make failures disruptive.</p>
+<pre>App-1 crashes
+   |
+   v
+User session disappears</pre>
+<p>A better approach is to externalize session state.</p>
+</section>
+
+<section id="10"><h2>10. What Does Stateless Mean?</h2>
+<pre>App-1 ----+
+App-2 ----+----&gt; Redis / DB
+App-3 ----+</pre>
+<p>Stateless means application instances do not own critical user state locally. Any instance can process any request.</p>
+</section>
+
+<section id="11"><h2>11. Health Checks</h2>
+<pre>Load Balancer
+      |
+      +---- App-1 → /health → 200 OK
+      |
+      +---- App-2 → /health → 500
+      |
+      +---- App-3 → /health → 200 OK</pre>
+<p>Traffic should stop going to unhealthy instances.</p>
+<ul><li><strong>Liveness:</strong> Is the process alive?</li><li><strong>Readiness:</strong> Can this instance safely receive traffic?</li></ul>
+</section>
+
+<section id="12"><h2>12. Stage 4 — Database Becomes Bottleneck</h2>
+<pre>             Load Balancer
+                   |
+        +----------+----------+
+        |          |          |
+       App        App        App
+        \          |          /
+         \         |         /
+          +--------+--------+
+                   |
+                   v
+             Single DB</pre>
+<p>Eventually database query latency, CPU, I/O, locking, and connection pressure become the bottleneck.</p>
+</section>
+
+<section id="13"><h2>13. Primary–Replica Architecture</h2>
+<pre>                  Application
+                       |
+             +---------+---------+
+             |                   |
+          WRITE                 READ
+             |                   |
+             v                   v
+       +-----------+      +-----------+
+       |  Primary  |----->|  Replica  |
+       |    DB     |      |    DB     |
+       +-----------+      +-----------+
+                              |
+                              v
+                         Replica-2</pre>
+<p>Writes go to the primary; reads can be distributed to replicas.</p>
+</section>
+
+<section id="14"><h2>14. Why Replicas Help</h2>
+<pre>100,000 requests/sec
+90,000 = reads
+10,000 = writes
+
+10K → Primary
+
+30K → Replica-1
+30K → Replica-2
+30K → Replica-3</pre>
+<p>Read replication increases read capacity while preserving a primary write path.</p>
+</section>
+
+<section id="15"><h2>15. Replication Lag</h2>
+<pre>Client
+  |
+  | WRITE
+  v
+Primary
+  |
+  | replication
+  +-----> Replica
+           |
+           | lag
+           v
+      older data</pre>
+<p>Replicas may temporarily contain stale data. This creates a consistency trade-off.</p>
+</section>
+
+<section id="16"><h2>16. Read-After-Write Consistency</h2>
+<pre>POST /payment
+      |
+      v
+   Primary
+      |
+      v
+GET /payment/status
+      |
+      v
+   Primary</pre>
+<p>For a short period after a write, route dependent reads to the primary. Other techniques include session affinity, replica-lag awareness, or consistency tokens.</p>
+</section>
+
+<section id="17"><h2>17. Failover</h2>
+<pre>                Primary
+                   X
+                   |
+                   v
+                FAILED
+
+Replica-1
+    |
+    v
+Promoted to Primary</pre>
+<p>Failover requires failure detection, promotion, connection reconfiguration, retry handling, and explicit data-loss/RPO decisions.</p>
+</section>
+
+<section id="18"><h2>18. Stage 5 — Cache Layer</h2>
+<pre>Application
+    |
+    v
+   Cache
+    |
+    +---- HIT ----&gt; Return
+    |
+    +---- MISS
+          |
+          v
+         DB
+          |
+          v
+        Cache</pre>
+<p>Use a cache to avoid repeatedly executing expensive database reads. Common technologies include Redis and Memcached.</p>
+</section>
+
+<section id="19"><h2>19. Cache-Aside Pattern</h2>
+<pre>value = cache.get(key)
+
+if value exists:
+    return value
+
+value = database.get(key)
+
+cache.set(key, value)
+
+return value</pre>
+<p>The application explicitly reads the cache first and populates it after a miss.</p>
+</section>
+
+<section id="20"><h2>20. Cache Invalidation</h2>
+<pre>DB:
+Balance = ₹10,000
+
+Cache:
+Balance = ₹10,000
+
+DB updated → ₹8,000
+Cache → ₹10,000</pre>
+<p>Common strategies: TTL, explicit invalidation, write-through, and write-behind. The correct choice depends on consistency and durability requirements.</p>
+</section>
+
+<section id="21"><h2>21. Cache Failure</h2>
+<pre>Cache DOWN
+    |
+    v
+All requests → DB
+    |
+    v
+DB overloaded
+    |
+    v
+Cascading failure</pre>
+<p>Mitigations include TTL jitter, request coalescing, locks, rate limiting, circuit breakers, cache warming, and graceful degradation.</p>
+</section>
+
+<section id="22"><h2>22. Cache Eviction</h2>
+<ul><li><strong>LRU:</strong> Least Recently Used</li><li><strong>LFU:</strong> Least Frequently Used</li><li><strong>FIFO:</strong> First In First Out</li></ul>
+<p>Eviction policies determine which entries leave when cache capacity is exhausted.</p>
+</section>
+
+<section id="23"><h2>23. What Should Be Cached?</h2>
+<p>Good candidates are frequently read, rarely changed, or expensive to calculate.</p>
+<ul><li>Product catalog</li><li>User preferences</li><li>Configuration</li><li>Popular content</li><li>Reference data</li></ul>
+<p>Be careful with highly sensitive, frequently changing, or strongly consistent financial state unless the consistency model is explicitly designed.</p>
+</section>
+
+<section id="24"><h2>24. Cache vs Database</h2>
+<pre>Database
+    ↓
+System of Record
+
+Cache
+    ↓
+Performance Optimization</pre>
+<p>The cache normally serves performance; the database remains the authoritative source unless the architecture explicitly defines otherwise.</p>
+</section>
+
+<section id="25"><h2>25. Stage 6 — Database Sharding</h2>
+<pre>                    Application
+                         |
+             +-----------+-----------+
+             |           |           |
+             v           v           v
+          Shard-1     Shard-2     Shard-3
+          Users       Users       Users
+          1-1M        1M-2M       2M-3M</pre>
+<p>Sharding horizontally partitions data across multiple database instances.</p>
+</section>
+
+<section id="26"><h2>26. Sharding Key</h2>
+<pre>hash(user_id) % 4
+
+User 101 → Shard 1
+User 102 → Shard 3
+User 103 → Shard 0
+User 104 → Shard 2</pre>
+<p>The shard key determines where a record lives and how requests are routed.</p>
+</section>
+
+<section id="27"><h2>27. Range-Based Sharding</h2>
+<pre>Shard 1: user_id 1 - 1M
+Shard 2: user_id 1M - 2M
+Shard 3: user_id 2M - 3M</pre>
+<p>Range sharding is simple but can create hotspots when new or popular data concentrates in one range.</p>
+</section>
+
+<section id="28"><h2>28. Hash Sharding</h2>
+<pre>hash(user_id)
+      |
+      v
++-----+-----+-----+-----+
+| S0  | S1  | S2  | S3  |
++-----+-----+-----+-----+</pre>
+<p>Hashing generally distributes records more evenly, but changing shard count can cause substantial data movement.</p>
+</section>
+
+<section id="29"><h2>29. Consistent Hashing</h2>
+<pre>             Consistent Hash Ring
+
+                 S1
+              /      \
+           S4          S2
+              \      /
+                 S3</pre>
+<p>Consistent hashing reduces the amount of data that must move when nodes are added or removed. It is particularly important in distributed caches and some distributed data systems.</p>
+</section>
+
+<section id="30"><h2>30. Sharding Problems</h2>
+<ul><li>Cross-shard queries</li><li>Cross-shard transactions</li><li>Rebalancing</li><li>Hot shards</li><li>Operational complexity</li></ul>
+<pre>Transaction
+   |
+   +---- Shard 1
+   |
+   +---- Shard 2</pre>
+<p>Distributed transactions are significantly harder than a transaction within one database.</p>
+</section>
+
+<section id="31"><h2>31. Choosing a Good Shard Key</h2>
+<p>A good shard key should provide:</p>
+<ul><li>High cardinality</li><li>Good distribution</li><li>Predictable routing</li><li>Minimal cross-shard queries</li><li>Minimal hotspots</li></ul>
+<p>Common candidates include user_id, account_id, or tenant_id depending on the workload.</p>
+</section>
+
+<section id="32"><h2>32. Stage 7 — Static Content</h2>
+<pre>User
+ |
+ v
+Load Balancer
+ |
+ v
+Application
+ |
+ v
+Disk
+ |
+ v
+image.jpg</pre>
+<p>Images, videos, CSS, JavaScript, fonts, and documents do not necessarily need to be served by application servers.</p>
+</section>
+
+<section id="33"><h2>33. Object Storage</h2>
+<pre>Application
+     |
+     v
+Object Storage
+     |
+     +-- images
+     +-- videos
+     +-- documents
+     +-- JS
+     +-- CSS</pre>
+<p>Object storage offloads static file serving from application servers and is designed for scalable storage and delivery.</p>
+</section>
+
+<section id="34"><h2>34. CDN</h2>
+<pre>                 User
+                   |
+                   v
+                 CDN
+                   |
+             +-----+-----+
+             |           |
+           CACHE       CACHE
+             |
+           MISS
+             |
+             v
+       Object Storage</pre>
+<p>A CDN caches content at geographically distributed edge locations, reducing latency and origin load.</p>
+</section>
+
+<section id="35"><h2>35. CDN Cache Hit</h2>
+<pre>India User
+     |
+     v
+India / nearby Edge
+     |
+     v
+Image</pre>
+<p>When content is already at the edge, the request does not need to travel to the origin.</p>
+</section>
+
+<section id="36"><h2>36. CDN Cache Miss</h2>
+<pre>User
+ |
+ v
+Edge
+ |
+ +--- HIT ---&gt; Return immediately
+ |
+ +--- MISS
+       |
+       v
+     Origin
+       |
+       v
+  Edge caches object
+       |
+       v
+      User</pre>
+</section>
+
+<section id="37"><h2>37. Cache-Control</h2>
+<p>Important HTTP caching mechanisms include:</p>
+<ul><li>Cache-Control</li><li>ETag</li><li>Last-Modified</li><li>Expires</li></ul>
+<pre>Cache-Control: public, max-age=86400</pre>
+</section>
+
+<section id="38"><h2>38. CDN Invalidation</h2>
+<p>A strong strategy is versioned or content-hashed assets.</p>
+<pre>app.js
+
+becomes
+
+app.v123.js
+
+or
+
+app.8f32a1.js</pre>
+<p>Changing the URL makes new content naturally distinct and reduces dependence on global cache invalidation.</p>
+</section>
+
+<section id="39"><h2>39. Stage 8 — Microservices</h2>
+<pre>                 API Gateway
+                     |
+       +-------------+-------------+
+       |             |             |
+       v             v             v
+   User Service  Order Service  Payment Service
+       |             |             |
+       v             v             v
+     DB-1          DB-2          DB-3</pre>
+<p>Microservices decompose a large application into independently deployable services aligned with business/domain boundaries.</p>
+</section>
+
+<section id="40"><h2>40. Why Microservices?</h2>
+<ul><li>Independent scaling</li><li>Independent deployment</li><li>Team autonomy</li><li>Fault isolation</li><li>Technology independence</li><li>Domain boundaries</li></ul>
+<p>For example, a payment service processing 10K TPS may need very different scaling characteristics from a notification service processing 100 TPS.</p>
+</section>
+
+<section id="41"><h2>41. Microservices Are Not Automatically Better</h2>
+<pre>Service A
+   |
+   | network
+   v
+Service B
+   |
+   | network
+   v
+Service C</pre>
+<p>Microservices introduce network calls, distributed tracing, service discovery, retries, timeouts, partial failures, consistency problems, deployment complexity, and operational overhead.</p>
+<div class="callout"><strong>Architectural rule:</strong> A modular monolith may be the better choice when service boundaries and operational scale do not justify distributed complexity.</div>
+</section>
+
+<section id="42"><h2>42. Database-per-Service</h2>
+<pre>Order Service
+     |
+    DB1
+
+Payment Service
+     |
+    DB2
+
+User Service
+     |
+    DB3</pre>
+<p>Database ownership by service reduces tight coupling but creates distributed data and transaction challenges.</p>
+</section>
+
+<section id="43"><h2>43. Distributed Transactions</h2>
+<pre>Place Order
+
+1. Create order
+2. Charge payment
+3. Reduce inventory
+
+Order
+  |
+  +---- Payment
+  |
+  +---- Inventory</pre>
+<p>A single database transaction cannot normally span independent service databases without additional distributed transaction machinery.</p>
+</section>
+
+<section id="44"><h2>44. Saga Pattern</h2>
+<pre>Create Order
+     |
+     v
+Reserve Inventory
+     |
+     v
+Charge Payment
+     |
+     v
+Confirm Order</pre>
+<p>If a later step fails, compensating actions undo or counteract earlier business actions.</p>
+<pre>Payment succeeded
+Inventory failed
+
+→ Refund payment
+→ Cancel order</pre>
+</section>
+
+<section id="45"><h2>45. Synchronous vs Asynchronous Communication</h2>
+<h3>Synchronous</h3>
+<pre>A → B → C → response</pre>
+<p>If B is slow, A waits.</p>
+<h3>Asynchronous</h3>
+<pre>A
+ |
+ v
+Message Queue
+ |
+ +----&gt; B
+ |
+ +----&gt; C</pre>
+<p>Asynchronous communication decouples producers and consumers and is useful when immediate completion is not required.</p>
+</section>
+
+<section id="46"><h2>46. Message Queues</h2>
+<pre>Producer
+   |
+   v
++---------+
+|  Queue  |
++----+----+
+     |
+     +----&gt; Consumer-1
+     |
+     +----&gt; Consumer-2
+     |
+     +----&gt; Consumer-3</pre>
+<p>Useful for email, notifications, image processing, reports, analytics, order events, and background jobs.</p>
+<p>Benefits include decoupling, buffering, asynchronous processing, load smoothing, and independent scaling.</p>
+</section>
+
+<section id="47"><h2>47. Backpressure</h2>
+<pre>Producer = 100K msg/sec
+Consumer = 20K msg/sec
+
+Queue
+  |
+  v
+Backlog ↑↑↑</pre>
+<p>Systems need rate limiting, backpressure, autoscaling, load shedding, and dead-letter queues when producers can outpace consumers.</p>
+</section>
+
+<section id="48"><h2>48. Retries Are Dangerous</h2>
+<pre>Payment request
+     |
+     v
+Payment service
+     |
+     | timeout
+     v
+Client retries</pre>
+<p>The original operation may have succeeded even though the response timed out.</p>
+<pre>Attempt 1 → ₹1,000 charged
+Attempt 2 → ₹1,000 charged again</pre>
+<p>Critical operations therefore require idempotency.</p>
+</section>
+
+<section id="49"><h2>49. Idempotency</h2>
+<pre>Idempotency-Key: ABC123
+
+ABC123 → Payment Result</pre>
+<p>If the same request arrives again with the same key, return the previously recorded result rather than executing the business operation twice.</p>
+<p>Especially important for payments, orders, money transfers, bookings, and other financial transactions.</p>
+</section>
+
+<section id="50"><h2>50. Stage 9 — GeoDNS</h2>
+<pre>                  Global Users
+                 /     |      \
+                /      |       \
+              India   Europe    USA
+                |       |        |
+                v       v        v
+             Region-A Region-B Region-C</pre>
+<p>GeoDNS can route users toward an appropriate geographic region.</p>
+</section>
+
+<section id="51"><h2>51. Multi-Region Architecture</h2>
+<pre>                         Global Users
+                              |
+                           GeoDNS
+                              |
+              +---------------+---------------+
+              |               |               |
+              v               v               v
+           India           Europe           USA
+             |               |               |
+        +----+----+      +----+----+      +----+----+
+        |         |      |         |      |         |
+       App       DB     App       DB     App       DB</pre>
+<p>Multi-region design introduces the question: where is the source of truth, and what consistency model is required?</p>
+</section>
+
+<section id="52"><h2>52. Multi-Region Database Strategies</h2>
+<h3>Single primary region</h3>
+<pre>India ───────┐
+Europe ──────┼──→ Primary DB
+USA ─────────┘</pre>
+<p>Simple consistency model, but cross-region latency exists.</p>
+<h3>Regional writes</h3>
+<pre>India → India DB
+Europe → Europe DB
+USA → USA DB</pre>
+<p>This reduces write latency but requires conflict resolution and replication strategy.</p>
+</section>
+
+<section id="53"><h2>53. Active-Passive</h2>
+<pre>             Users
+               |
+               v
+          Primary Region
+               |
+               v
+          Secondary Region</pre>
+<p>The secondary is standby. If the primary fails, the secondary can be promoted.</p>
+</section>
+
+<section id="54"><h2>54. Active-Active</h2>
+<pre>              Users
+                |
+       +--------+--------+
+       |                 |
+       v                 v
+   Region A           Region B
+   ACTIVE             ACTIVE
+       |                 |
+       +--------+--------+
+                |
+             Replication</pre>
+<p>Both regions actively serve traffic. This can improve availability and latency but makes data consistency and conflict resolution harder.</p>
+</section>
+
+<section id="55"><h2>55. Edge Servers</h2>
+<pre>                   Global User
+                        |
+                        v
+                      Edge
+                        |
+              +---------+---------+
+              |                   |
+          Cached data        Dynamic request
+                                  |
+                                  v
+                              Origin</pre>
+<p>Edge infrastructure can perform routing, TLS termination, authentication-related processing, rate limiting, WAF rules, A/B testing, and lightweight computation closer to users.</p>
+</section>
+
+<section id="56"><h2>56. WAF</h2>
+<pre>User
+ |
+ v
+DNS
+ |
+ v
+CDN / Edge
+ |
+ v
+WAF
+ |
+ v
+Load Balancer
+ |
+ v
+Application</pre>
+<p>A Web Application Firewall helps protect internet-facing applications from common malicious HTTP traffic patterns, including SQL injection and XSS.</p>
+</section>
+
+<section id="57"><h2>57. API Gateway</h2>
+<pre>Client
+  |
+  v
+API Gateway
+  |
+  +---- User Service
+  +---- Order Service
+  +---- Payment Service
+  +---- Portfolio Service</pre>
+<p>An API gateway can centralize authentication, authorization, rate limiting, routing, TLS termination, request transformation, observability, and API versioning.</p>
+<p>Do not turn the gateway into a giant business-logic layer.</p>
+</section>
+
+<section id="58"><h2>58. Rate Limiting</h2>
+<pre>Client A → 100 requests/sec
+Client B → 100 requests/sec
+Client C → 100 requests/sec
+
+Client D → 100,000 requests/sec
+               |
+               v
+           overloaded</pre>
+<p>Common algorithms include Token Bucket, Leaky Bucket, Fixed Window, and Sliding Window.</p>
+</section>
+
+<section id="59"><h2>59. Reliability Layer</h2>
+<p>At scale, failures are expected.</p>
+<div><span class="tag">Timeouts</span><span class="tag">Retries</span><span class="tag">Circuit Breakers</span><span class="tag">Bulkheads</span><span class="tag">Health Checks</span><span class="tag">Failover</span><span class="tag">Graceful Degradation</span><span class="tag">Load Shedding</span></div>
+<p>Architecture must assume server, database, network, region, dependency, queue, cache, and deployment failures can occur.</p>
+</section>
+
+<section id="60"><h2>60. Circuit Breaker</h2>
+<pre>       CLOSED
+         |
+      failures
+         v
+        OPEN
+         |
+    reject requests
+         |
+       timeout
+         v
+     HALF-OPEN
+         |
+    test request
+      /       \
+ success      failure
+   |             |
+ CLOSED          OPEN</pre>
+<p>Circuit breakers prevent repeated calls to a failing dependency from creating cascading failures.</p>
+</section>
+
+<section id="61"><h2>61. Observability</h2>
+<pre>       Observability
+       /     |      \
+   Logs    Metrics   Traces</pre>
+<ul><li><strong>Logs:</strong> What happened?</li><li><strong>Metrics:</strong> How much/how often?</li><li><strong>Traces:</strong> Where did time go?</li></ul>
+</section>
+
+<section id="62"><h2>62. Distributed Tracing</h2>
+<pre>User
+ |
+ v
+Gateway
+ |
+ v
+Order Service
+ |
+ v
+Payment Service
+ |
+ v
+Database</pre>
+<p>Propagate a trace ID such as <code>ABC123</code> through the request path so the complete distributed transaction can be reconstructed.</p>
+</section>
+
+<section id="63"><h2>63. Latency Budget</h2>
+<pre>Requirement:
+p99 &lt; 300 ms
+
+Gateway          20 ms
+Order            50 ms
+Inventory        50 ms
+Payment          80 ms
+DB               40 ms
+Network          30 ms
+----------------------
+Total            270 ms</pre>
+<p>Every distributed hop consumes part of the end-to-end latency budget.</p>
+</section>
+
+<section id="64"><h2>64. Availability</h2>
+<table>
+<tr><th>Availability</th><th>Approx. annual downtime</th></tr>
+<tr><td>99%</td><td>3.65 days</td></tr>
+<tr><td>99.9%</td><td>8.76 hours</td></tr>
+<tr><td>99.99%</td><td>52.6 minutes</td></tr>
+<tr><td>99.999%</td><td>5.26 minutes</td></tr>
+</table>
+<p>The higher the availability requirement, the more redundancy, automation, operational maturity, and cost are generally required.</p>
+</section>
+
+<section id="65"><h2>65. CAP Theorem</h2>
+<pre>          Network Partition
+                 |
+       +---------+---------+
+       |                   |
+Consistency           Availability</pre>
+<p>CAP is specifically about behavior during a network partition: a distributed system cannot simultaneously guarantee both strong consistency and availability under the partition while also tolerating the partition.</p>
+</section>
+
+<section id="66"><h2>66. Strong vs Eventual Consistency</h2>
+<h3>Strong consistency</h3>
+<pre>WRITE
+  |
+  v
+Read immediately
+  |
+  v
+Latest committed value</pre>
+<h3>Eventual consistency</h3>
+<pre>WRITE
+  |
+  v
+Some replicas updated
+  |
+  v
+Temporary stale reads
+  |
+  v
+Eventually converge</pre>
+<p>Eventual consistency can be appropriate for social likes, search indexing, analytics, recommendations, and similar workloads. Strong consistency is generally more important for account balances, money transfers, inventory reservations, and other critical financial state.</p>
+</section>
+
+<section id="67"><h2>67. Final Global Architecture</h2>
+<pre>
+                         INTERNET
+                            |
+                            v
+                          DNS
+                            |
+                            v
+                    +---------------+
+                    | GeoDNS / GSLB |
+                    +-------+-------+
+                            |
+                 +----------+----------+
+                 |          |           |
+                 v          v           v
+              Region A   Region B    Region C
+                 |          |           |
+                 v          v           v
+                CDN        CDN         CDN
+                 |          |           |
+                 v          v           v
+                WAF        WAF         WAF
+                 |          |           |
+                 v          v           v
+          +--------------------------------+
+          |        Load Balancer           |
+          +--------------------------------+
+                    |
+             +------+------+
+             |             |
+             v             v
+          Gateway       Gateway
+             |
+       +-----+-----+----------------+
+       |           |                |
+       v           v                v
+     User        Order           Payment
+   Service      Service          Service
+       |           |                |
+       v           v                v
+    Redis        Redis            Redis
+       |           |                |
+       v           v                v
+     DB          DB               DB
+       |           |                |
+       +-----------+----------------+
+                   |
+              Event Bus / Kafka
+                   |
+        +----------+----------+
+        |          |          |
+        v          v          v
+    Analytics   Search    Notifications
+</pre>
+</section>
+
+<section>
+<h2>Architecture Evolution — One-Page Summary</h2>
+<table>
+<tr><th>Stage</th><th>Problem</th><th>Solution</th></tr>
+<tr><td>1</td><td>Small workload</td><td>Single server</td></tr>
+<tr><td>2</td><td>Hardware limits</td><td>Vertical scaling</td></tr>
+<tr><td>3</td><td>Different workloads</td><td>Separate concerns</td></tr>
+<tr><td>4</td><td>App server overloaded</td><td>Load balancer</td></tr>
+<tr><td>5</td><td>Session dependency</td><td>Stateless applications</td></tr>
+<tr><td>6</td><td>DB read bottleneck</td><td>Read replicas</td></tr>
+<tr><td>7</td><td>Repeated expensive reads</td><td>Cache</td></tr>
+<tr><td>8</td><td>DB write/storage limits</td><td>Sharding</td></tr>
+<tr><td>9</td><td>Static content load</td><td>Object storage</td></tr>
+<tr><td>10</td><td>Global static latency</td><td>CDN</td></tr>
+<tr><td>11</td><td>System/organizational complexity</td><td>Microservices</td></tr>
+<tr><td>12</td><td>Async workloads</td><td>Message queues</td></tr>
+<tr><td>13</td><td>Global users</td><td>GeoDNS</td></tr>
+<tr><td>14</td><td>Regional resilience</td><td>Multi-region</td></tr>
+<tr><td>15</td><td>Internet attacks</td><td>WAF</td></tr>
+<tr><td>16</td><td>Service failures</td><td>Circuit breakers/timeouts</td></tr>
+<tr><td>17</td><td>Operational complexity</td><td>Observability</td></tr>
+</table>
+
+<div class="callout">
+<strong>The Architect's Mental Model</strong>
+<pre>Requirements
+     ↓
+Capacity estimation
+     ↓
+Simple architecture
+     ↓
+Identify bottleneck
+     ↓
+Scale that bottleneck
+     ↓
+Identify NEW bottleneck
+     ↓
+Add next architectural component
+     ↓
+Analyze failure modes
+     ↓
+Analyze consistency
+     ↓
+Analyze observability
+     ↓
+Analyze security
+     ↓
+Analyze cost
+     ↓
+Multi-region / disaster recovery</pre>
+</div>
+
+<div class="callout">
+<strong>Golden principle:</strong> System design is the controlled evolution of architecture: start with the simplest system that satisfies today's requirements, identify the actual bottleneck, scale that bottleneck, and consciously accept/manage the new complexity introduced by the solution.
+</div>
+
+</section>
+
+<footer>
+  System Design Notes — Sections 1–67 · Prepared as a study/reference document
+</footer>
+
+</div>
+</body>
+</html>

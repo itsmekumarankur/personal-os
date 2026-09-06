@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capacity Estimation — System Design Notes</title>
+<style>
+  :root {
+    --bg:#f6f8fb; --card:#fff; --text:#172033; --muted:#5d687a;
+    --border:#dfe5ee; --accent:#315efb; --code:#111827; --soft:#eef3ff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif;line-height:1.55}
+  .wrap{max-width:1050px;margin:0 auto;padding:36px 22px 60px}
+  header{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:30px;margin-bottom:24px}
+  h1{margin:0 0 8px;font-size:34px}
+  h2{margin-top:36px;padding-bottom:8px;border-bottom:2px solid var(--border);font-size:25px}
+  h3{margin-top:24px;font-size:19px}
+  p{margin:10px 0}
+  .subtitle{color:var(--muted);font-size:17px}
+  .callout{background:var(--soft);border-left:5px solid var(--accent);padding:16px 18px;border-radius:8px;margin:18px 0}
+  .formula{background:#f3f4f6;border:1px solid var(--border);border-radius:10px;padding:15px;text-align:center;font-size:18px;font-weight:600;margin:14px 0}
+  pre{background:var(--code);color:#f9fafb;padding:18px;border-radius:10px;overflow:auto;font:14px/1.45 "SFMono-Regular",Consolas,monospace}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px}
+  table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+  th,td{padding:12px;border-bottom:1px solid var(--border);text-align:left}
+  th{background:#f1f4f8}
+  tr:last-child td{border-bottom:0}
+  .tag{display:inline-block;background:#e8edff;color:#2445b8;border-radius:999px;padding:4px 10px;font-size:13px;margin:3px}
+  .checklist li{margin:8px 0}
+  .footer{color:var(--muted);font-size:14px;margin-top:40px}
+  @media print{body{background:white}.wrap{max-width:none;padding:0}.card,header,table{break-inside:avoid}pre{white-space:pre-wrap}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Capacity Estimation — System Design Notes</h1>
+  <div class="subtitle">Easy-to-understand, interview-oriented notes with ASCII diagrams</div>
+  <div style="margin-top:16px">
+    <span class="tag">Demand</span>
+    <span class="tag">RPS</span>
+    <span class="tag">SLO</span>
+    <span class="tag">Server Capacity</span>
+    <span class="tag">Autoscaling</span>
+  </div>
+</header>
+
+<section>
+<h2>1. What is Capacity Estimation?</h2>
+<p>Capacity estimation answers one fundamental question:</p>
+<div class="callout"><strong>“How much infrastructure do I need to handle the expected load while meeting my SLO?”</strong></div>
+
+<pre>
+                    SYSTEM DESIGN
+                         |
+                         v
+              +----------------------+
+              | How much traffic?    |
+              | How much data?       |
+              | How much bandwidth?  |
+              | How many servers?    |
+              +----------+-----------+
+                         |
+                         v
+                 CAPACITY ESTIMATION
+</pre>
+
+<p>It is essentially <strong>back-of-the-envelope calculation</strong>. Exact numbers are less important than reasonable assumptions, correct order of magnitude, and understanding the architectural consequences.</p>
+</section>
+
+<section>
+<h2>2. The Three Things You Need First</h2>
+<pre>
+                CAPACITY ESTIMATION
+                         |
+          +--------------+--------------+
+          |              |              |
+          v              v              v
+        SLO            DEMAND       INSTANCE
+      Requirement      Traffic       Capacity
+          |              |              |
+       "How fast?"   "How much?"   "How fast
+                                    is 1 server?"
+</pre>
+
+<div class="grid">
+<div class="card">
+<h3>A. SLO</h3>
+<p>Example: <strong>P90 latency ≤ 100 ms</strong>.</p>
+<pre>90% of requests
+       |
+       v
+must finish within
+       |
+       v
+    100 ms</pre>
+</div>
+
+<div class="card">
+<h3>B. Demand</h3>
+<p>Example: <strong>2,000,000 requests/day</strong>.</p>
+<div class="formula">2,000,000 ÷ 86,400 ≈ 23.1 RPS ≈ 24 RPS</div>
+</div>
+
+<div class="card">
+<h3>C. Instance Capacity</h3>
+<p>Performance testing tells us how much work one instance can process while meeting the SLO.</p>
+<pre>1 server
+   |
+   +---- Request 1 --> 35 ms
+   +---- Request 2 --> 35 ms
+   +---- Request 3 --> 35 ms</pre>
+</div>
+</div>
+</section>
+
+<section>
+<h2>3. Acceptable Backlog per Instance</h2>
+<p>Suppose:</p>
+<ul>
+<li>SLO = 100 ms</li>
+<li>Processing time per request = 35 ms</li>
+</ul>
+
+<div class="formula">Acceptable Backlog / Instance = SLO ÷ Processing Time = 100 ÷ 35 ≈ 3</div>
+
+<pre>
+        +----------------+
+        |    SERVER 1    |
+        +----------------+
+          |    |    |
+          v    v    v
+        Req1 Req2 Req3
+          |    |    |
+         35ms 35ms 35ms
+
+        ≈ 3 requests
+</pre>
+
+<p>Think of this number as the approximate amount of work an instance can carry while still satisfying the latency objective.</p>
+</section>
+
+<section>
+<h2>4. The Two Numbers to Remember</h2>
+<pre>
+                    CAPACITY
+                       |
+                       v
+          Acceptable Backlog / Instance
+                       |
+                       v
+              "How much CAN
+               one server handle?"
+
+
+                    DEMAND
+                       |
+                       v
+              Backlog / Instance
+                       |
+                       v
+              "How much LOAD
+               is each server getting?"
+</pre>
+
+<div class="grid">
+<div class="card">
+<h3>Acceptable Load</h3>
+<div class="formula">SLO ÷ Processing Time</div>
+</div>
+<div class="card">
+<h3>Actual Load</h3>
+<div class="formula">Demand ÷ Number of Instances</div>
+</div>
+</div>
+</section>
+
+<section>
+<h2>5. Calculate Number of Servers</h2>
+<pre>
+                    Demand
+                       |
+                       v
+              +----------------+
+              |    24 RPS      |
+              +-------+--------+
+                      |
+                      v
+             Desired capacity
+              per instance
+                      |
+                      v
+                 ~3 RPS
+                      |
+                      v
+              +---------------+
+              | 24 / 3 = 8   |
+              +---------------+
+                      |
+                      v
+                 8 SERVERS
+</pre>
+
+<div class="formula">Required Instances = Demand ÷ Acceptable Load per Instance</div>
+
+<table>
+<tr><th>Input</th><th>Value</th></tr>
+<tr><td>Demand</td><td>24 RPS</td></tr>
+<tr><td>Acceptable capacity / instance</td><td>3 RPS</td></tr>
+<tr><td>Required instances</td><td>24 ÷ 3 = <strong>8</strong></td></tr>
+</table>
+</section>
+
+<section>
+<h2>6. Traffic Increase → Scale Out</h2>
+<p>Normal traffic:</p>
+<pre>
+Traffic = 24 RPS
+Servers = 8
+Load/server = 24 / 8 = 3
+Target = 3
+
+Actual = Target
+      |
+      v
+   HEALTHY
+</pre>
+
+<p>Now traffic jumps to 96 RPS:</p>
+<pre>
+             96 RPS
+                |
+                v
+        +---------------+
+        | 8 servers     |
+        +---------------+
+                |
+                v
+          96 / 8 = 12
+
+Acceptable = 3
+Actual     = 12
+
+12 > 3
+  |
+  v
+SCALE OUT
+</pre>
+
+<p>Required capacity:</p>
+<div class="formula">96 ÷ 3 = 32 servers</div>
+</section>
+
+<section>
+<h2>7. Autoscaling Feedback Loop</h2>
+<pre>
+                    TRAFFIC
+                       |
+                       v
+                +-------------+
+                |   LOAD      |
+                +------+------+
+                       |
+                       v
+              Demand / Instances
+                       |
+                       v
+             +-------------------+
+             | Load / Instance   |
+             +---------+---------+
+                       |
+                       v
+                Compare with
+                  target = 3
+                       |
+             +---------+---------+
+             |                   |
+             v                   v
+          > 3                  < 3
+             |                   |
+             v                   v
+        SCALE OUT           SCALE IN
+             |                   |
+             v                   v
+      Add instances        Remove instances
+             |                   |
+             +---------+---------+
+                       |
+                       v
+                  Recalculate
+</pre>
+</section>
+
+<section>
+<h2>8. Traffic Falls → Scale In</h2>
+<p>Suppose traffic falls back to 24 RPS but we still have 32 servers:</p>
+
+<div class="formula">24 ÷ 32 = 0.75 RPS/server</div>
+
+<pre>
+Actual load = 0.75
+Target       = 3
+
+0.75 < 3
+   |
+   v
+SCALE IN
+   |
+   v
+Eventually:
+24 RPS / 8 servers = 3 RPS/server
+   |
+   v
+HEALTHY
+</pre>
+</section>
+
+<section>
+<h2>9. Complete Architecture View</h2>
+<pre>
+             TRAFFIC
+                |
+                v
+        +---------------+
+        | Load Balancer |
+        +-------+-------+
+                |
+        +-------+-------+
+        |       |       |
+        v       v       v
+      EC2     EC2     EC2
+       ...     ...     ...
+                |
+                v
+        Measure traffic
+                |
+                v
+       Demand / Instances
+                |
+                v
+       Load per Instance
+                |
+                v
+          +-----------+
+          | Compare   |
+          | with 3    |
+          +-----+-----+
+                |
+        +-------+-------+
+        |               |
+      > 3              < 3
+        |               |
+        v               v
+    SCALE OUT        SCALE IN
+        |               |
+        v               v
+   Add servers      Remove servers
+</pre>
+</section>
+
+<section>
+<h2>10. Don't Stop at RPS</h2>
+<pre>
+                 CAPACITY ESTIMATION
+                         |
+       +---------+-------+--------+---------+
+       |         |                |         |
+       v         v                v         v
+     Traffic   Storage         Bandwidth   Memory
+       |         |                |         |
+       v         v                v         v
+      RPS       GB/TB            Mbps       GB
+</pre>
+
+<div class="grid">
+<div class="card"><strong>Traffic</strong><br>Users, DAU/MAU, requests/day, average RPS, peak RPS</div>
+<div class="card"><strong>Data</strong><br>Storage/day, storage/year, database growth</div>
+<div class="card"><strong>Network</strong><br>Bandwidth, request/response payload sizes</div>
+<div class="card"><strong>Compute</strong><br>CPU, memory, instances, per-instance benchmark</div>
+<div class="card"><strong>Database</strong><br>Read/write ratio, QPS, replication, storage</div>
+<div class="card"><strong>Scaling</strong><br>Horizontal scaling, autoscaling, peak factor</div>
+</div>
+</section>
+
+<section>
+<h2>11. Interview Reasoning Flow</h2>
+<pre>
+Business requirement
+       ↓
+Traffic assumptions
+       ↓
+Average RPS
+       ↓
+Peak RPS
+       ↓
+Per-server benchmark
+       ↓
+SLO / latency constraint
+       ↓
+Required capacity
+       ↓
+Number of servers
+       ↓
+Autoscaling strategy
+</pre>
+
+<div class="callout">
+<strong>Do not simply say:</strong> “We need 20 servers.”<br><br>
+Instead explain the assumptions and calculations that lead to the number.
+</div>
+</section>
+
+<section>
+<h2>12. One-Minute Interview Framework</h2>
+<pre>
+             ┌─────────────────────┐
+             │ 1. USERS            │
+             │ DAU / MAU           │
+             └──────────┬──────────┘
+                        ↓
+             ┌─────────────────────┐
+             │ 2. REQUESTS         │
+             │ requests/user/day   │
+             └──────────┬──────────┘
+                        ↓
+             ┌─────────────────────┐
+             │ 3. TRAFFIC          │
+             │ Avg RPS → Peak RPS  │
+             └──────────┬──────────┘
+                        ↓
+             ┌─────────────────────┐
+             │ 4. DATA             │
+             │ storage + bandwidth │
+             └──────────┬──────────┘
+                        ↓
+             ┌─────────────────────┐
+             │ 5. COMPUTE          │
+             │ capacity/server     │
+             └──────────┬──────────┘
+                        ↓
+             ┌─────────────────────┐
+             │ 6. INFRASTRUCTURE   │
+             │ servers/DB/cache    │
+             └──────────┬──────────┘
+                        ↓
+             ┌─────────────────────┐
+             │ 7. SCALE            │
+             │ horizontal + auto   │
+             └─────────────────────┘
+</pre>
+</section>
+
+<section>
+<h2>13. Formula Cheat Sheet</h2>
+<table>
+<tr><th>Calculation</th><th>Formula</th></tr>
+<tr><td>Average RPS</td><td>Requests/day ÷ 86,400</td></tr>
+<tr><td>Peak RPS</td><td>Average RPS × Peak Factor</td></tr>
+<tr><td>Acceptable load / instance</td><td>SLO ÷ Processing Time</td></tr>
+<tr><td>Actual load / instance</td><td>Demand ÷ Current Instances</td></tr>
+<tr><td>Required instances</td><td>Peak Demand ÷ Acceptable Load / Instance</td></tr>
+<tr><td>Storage</td><td>Records × Record Size × Retention Period</td></tr>
+<tr><td>Bandwidth</td><td>RPS × Average Payload Size</td></tr>
+</table>
+</section>
+
+<section>
+<h2>14. Quick Example to Memorize</h2>
+<div class="card">
+<p><strong>Given:</strong></p>
+<ul>
+<li>2M requests/day</li>
+<li>P90 SLO = 100 ms</li>
+<li>Request processing time = 35 ms</li>
+</ul>
+
+<p><strong>Step 1 — Average RPS</strong></p>
+<div class="formula">2,000,000 ÷ 86,400 ≈ 24 RPS</div>
+
+<p><strong>Step 2 — Acceptable load / instance</strong></p>
+<div class="formula">100 ÷ 35 ≈ 3</div>
+
+<p><strong>Step 3 — Required instances</strong></p>
+<div class="formula">24 ÷ 3 = 8 servers</div>
+
+<p><strong>Step 4 — Peak traffic at 4×</strong></p>
+<div class="formula">24 × 4 = 96 RPS</div>
+
+<p><strong>Step 5 — Peak instances</strong></p>
+<div class="formula">96 ÷ 3 = 32 servers</div>
+
+<p><strong>Architectural conclusion:</strong> design for horizontal scaling from approximately 8 instances at normal load to approximately 32 instances at the assumed peak, with autoscaling driven by load per instance and protected by sensible scale-out/scale-in policies.</p>
+</div>
+</section>
+
+<section>
+<h2>15. Final Mental Model</h2>
+<pre>
+              DEMAND
+                 |
+                 v
+          How much traffic?
+                 |
+                 v
+              PEAK RPS
+                 |
+                 v
+       How much can ONE server
+             handle?
+                 |
+                 v
+          SERVER CAPACITY
+                 |
+                 v
+      +-----------------------+
+      | Required Servers      |
+      |                       |
+      | Peak RPS              |
+      | -----------           |
+      | Server Capacity       |
+      +-----------+-----------+
+                  |
+                  v
+             ARCHITECTURE
+                  |
+        +---------+---------+
+        |         |         |
+        v         v         v
+      Cache      DB       Servers
+        |         |         |
+        +---------+---------+
+                  |
+                  v
+             AUTOSCALING
+</pre>
+
+<div class="callout">
+<strong>One line to remember:</strong><br>
+Capacity estimation = <strong>quantify demand + quantify per-unit capacity + respect the SLO + size for peak + translate the result into architecture.</strong>
+</div>
+
+<h2>16. Interview Checklist</h2>
+<ul class="checklist">
+<li>Clarify the functional workload.</li>
+<li>Estimate users and requests.</li>
+<li>Convert daily traffic into average RPS.</li>
+<li>Estimate peak RPS and state the peak factor.</li>
+<li>Clarify latency/SLO requirements.</li>
+<li>Use benchmark data for per-instance capacity where possible.</li>
+<li>Calculate required instances.</li>
+<li>Consider redundancy and failure scenarios.</li>
+<li>Estimate storage and bandwidth.</li>
+<li>Check database and cache capacity separately.</li>
+<li>Explain horizontal scaling and autoscaling.</li>
+<li>State assumptions explicitly.</li>
+</ul>
+</section>
+
+<div class="footer">
+  Capacity Estimation — System Design Interview Notes
+</div>
+
+</div>
+</body>
+</html>
