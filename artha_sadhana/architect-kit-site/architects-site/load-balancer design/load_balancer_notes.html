@@ -1,107 +1,793 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Load Balancer — 26-Point Revision Notes</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Load Balancer — 26-Point Revision Notes (Enhanced)</title>
 <style>
-:root{--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#5d687a;--border:#dfe5ee;--accent:#334155;--code:#0f172a}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.55}
-.container{max-width:1200px;margin:0 auto;padding:28px 20px 60px}
-header{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px 28px;margin-bottom:22px;position:sticky;top:10px;z-index:2;box-shadow:0 8px 30px #17203312}
-h1{margin:0 0 6px;font-size:30px}
-.subtitle{color:var(--muted);font-size:14px}
-.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
-button{border:1px solid var(--border);background:#fff;border-radius:9px;padding:8px 12px;cursor:pointer;color:var(--text)}
-button:hover{background:#f0f3f8}
-#content{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px}
-h2{margin-top:38px;padding-top:12px;border-top:1px solid var(--border);font-size:24px}
-h3{margin-top:28px;font-size:19px}
-h4{margin-top:22px}
-p{margin:10px 0}
-strong{font-weight:750}
-blockquote{margin:18px 0;padding:14px 18px;border-left:4px solid #64748b;background:#f8fafc;border-radius:6px}
-pre{background:var(--code);color:#e5e7eb;padding:18px;border-radius:10px;overflow:auto;line-height:1.35}
-code{font-family:"SFMono-Regular",Consolas,monospace}
-:not(pre)>code{background:#eef2f7;padding:2px 5px;border-radius:4px}
-table{width:100%;border-collapse:collapse;margin:18px 0;display:block;overflow-x:auto}
-th,td{border:1px solid var(--border);padding:9px 11px;text-align:left;vertical-align:top;min-width:130px}
-th{background:#f1f5f9}
-ul,ol{padding-left:26px}
-hr{border:0;border-top:1px solid var(--border);margin:30px 0}
-a{color:#1d4ed8}
-@media print{
- body{background:#fff}.container{max-width:none;padding:0}
- header{position:static;box-shadow:none;border:0;padding:0 0 15px}
- .toolbar{display:none}#content{border:0;padding:0}
- pre{white-space:pre-wrap;page-break-inside:avoid}
- h2{page-break-before:auto}
-}
+body{margin:0;background:#f4f6f8;color:#17202a;font-family:Arial,Helvetica,sans-serif;line-height:1.5}
+.wrapper{max-width:1100px;margin:auto;padding:24px}
+.header,.notes,.summary-section{background:#fff;border:1px solid #d9dee5;border-radius:12px;padding:24px;margin-bottom:20px}
+h1{margin:0 0 8px;font-size:26px}
+h2{font-size:20px;margin-top:0}
+.meta{color:#667085;font-size:14px}
+.intro p{margin:8px 0}
+details.point{border:1px solid #d9dee5;border-radius:8px;margin-bottom:10px;padding:0;overflow:hidden}
+details.point summary{cursor:pointer;padding:14px 16px;font-weight:bold;font-size:16px;list-style:none;background:#eef1f5;user-select:none}
+details.point summary::-webkit-details-marker{display:none}
+details.point summary::before{content:"▸ ";display:inline-block;transition:transform .15s ease}
+details.point[open] summary::before{transform:rotate(90deg)}
+.point-num{display:inline-block;min-width:26px;color:#475467}
+.point-body{padding:16px}
+.point-body p{margin:8px 0}
+.point-body ul{margin:8px 0;padding-left:22px}
+pre.ascii{margin:10px 0;white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.42 "Courier New",monospace;background:#0f172a;color:#e2e8f0;padding:14px;border-radius:8px;overflow-x:auto}
+blockquote{border-left:4px solid #94a3b8;margin:10px 0;padding:4px 16px;background:#f8fafc;color:#334155}
+table.ref-table{border-collapse:collapse;width:100%;font-size:14px}
+table.ref-table th,table.ref-table td{border:1px solid #d9dee5;padding:8px 10px;text-align:left;vertical-align:top}
+table.ref-table th{background:#eef1f5}
+.truncation-note{color:#667085;font-size:13px}
+.toolbar{margin-bottom:16px}
+.toolbar button{background:#1f6feb;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:14px;cursor:pointer;margin-right:8px}
+.toolbar button:hover{opacity:.9}
+@media print{body{background:#fff}.wrapper{max-width:none;padding:0}.header,.notes,.summary-section{border:0} details.point summary::before{content:""}}
 </style>
 </head>
 <body>
-<div class="container">
-<header>
-  <h1>Load Balancer — 26-Point Revision Notes</h1>
-  <div class="subtitle">Complete source-preserving revision notes — all supplied content retained.</div>
-  <div class="toolbar">
-    <button onclick="window.print()">Print / Save as PDF</button>
-    <button onclick="document.body.classList.toggle('compact')">Toggle view</button>
-  </div>
-</header>
-<main id="content"></main>
+<div class="wrapper">
+<div class="header">
+<h1>Load Balancer — 26-Point Revision Notes (Enhanced)</h1>
+<div class="meta">Complete source-preserving HTML version — all supplied content retained.</div>
 </div>
 
-<script>
-const md = "# Load Balancer — 26-Point Revision Notes (Enhanced)\n\nBelow are **26 compact revision points** designed to preserve the key judgment calls without turning this into a huge set of notes.\n\n---\n\n## Load Balancer — 26-Point Revision Notes\n\n---\n\n### 1. L4 vs L7 — decide the layer first\n\n```\n┌─────────────────────────────────────────────────────────────────┐\n│                        L4 vs L7                               │\n├───────────────────────────────┬─────────────────────────────────┤\n│         L4 (TCP/UDP)          │          L7 (HTTP/gRPC)        │\n├───────────────────────────────┼─────────────────────────────────┤\n│ • Sees IP, port, connections  │ • Sees host, path, headers     │\n│ • Forwards packets/connections│   cookies, method              │\n│ • Blind to request content    │ • Can make per-request decisions│\n│ • Fast, cheap, simple         │ • Rich, content-aware, heavier │\n│ • Balances CONNECTIONS        │ • Can balance REQUESTS         │\n└───────────────────────────────┴─────────────────────────────────┘\n\n        Client ──TCP conn──► LB ──TCP conn──► Backend\n        Client ──HTTP req──► LB (reads path/headers) ──► Backend\n```\n\n**Key insight:** Choosing the algorithm before choosing the layer is the wrong starting point.\n\n---\n\n### 2. Why L4 can be unfair\n\n```\n        1 TCP Connection\n        ┌─────────────────────────────────────────────┐\n        │  Request 1 ──► Server A                     │\n        │  Request 2 ──► Server A                     │\n        │  Request 3 ──► Server A                     │\n        │     ...                                     │\n        │  Request 10,000 ──► Server A               │\n        └─────────────────────────────────────────────┘\n\n        Server A: ████████████████████████████████████  (overloaded)\n        Server B: ████                                 (idle)\n        Server C: ████                                 (idle)\n```\n\nThis isn't an LB bug; it's a consequence of balancing at connection level.\n\n- L4 is still valuable because it is **fast, cheap, protocol-agnostic, and simple**\n- It works well when request volumes are similar across connections\n\n---\n\n### 3. L4 + L7 can coexist (layered design)\n\n```\n                    ┌─────────────────┐\n                    │    Client       │\n                    └────────┬────────┘\n                             │\n                             ▼\n                    ┌─────────────────┐\n                    │   L4 LB         │  ← Fast edge, connection-level\n                    │   (VIP/Anycast) │     Absorbs DDoS, connection flood\n                    └────────┬────────┘\n                             │\n                             ▼\n                    ┌─────────────────┐\n                    │   L7 LB         │  ← Smart HTTP routing\n                    │   (HAProxy/NGINX)│     Reads host/path/headers\n                    └────────┬────────┘\n                             │\n              ┌──────────────┼──────────────┐\n              ▼              ▼              ▼\n        ┌─────────┐   ┌─────────┐   ┌─────────┐\n        │ Service │   │ Service │   │ Service │\n        │   A     │   │   B     │   │   C     │\n        └─────────┘   └─────────┘   └─────────┘\n```\n\n**Question:** Don't ask \"L4 or L7 for everything?\"  \n**Ask:** \"Which layer should own which responsibility?\"\n\n---\n\n### 4. Traffic entry is a separate availability problem\n\n```\n        ┌──────────────────────────────────────────────────────────────┐\n        │              TRAFFIC ENTRY MODELS                          │\n        ├──────────────────────────────────────────────────────────────┤\n        │ 1. DNS-based:      client ──DNS lookup──► LB IP           │\n        │    (coarse, TTL-limited failover)                         │\n        │                                                           │\n        │ 2. Anycast:        same IP announced from many locations  │\n        │    (network routes to nearest healthy)                    │\n        │                                                           │\n        │ 3. Virtual IP (VIP): floating IP moves to healthy LB node │\n        │    (fast failover, transparent to clients)                │\n        │                                                           │\n        │ 4. ECMP + multiple LB nodes: router spreads flows         │\n        │    (active-active, scale-out)                             │\n        └──────────────────────────────────────────────────────────────┘\n\n        Client ──► DNS/Anycast/VIP/ECMP ──► LB ──► Backend Pool\n```\n\n- Backend balancing assumes the LB is already reachable\n- If the LB itself dies, backend-selection logic is irrelevant\n\n---\n\n### 5. DNS vs VIP/Anycast — failover behavior\n\n```\n        DNS Failover:\n        ┌─────────┐      ┌─────────┐\n        │ Client  │──────►│ DNS     │  \"LB IP = 10.0.0.1\"\n        └─────────┘      └─────────┘\n                              │\n                              ▼ TTL = 300s\n        ┌─────────┐      ┌─────────┐\n        │ Client  │──────►│ LB      │  10.0.0.1 dies\n        └─────────┘      └─────────┘   Client keeps trying dead IP\n                              │        until cache expires!\n                              ▼\n        Death + 300s = failover\n\n        VIP Failover:\n        ┌─────────┐      ┌─────────┐\n        │ Client  │──────►│ LB1     │  10.0.0.1 (VIP) dies\n        └─────────┘      └─────────┘\n                              │\n                              ▼ (seconds, not minutes)\n        ┌─────────┐      ┌─────────┐\n        │ Client  │──────►│ LB2     │  VIP moves to LB2\n        └─────────┘      └─────────┘  Client IP never changes\n```\n\n**Why VIP/Anycast wins:** Network-level failover is more transparent/faster than DNS failover.\n\n---\n\n### 6. Backend discovery = source of truth\n\n```\n        STATIC CONFIG                    DYNAMIC DISCOVERY\n        ┌─────────────────┐             ┌─────────────────┐\n        │ Load Balancer   │             │ Load Balancer   │\n        │                 │             │                 │\n        │ S1, S2, S3      │             │ ──► Registry   │\n        │ (hardcoded)     │             │ ──► Control    │\n        └─────────────────┘             │    Plane       │\n              │                         └─────────────────┘\n              ▼                              │\n        Simple but stale             Complex but reflects reality\n        Human edits                    Autoscaling, rolling deploys\n        Can't keep up                 Self-registration possible\n```\n\n**Discovery answers:** \"Does this backend exist?\"  \n**It does NOT automatically answer:** \"Can it serve traffic now?\"\n\n---\n\n### 7. Discovery and health are different\n\n```\n        ┌─────────────────────────────────────────────────────────────┐\n        │         Discovery vs Health — Different Questions         │\n        ├─────────────────────────────────────────────────────────────┤\n        │                                                           │\n        │   Registry says:    \"S1 exists\"                           │\n        │                          │                                │\n        │                          ▼                                │\n        │   Health Check says: \"S1 is ready\"                        │\n        │                          │                                │\n        │                          ▼                                │\n        │   LB Pool says:     \"S1 is eligible for traffic\"         │\n        │                                                           │\n        └─────────────────────────────────────────────────────────────┘\n\n        BEFORE TRAFFIC:     Registered ──► Warming Up ──► Ready\n                              (exists)       (not ready)   (eligible)\n```\n\n**Key point:** A warming-up server shouldn't receive traffic just because it registered.  \nStale registry can be tolerated with eventual consistency, but may delay discovering/removing capacity.\n\n---\n\n### 8. Backend selection — balance the right resource\n\n```\n        ┌─────────────────────────────────────────────────────────────────────┐\n        │                    SELECTION ALGORITHMS                           │\n        ├─────────────────────┬───────────────────────────────────────────────┤\n        │ ROUND ROBIN        │ R1→S1, R2→S2, R3→S3, R4→S1, R5→S2...        │\n        │                    │ Simple, assumes similar request cost          │\n        ├─────────────────────┼───────────────────────────────────────────────┤\n        │ LEAST CONNECTIONS  │ S1=200, S2=50, S3=120 → new req → S2         │\n        │                    │ Useful when connections ≈ work                │\n        ├─────────────────────┼───────────────────────────────────────────────┤\n        │ WEIGHTED           │ S1:5, S2:2, S3:1                             │\n        │                    │ S1 S1 S1 S1 S1 S2 S2 S3                       │\n        │                    │ Useful for heterogeneous capacity             │\n        ├─────────────────────┼───────────────────────────────────────────────┤\n        │ HASH-BASED         │ hash(client_id) → backend                     │\n        │                    │ A→S2, B→S1, C→S2 (stable mapping)             │\n        ├─────────────────────┼───────────────────────────────────────────────┤\n        │ LATENCY-AWARE      │ Routes to fastest responding backend          │\n        │                    │ Needs damping to avoid oscillation            │\n        └─────────────────────┴───────────────────────────────────────────────┘\n```\n\n**Senior question:** \"What resource is actually scarce on my backends?\"\n\n---\n\n### 9. Round robin isn't automatically fair\n\n```\n        ┌─────────────────────────────────────────────────────────────────┐\n        │          Round Robin assumes every request is equal            │\n        ├─────────────────────────────────────────────────────────────────┤\n        │                                                                 │\n        │   Request 1: GET /health (1ms)    ──► Server A                 │\n        │   Request 2: GET /health (1ms)    ──► Server B                 │\n        │   Request 3: POST /report (30s)   ──► Server C  ◄── overloaded!│\n        │   Request 4: GET /health (1ms)    ──► Server A                 │\n        │   Request 5: GET /health (1ms)    ──► Server B                 │\n        │   Request 6: POST /report (30s)   ──► Server A  ◄── overloaded!│\n        │                                                                 │\n        │   \"Fair\" request count ≠ Fair work distribution                │\n        └─────────────────────────────────────────────────────────────────┘\n```\n\n**The trap:** 1 lightweight GET ≠ 1 heavy report-generation POST.  \nThe server can receive its \"fair\" number of requests while receiving an unfair amount of actual work.\n\n---\n\n### 10. Least-connections can also mislead\n\n```\n        ┌─────────────────────────────────────────────────────────────────────┐\n        │         Least-connections ≠ Least-load                            │\n        ├─────────────────────────────────────────────────────────────────────┤\n        │                                                                   │\n        │   Server A:  1,000 idle WebSocket connections                     │\n        │              CPU: 5%    Memory: 20%    (plenty of headroom)       │\n        │                                                                   │\n        │   Server B:  50 active HTTP connections                           │\n        │              CPU: 85%   Memory: 90%    (near overload)            │\n        │                                                                   │\n        │   LB sees:   A has 1,000 connections, B has 50                    │\n        │   LB sends:  New request to B (least connections) ◄── wrong!      │\n        │                                                                   │\n        └─────────────────────────────────────────────────────────────────────┘\n```\n\n**Lesson:** Connection count is useful only if it correlates with real load (CPU, memory, active work).\n\n---\n\n### 11. Latency-aware routing needs damping\n\n```\n        ┌─────────────────────────────────────────────────────────────────┐\n        │               OSCILLATION LOOP                                 │\n        ├─────────────────────────────────────────────────────────────────┤\n        │                                                                 │\n        │   1. A is fast ──► LB sends traffic to A                       │\n        │                     │                                          │\n        │                     ▼                                          │\n        │   2. A receives more load ──► A slows down                    │\n        │                     │                                          │\n        │                     ▼                                          │\n        │   3. B now looks faster ──► LB swings traffic to B            │\n        │                     │                                          │\n        │                     ▼                                          │\n        │   4. B receives more load ──► B slows down                    │\n        │                     │                                          │\n        │                     ▼                                          │\n        │   5. Back to Step 1 ──► Continuous oscillation!               │\n        │                                                                 │\n        └─────────────────────────────────────────────────────────────────┘\n```\n\n**Solutions:** Smoothing, randomness, thresholds, damping factors.  \nAggressive reaction can create herd behavior that destabilizes the system.\n\n---\n\n### 12. Health checks are necessary but can lie\n\n```\n        ┌─────────────────────────────────────────────────────────────────────┐\n        │                  HEALTH CHECK TYPES                               │\n        ├─────────────────────┬───────────────────────────────────────────────┤\n        │ TCP Check           │ Can a TCP connection open?                   │\n        │                     │ Proves: port is listening                    │\n        │                     │ Does NOT prove: app can serve requests       │\n        ├─────────────────────┼───────────────────────────────────────────────┤\n        │ HTTP Check          │ Does GET /health return 200?                │\n        │                     │ Proves: HTTP handler responds                │\n        │                     │ Does NOT prove: dependencies work            │\n        ├─────────────────────┼───────────────────────────────────────────────┤\n        │ Deep Check          │ Does app + DB + dependencies work?          │\n        │                     │ Proves: the whole request path               │\n        │                     │ Risk: can overload dependencies              │\n        └─────────────────────┴───────────────────────────────────────────────┘\n\n        ┌─────────────────────────────────────────────────────────────────────┐\n        │  HEALTH CHECK LIES:                                                │\n        │  /health returns 200 OK  ──► LB thinks: \"healthy\"                 │\n        │  But real request fails ──► auth down / DB timeout / cache miss   │\n        └─────────────────────────────────────────────────────────────────────┘\n```\n\n**Key point:** `200 OK` may only mean **process alive**, not **real user request succeeds**.\n\n---\n\n### 13. Health-check depth should match risk\n\n```\n        ┌─────────────────────────────────────────────────────────────────────┐\n        │         HEALTH DEPTH vs COST OF BEING WRONG                       │\n        ├─────────────────────────────────────────────────────────────────────┤\n        │                                                                   │\n        │   Low Risk (static content, read-only APIs)                       │\n        │   ───────────────────────────────────                              │\n        │   Shallow HTTP check ✓    (fast, cheap, sufficient)               │\n        │                                                                   │\n        │   Medium Risk (user profiles, product catalog)                    │\n        │   ───────────────────────────────────────                          │\n        │   Check cache + DB read ✓   (moderate depth)                      │\n        │                                                                   │\n        │   High Risk (payments, orders, settlements)                       │\n        │   ──────────────────────────────────────────                       │\n        │   Deep dependency check ✓   (expensive, but cost of failure       │\n        │    with rate-limiting/caching)                                    │\n        │                                                                   │\n        └─────────────────────────────────────────────────────────────────────┘\n```\n\n**Senior judgment:** Define explicitly what \"healthy\" means for each service.  \nDon't make every health probe expensive; rate-limit and cache deep checks.\n\n---\n\n### 14. Health thresholds prevent flapping\n\n```\n        ┌─────────────────────────────────────────────────────────────────────┐\n        │                  HEALTH STATE MACHINE                             │\n        ├─────────────────────────────────────────────────────────────────────┤\n        │                                                                   │\n        │   ┌─────────┐      failures >= 3    ┌────────────┐               │\n        │   │ HEALTHY │ ────────────────────► │ UNHEALTHY  │               │\n        │   └─────────┘                        └────────────┘               │\n        │        ▲                                   │                      │\n        │        │                                   │                      │\n        │        │     successes >= 2                │                      │\n        │        └───────────────────────────────────┘                      │\n        │                                                                   │\n        │   Failure threshold = 3   (remove after 3 consecutive failures)   │\n        │   Success threshold = 2   (re-add after 2 consecutive successes)  │\n        │                                                                   │\n        └─────────────────────────────────────────────────────────────────────┘\n\n        Too sensitive:\n        ┌─┐ ┌─┐ ┌─┐ ┌─┐ ┌─┐ ┌─┐  ──► Constant flapping\n        │H│ │U│ │H│ │U│ │H│ │U│      Routing instability\n\n        Too lax:\n        H H H H H H H H H U U U U  ──► Broken server keeps receiving traffic\n```\n\n**Tune based on:** Cost of false removal vs cost of missed detection.\n\n---\n\n### 15. Connection handling is architectural\n\n```\n        PROXY MODEL (Terminating):\n        ┌────────┐    conn1     ┌────────┐    conn2     ┌────────┐\n        │ Client │──────────────►│   LB   │──────────────►│Backend │\n        └────────┘              └────────┘              └────────┘\n           │                        │                        │\n           │◄─── TLS ──────────────►│◄─── New TLS/Plain ───►│\n           │                        │                        │\n           │    LB terminates client TLS, creates new        │\n           │    connection to backend                        │\n\n        PASS-THROUGH:\n        ┌────────┐              ┌────────┐              ┌────────┐\n        │ Client │──────────────►│   LB   │──────────────►│Backend │\n        └────────┘              └────────┘              └────────┘\n           │                        │                        │\n           │◄───────────── TLS passthrough ─────────────────►│\n           │                        │                        │\n           │    LB forwards at lower layer,                  │\n           │    no application awareness                     │\n```\n\n**Trade-off:** Termination gives visibility, TLS offload, header manipulation, L7 routing.  \nPass-through preserves end-to-end encryption but sacrifices content-based routing.\n\n---\n\n### 16. TLS termination changes the trust boundary\n\n```\n        BEFORE TLS TERMINATION:\n        ┌────────┐      TLS      ┌────────┐\n        │ Client │───────────────►│Backend │\n        └────────┘               └────────┘\n           │                        │\n           └─────── Trust ──────────┘\n\n        AFTER TLS TERMINATION:\n        ┌────────┐   TLS   ┌────────┐   plain/  ┌────────┐\n        │ Client │────────►│   LB   │──────────►│Backend │\n        └────────┘         └────────┘   new TLS └────────┘\n           │                   │                    │\n           │◄── Trust ────────►│◄── Trust ─────────►│\n           │                   │                    │\n           │   Two separately-trusted hops           │\n```\n\n**Consequences:**\n- Backend must trust the LB for forwarded identity/IP/headers\n- The LB becomes part of the security and failure path\n- Anything the backend believes about the client is only as trustworthy as the LB's own security\n\n---\n\n### 17. HTTP/2/gRPC changes the balancing problem\n\n```\n        HTTP/1.1:  1 connection = 1 request at a time\n        ┌──────────────────────────────────────────────┐\n        │  Client ──► 1 connection ──► 1 request      │\n        └──────────────────────────────────────────────┘\n\n        HTTP/2:    1 connection = MANY concurrent streams\n        ┌──────────────────────────────────────────────────────────┐\n        │                  1 Connection                          │\n        │  ┌────────────────────────────────────────────────┐     │\n        │  │  Stream 1  │  Stream 2  │  Stream 3  │  ...   │     │\n        │  └────────────────────────────────────────────────┘     │\n        └──────────────────────────────────────────────────────────┘\n\n        ┌──────────────────────────────────────────────────────────┐\n        │  TRAP: Balancing per HTTP/2 connection                 │\n        │                                                         │\n        │  1 connection = 100 concurrent streams                  │\n        │  LB sends all 100 streams to Server A                  │\n        │                                                         │\n        │  Recreates the exact L4 connection-fairness problem    │\n        │  Just one abstraction layer higher!                    │\n        └──────────────────────────────────────────────────────────┘\n```\n\n**Modern design question:** \"Balance per connection or per stream/request?\"\n\n---\n\n### 18. L7 routing is powerful — and dangerous\n\n```\n        ┌─────────────────────────────────────────────────────────────────────┐\n        │                     L7 ROUTING RULES                              │\n        ├─────────────────────────────────────────────────────────────────────┤\n        │                                                                   │\n        │   IF host = api.shop.com AND path = /checkout                     │\n        │       ──► Checkout service pool                                   │\n        │                                                                   │\n        │   IF host = api.shop.com AND path starts /users                   │\n        │       ──► User service pool                                       │\n        │                                                                   │\n        │   IF host = api.shop.com AND path starts /orders                  │\n        │       ──► Order service pool                                      │\n        │                                                                   │\n        │   IF host = static.shop.com                                       │\n        │       ──► Static content service pool                             │\n        │                                                                   │\n        └─────────────────────────────────────────────────────────────────────┘\n\n        ┌─────────────────────────────────────────────────────────────────────┐\n        │  DANGER: Bad routing rule                                         │\n        │  IF host = api.shop.com AND path starts /orders                   │\n        │       ──► User service pool  ◄── WRONG!                         │\n        │                                                                   │\n        │  Result: All /orders traffic gets 404 or errors                   │\n        │  Blast radius: Entire order flow is blackholed                   │\n        └─────────────────────────────────────────────────────────────────────┘\n```\n\n**Key point:** Routing config deserves code-like review/change control.\n\n---\n\n### 19. Don't accidentally turn LB into an API gateway\n\n```\n        ┌─────────────────────────────────────────────────────────────────────┐\n        │                  LB vs API Gateway                                │\n        ├─────────────────────────────────────────────────────────────────────┤\n        │                                                                   │\n        │   Load Balancer:                                                  │\n        │   ───────────────                                                │\n        │   • Route by host/path                                            │\n        │   • Distribute traffic                                            │\n        │   • Health checks                                                 │\n        │   • TLS termination                                               │\n        │                                                                   │\n        │   API Gateway (additional responsibilities):                     │\n        │   ───────────────────────────────                                 │\n        │   • Authentication/Authorization                                 │\n        │   • Request/response transformation                              │\n        │   • Rate limiting per tenant                                     │\n        │   • Payload validation                                            │\n        │   • Business policy enforcement                                  │\n        │   • URL rewriting                                                 │\n        │                                                                   │\n        └─────────────────────────────────────────────────────────────────────┘\n```\n\n**Why keep the LB \"dumb\"?**  \nConcentrating more logic at the LB = more logic every request depends on = larger blast radius.\n\n---\n\n### 20. Stickiness = deliberate fairness trade-off\n\n```\n        WITH STICKINESS:\n        ┌────────┐         ┌────────┐\n        │ User A │────────►│ Server │\n        └────────┘         │   S2   │\n              │            └────────┘\n              │                 ▲\n              ▼                 │\n        ┌────────┐         ┌────────┐\n        │ User A │────────►│ Server │\n        └────────┘         │   S2   │\n              │            └────────┘\n              │                 ▲\n              ▼                 │\n        ┌────────┐         ┌────────┐\n        │ User A │────────►│ Server │  (always the same backend)\n        └────────┘         │   S2   │\n                           └────────┘\n\n        METHODS:\n        ┌─────────────────┬─────────────────────────────────────────┐\n        │ Cookie-based    │ session123 → S2                        │\n        │ Client-IP hash  │ hash(IP) → S3                          │\n        │ Session-ID hash │ hash(session_id) → S1                  │\n        │ Custom key      │ hash(user_id) → S2                     │\n        └─────────────────┴─────────────────────────────────────────┘\n```\n\n**Useful when:** Local cache, in-memory session, warm context.  \n**Bad as a global default because:** It creates hotspots.  \n**Prefer:** Route-specific stickiness (only where needed).\n\n---\n\n### 21. Sticky backend failure must be recoverable\n\n```\n        SCENARIO: User A is stuck to S2\n        ┌────────┐         ┌────────┐\n        │ User A │────────►│ Server │\n        └────────┘         │   S2   │\n                           └────────┘\n                               │\n                               ▼\n                             S2 dies!\n                               │\n                               ▼\n        ┌────────┐         ┌────────┐\n        │ User A │────────►│ Server │  ← Remapped to healthy backend\n        └────────┘         │   S3   │\n                           └────────┘\n        BUT:\n        ┌──────────────────────────────────────────────────────────────┐\n        │ • Sticky state (session, cache) is lost                     │\n        │ • Application must rebuild/recover local state              │\n        │ • Cache warm-up, session reload, reconnect logic            │\n        └──────────────────────────────────────────────────────────────┘\n```\n\n**Key principle:** Health always overrides stickiness.  \nIf stickiness is required for correctness, failure becomes much harder.\n\n---\n\n### 22. Retry is a semantic decision\n\n```\n        RETRY RISK MATRIX:\n        ┌──────────────────────┬─────────────────────────────────────────────┐\n        │ REQUEST TYPE        │ RETRY SAFE?                                 │\n        ├──────────────────────┼─────────────────────────────────────────────┤\n        │ GET (read)          │ ✓ Yes — idempotent by design                │\n        │ HEAD (read)         │ ✓ Yes — no state change                     │\n        │ POST (write)        │ ✗ DANGER — duplicate if partially executed │\n        │ PUT (idempotent)    │ ✓ Yes — if designed as idempotent           │\n        │ DELETE (idempotent) │ ✓ Yes — if designed as idempotent           │\n        │ PATCH (partial)     │ ✗ DANGER — can cause inconsistent state     │\n        └──────────────────────┴─────────────────────────────────────────────┘\n\n        RETRY SCENARIO:\n        ┌────────────┐\n        │ POST /order│ ────► Backend times out ────► Might have succeeded\n        └────────────┘\n              │\n              ▼\n        ┌────────────┐\n        │ RETRY      │ ────► Backend processes again ────► DUPLICATE ORDER!\n        └────────────┘\n```\n\n**Golden rule:** **Idempotency key before retry** on important write paths.  \nNever make retry a blind universal LB feature.\n\n---\n\n### 23. Slow ≠ unhealthy\n\n```\n        HEALTH CHECK SAYS:\n        ┌─────────────┐\n        │ /health     │ ──► 200 OK ──► Healthy!  ──► Keep sending traffic\n        └─────────────┘\n\n        BUT REAL PERFORMANCE:\n        ┌─────────────────────────────────────────────────────────────────────┐\n        │  Response time:  15 seconds  ◄── Users are experiencing           │\n        │  Error rate:     12%          timeout failures                    │\n        │  Queue depth:    Growing                                         │\n        └─────────────────────────────────────────────────────────────────────┘\n\n        SOLUTION: Watch performance signals alongside binary health\n        ┌─────────────────────────────────────────────────────────────────────┐\n        │                                                                   │\n        │  Signal               │ What to check                             │\n        │  ──────────────────── │ ───────────────────────────────────────── │\n        │  p95/p99 latency      │ Has it tripled?                          │\n        │  Error rate           │ Is it rising?                            │\n        │  Queue depth          │ Is it growing?                           │\n        │  Active streams       │ Is it saturated?                         │\n        │  Retry counts         │ Is the LB compensating for slowness?     │\n        └─────────────────────────────────────────────────────────────────────┘\n```\n\n**Prefer:** Reducing traffic to a **degraded** backend rather than waiting for total failure.\n\n---\n\n### 24. Drain before removal + scale LB independently\n\n```\n        DRAIN LIFE CYCLE:\n        ┌────────────┐     ┌────────────┐     ┌────────────┐\n        │  ACTIVE    │────►│ DRAINING   │────►│  REMOVED   │\n        └────────────┘     └────────────┘     └────────────┘\n              │                   │                   │\n              ▼                   ▼                   ▼\n        Receives         No new traffic,    Completely\n        traffic          existing work      removed\n                         finishes\n\n        SCALING LB NODES:\n        ┌─────────────────────────────────────────────────────────────────────┐\n        │                                                                   │\n        │   Clients ──► [ LB1 ][ LB2 ][ LB3 ][ LB4 ] ──► Backend Pool     │\n        │                     │       │       │       │                      │\n        │                     ▼       ▼       ▼       ▼                      │\n        │               Each LB node operates independently                  │\n        │               • Shared config from control plane                  │\n        │               • Tolerate small eventual inconsistency              │\n        │               • Avoid synchronizing every request                 │\n        │                                                                   │\n        └─────────────────────────────────────────────────────────────────────┘\n```\n\n**Why no tight coordination:** Adds latency, creates single point of contention.\n\n---\n\n### 25. Overload protection beats perfect balancing\n\n```\n        SCENARIO:\n        ┌─────────────────────────────────────────────────────────────────────┐\n        │  Incoming traffic = 100,000 RPS                                  │\n        │  Safe capacity    =  60,000 RPS                                  │\n        │                                                                   │\n        │  Problem: 40,000 RPS more than backends can handle               │\n        └─────────────────────────────────────────────────────────────────────┘\n\n        WHAT \"FAIR\" DISTRIBUTION DOES:\n        ┌────────────┐  ┌────────────┐  ┌────────────┐\n        │  Server A  │  │  Server B  │  │  Server C  │\n        │  33,333    │  │  33,333    │  │  33,334    │\n        └────────────┘  └────────────┘  └────────────┘\n              │               │               │\n              ▼               ▼               ▼\n        All overloaded ──► All fail together!\n\n        WHAT OVERLOAD PROTECTION DOES:\n        ┌─────────────────────────────────────────────────────────────────────┐\n        │  Incoming 100k RPS                                                │\n        │       │                                                            │\n        │       ▼                                                            │\n        │  LB detects saturation (queue depth, latency, CPU)                │\n        │       │                                                            │\n        │       ├──► Queue briefly (buffer)                                 │\n        │       ├──► Rate limit (allow only safe capacity)                  │\n        │       ├──► Shed load (return 503 to slow clients)                 │\n        │       └──► Add capacity (scale out)                              │\n        │                                                                   │\n        │  Result: 60k RPS processed safely, remaining 40k shed/queued      │\n        └─────────────────────────────────────────────────────────────────────┘\n```\n\n**Fair distribution cannot create capacity.** Protection preserves the system.\n\n---\n\n### 26. Leadership + production mindset\n\n```\n        HEALTH STATE MACHINE:\n        ┌────────────┐    ┌────────────┐    ┌────────────┐\n        │  HEALTHY   │───►│ DEGRADED   │───►│ UNHEALTHY  │\n        └────────────┘    └────────────┘    └────────────┘\n              │                 │                  │\n              │                 │                  │\n              ▼                 ▼                  ▼\n        ┌────────────┐    ┌────────────┐    ┌────────────┐\n        │ DRAINING   │───►│  REMOVED   │    │            │\n        └────────────┘    └────────────┘    └────────────┘\n\n        OUR PLATFORM IN NUMBERS:\n        ┌─────────────────────────────────────────────────────────────────────┐\n        │                                                                   │\n        │  • L4 + L7 layered                                                │\n        │  • 80+ microservices                                              │\n        │  • Mixed health depth (shallow + deep)                           │\n        │  • Selective stickiness (route-specific)                         │\n        │  • TLS at edge boundary                                          │\n        │  • Rate-limit + 503 overload posture                             │\n        │                                                                   │\n        └─────────────────────────────────────────────────────────────────────┘\n\n        DOMAIN-SPECIFIC RISKS:\n        ┌─────────────────────────────────────────────────────────────────────┐\n        │  MF redemption    → Retry risk       → Idempotency key            │\n        │  IPO allotment    → Burst traffic    → Queue/overload protection  │\n        │  NSDL demat       → Slow-but-alive   → Latency + deep checks      │\n        │  Insurance        → Trust boundary   → Header verification/WAF    │\n        │  LAMF             → Session pinning  → Scoped stickiness          │\n        └─────────────────────────────────────────────────────────────────────┘\n\n        LEADERSHIP QUESTION:\n        Not just \"How do we fix this incident?\"\n        But:\n        ┌─────────────────────────────────────────────────────────────────────┐\n        │  • Why does this configuration exist?                             │\n        │  • Who owns the decision?                                         │\n        │  • Does the original justification still exist?                   │\n        │  • What's the governance gap that let this happen?                │\n        │  • What's the business/compliance exposure?                       │\n        └─────────────────────────────────────────────────────────────────────┘\n```\n\n---\n\n## One-line mental model\n\n```\nLAYER\n  ↓\nTRAFFIC ENTRY\n  ↓\nDISCOVERY\n  ↓\nHEALTH\n  ↓\nSELECTION\n  ↓\nCONNECTION / TLS\n  ↓\nL7 ROUTING / STICKINESS\n  ↓\nFAILURE + RETRY\n  ↓\nDRAIN / SCALE / OVERLOAD\n  ↓\nOBSERVE STATES\n  ↓\nSECURITY BOUNDARY\n  ↓\nPRODUCTION + LEADERSHIP JUDGMENT\n```\n\n---\n\n## Core Interview Principle\n\n> **Don't start with \"Which LB algorithm?\"**\n>\n> Start with:\n> 1. **What exactly are we balancing?** (connections? requests? streams?)\n> 2. **What can fail?** (LB node? backend? network? dependency?)\n> 3. **What signal tells us it's failing?** (health? latency? error rate?)\n> 4. **What is the cost of being wrong?** (duplicate order? dropped request? customer impact?)\n\n---\n\n## Quick Reference: The 26 Points in One View\n\n| # | Topic | Key Takeaway |\n|---|-------|--------------|\n| 1 | L4 vs L7 | Decide the layer before the algorithm |\n| 2 | L4 unfairness | Balances connections, not requests |\n| 3 | L4 + L7 coexist | Each layer owns different responsibilities |\n| 4 | Traffic entry | Separate availability problem from backend balancing |\n| 5 | DNS vs VIP | Network failover > DNS failover |\n| 6 | Backend discovery | Exists ≠ ready for traffic |\n| 7 | Discovery + health | Two different questions, combine both |\n| 8 | Selection algorithms | Balance the resource that's actually scarce |\n| 9 | Round robin | Counts requests, not";
+<div class="notes">
+<div class="intro">
+<p>Below are <strong>26 compact revision points</strong> designed to preserve the key judgment calls without turning this into a huge set of notes.</p>
+</div>
 
-function inline(s){
-  s = s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  s = s.replace(/`([^`]+)`/g,'<code>$1</code>');
-  s = s.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
-  s = s.replace(/__([^_]+)__/g,'<strong>$1</strong>');
-  s = s.replace(/\*([^*]+)\*/g,'<em>$1</em>');
-  s = s.replace(/_([^_]+)_/g,'<em>$1</em>');
-  s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
-  return s;
-}
+<h2>Load Balancer — 26-Point Revision Notes</h2>
 
-function render(src){
-  const lines = src.replace(/\\r/g,'').split('\\n');
-  let out='', i=0, inList=false, listType='';
-  function closeList(){ if(inList){out += '</'+listType+'>';inList=false;listType='';} }
-  while(i<lines.length){
-    let line=lines[i];
-    if(/^```/.test(line)){
-      closeList(); let lang=line.slice(3).trim(), buf=[]; i++;
-      while(i<lines.length && !/^```/.test(lines[i])){buf.push(lines[i]);i++;}
-      i++; out += '<pre><code>'+inline(buf.join('\\n'))+'</code></pre>'; continue;
-    }
-    if(/^---+$/.test(line.trim())){closeList();out+='<hr>';i++;continue;}
-    let m=line.match(/^(#{1,6})\\s+(.*)$/);
-    if(m){closeList();let n=m[1].length;out+='<h'+n+'>'+inline(m[2])+'</h'+n+'>';i++;continue;}
-    if(/^>\\s?/.test(line)){closeList();let buf=[];while(i<lines.length&&/^>\\s?/.test(lines[i])){buf.push(lines[i].replace(/^>\\s?/,'') );i++;}out+='<blockquote>'+buf.map(inline).join('<br>')+'</blockquote>';continue;}
-    if(/^\\|/.test(line) && i+1<lines.length && /^\\|?\\s*:?-+:?\\s*(\\||$)/.test(lines[i+1])){
-      closeList(); let rows=[]; rows.push(line); i+=2;
-      while(i<lines.length && /^\\|/.test(lines[i])){rows.push(lines[i]);i++;}
-      const cells=r=>r.trim().replace(/^\\||\\|$/g,'').split('|').map(x=>x.trim());
-      const head=cells(rows[0]); out+='<table><thead><tr>'+head.map(x=>'<th>'+inline(x)+'</th>').join('')+'</tr></thead><tbody>';
-      rows.slice(1).forEach(r=>{out+='<tr>'+cells(r).map(x=>'<td>'+inline(x)+'</td>').join('')+'</tr>';});
-      out+='</tbody></table>'; continue;
-    }
-    m=line.match(/^([-*+])\\s+(.*)$/);
-    if(m){ if(!inList||listType!=='ul'){closeList();out+='<ul>';inList=true;listType='ul';}out+='<li>'+inline(m[2])+'</li>';i++;continue;}
-    m=line.match(/^\\d+\\.\\s+(.*)$/);
-    if(m){ if(!inList||listType!=='ol'){closeList();out+='<ol>';inList=true;listType='ol';}out+='<li>'+inline(m[1])+'</li>';i++;continue;}
-    if(!line.trim()){closeList();i++;continue;}
-    closeList(); let buf=[line];i++;
-    while(i<lines.length && lines[i].trim() && !/^(#{1,6})\\s+/.test(lines[i]) && !/^```/.test(lines[i]) && !/^>/.test(lines[i]) && !/^[-*+]\\s+/.test(lines[i]) && !/^\\d+\\.\\s+/.test(lines[i]) && !/^\\|/.test(lines[i]) && !/^---+$/.test(lines[i])){buf.push(lines[i]);i++;}
-    out+='<p>'+buf.map(inline).join('<br>')+'</p>';
-  }
-  closeList(); return out;
-}
-document.getElementById('content').innerHTML=render(md);
-</script>
+<div class="toolbar">
+<button type="button" onclick="document.querySelectorAll('details.point').forEach(d=>d.open=true)">Expand all</button>
+<button type="button" onclick="document.querySelectorAll('details.point').forEach(d=>d.open=false)">Collapse all</button>
+</div>
+
+<details class="point">
+<summary><span class="point-num">1</span> L4 vs L7 — decide the layer first</summary>
+<div class="point-body">
+<pre class="ascii"><code>┌─────────────────────────────────────────────────────────────────┐
+│                        L4 vs L7                               │
+├───────────────────────────────┬─────────────────────────────────┤
+│         L4 (TCP/UDP)          │          L7 (HTTP/gRPC)        │
+├───────────────────────────────┼─────────────────────────────────┤
+│ • Sees IP, port, connections  │ • Sees host, path, headers     │
+│ • Forwards packets/connections│   cookies, method              │
+│ • Blind to request content    │ • Can make per-request decisions│
+│ • Fast, cheap, simple         │ • Rich, content-aware, heavier │
+│ • Balances CONNECTIONS        │ • Can balance REQUESTS         │
+└───────────────────────────────┴─────────────────────────────────┘
+
+        Client ──TCP conn──► LB ──TCP conn──► Backend
+        Client ──HTTP req──► LB (reads path/headers) ──► Backend</code></pre>
+<p><strong>Key insight:</strong> Choosing the algorithm before choosing the layer is the wrong starting point.</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="point-num">2</span> Why L4 can be unfair</summary>
+<div class="point-body">
+<pre class="ascii"><code>        1 TCP Connection
+        ┌─────────────────────────────────────────────┐
+        │  Request 1 ──► Server A                     │
+        │  Request 2 ──► Server A                     │
+        │  Request 3 ──► Server A                     │
+        │     ...                                     │
+        │  Request 10,000 ──► Server A               │
+        └─────────────────────────────────────────────┘
+
+        Server A: ████████████████████████████████████  (overloaded)
+        Server B: ████                                 (idle)
+        Server C: ████                                 (idle)</code></pre>
+<p>This isn't an LB bug; it's a consequence of balancing at connection level.</p>
+<ul>
+<li>L4 is still valuable because it is <strong>fast, cheap, protocol-agnostic, and simple</strong></li>
+<li>It works well when request volumes are similar across connections</li>
+</ul>
+</div>
+</details>
+<details class="point">
+<summary><span class="point-num">3</span> L4 + L7 can coexist (layered design)</summary>
+<div class="point-body">
+<pre class="ascii"><code>                    ┌─────────────────┐
+                    │    Client       │
+                    └────────┬────────┘
+                             │
+                             ▼
+                    ┌─────────────────┐
+                    │   L4 LB         │  ← Fast edge, connection-level
+                    │   (VIP/Anycast) │     Absorbs DDoS, connection flood
+                    └────────┬────────┘
+                             │
+                             ▼
+                    ┌─────────────────┐
+                    │   L7 LB         │  ← Smart HTTP routing
+                    │   (HAProxy/NGINX)│     Reads host/path/headers
+                    └────────┬────────┘
+                             │
+              ┌──────────────┼──────────────┐
+              ▼              ▼              ▼
+        ┌─────────┐   ┌─────────┐   ┌─────────┐
+        │ Service │   │ Service │   │ Service │
+        │   A     │   │   B     │   │   C     │
+        └─────────┘   └─────────┘   └─────────┘</code></pre>
+<p><strong>Question:</strong> Don't ask "L4 or L7 for everything?" <strong>Ask:</strong> "Which layer should own which responsibility?"</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="point-num">4</span> Traffic entry is a separate availability problem</summary>
+<div class="point-body">
+<pre class="ascii"><code>        ┌──────────────────────────────────────────────────────────────┐
+        │              TRAFFIC ENTRY MODELS                          │
+        ├──────────────────────────────────────────────────────────────┤
+        │ 1. DNS-based:      client ──DNS lookup──► LB IP           │
+        │    (coarse, TTL-limited failover)                         │
+        │                                                           │
+        │ 2. Anycast:        same IP announced from many locations  │
+        │    (network routes to nearest healthy)                    │
+        │                                                           │
+        │ 3. Virtual IP (VIP): floating IP moves to healthy LB node │
+        │    (fast failover, transparent to clients)                │
+        │                                                           │
+        │ 4. ECMP + multiple LB nodes: router spreads flows         │
+        │    (active-active, scale-out)                             │
+        └──────────────────────────────────────────────────────────────┘
+
+        Client ──► DNS/Anycast/VIP/ECMP ──► LB ──► Backend Pool</code></pre>
+<ul>
+<li>Backend balancing assumes the LB is already reachable</li>
+<li>If the LB itself dies, backend-selection logic is irrelevant</li>
+</ul>
+</div>
+</details>
+<details class="point">
+<summary><span class="point-num">5</span> DNS vs VIP/Anycast — failover behavior</summary>
+<div class="point-body">
+<pre class="ascii"><code>        DNS Failover:
+        ┌─────────┐      ┌─────────┐
+        │ Client  │──────►│ DNS     │  "LB IP = 10.0.0.1"
+        └─────────┘      └─────────┘
+                              │
+                              ▼ TTL = 300s
+        ┌─────────┐      ┌─────────┐
+        │ Client  │──────►│ LB      │  10.0.0.1 dies
+        └─────────┘      └─────────┘   Client keeps trying dead IP
+                              │        until cache expires!
+                              ▼
+        Death + 300s = failover
+
+        VIP Failover:
+        ┌─────────┐      ┌─────────┐
+        │ Client  │──────►│ LB1     │  10.0.0.1 (VIP) dies
+        └─────────┘      └─────────┘
+                              │
+                              ▼ (seconds, not minutes)
+        ┌─────────┐      ┌─────────┐
+        │ Client  │──────►│ LB2     │  VIP moves to LB2
+        └─────────┘      └─────────┘  Client IP never changes</code></pre>
+<p><strong>Why VIP/Anycast wins:</strong> Network-level failover is more transparent/faster than DNS failover.</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="point-num">6</span> Backend discovery = source of truth</summary>
+<div class="point-body">
+<pre class="ascii"><code>        STATIC CONFIG                    DYNAMIC DISCOVERY
+        ┌─────────────────┐             ┌─────────────────┐
+        │ Load Balancer   │             │ Load Balancer   │
+        │                 │             │                 │
+        │ S1, S2, S3      │             │ ──► Registry   │
+        │ (hardcoded)     │             │ ──► Control    │
+        └─────────────────┘             │    Plane       │
+              │                         └─────────────────┘
+              ▼                              │
+        Simple but stale             Complex but reflects reality
+        Human edits                    Autoscaling, rolling deploys
+        Can't keep up                 Self-registration possible</code></pre>
+<p><strong>Discovery answers:</strong> "Does this backend exist?" <strong>It does NOT automatically answer:</strong> "Can it serve traffic now?"</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="point-num">7</span> Discovery and health are different</summary>
+<div class="point-body">
+<pre class="ascii"><code>        ┌─────────────────────────────────────────────────────────────┐
+        │         Discovery vs Health — Different Questions         │
+        ├─────────────────────────────────────────────────────────────┤
+        │                                                           │
+        │   Registry says:    "S1 exists"                           │
+        │                          │                                │
+        │                          ▼                                │
+        │   Health Check says: "S1 is ready"                        │
+        │                          │                                │
+        │                          ▼                                │
+        │   LB Pool says:     "S1 is eligible for traffic"         │
+        │                                                           │
+        └─────────────────────────────────────────────────────────────┘
+
+        BEFORE TRAFFIC:     Registered ──► Warming Up ──► Ready
+                              (exists)       (not ready)   (eligible)</code></pre>
+<p><strong>Key point:</strong> A warming-up server shouldn't receive traffic just because it registered. Stale registry can be tolerated with eventual consistency, but may delay discovering/removing capacity.</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="point-num">8</span> Backend selection — balance the right resource</summary>
+<div class="point-body">
+<pre class="ascii"><code>        ┌─────────────────────────────────────────────────────────────────────┐
+        │                    SELECTION ALGORITHMS                           │
+        ├─────────────────────┬───────────────────────────────────────────────┤
+        │ ROUND ROBIN        │ R1→S1, R2→S2, R3→S3, R4→S1, R5→S2...        │
+        │                    │ Simple, assumes similar request cost          │
+        ├─────────────────────┼───────────────────────────────────────────────┤
+        │ LEAST CONNECTIONS  │ S1=200, S2=50, S3=120 → new req → S2         │
+        │                    │ Useful when connections ≈ work                │
+        ├─────────────────────┼───────────────────────────────────────────────┤
+        │ WEIGHTED           │ S1:5, S2:2, S3:1                             │
+        │                    │ S1 S1 S1 S1 S1 S2 S2 S3                       │
+        │                    │ Useful for heterogeneous capacity             │
+        ├─────────────────────┼───────────────────────────────────────────────┤
+        │ HASH-BASED         │ hash(client_id) → backend                     │
+        │                    │ A→S2, B→S1, C→S2 (stable mapping)             │
+        ├─────────────────────┼───────────────────────────────────────────────┤
+        │ LATENCY-AWARE      │ Routes to fastest responding backend          │
+        │                    │ Needs damping to avoid oscillation            │
+        └─────────────────────┴───────────────────────────────────────────────┘</code></pre>
+<p><strong>Senior question:</strong> "What resource is actually scarce on my backends?"</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="point-num">9</span> Round robin isn't automatically fair</summary>
+<div class="point-body">
+<pre class="ascii"><code>        ┌─────────────────────────────────────────────────────────────────┐
+        │          Round Robin assumes every request is equal            │
+        ├─────────────────────────────────────────────────────────────────┤
+        │                                                                 │
+        │   Request 1: GET /health (1ms)    ──► Server A                 │
+        │   Request 2: GET /health (1ms)    ──► Server B                 │
+        │   Request 3: POST /report (30s)   ──► Server C  ◄── overloaded!│
+        │   Request 4: GET /health (1ms)    ──► Server A                 │
+        │   Request 5: GET /health (1ms)    ──► Server B                 │
+        │   Request 6: POST /report (30s)   ──► Server A  ◄── overloaded!│
+        │                                                                 │
+        │   "Fair" request count ≠ Fair work distribution                │
+        └─────────────────────────────────────────────────────────────────┘</code></pre>
+<p><strong>The trap:</strong> 1 lightweight GET ≠ 1 heavy report-generation POST. The server can receive its "fair" number of requests while receiving an unfair amount of actual work.</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="point-num">10</span> Least-connections can also mislead</summary>
+<div class="point-body">
+<pre class="ascii"><code>        ┌─────────────────────────────────────────────────────────────────────┐
+        │         Least-connections ≠ Least-load                            │
+        ├─────────────────────────────────────────────────────────────────────┤
+        │                                                                   │
+        │   Server A:  1,000 idle WebSocket connections                     │
+        │              CPU: 5%    Memory: 20%    (plenty of headroom)       │
+        │                                                                   │
+        │   Server B:  50 active HTTP connections                           │
+        │              CPU: 85%   Memory: 90%    (near overload)            │
+        │                                                                   │
+        │   LB sees:   A has 1,000 connections, B has 50                    │
+        │   LB sends:  New request to B (least connections) ◄── wrong!      │
+        │                                                                   │
+        └─────────────────────────────────────────────────────────────────────┘</code></pre>
+<p><strong>Lesson:</strong> Connection count is useful only if it correlates with real load (CPU, memory, active work).</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="point-num">11</span> Latency-aware routing needs damping</summary>
+<div class="point-body">
+<pre class="ascii"><code>        ┌─────────────────────────────────────────────────────────────────┐
+        │               OSCILLATION LOOP                                 │
+        ├─────────────────────────────────────────────────────────────────┤
+        │                                                                 │
+        │   1. A is fast ──► LB sends traffic to A                       │
+        │                     │                                          │
+        │                     ▼                                          │
+        │   2. A receives more load ──► A slows down                    │
+        │                     │                                          │
+        │                     ▼                                          │
+        │   3. B now looks faster ──► LB swings traffic to B            │
+        │                     │                                          │
+        │                     ▼                                          │
+        │   4. B receives more load ──► B slows down                    │
+        │                     │                                          │
+        │                     ▼                                          │
+        │   5. Back to Step 1 ──► Continuous oscillation!               │
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘</code></pre>
+<p><strong>Solutions:</strong> Smoothing, randomness, thresholds, damping factors. Aggressive reaction can create herd behavior that destabilizes the system.</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="point-num">12</span> Health checks are necessary but can lie</summary>
+<div class="point-body">
+<pre class="ascii"><code>        ┌─────────────────────────────────────────────────────────────────────┐
+        │                  HEALTH CHECK TYPES                               │
+        ├─────────────────────┬───────────────────────────────────────────────┤
+        │ TCP Check           │ Can a TCP connection open?                   │
+        │                     │ Proves: port is listening                    │
+        │                     │ Does NOT prove: app can serve requests       │
+        ├─────────────────────┼───────────────────────────────────────────────┤
+        │ HTTP Check          │ Does GET /health return 200?                │
+        │                     │ Proves: HTTP handler responds                │
+        │                     │ Does NOT prove: dependencies work            │
+        ├─────────────────────┼───────────────────────────────────────────────┤
+        │ Deep Check          │ Does app + DB + dependencies work?          │
+        │                     │ Proves: the whole request path               │
+        │                     │ Risk: can overload dependencies              │
+        └─────────────────────┴───────────────────────────────────────────────┘
+
+        ┌─────────────────────────────────────────────────────────────────────┐
+        │  HEALTH CHECK LIES:                                                │
+        │  /health returns 200 OK  ──► LB thinks: "healthy"                 │
+        │  But real request fails ──► auth down / DB timeout / cache miss   │
+        └─────────────────────────────────────────────────────────────────────┘</code></pre>
+<p><strong>Key point:</strong> <code>200 OK</code> may only mean <strong>process alive</strong>, not <strong>real user request succeeds</strong>.</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="point-num">13</span> Health-check depth should match risk</summary>
+<div class="point-body">
+<pre class="ascii"><code>        ┌─────────────────────────────────────────────────────────────────────┐
+        │         HEALTH DEPTH vs COST OF BEING WRONG                       │
+        ├─────────────────────────────────────────────────────────────────────┤
+        │                                                                   │
+        │   Low Risk (static content, read-only APIs)                       │
+        │   ───────────────────────────────────                              │
+        │   Shallow HTTP check ✓    (fast, cheap, sufficient)               │
+        │                                                                   │
+        │   Medium Risk (user profiles, product catalog)                    │
+        │   ───────────────────────────────────────                          │
+        │   Check cache + DB read ✓   (moderate depth)                      │
+        │                                                                   │
+        │   High Risk (payments, orders, settlements)                       │
+        │   ──────────────────────────────────────────                       │
+        │   Deep dependency check ✓   (expensive, but cost of failure       │
+        │    with rate-limiting/caching)                                    │
+        │                                                                   │
+        └─────────────────────────────────────────────────────────────────────┘</code></pre>
+<p><strong>Senior judgment:</strong> Define explicitly what "healthy" means for each service. Don't make every health probe expensive; rate-limit and cache deep checks.</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="point-num">14</span> Health thresholds prevent flapping</summary>
+<div class="point-body">
+<pre class="ascii"><code>        ┌─────────────────────────────────────────────────────────────────────┐
+        │                  HEALTH STATE MACHINE                             │
+        ├─────────────────────────────────────────────────────────────────────┤
+        │                                                                   │
+        │   ┌─────────┐      failures &gt;= 3    ┌────────────┐               │
+        │   │ HEALTHY │ ────────────────────► │ UNHEALTHY  │               │
+        │   └─────────┘                        └────────────┘               │
+        │        ▲                                   │                      │
+        │        │                                   │                      │
+        │        │     successes &gt;= 2                │                      │
+        │        └───────────────────────────────────┘                      │
+        │                                                                   │
+        │   Failure threshold = 3   (remove after 3 consecutive failures)   │
+        │   Success threshold = 2   (re-add after 2 consecutive successes)  │
+        │                                                                   │
+        └─────────────────────────────────────────────────────────────────────┘
+
+        Too sensitive:
+        ┌─┐ ┌─┐ ┌─┐ ┌─┐ ┌─┐ ┌─┐  ──► Constant flapping
+        │H│ │U│ │H│ │U│ │H│ │U│      Routing instability
+
+        Too lax:
+        H H H H H H H H H U U U U  ──► Broken server keeps receiving traffic</code></pre>
+<p><strong>Tune based on:</strong> Cost of false removal vs cost of missed detection.</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="point-num">15</span> Connection handling is architectural</summary>
+<div class="point-body">
+<pre class="ascii"><code>        PROXY MODEL (Terminating):
+        ┌────────┐    conn1     ┌────────┐    conn2     ┌────────┐
+        │ Client │──────────────►│   LB   │──────────────►│Backend │
+        └────────┘              └────────┘              └────────┘
+           │                        │                        │
+           │◄─── TLS ──────────────►│◄─── New TLS/Plain ───►│
+           │                        │                        │
+           │    LB terminates client TLS, creates new        │
+           │    connection to backend                        │
+
+        PASS-THROUGH:
+        ┌────────┐              ┌────────┐              ┌────────┐
+        │ Client │──────────────►│   LB   │──────────────►│Backend │
+        └────────┘              └────────┘              └────────┘
+           │                        │                        │
+           │◄───────────── TLS passthrough ─────────────────►│
+           │                        │                        │
+           │    LB forwards at lower layer,                  │
+           │    no application awareness                     │</code></pre>
+<p><strong>Trade-off:</strong> Termination gives visibility, TLS offload, header manipulation, L7 routing. Pass-through preserves end-to-end encryption but sacrifices content-based routing.</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="point-num">16</span> TLS termination changes the trust boundary</summary>
+<div class="point-body">
+<pre class="ascii"><code>        BEFORE TLS TERMINATION:
+        ┌────────┐      TLS      ┌────────┐
+        │ Client │───────────────►│Backend │
+        └────────┘               └────────┘
+           │                        │
+           └─────── Trust ──────────┘
+
+        AFTER TLS TERMINATION:
+        ┌────────┐   TLS   ┌────────┐   plain/  ┌────────┐
+        │ Client │────────►│   LB   │──────────►│Backend │
+        └────────┘         └────────┘   new TLS └────────┘
+           │                   │                    │
+           │◄── Trust ────────►│◄── Trust ─────────►│
+           │                   │                    │
+           │   Two separately-trusted hops           │</code></pre>
+<p><strong>Consequences:</strong></p>
+<ul>
+<li>Backend must trust the LB for forwarded identity/IP/headers</li>
+<li>The LB becomes part of the security and failure path</li>
+<li>Anything the backend believes about the client is only as trustworthy as the LB's own security</li>
+</ul>
+</div>
+</details>
+<details class="point">
+<summary><span class="point-num">17</span> HTTP/2/gRPC changes the balancing problem</summary>
+<div class="point-body">
+<pre class="ascii"><code>        HTTP/1.1:  1 connection = 1 request at a time
+        ┌──────────────────────────────────────────────┐
+        │  Client ──► 1 connection ──► 1 request      │
+        └──────────────────────────────────────────────┘
+
+        HTTP/2:    1 connection = MANY concurrent streams
+        ┌──────────────────────────────────────────────────────────┐
+        │                  1 Connection                          │
+        │  ┌────────────────────────────────────────────────┐     │
+        │  │  Stream 1  │  Stream 2  │  Stream 3  │  ...   │     │
+        │  └────────────────────────────────────────────────┘     │
+        └──────────────────────────────────────────────────────────┘
+
+        ┌──────────────────────────────────────────────────────────┐
+        │  TRAP: Balancing per HTTP/2 connection                 │
+        │                                                         │
+        │  1 connection = 100 concurrent streams                  │
+        │  LB sends all 100 streams to Server A                  │
+        │                                                         │
+        │  Recreates the exact L4 connection-fairness problem    │
+        │  Just one abstraction layer higher!                    │
+        └──────────────────────────────────────────────────────────┘</code></pre>
+<p><strong>Modern design question:</strong> "Balance per connection or per stream/request?"</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="point-num">18</span> L7 routing is powerful — and dangerous</summary>
+<div class="point-body">
+<pre class="ascii"><code>        ┌─────────────────────────────────────────────────────────────────────┐
+        │                     L7 ROUTING RULES                              │
+        ├─────────────────────────────────────────────────────────────────────┤
+        │                                                                   │
+        │   IF host = api.shop.com AND path = /checkout                     │
+        │       ──► Checkout service pool                                   │
+        │                                                                   │
+        │   IF host = api.shop.com AND path starts /users                   │
+        │       ──► User service pool                                       │
+        │                                                                   │
+        │   IF host = api.shop.com AND path starts /orders                  │
+        │       ──► Order service pool                                      │
+        │                                                                   │
+        │   IF host = static.shop.com                                       │
+        │       ──► Static content service pool                             │
+        │                                                                   │
+        └─────────────────────────────────────────────────────────────────────┘
+
+        ┌─────────────────────────────────────────────────────────────────────┐
+        │  DANGER: Bad routing rule                                         │
+        │  IF host = api.shop.com AND path starts /orders                   │
+        │       ──► User service pool  ◄── WRONG!                         │
+        │                                                                   │
+        │  Result: All /orders traffic gets 404 or errors                   │
+        │  Blast radius: Entire order flow is blackholed                   │
+        └─────────────────────────────────────────────────────────────────────┘</code></pre>
+<p><strong>Key point:</strong> Routing config deserves code-like review/change control.</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="point-num">19</span> Don't accidentally turn LB into an API gateway</summary>
+<div class="point-body">
+<pre class="ascii"><code>        ┌─────────────────────────────────────────────────────────────────────┐
+        │                  LB vs API Gateway                                │
+        ├─────────────────────────────────────────────────────────────────────┤
+        │                                                                   │
+        │   Load Balancer:                                                  │
+        │   ───────────────                                                │
+        │   • Route by host/path                                            │
+        │   • Distribute traffic                                            │
+        │   • Health checks                                                 │
+        │   • TLS termination                                               │
+        │                                                                   │
+        │   API Gateway (additional responsibilities):                     │
+        │   ───────────────────────────────                                 │
+        │   • Authentication/Authorization                                 │
+        │   • Request/response transformation                              │
+        │   • Rate limiting per tenant                                     │
+        │   • Payload validation                                            │
+        │   • Business policy enforcement                                  │
+        │   • URL rewriting                                                 │
+        │                                                                   │
+        └─────────────────────────────────────────────────────────────────────┘</code></pre>
+<p><strong>Why keep the LB "dumb"?</strong> Concentrating more logic at the LB = more logic every request depends on = larger blast radius.</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="point-num">20</span> Stickiness = deliberate fairness trade-off</summary>
+<div class="point-body">
+<pre class="ascii"><code>        WITH STICKINESS:
+        ┌────────┐         ┌────────┐
+        │ User A │────────►│ Server │
+        └────────┘         │   S2   │
+              │            └────────┘
+              │                 ▲
+              ▼                 │
+        ┌────────┐         ┌────────┐
+        │ User A │────────►│ Server │
+        └────────┘         │   S2   │
+              │            └────────┘
+              │                 ▲
+              ▼                 │
+        ┌────────┐         ┌────────┐
+        │ User A │────────►│ Server │  (always the same backend)
+        └────────┘         │   S2   │
+                           └────────┘
+
+        METHODS:
+        ┌─────────────────┬─────────────────────────────────────────┐
+        │ Cookie-based    │ session123 → S2                        │
+        │ Client-IP hash  │ hash(IP) → S3                          │
+        │ Session-ID hash │ hash(session_id) → S1                  │
+        │ Custom key      │ hash(user_id) → S2                     │
+        └─────────────────┴─────────────────────────────────────────┘</code></pre>
+<p><strong>Useful when:</strong> Local cache, in-memory session, warm context. <strong>Bad as a global default because:</strong> It creates hotspots. <strong>Prefer:</strong> Route-specific stickiness (only where needed).</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="point-num">21</span> Sticky backend failure must be recoverable</summary>
+<div class="point-body">
+<pre class="ascii"><code>        SCENARIO: User A is stuck to S2
+        ┌────────┐         ┌────────┐
+        │ User A │────────►│ Server │
+        └────────┘         │   S2   │
+                           └────────┘
+                               │
+                               ▼
+                             S2 dies!
+                               │
+                               ▼
+        ┌────────┐         ┌────────┐
+        │ User A │────────►│ Server │  ← Remapped to healthy backend
+        └────────┘         │   S3   │
+                           └────────┘
+        BUT:
+        ┌──────────────────────────────────────────────────────────────┐
+        │ • Sticky state (session, cache) is lost                     │
+        │ • Application must rebuild/recover local state              │
+        │ • Cache warm-up, session reload, reconnect logic            │
+        └──────────────────────────────────────────────────────────────┘</code></pre>
+<p><strong>Key principle:</strong> Health always overrides stickiness. If stickiness is required for correctness, failure becomes much harder.</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="point-num">22</span> Retry is a semantic decision</summary>
+<div class="point-body">
+<pre class="ascii"><code>        RETRY RISK MATRIX:
+        ┌──────────────────────┬─────────────────────────────────────────────┐
+        │ REQUEST TYPE        │ RETRY SAFE?                                 │
+        ├──────────────────────┼─────────────────────────────────────────────┤
+        │ GET (read)          │ ✓ Yes — idempotent by design                │
+        │ HEAD (read)         │ ✓ Yes — no state change                     │
+        │ POST (write)        │ ✗ DANGER — duplicate if partially executed │
+        │ PUT (idempotent)    │ ✓ Yes — if designed as idempotent           │
+        │ DELETE (idempotent) │ ✓ Yes — if designed as idempotent           │
+        │ PATCH (partial)     │ ✗ DANGER — can cause inconsistent state     │
+        └──────────────────────┴─────────────────────────────────────────────┘
+
+        RETRY SCENARIO:
+        ┌────────────┐
+        │ POST /order│ ────► Backend times out ────► Might have succeeded
+        └────────────┘
+              │
+              ▼
+        ┌────────────┐
+        │ RETRY      │ ────► Backend processes again ────► DUPLICATE ORDER!
+        └────────────┘</code></pre>
+<p><strong>Golden rule:</strong> <strong>Idempotency key before retry</strong> on important write paths. Never make retry a blind universal LB feature.</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="point-num">23</span> Slow ≠ unhealthy</summary>
+<div class="point-body">
+<pre class="ascii"><code>        HEALTH CHECK SAYS:
+        ┌─────────────┐
+        │ /health     │ ──► 200 OK ──► Healthy!  ──► Keep sending traffic
+        └─────────────┘
+
+        BUT REAL PERFORMANCE:
+        ┌─────────────────────────────────────────────────────────────────────┐
+        │  Response time:  15 seconds  ◄── Users are experiencing           │
+        │  Error rate:     12%          timeout failures                    │
+        │  Queue depth:    Growing                                         │
+        └─────────────────────────────────────────────────────────────────────┘
+
+        SOLUTION: Watch performance signals alongside binary health
+        ┌─────────────────────────────────────────────────────────────────────┐
+        │                                                                   │
+        │  Signal               │ What to check                             │
+        │  ──────────────────── │ ───────────────────────────────────────── │
+        │  p95/p99 latency      │ Has it tripled?                          │
+        │  Error rate           │ Is it rising?                            │
+        │  Queue depth          │ Is it growing?                           │
+        │  Active streams       │ Is it saturated?                         │
+        │  Retry counts         │ Is the LB compensating for slowness?     │
+        └─────────────────────────────────────────────────────────────────────┘</code></pre>
+<p><strong>Prefer:</strong> Reducing traffic to a <strong>degraded</strong> backend rather than waiting for total failure.</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="point-num">24</span> Drain before removal + scale LB independently</summary>
+<div class="point-body">
+<pre class="ascii"><code>        DRAIN LIFE CYCLE:
+        ┌────────────┐     ┌────────────┐     ┌────────────┐
+        │  ACTIVE    │────►│ DRAINING   │────►│  REMOVED   │
+        └────────────┘     └────────────┘     └────────────┘
+              │                   │                   │
+              ▼                   ▼                   ▼
+        Receives         No new traffic,    Completely
+        traffic          existing work      removed
+                         finishes
+
+        SCALING LB NODES:
+        ┌─────────────────────────────────────────────────────────────────────┐
+        │                                                                   │
+        │   Clients ──► [ LB1 ][ LB2 ][ LB3 ][ LB4 ] ──► Backend Pool     │
+        │                     │       │       │       │                      │
+        │                     ▼       ▼       ▼       ▼                      │
+        │               Each LB node operates independently                  │
+        │               • Shared config from control plane                  │
+        │               • Tolerate small eventual inconsistency              │
+        │               • Avoid synchronizing every request                 │
+        │                                                                   │
+        └─────────────────────────────────────────────────────────────────────┘</code></pre>
+<p><strong>Why no tight coordination:</strong> Adds latency, creates single point of contention.</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="point-num">25</span> Overload protection beats perfect balancing</summary>
+<div class="point-body">
+<pre class="ascii"><code>        SCENARIO:
+        ┌─────────────────────────────────────────────────────────────────────┐
+        │  Incoming traffic = 100,000 RPS                                  │
+        │  Safe capacity    =  60,000 RPS                                  │
+        │                                                                   │
+        │  Problem: 40,000 RPS more than backends can handle               │
+        └─────────────────────────────────────────────────────────────────────┘
+
+        WHAT "FAIR" DISTRIBUTION DOES:
+        ┌────────────┐  ┌────────────┐  ┌────────────┐
+        │  Server A  │  │  Server B  │  │  Server C  │
+        │  33,333    │  │  33,333    │  │  33,334    │
+        └────────────┘  └────────────┘  └────────────┘
+              │               │               │
+              ▼               ▼               ▼
+        All overloaded ──► All fail together!
+
+        WHAT OVERLOAD PROTECTION DOES:
+        ┌─────────────────────────────────────────────────────────────────────┐
+        │  Incoming 100k RPS                                                │
+        │       │                                                            │
+        │       ▼                                                            │
+        │  LB detects saturation (queue depth, latency, CPU)                │
+        │       │                                                            │
+        │       ├──► Queue briefly (buffer)                                 │
+        │       ├──► Rate limit (allow only safe capacity)                  │
+        │       ├──► Shed load (return 503 to slow clients)                 │
+        │       └──► Add capacity (scale out)                              │
+        │                                                                   │
+        │  Result: 60k RPS processed safely, remaining 40k shed/queued      │
+        └─────────────────────────────────────────────────────────────────────┘</code></pre>
+<p><strong>Fair distribution cannot create capacity.</strong> Protection preserves the system.</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="point-num">26</span> Leadership + production mindset</summary>
+<div class="point-body">
+<pre class="ascii"><code>        HEALTH STATE MACHINE:
+        ┌────────────┐    ┌────────────┐    ┌────────────┐
+        │  HEALTHY   │───►│ DEGRADED   │───►│ UNHEALTHY  │
+        └────────────┘    └────────────┘    └────────────┘
+              │                 │                  │
+              │                 │                  │
+              ▼                 ▼                  ▼
+        ┌────────────┐    ┌────────────┐    ┌────────────┐
+        │ DRAINING   │───►│  REMOVED   │    │            │
+        └────────────┘    └────────────┘    └────────────┘
+
+        OUR PLATFORM IN NUMBERS:
+        ┌─────────────────────────────────────────────────────────────────────┐
+        │                                                                   │
+        │  • L4 + L7 layered                                                │
+        │  • 80+ microservices                                              │
+        │  • Mixed health depth (shallow + deep)                           │
+        │  • Selective stickiness (route-specific)                         │
+        │  • TLS at edge boundary                                          │
+        │  • Rate-limit + 503 overload posture                             │
+        │                                                                   │
+        └─────────────────────────────────────────────────────────────────────┘
+
+        DOMAIN-SPECIFIC RISKS:
+        ┌─────────────────────────────────────────────────────────────────────┐
+        │  MF redemption    → Retry risk       → Idempotency key            │
+        │  IPO allotment    → Burst traffic    → Queue/overload protection  │
+        │  NSDL demat       → Slow-but-alive   → Latency + deep checks      │
+        │  Insurance        → Trust boundary   → Header verification/WAF    │
+        │  LAMF             → Session pinning  → Scoped stickiness          │
+        └─────────────────────────────────────────────────────────────────────┘
+
+        LEADERSHIP QUESTION:
+        Not just "How do we fix this incident?"
+        But:
+        ┌─────────────────────────────────────────────────────────────────────┐
+        │  • Why does this configuration exist?                             │
+        │  • Who owns the decision?                                         │
+        │  • Does the original justification still exist?                   │
+        │  • What's the governance gap that let this happen?                │
+        │  • What's the business/compliance exposure?                       │
+        └─────────────────────────────────────────────────────────────────────┘</code></pre>
+</div>
+</details>
+</div>
+
+<div class="summary-section">
+<h2>One-line mental model</h2>
+<pre class="ascii"><code>LAYER
+  ↓
+TRAFFIC ENTRY
+  ↓
+DISCOVERY
+  ↓
+HEALTH
+  ↓
+SELECTION
+  ↓
+CONNECTION / TLS
+  ↓
+L7 ROUTING / STICKINESS
+  ↓
+FAILURE + RETRY
+  ↓
+DRAIN / SCALE / OVERLOAD
+  ↓
+OBSERVE STATES
+  ↓
+SECURITY BOUNDARY
+  ↓
+PRODUCTION + LEADERSHIP JUDGMENT</code></pre>
+</div>
+
+<div class="summary-section">
+<h2>Core Interview Principle</h2>
+<blockquote><p><strong>Don't start with "Which LB algorithm?"</strong></p><p>Start with:</p><p>1. <strong>What exactly are we balancing?</strong> (connections? requests? streams?)</p><p>2. <strong>What can fail?</strong> (LB node? backend? network? dependency?)</p><p>3. <strong>What signal tells us it's failing?</strong> (health? latency? error rate?)</p><p>4. <strong>What is the cost of being wrong?</strong> (duplicate order? dropped request? customer impact?)</p></blockquote>
+</div>
+
+<div class="summary-section">
+<h2>Quick Reference: The 26 Points in One View</h2>
+<table class="ref-table"><thead><tr><th>#</th><th>Topic</th><th>Key Takeaway</th></tr></thead><tbody><tr><td>1</td><td>L4 vs L7</td><td>Decide the layer before the algorithm</td></tr><tr><td>2</td><td>L4 unfairness</td><td>Balances connections, not requests</td></tr><tr><td>3</td><td>L4 + L7 coexist</td><td>Each layer owns different responsibilities</td></tr><tr><td>4</td><td>Traffic entry</td><td>Separate availability problem from backend balancing</td></tr><tr><td>5</td><td>DNS vs VIP</td><td>Network failover &gt; DNS failover</td></tr><tr><td>6</td><td>Backend discovery</td><td>Exists ≠ ready for traffic</td></tr><tr><td>7</td><td>Discovery + health</td><td>Two different questions, combine both</td></tr><tr><td>8</td><td>Selection algorithms</td><td>Balance the resource that's actually scarce</td></tr><tr><td>9</td><td>Round robin</td><td>Counts requests, not</td></tr></tbody></table>
+<p class="truncation-note"><em>Note: the source document's reference table ends mid-row at item 9 — preserved exactly as supplied, without completion.</em></p>
+</div>
+
+</div>
 </body>
 </html>
