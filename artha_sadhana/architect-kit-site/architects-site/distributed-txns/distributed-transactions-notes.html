@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Distributed Transactions — 26-Point Revision Notes</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 20px 80px;
+    line-height: 1.55;
+    color: #1a1a1a;
+    background: #ffffff;
+  }
+  h1 { font-size: 1.6em; margin-bottom: 4px; }
+  h2 { font-size: 1.25em; margin-top: 28px; border-bottom: 1px solid #ddd; padding-bottom: 6px; }
+  p { margin: 0.6em 0; }
+  pre {
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 12px;
+    overflow-x: auto;
+    font-family: "SFMono-Regular", Consolas, Menlo, monospace;
+    font-size: 12.5px;
+    line-height: 1.35;
+    white-space: pre;
+  }
+  blockquote {
+    border-left: 3px solid #ccc;
+    margin: 0.6em 0;
+    padding: 2px 14px;
+    color: #444;
+    font-style: italic;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0.8em 0;
+    font-size: 0.92em;
+  }
+  th, td {
+    border: 1px solid #ddd;
+    padding: 6px 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: #f0f0f0; }
+  details.point {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    margin: 10px 0;
+    padding: 0;
+    background: #fafafa;
+  }
+  details.point > summary {
+    cursor: pointer;
+    padding: 12px 16px;
+    font-weight: 600;
+    list-style: none;
+  }
+  details.point > summary::-webkit-details-marker { display: none; }
+  details.point > summary::before {
+    content: "▶ ";
+    display: inline-block;
+    transition: transform 0.15s ease;
+  }
+  details.point[open] > summary::before {
+    transform: rotate(90deg);
+  }
+  details.point > .content {
+    padding: 4px 16px 16px;
+    border-top: 1px solid #e5e5e5;
+  }
+  .num {
+    display: inline-block;
+    min-width: 26px;
+    color: #555;
+  }
+  .controls {
+    margin: 16px 0;
+  }
+  .controls button {
+    font-size: 0.85em;
+    padding: 6px 12px;
+    margin-right: 8px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    background: #fff;
+    border-radius: 4px;
+  }
+  .controls button:hover { background: #f0f0f0; }
+</style>
+</head>
+<body>
+<p># Distributed Transactions — 26-Point Revision Notes (Enhanced)</p>
+<p>Below are the same <strong>26-point, compact revision notes</strong>, keeping the important design judgments, failure modes, production examples, and leadership thinking — now enhanced with more detail and ASCII diagrams.</p>
+<p>## Distributed Transactions — 26-Point Revision Notes</p>
+
+<div class="controls">
+  <button onclick="document.querySelectorAll('details.point').forEach(d=>d.open=true)">Expand all</button>
+  <button onclick="document.querySelectorAll('details.point').forEach(d=>d.open=false)">Collapse all</button>
+</div>
+
+<details class="point">
+<summary><span class="num">1</span> Start with the right mental model</summary>
+<div class="content">
+<pre>┌─────────────────────────────────────────────────────────────────────────────┐
+│                    DISTRIBUTED TRANSACTION ≠                              │
+│                    "MANY DBs BEHAVING LIKE ONE DB"                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                           │
+│   Distributed Transaction =                                               │
+│   ┌─────────────────────────────────────────────────────────────────┐    │
+│   │  Workflow coordination                                          │    │
+│   │       +                                                         │    │
+│   │  Failure handling                                               │    │
+│   │       +                                                         │    │
+│   │  Retry safety                                                   │    │
+│   │       +                                                         │    │
+│   │  Compensation                                                   │    │
+│   │       +                                                         │    │
+│   │  Reconciliation                                                 │    │
+│   └─────────────────────────────────────────────────────────────────┘    │
+│                                                                           │
+│   ┌─────────────┐   ┌─────────────┐   ┌─────────────┐                   │
+│   │  Order DB   │   │  Payment DB │   │ Inventory DB│                   │
+│   │  (Service A)│   │  (Service B)│   │  (Service C)│                   │
+│   └─────────────┘   └─────────────┘   └─────────────┘                   │
+│         │                  │                  │                          │
+│         └──────────────────┼──────────────────┘                          │
+│                            │                                             │
+│                    Each service has its own                              │
+│                    commit boundary                                       │
+│                                                                           │
+└─────────────────────────────────────────────────────────────────────────────┘</pre>
+<p><strong>Core question:</strong> What happens if step 2 succeeds and step 3 fails?</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="num">2</span> There is no natural global commit authority</summary>
+<div class="content">
+<pre>        ┌─────────────────────────────────────────────────────────────────┐
+        │          NO SINGLE DB TRANSACTION CONTROLS ALL SERVICES        │
+        ├─────────────────────────────────────────────────────────────────┤
+        │                                                                 │
+        │   ┌─────────────┐   ┌─────────────┐   ┌─────────────┐         │
+        │   │  Order DB   │   │  Payment DB │   │ Inventory DB│         │
+        │   │   COMMIT ✓  │   │   COMMIT ✓  │   │   COMMIT ✗  │         │
+        │   └─────────────┘   └─────────────┘   └─────────────┘         │
+        │         │                  │                  │                 │
+        │         └──────────────────┼──────────────────┘                 │
+        │                            │                                    │
+        │                    ┌───────▼───────┐                           │
+        │                    │   No single   │                           │
+        │                    │ coordinator   │                           │
+        │                    └───────────────┘                           │
+        │                                                                 │
+        │   To get global atomicity:                                     │
+        │   ┌───────────────────────────────────────────────────────────┐│
+        │   │  Option 1: Introduce coordination (2PC)                  ││
+        │   │  Option 2: Accept partial progress (Saga + compensation) ││
+        │   └───────────────────────────────────────────────────────────┘│
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘</pre>
+<p><strong>Key insight:</strong> No single DB transaction can control all services. You must explicitly design for coordination or recovery.</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="num">3</span> The real goal is business correctness</summary>
+<div class="content">
+<pre>        ┌─────────────────────────────────────────────────────────────────┐
+        │              BUSINESS CORRECTNESS &gt; DATA CORRECTNESS          │
+        ├─────────────────────────────────────────────────────────────────┤
+        │                                                                 │
+        │   Wrong Starting Question:                                     │
+        │   ┌───────────────────────────────────────────────────────────┐│
+        │   │ "How do I make all databases commit together?"           ││
+        │   └───────────────────────────────────────────────────────────┘│
+        │                                                                 │
+        │   Right Starting Question:                                     │
+        │   ┌───────────────────────────────────────────────────────────┐│
+        │   │ "What business outcome must never be wrong?"             ││
+        │   └───────────────────────────────────────────────────────────┘│
+        │                                                                 │
+        │   Data consistency ≠ Business correctness:                    │
+        │   ┌───────────────────────────────────────────────────────────┐│
+        │   │  Data consistency: all DB updates commit together        ││
+        │   │  Business correctness: customer sees a valid outcome     ││
+        │   └───────────────────────────────────────────────────────────┘│
+        │                                                                 │
+        │   Example:                                                     │
+        │   ┌───────────────────────────────────────────────────────────┐│
+        │   │  Shipping being delayed 2 minutes → acceptable           ││
+        │   │  Payment charged + order missing → NOT acceptable        ││
+        │   └───────────────────────────────────────────────────────────┘│
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘</pre>
+<p><strong>Design principle:</strong> Design <strong>from business invariants backward</strong>.</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="num">4</span> Data atomicity ≠ business atomicity</summary>
+<div class="content">
+<pre>        ┌─────────────────────────────────────────────────────────────────┐
+        │          DATA ATOMICITY vs BUSINESS ATOMICITY                 │
+        ├─────────────────────────────────────────────────────────────────┤
+        │                                                                 │
+        │   DATA ATOMICITY:                                              │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  All database updates commit together in one operation │  │
+        │   │  ┌─────────┐  ┌─────────┐  ┌─────────┐               │  │
+        │   │  │  Order  │  │Payment  │  │Inventory│   ALL or NONE │  │
+        │   │  │  Insert │  │  Insert │  │  Update │               │  │
+        │   │  └─────────┘  └─────────┘  └─────────┘               │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   BUSINESS ATOMICITY:                                          │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  Customer sees a valid business outcome                 │  │
+        │   │  ┌──────────────────────────────────────────────────┐  │  │
+        │   │  │  Order created + Payment charged                 │  │  │
+        │   │  │      OR                                          │  │  │
+        │   │  │  Order created + Payment pending (reconciled)   │  │  │
+        │   │  └──────────────────────────────────────────────────┘  │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   Not every step needs strict all-or-nothing behavior         │
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘</pre>
+<p><strong>Trade-off:</strong> Shipping being delayed 2 minutes may be acceptable.   Payment charged + order missing is not.</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="num">5</span> Define the strict transaction boundary carefully</summary>
+<div class="content">
+<pre>        ┌─────────────────────────────────────────────────────────────────┐
+        │              TRANSACTION BOUNDARY DECISIONS                    │
+        ├─────────────────────────────────────────────────────────────────┤
+        │                                                                 │
+        │   STRONG CONSISTENCY REQUIRED:                                 │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  ✓ Money movement and transfers                        │  │
+        │   │  ✓ IPO allotment                                        │  │
+        │   │  ✓ Lien marking                                         │  │
+        │   │  ✓ Irreversible external commitments                    │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   EVENTUAL CONSISTENCY ACCEPTABLE:                            │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  ✓ Notifications and alerts                            │  │
+        │   │  ✓ Analytics and reporting                             │  │
+        │   │  ✓ Recommendations                                     │  │
+        │   │  ✓ Cosmetic UI updates                                 │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   Golden Rule:                                                 │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  Don't let a confirmation email failure block a         │  │
+        │   │  financial workflow!                                    │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘</pre>
+</div>
+</details>
+<details class="point">
+<summary><span class="num">6</span> Four major building blocks</summary>
+<div class="content">
+<pre>        ┌─────────────────────────────────────────────────────────────────┐
+        │                  FOUR BUILDING BLOCKS                          │
+        ├─────────────────────────────────────────────────────────────────┤
+        │                                                                 │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  Strong atomicity        → 2PC                         │  │
+        │   ├─────────────────────────────────────────────────────────┤  │
+        │   │  Distributed workflow   → Saga                         │  │
+        │   ├─────────────────────────────────────────────────────────┤  │
+        │   │  Reliable event publish → Outbox                       │  │
+        │   ├─────────────────────────────────────────────────────────┤  │
+        │   │  Crash/retry safety     → Idempotency + Reconciliation│  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  Mature systems use different patterns for different   │  │
+        │   │  boundaries. There is no single "company-wide          │  │
+        │   │  transaction pattern" that fits everything.            │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘</pre>
+</div>
+</details>
+<details class="point">
+<summary><span class="num">7</span> 2PC — what it tries to achieve</summary>
+<div class="content">
+<pre>        ┌─────────────────────────────────────────────────────────────────┐
+        │                     TWO-PHASE COMMIT (2PC)                     │
+        ├─────────────────────────────────────────────────────────────────┤
+        │                                                                 │
+        │   Phase 1: PREPARE (Voting)                                    │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │                 Coordinator                             │  │
+        │   │                      │                                  │  │
+        │   │          ┌───────────┼───────────┐                     │  │
+        │   │          ▼           ▼           ▼                     │  │
+        │   │      ┌─────────┐ ┌─────────┐ ┌─────────┐              │  │
+        │   │      │  Order  │ │ Payment │ │Inventory│              │  │
+        │   │      │PREPARE? │ │PREPARE? │ │PREPARE? │              │  │
+        │   │      └────┬────┘ └────┬────┘ └────┬────┘              │  │
+        │   │           │           │           │                    │  │
+        │   │           ▼           ▼           ▼                    │  │
+        │   │         YES          YES          YES                   │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   Phase 2: COMMIT (Decision)                                   │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │                 Coordinator                             │  │
+        │   │                      │                                  │  │
+        │   │          ┌───────────┼───────────┐                     │  │
+        │   │          ▼           ▼           ▼                     │  │
+        │   │      ┌─────────┐ ┌─────────┐ ┌─────────┐              │  │
+        │   │      │  Order  │ │ Payment │ │Inventory│              │  │
+        │   │      │  COMMIT │ │  COMMIT │ │  COMMIT │              │  │
+        │   │      └─────────┘ └─────────┘ └─────────┘              │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   All YES → COMMIT                                             │
+        │   Any NO  → ROLLBACK                                           │
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘</pre>
+<p><strong>Main benefit:</strong> Genuine <strong>all-or-nothing atomicity</strong>.</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="num">8</span> Why 2PC hurts availability</summary>
+<div class="content">
+<pre>        ┌─────────────────────────────────────────────────────────────────┐
+        │              WHY 2PC HURTS AVAILABILITY                        │
+        ├─────────────────────────────────────────────────────────────────┤
+        │                                                                 │
+        │   Problem 1: Blocking Locks                                    │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  Participants hold locks/prepared state while waiting   │  │
+        │   │  ┌─────────┐  ┌─────────┐  ┌─────────┐                │  │
+        │   │  │  Order  │  │ Payment │  │Inventory│   ← Locks held │  │
+        │   │  │  LOCKED │  │  LOCKED │  │  LOCKED │   ← Resources  │  │
+        │   │  └─────────┘  └─────────┘  └─────────┘   ← Blocked    │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   Problem 2: Slowest Participant Wins                          │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  Transaction duration = MAX(all participant times)     │  │
+        │   │  Slowest participant slows everything                  │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   Problem 3: Coordinator Failure = Blocked Participants       │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │  Coordinator ──► CRASHES!                               │  │
+        │   │       │                                                 │  │
+        │   │       ▼                                                 │  │
+        │   │  ┌─────────┐  ┌─────────┐  ┌─────────┐                │  │
+        │   │  │  Order  │  │ Payment │  │Inventory│  ← WAITING     │  │
+        │   │  │ WAITING │  │ WAITING │  │ WAITING │  ← FOREVER     │  │
+        │   │  └─────────┘  └─────────┘  └─────────┘                │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   Conclusion:                                                  │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  2PC is better for SMALL, tightly controlled systems,  │  │
+        │   │  not internet-scale microservice workflows.             │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘</pre>
+</div>
+</details>
+<details class="point">
+<summary><span class="num">9</span> 2PC vs Saga = prevent vs recover</summary>
+<div class="content">
+<pre>        ┌─────────────────────────────────────────────────────────────────┐
+        │                    2PC vs SAGA                                 │
+        ├─────────────────────────────────────────────────────────────────┤
+        │                                                                 │
+        │   2PC:                                                         │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  "Don't let partial commit happen."                    │  │
+        │   │                                                         │  │
+        │   │  ┌──────┐   ┌──────┐   ┌──────┐                       │  │
+        │   │  │Step 1│──►│Step 2│──►│Step 3│   ALL or NOTHING      │  │
+        │   │  └──────┘   └──────┘   └──────┘                       │  │
+        │   │                                                         │  │
+        │   │  Favors: Stronger immediate atomicity                  │  │
+        │   │  Cost:   Availability, scalability                      │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   SAGA:                                                         │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  "Partial progress may happen; recover and converge."  │  │
+        │   │                                                         │  │
+        │   │  ┌──────┐   ┌──────┐   ┌──────┐   ┌──────┐           │  │
+        │   │  │Step 1│──►│Step 2│──►│Step 3│──►│Step 4│           │  │
+        │   │  └──────┘   └──┬───┘   └──────┘   └──────┘           │  │
+        │   │                │                                        │  │
+        │   │                ▼                                        │  │
+        │   │            ┌──────────┐                                │  │
+        │   │            │ FAIL!    │   Compensate earlier steps     │  │
+        │   │            └──────────┘                                │  │
+        │   │                                                         │  │
+        │   │  Favors: Availability, scalability, independence       │  │
+        │   │  Cost:   Complexity, temporary inconsistency           │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   Choose based on:                                              │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  Business tolerance for temporary inconsistency         │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘</pre>
+</div>
+</details>
+<details class="point">
+<summary><span class="num">10</span> TCC is a middle-ground pattern</summary>
+<div class="content">
+<pre>        ┌─────────────────────────────────────────────────────────────────┐
+        │               TCC — Try, Confirm, Cancel                      │
+        ├─────────────────────────────────────────────────────────────────┤
+        │                                                                 │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │  Phase 1: TRY                                          │  │
+        │   │  ┌──────────────────────────────────────────────────┐  │  │
+        │   │  │  Reserve resources without committing            │  │  │
+        │   │  │  • Lock inventory quantity                       │  │  │
+        │   │  │  • Reserve payment amount                        │  │  │
+        │   │  │  • Hold the order slot                           │  │  │
+        │   │  └──────────────────────────────────────────────────┘  │  │
+        │   │                                                         │  │
+        │   │  Phase 2: CONFIRM                                       │  │
+        │   │  ┌──────────────────────────────────────────────────┐  │  │
+        │   │  │  Convert reservations to actual operations      │  │  │
+        │   │  │  • Deduct inventory                              │  │  │
+        │   │  │  • Capture payment                               │  │  │
+        │   │  │  • Confirm order                                 │  │  │
+        │   │  └──────────────────────────────────────────────────┘  │  │
+        │   │                                                         │  │
+        │   │  Phase 3: CANCEL                                        │  │
+        │   │  ┌──────────────────────────────────────────────────┐  │  │
+        │   │  │  Release reservations without side effects      │  │  │
+        │   │  │  • Release inventory                             │  │  │
+        │   │  │  • Release payment hold                          │  │  │
+        │   │  │  • Cancel order                                  │  │  │
+        │   │  └──────────────────────────────────────────────────┘  │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   Advantages:                                                   │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  ✓ Uses application-level actions (not DB locks)       │  │
+        │   │  ✓ Stronger coordination than plain Saga               │  │
+        │   │  ✓ Avoids some 2PC limitations                         │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘</pre>
+<p><strong>Useful when:</strong> Resources can explicitly support reservation/confirmation/cancellation.</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="num">11</span> Saga = sequence of local transactions</summary>
+<div class="content">
+<pre>        ┌─────────────────────────────────────────────────────────────────┐
+        │                   SAGA WORKFLOW                                │
+        ├─────────────────────────────────────────────────────────────────┤
+        │                                                                 │
+        │   Forward Path:                                                 │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │  ┌─────────────┐                                        │  │
+        │   │  │ 1. Create   │──► Order created (local commit)        │  │
+        │   │  │    Order    │                                        │  │
+        │   │  └─────────────┘                                        │  │
+        │   │        │                                                │  │
+        │   │        ▼                                                │  │
+        │   │  ┌─────────────┐                                        │  │
+        │   │  │ 2. Reserve  │──► Inventory reserved (local commit)   │  │
+        │   │  │  Inventory  │                                        │  │
+        │   │  └─────────────┘                                        │  │
+        │   │        │                                                │  │
+        │   │        ▼                                                │  │
+        │   │  ┌─────────────┐                                        │  │
+        │   │  │ 3. Charge   │──► Payment charged (local commit)      │  │
+        │   │  │  Payment    │                                        │  │
+        │   │  └─────────────┘                                        │  │
+        │   │        │                                                │  │
+        │   │        ▼                                                │  │
+        │   │  ┌─────────────┐                                        │  │
+        │   │  │ 4. Create   │──► Shipment created (local commit)     │  │
+        │   │  │  Shipment   │                                        │  │
+        │   │  └─────────────┘                                        │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   Failure Path (Compensation):                                 │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │  Step 3 fails!                                          │  │
+        │   │        │                                                │  │
+        │   │        ▼                                                │  │
+        │   │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐   │  │
+        │   │  │    Saga     │  │ Compensate  │  │ Compensate  │   │  │
+        │   │  │  orchestrator│◄─│   Step 2    │◄─│   Step 1    │   │  │
+        │   │  └─────────────┘  └─────────────┘  └─────────────┘   │  │
+        │   │                                                         │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   Each step commits locally.                                   │
+        │   Saga is only as good as the recovery logic behind each step.│
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘</pre>
+</div>
+</details>
+<details class="point">
+<summary><span class="num">12</span> Compensation ≠ rollback</summary>
+<div class="content">
+<pre>        ┌─────────────────────────────────────────────────────────────────┐
+        │              COMPENSATION vs ROLLBACK                          │
+        ├─────────────────────────────────────────────────────────────────┤
+        │                                                                 │
+        │   ROLLBACK:                                                     │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │  Charge: $100.00                                        │  │
+        │   │     │                                                   │  │
+        │   │     ▼                                                   │  │
+        │   │  Rollback: Erase the change as if it never happened    │  │
+        │   │     │                                                   │  │
+        │   │     ▼                                                   │  │
+        │   │  Result: Transaction is undone                         │  │
+        │   │                                                         │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   COMPENSATION:                                                 │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │  Charge: $100.00                                        │  │
+        │   │     │                                                   │  │
+        │   │     ▼                                                   │  │
+        │   │  Compensation: Perform a NEW action to reverse         │  │
+        │   │     │                                                   │  │
+        │   │     ▼                                                   │  │
+        │   │  Refund: $100.00                                        │  │
+        │   │     │                                                   │  │
+        │   │     ▼                                                   │  │
+        │   │  Result: Two separate transactions:                    │  │
+        │   │  Charge (+$100) + Refund (-$100) = Net zero            │  │
+        │   │                                                         │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   EXAMPLES:                                                    │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  Charge     → Compensation is Refund                  │  │
+        │   │  Reserve    → Compensation is Release                 │  │
+        │   │  Create     → Compensation is Cancel                  │  │
+        │   │                                                         │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   Key difference: A refund is NOT literally the same as      │
+        │   the original charge never occurring.                        │
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘</pre>
+<p><strong>Remember:</strong> Compensation has its <strong>own side effects and failure modes</strong>.</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="num">13</span> Design around reversibility</summary>
+<div class="content">
+<pre>        ┌─────────────────────────────────────────────────────────────────┐
+        │               REVERSIBILITY ORDERING                           │
+        ├─────────────────────────────────────────────────────────────────┤
+        │                                                                 │
+        │   Reversible Steps (Early):                                   │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  1. Validate      → Can be reversed (just check)       │  │
+        │   │  2. KYC           → Can be reversed (status change)    │  │
+        │   │  3. Eligibility   → Can be reversed (recalculate)      │  │
+        │   │  4. Reserve       → Can be reversed (release)          │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                         │                                      │
+        │                         ▼                                      │
+        │   Less Reversible Steps (Middle):                             │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  5. Payment Hold   → Can be released (but timing matters)│  │
+        │   │  6. Internal State  → Harder to reverse cleanly        │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                         │                                      │
+        │                         ▼                                      │
+        │   Irreversible Step (Last):                                   │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  7. EXTERNAL ACTION → SMS sent, regulator notified,    │  │
+        │   │                         external account created        │  │
+        │   │                         CANNOT BE UNDONE!              │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  Identify the "Point of No Return" before designing    │  │
+        │   │  your saga.                                            │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘</pre>
+</div>
+</details>
+<details class="point">
+<summary><span class="num">14</span> Not everything is compensatable</summary>
+<div class="content">
+<pre>        ┌─────────────────────────────────────────────────────────────────┐
+        │           DIFFICULT OR IMPOSSIBLE TO COMPENSATE                 │
+        ├─────────────────────────────────────────────────────────────────┤
+        │                                                                 │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  ✗ SMS already delivered to customer                   │  │
+        │   │                                                         │  │
+        │   │  ✗ Regulator already notified                          │  │
+        │   │                                                         │  │
+        │   │  ✗ External account created at partner bank            │  │
+        │   │                                                         │  │
+        │   │  ✗ Irreversible financial action (settlement)          │  │
+        │   │                                                         │  │
+        │   │  ✗ Email already sent (can't unsend)                  │  │
+        │   │                                                         │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  Strategy: Push irreversible steps LATER in the        │  │
+        │   │  workflow, after all reversible steps have succeeded.  │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   Example:                                                     │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │  BAD: Send SMS → Reserve Inventory → Charge Payment    │  │
+        │   │       (SMS sent even if payment fails)                 │  │
+        │   │                                                         │  │
+        │   │  GOOD: Reserve Inventory → Charge Payment → Send SMS  │  │
+        │   │       (SMS only sent after success)                    │  │
+        │   │                                                         │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘</pre>
+<p><strong>Rule:</strong> Don't assume every step has a perfect "undo."</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="num">15</span> Compensation itself must be idempotent</summary>
+<div class="content">
+<pre>        ┌─────────────────────────────────────────────────────────────────┐
+        │           COMPENSATION MUST BE IDEMPOTENT                      │
+        ├─────────────────────────────────────────────────────────────────┤
+        │                                                                 │
+        │   WITHOUT IDEMPOTENCY:                                         │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │  Step 3 fails!                                          │  │
+        │   │       │                                                 │  │
+        │   │       ▼                                                 │  │
+        │   │  Compensate: Release Inventory                         │  │
+        │   │       │                                                 │  │
+        │   │       ▼                                                 │  │
+        │   │  Compensate times out!                                  │  │
+        │   │       │                                                 │  │
+        │   │       ▼                                                 │  │
+        │   │  Retry: Release Inventory AGAIN                        │  │
+        │   │       │                                                 │  │
+        │   │       ▼                                                 │  │
+        │   │  ❌ Double-release! Inventory count is now WRONG!      │  │
+        │   │                                                         │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   WITH IDEMPOTENCY:                                            │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │  Compensate: Release Inventory with idempotency_key    │  │
+        │   │       │                                                 │  │
+        │   │       ▼                                                 │  │
+        │   │  Compensate times out!                                  │  │
+        │   │       │                                                 │  │
+        │   │       ▼                                                 │  │
+        │   │  Retry: Release Inventory AGAIN                        │  │
+        │   │       │                                                 │  │
+        │   │       ▼                                                 │  │
+        │   │  ✓ Idempotency check: Already released                 │  │
+        │   │  ✓ Inventory count remains CORRECT!                   │  │
+        │   │                                                         │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘</pre>
+<p><strong>Key point:</strong> Every compensation needs its own idempotency protection.   "It's only rollback" is <strong>not</strong> a valid reason to ignore idempotency.</p>
+</div>
+</details>
+<details class="point">
+<summary><span class="num">16</span> Orchestration vs choreography</summary>
+<div class="content">
+<pre>        ┌─────────────────────────────────────────────────────────────────┐
+        │           ORCHESTRATION vs CHOREOGRAPHY                       │
+        ├─────────────────────────────────────────────────────────────────┤
+        │                                                                 │
+        │   ORCHESTRATION (Centralized):                                 │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │              ┌─────────────┐                           │  │
+        │   │              │ Orchestrator│                           │  │
+        │   │              └──────┬──────┘                           │  │
+        │   │                     │                                   │  │
+        │   │          ┌──────────┼──────────┐                      │  │
+        │   │          ▼          ▼          ▼                      │  │
+        │   │    ┌──────────┐┌──────────┐┌──────────┐             │  │
+        │   │    │  Order   ││Inventory ││ Payment  │             │  │
+        │   │    │ Service  ││ Service  ││ Service  │             │  │
+        │   │    └──────────┘└──────────┘└──────────┘             │  │
+        │   │                                                         │  │
+        │   │  Central coordinator tells each service what to do     │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   CHOREOGRAPHY (Event-Driven):                                 │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │  ┌──────────┐   OrderCreated    ┌──────────┐         │  │
+        │   │  │  Order   │──────────────────►│Inventory │         │  │
+        │   │  │ Service  │                   │ Service  │         │  │
+        │   │  └──────────┘                   └────┬─────┘         │  │
+        │   │                                      │                │  │
+        │   │                        InventoryReserved               │  │
+        │   │                                      │                │  │
+        │   │                                      ▼                │  │
+        │   │  ┌──────────┐   PaymentSucceeded   ┌──────────┐      │  │
+        │   │  │ Payment  │◄─────────────────────│Inventory │      │  │
+        │   │  │ Service  │                      │ Service  │      │  │
+        │   │  └──────────┘                      └──────────┘      │  │
+        │   │                                                         │  │
+        │   │  Each service reacts to events independently           │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘</pre>
+</div>
+</details>
+<details class="point">
+<summary><span class="num">17</span> When orchestration is easier</summary>
+<div class="content">
+<pre>        ┌─────────────────────────────────────────────────────────────────┐
+        │              WHEN ORCHESTRATION IS EASIER                     │
+        ├─────────────────────────────────────────────────────────────────┤
+        │                                                                 │
+        │   Clear answers to:                                            │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │  ✓ What step are we on?                                │  │
+        │   │  ✓ What happens next?                                  │  │
+        │   │  ✓ Why is this order stuck?                            │  │
+        │   │                                                         │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   Advantages:                                                  │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  ✓ Single place to see workflow progress               │  │
+        │   │  ✓ Easier debugging and operational visibility         │  │
+        │   │  ✓ Clear state machine                                  │  │
+        │   │  ✓ Simpler to implement retry logic                    │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   ⚠️ But orchestrator becomes an important component:          │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  • Requires high availability                           │  │
+        │   │  • Must handle its own failures                         │  │
+        │   │  • Needs explicit ownership                             │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘</pre>
+</div>
+</details>
+<details class="point">
+<summary><span class="num">18</span> Choreography can become invisible spaghetti</summary>
+<div class="content">
+<pre>        ┌─────────────────────────────────────────────────────────────────┐
+        │          CHOREOGRAPHY RISK — INVISIBLE SPAGHETTI              │
+        ├─────────────────────────────────────────────────────────────────┤
+        │                                                                 │
+        │   Event Chain (Hard to Debug):                                 │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │  OrderCreated                                            │  │
+        │   │       │                                                  │  │
+        │   │       ▼                                                  │  │
+        │   │  InventoryReserved                                       │  │
+        │   │       │                                                  │  │
+        │   │       ▼                                                  │  │
+        │   │  PaymentCharged                                          │  │
+        │   │       │                                                  │  │
+        │   │       ▼                                                  │  │
+        │   │  ShipmentCreated                                         │  │
+        │   │       │                                                  │  │
+        │   │       ▼                                                  │  │
+        │   │  NotificationSent                                       │  │
+        │   │                                                         │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   The Problem:                                                 │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  • Each service knows only its own event reactions    │  │
+        │   │  • End-to-end flow is spread across many codebases    │  │
+        │   │  • Debugging requires reconstructing an event chain   │  │
+        │   │  • No single place to see "what's happening"          │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   When to Worry:                                               │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  • Events are chained more than 3-4 steps              │  │
+        │   │  • Teams are confused about end-to-end flow            │  │
+        │   │  • Hard to answer "why did this order fail?"          │  │
+        │   │  • Growing choreography deserves review/migration      │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘</pre>
+</div>
+</details>
+<details class="point">
+<summary><span class="num">19</span> Transactional Outbox solves the DB → event gap</summary>
+<div class="content">
+<pre>        ┌─────────────────────────────────────────────────────────────────┐
+        │              TRANSACTIONAL OUTBOX PATTERN                     │
+        ├─────────────────────────────────────────────────────────────────┤
+        │                                                                 │
+        │   BAD (Without Outbox):                                        │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │  1. UPDATE business table                               │  │
+        │   │  2. publish event to broker                            │  │
+        │   │  3. CRASH ❌                                            │  │
+        │   │                                                         │  │
+        │   │  Result: DB updated, but event was NEVER published!    │  │
+        │   │                                                         │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   GOOD (With Outbox):                                           │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │  1. BEGIN TRANSACTION                                   │  │
+        │   │  2. UPDATE business table                               │  │
+        │   │  3. INSERT outbox table (event)                         │  │
+        │   │  4. COMMIT                                              │  │
+        │   │  5. (Separate Relay) Read outbox → publish to broker   │  │
+        │   │                                                         │  │
+        │   │  Result: Local state change + event creation is        │  │
+        │   │  ATOMIC!                                                │  │
+        │   │                                                         │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │  ┌─────────────┐     ┌─────────────┐                   │  │
+        │   │  │  Business  │     │   Outbox    │   Both in one     │  │
+        │   │  │    Table   │     │    Table    │   local commit!   │  │
+        │   │  └─────────────┘     └─────────────┘                   │  │
+        │   │         │                   │                           │  │
+        │   │         └───────┬───────────┘                           │  │
+        │   │                 │                                        │  │
+        │   │                 ▼                                        │  │
+        │   │         ┌─────────────┐                                 │  │
+        │   │         │   Outbox    │                                 │  │
+        │   │         │   Relay     │  ← Separate process/thread      │  │
+        │   │         └──────┬──────┘                                 │  │
+        │   │                │                                         │  │
+        │   │                ▼                                         │  │
+        │   │         ┌─────────────┐                                 │  │
+        │   │         │   Broker   │                                 │  │
+        │   │         └─────────────┘                                 │  │
+        │   │                                                         │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘</pre>
+</div>
+</details>
+<details class="point">
+<summary><span class="num">20</span> Outbox ≠ exactly-once delivery</summary>
+<div class="content">
+<pre>        ┌─────────────────────────────────────────────────────────────────┐
+        │           OUTBOX = AT-LEAST-ONCE (Not Exactly-Once)           │
+        ├─────────────────────────────────────────────────────────────────┤
+        │                                                                 │
+        │   WHY AT-LEAST-ONCE:                                           │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │  1. Relay reads outbox record                           │  │
+        │   │  2. Relay publishes event to broker                    │  │
+        │   │  3. Relay crashes before marking record as published   │  │
+        │   │                                                         │  │
+        │   │  On restart, relay reads the record AGAIN              │  │
+        │   │  and publishes the event AGAIN                         │  │
+        │   │                                                         │  │
+        │   │  Result: Event delivered TWICE                         │  │
+        │   │                                                         │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   SOLUTION:                                                    │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  Event may be delivered multiple times:                │  │
+        │   │  Consumers must be IDEMPOTENT                         │  │
+        │   │                                                         │  │
+        │   │  ┌──────────────┐                                     │  │
+        │   │  │   Consumer   │                                      │  │
+        │   │  │  (Idempotent)│←── Event 1 (processed once)        │  │
+        │   │  └──────────────┘                                      │  │
+        │   │        ▲                                               │  │
+        │   │        │                                               │  │
+        │   │  ┌─────┴──────┐                                       │  │
+        │   │  │   Event 2  │ (duplicate, ignored)                  │  │
+        │   │  └────────────┘                                       │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘</pre>
+</div>
+</details>
+<details class="point">
+<summary><span class="num">21</span> Idempotency = repeated request, one business effect</summary>
+<div class="content">
+<pre>        ┌─────────────────────────────────────────────────────────────────┐
+        │                   IDEMPOTENCY PRINCIPLE                        │
+        ├─────────────────────────────────────────────────────────────────┤
+        │                                                                 │
+        │   Same Intent → Multiple Retries → ONE Business Effect        │
+        │                                                                 │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │  Request 1: ReserveInventory(order_id, 10, idempotency)│  │
+        │   │       │                                                 │  │
+        │   │       ▼                                                 │  │
+        │   │  ❌ Timeout! (Request may have succeeded)              │  │
+        │   │       │                                                 │  │
+        │   │       ▼                                                 │  │
+        │   │  Request 2: ReserveInventory(order_id, 10, idempotency)│  │
+        │   │       │                                                 │  │
+        │   │       ▼                                                 │  │
+        │   │  ✅ Already reserved, return success                   │  │
+        │   │                                                         │  │
+        │   │  Result: Inventory reserved ONCE                       │  │
+        │   │                                                         │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   IDEMPOTENCY KEYS:                                            │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │  ✓ order_id + saga_step                                │  │
+        │   │  ✓ payment_intent_id                                   │  │
+        │   │  ✓ external_event_id                                   │  │
+        │   │  ✓ request_id from client                              │  │
+        │   │                                                         │  │
+        │   │  Each important saga step needs its own                │  │
+        │   │  idempotency model.                                    │  │
+        │   │                                                         │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘</pre>
+</div>
+</details>
+<details class="point">
+<summary><span class="num">22</span> The deepest rule: timeout = UNKNOWN</summary>
+<div class="content">
+<pre>        ┌─────────────────────────────────────────────────────────────────┐
+        │                 TIMEOUT = UNKNOWN                              │
+        ├─────────────────────────────────────────────────────────────────┤
+        │                                                                 │
+        │   Payment Request:                                             │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │  ┌────────────────────────────────────────────────┐     │  │
+        │   │  │ Charge $100.00                                   │     │  │
+        │   │  └────────────────────────────────────────────────┘     │  │
+        │   │                    │                                    │  │
+        │   │                    ▼                                    │  │
+        │   │              ┌──────────┐                              │  │
+        │   │              │ TIMEOUT! │                              │  │
+        │   │              └──────────┘                              │  │
+        │   │                    │                                    │  │
+        │   │                    ▼                                    │  │
+        │   │         ┌─────────────────────┐                       │  │
+        │   │         │ Did payment happen? │                       │  │
+        │   │         └─────────────────────┘                       │  │
+        │   │                    │                                    │  │
+        │   │         ┌──────────┼──────────┐                       │  │
+        │   │         ▼          ▼          ▼                       │  │
+        │   │    SUCCESS    PENDING     FAILED                      │  │
+        │   │                                                         │  │
+        │   │   Timeout only means:                                  │  │
+        │   │   "Response wasn't received in time"                  │  │
+        │   │   The remote operation may already have succeeded!    │  │
+        │   │                                                         │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   RULES FOR TIMEOUT:                                          │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  ✗ Never blindly retry          (could duplicate)      │  │
+        │   │  ✗ Never blindly compensate     (could double-refund)  │  │
+        │   │  ✗ Never blindly cancel         (could double-cancel)  │  │
+        │   │  ✓ First determine/reconcile the actual outcome        │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘</pre>
+</div>
+</details>
+<details class="point">
+<summary><span class="num">23</span> Use explicit workflow states</summary>
+<div class="content">
+<pre>        ┌─────────────────────────────────────────────────────────────────┐
+        │               EXPLICIT WORKFLOW STATES                         │
+        ├─────────────────────────────────────────────────────────────────┤
+        │                                                                 │
+        │   State Machine:                                               │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │  ┌─────────────┐                                       │  │
+        │   │  │   PENDING   │                                       │  │
+        │   │  └──────┬──────┘                                       │  │
+        │   │         │                                               │  │
+        │   │         ▼                                               │  │
+        │   │  ┌─────────────┐                                       │  │
+        │   │  │ ORDER_     │                                        │  │
+        │   │  │ CREATED    │                                        │  │
+        │   │  └──────┬──────┘                                       │  │
+        │   │         │                                               │  │
+        │   │         ▼                                               │  │
+        │   │  ┌─────────────┐                                       │  │
+        │   │  │ INVENTORY_  │                                        │  │
+        │   │  │ RESERVED    │                                        │  │
+        │   │  └──────┬──────┘                                       │  │
+        │   │         │                                               │  │
+        │   │         ▼                                               │  │
+        │   │  ┌─────────────┐     ┌─────────────────┐              │  │
+        │   │  │  PAYMENT_   │────►│  PAYMENT_       │              │  │
+        │   │  │  CHARGED    │     │  RECONCILIATION │              │  │
+        │   │  └──────┬──────┘     └─────────────────┘              │  │
+        │   │         │                                               │  │
+        │   │         ▼                                               │  │
+        │   │  ┌─────────────┐                                       │  │
+        │   │  │  COMPLETED  │                                       │  │
+        │   │  └─────────────┘                                       │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   Why This Matters:                                            │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  • FAILED and UNKNOWN are fundamentally different      │  │
+        │   │  • State machine makes ambiguity explicit              │  │
+        │   │  • Each service owns its local state                   │  │
+        │   │  • Orchestrator tracks workflow progress               │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘</pre>
+</div>
+</details>
+<details class="point">
+<summary><span class="num">24</span> Reconciliation is a feature, not an admission of failure</summary>
+<div class="content">
+<pre>        ┌─────────────────────────────────────────────────────────────────┐
+        │              RECONCILIATION AS A FEATURE                      │
+        ├─────────────────────────────────────────────────────────────────┤
+        │                                                                 │
+        │   Why Reconciliation is Needed:                               │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │  • External systems are black boxes                    │  │
+        │   │  • Some outcomes cannot be known immediately           │  │
+        │   │  • Network timeouts obscure the truth                  │  │
+        │   │  • Third-party APIs may not return status              │  │
+        │   │                                                         │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   Reconciliation Flow:                                         │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │  ┌─────────────┐                                       │  │
+        │   │  │   UNKNOWN   │                                       │  │
+        │   │  └──────┬──────┘                                       │  │
+        │   │         │                                               │  │
+        │   │         ▼                                               │  │
+        │   │  ┌─────────────┐                                       │  │
+        │   │  │ PENDING_    │  ← Explicit state for uncertainty    │  │
+        │   │  │ RECONCILIATION│                                      │  │
+        │   │  └──────┬──────┘                                       │  │
+        │   │         │                                               │  │
+        │   │         ▼                                               │  │
+        │   │  ┌─────────────┐     ┌─────────────┐                  │  │
+        │   │  │   Query     │────►│   External  │                  │  │
+        │   │  │   External  │     │    Truth    │                  │  │
+        │   │  └─────────────┘     └─────────────┘                  │  │
+        │   │         │                                               │  │
+        │   │         ▼                                               │  │
+        │   │  ┌─────────────┐     ┌─────────────┐                  │  │
+        │   │  │  CONFIRMED  │     │  CONFIRMED  │                  │  │
+        │   │  │  SUCCESS   │     │  FAILURE    │                  │  │
+        │   │  └─────────────┘     └─────────────┘                  │  │
+        │   │                                                         │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  Particularly important for money movement and         │  │
+        │   │  regulated external integrations.                      │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘</pre>
+</div>
+</details>
+<details class="point">
+<summary><span class="num">25</span> Exactly-once is usually the wrong promise</summary>
+<div class="content">
+<pre>        ┌─────────────────────────────────────────────────────────────────┐
+        │          EXACTLY-ONCE is Usually the Wrong Promise            │
+        ├─────────────────────────────────────────────────────────────────┤
+        │                                                                 │
+        │   Why Exactly-Once is Hard:                                   │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │  ┌──────────┐  ┌──────────┐  ┌──────────┐             │  │
+        │   │  │  Network │  │  Broker  │  │  Database│   Any of    │  │
+        │   │  │  can     │  │  can     │  │  can     │   these can │  │
+        │   │  │  retransmit│  │  replay  │  │  fail    │   cause    │  │
+        │   │  │  packets │  │  messages│  │  mid-   │   duplicate │  │
+        │   │  └──────────┘  └──────────┘  │  commit  │             │  │
+        │   │                               └──────────┘             │  │
+        │   │                                                         │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   More Realistic Target:                                       │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │     At-least-once delivery                              │  │
+        │   │          +                                              │  │
+        │   │     Idempotent consumers                                │  │
+        │   │          +                                              │  │
+        │   │     Reconciliation                                      │  │
+        │   │          =                                              │  │
+        │   │     Effectively-once business outcome                  │  │
+        │   │                                                         │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   Rules:                                                       │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  ✓ Automatic compensation for CONFIRMED failures       │  │
+        │   │  ✓ Reconciliation for UNKNOWN outcomes                 │  │
+        │   │  ✓ Idempotency for all operations                      │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘</pre>
+</div>
+</details>
+<details class="point">
+<summary><span class="num">26</span> Production + leadership mindset</summary>
+<div class="content">
+<pre>        ┌─────────────────────────────────────────────────────────────────┐
+        │          PRODUCTION PATTERNS + LEADERSHIP MINDSET             │
+        ├─────────────────────────────────────────────────────────────────┤
+        │                                                                 │
+        │   Platform Patterns:                                           │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │  ✓ Saga orchestration                                   │  │
+        │   │  ✓ Outbox for reliable event publishing                 │  │
+        │   │  ✓ order_id + step idempotency                          │  │
+        │   │  ✓ Reconciliation for unknown outcomes                  │  │
+        │   │  ✓ External-system safeguards                           │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   Domain-Specific Considerations:                              │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │  MF Redemption    → Payment timeout                    │  │
+        │   │                    → RECONCILIATION, not compensation  │  │
+        │   │                                                         │  │
+        │   │  IPO Allotment    → Duplicate webhook                  │  │
+        │   │                    → Dedupe using provider event ID    │  │
+        │   │                                                         │  │
+        │   │  NSDL Demat       → Irreversible account creation      │  │
+        │   │                    → Make it the FINAL step            │  │
+        │   │                                                         │  │
+        │   │  Outbox Lag       → Monitor oldest unpublished event   │  │
+        │   │                                                         │  │
+        │   │  Compensation     → Compensation itself must be        │  │
+        │   │    Retry           idempotent                          │  │
+        │   │                                                         │  │
+        │   │  LAMF             → Reversible lien marking            │  │
+        │   │                    → Before irreversible disbursal     │  │
+        │   │                                                         │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        │   Leadership Question:                                         │
+        │   ┌─────────────────────────────────────────────────────────┐  │
+        │   │                                                         │  │
+        │   │  "Why does this workflow/configuration exist,           │  │
+        │   │   what assumption does it depend on,                   │  │
+        │   │   and does that assumption still hold?"                │  │
+        │   │                                                         │  │
+        │   └─────────────────────────────────────────────────────────┘  │
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘</pre>
+</div>
+</details>
+
+<details class="point">
+<summary>One-Line Mental Model</summary>
+<div class="content">
+<pre>BUSINESS INVARIANT
+       ↓
+TRANSACTION BOUNDARY
+       ↓
+LOCAL COMMITS
+       ↓
+2PC or SAGA
+       ↓
+COMPENSATION
+       ↓
+OUTBOX
+       ↓
+IDEMPOTENCY
+       ↓
+STATE MACHINE
+       ↓
+TIMEOUT = UNKNOWN
+       ↓
+RECONCILIATION
+       ↓
+OBSERVABILITY + AUDIT
+       ↓
+BUSINESS CORRECTNESS</pre>
+</div>
+</details>
+<details class="point">
+<summary>The 5 Rules Worth Memorizing</summary>
+<div class="content">
+<pre>┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                           │
+│   1. Distributed transaction != distributed DB transaction               │
+│                                                                           │
+│   2. Compensation != rollback                                             │
+│                                                                           │
+│   3. Timeout != failure                                                   │
+│                                                                           │
+│   4. Outbox != exactly-once                                               │
+│                                                                           │
+│   5. Idempotency + reconciliation = practical correctness                │
+│                                                                           │
+└─────────────────────────────────────────────────────────────────────────────┘</pre>
+</div>
+</details>
+<details class="point">
+<summary>Best Interview Sentence</summary>
+<div class="content">
+<blockquote><p>"I don't start by choosing 2PC or Saga. I first identify the business invariant, classify each step by reversibility and failure semantics, then choose the coordination pattern, idempotency, and reconciliation strategy that keeps the business outcome correct even when the network doesn't tell me the truth."</p></blockquote>
+</div>
+</details>
+<details class="point">
+<summary>Quick Reference: The 26 Points in One View</summary>
+<div class="content">
+<table>
+<thead><tr>
+<th>#</th>
+<th>Topic</th>
+<th>Key Takeaway</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Mental model</td>
+<td>Distributed transaction = workflow + failure + retry + compensation + reconciliation</td>
+</tr>
+<tr>
+<td>2</td>
+<td>No global commit</td>
+<td>No single DB controls all services; must design coordination or recovery</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Business correctness</td>
+<td>Start with business invariants, not DB atomicity</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Data vs business atomicity</td>
+<td>Not every step needs all-or-nothing</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Transaction boundary</td>
+<td>Strong for money, eventual for notifications</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Building blocks</td>
+<td>2PC, Saga, Outbox, Idempotency + Reconciliation</td>
+</tr>
+<tr>
+<td>7</td>
+<td>2PC</td>
+<td>PREPARE → COMMIT/ROLLBACK, all-or-nothing</td>
+</tr>
+<tr>
+<td>8</td>
+<td>2PC availability cost</td>
+<td>Locks, slowest participant, coordinator failure</td>
+</tr>
+<tr>
+<td>9</td>
+<td>2PC vs Saga</td>
+<td>Prevent vs recover</td>
+</tr>
+<tr>
+<td>10</td>
+<td>TCC</td>
+<td>Try → Confirm → Cancel, middle-ground</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Saga</td>
+<td>Sequence of local transactions with compensation</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Compensation ≠ rollback</td>
+<td>Refund is a new action, not an undo</td>
+</tr>
+<tr>
+<td>13</td>
+<td>Reversibility</td>
+<td>Reversible → less reversible → irreversible (LAST)</td>
+</tr>
+<tr>
+<td>14</td>
+<td>Not everything is compensatable</td>
+<td>Push irreversible steps later</td>
+</tr>
+<tr>
+<td>15</td>
+<td>Compensation idempotency</td>
+<td>Compensation itself must be idempotent</td>
+</tr>
+<tr>
+<td>16</td>
+<td>Orchestration vs choreography</td>
+<td>Centralized coordinator vs event-driven</td>
+</tr>
+<tr>
+<td>17</td>
+<td>When orchestration is easier</td>
+<td>Clear visibility, easier debugging</td>
+</tr>
+<tr>
+<td>18</td>
+<td>Choreography risk</td>
+<td>Invisible spaghetti, hard to debug</td>
+</tr>
+<tr>
+<td>19</td>
+<td>Outbox</td>
+<td>DB update + event insert in one transaction</td>
+</tr>
+<tr>
+<td>20</td>
+<td>Outbox ≠ exactly-once</td>
+<td>At-least-once + idempotent consumers</td>
+</tr>
+<tr>
+<td>21</td>
+<td>Idempotency</td>
+<td>Repeated request, one business effect</td>
+</tr>
+<tr>
+<td>22</td>
+<td>Timeout = UNKNOWN</td>
+<td>Never blindly retry/compensate/cancel</td>
+</tr>
+<tr>
+<td>23</td>
+<td>Explicit workflow states</td>
+<td>FAILED and UNKNOWN are different</td>
+</tr>
+<tr>
+<td>24</td>
+<td>Reconciliation</td>
+<td>Query external truth for UNKNOWN</td>
+</tr>
+<tr>
+<td>25</td>
+<td>Effectively-once</td>
+<td>At-least-once + idempotency + reconciliation</td>
+</tr>
+<tr>
+<td>26</td>
+<td>Production + leadership</td>
+<td>Business correctness, assumptions, ownership</td>
+</tr>
+</tbody></table>
+</div>
+</details>
+
+</body>
+</html>
