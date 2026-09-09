@@ -148,6 +148,80 @@
     font-weight: bold;
     color: #4a3c1e;
   }
+  /* tracker */
+  .tracker-label {
+    font-size: 0.95em;
+    color: #7a5c2e;
+    margin-bottom: 10px;
+    font-style: italic;
+  }
+  #samyama-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid #d4af37;
+    background: transparent;
+    cursor: pointer;
+    transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7em;
+    color: transparent;
+    user-select: none;
+  }
+  .dot.done {
+    background: #d4af37;
+    color: #fff;
+  }
+  .shoonya-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 0.95em;
+    color: #4a3c1e;
+  }
+  .shoonya-label input[type="checkbox"] {
+    display: none;
+  }
+  .shoonya-box {
+    width: 22px;
+    height: 22px;
+    border: 2px solid #d4af37;
+    border-radius: 4px;
+    display: inline-block;
+    position: relative;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .shoonya-label input:checked + .shoonya-box {
+    background: #d4af37;
+  }
+  .shoonya-label input:checked + .shoonya-box::after {
+    content: "✓";
+    position: absolute;
+    top: -1px;
+    left: 3px;
+    font-size: 14px;
+    color: #fff;
+  }
+  .tracker-reset {
+    margin-top: 14px;
+    font-size: 0.8em;
+    color: #c9a15a;
+    cursor: pointer;
+    text-align: right;
+    letter-spacing: 0.5px;
+    text-decoration: underline;
+    opacity: 0.7;
+  }
+  .tracker-reset:hover { opacity: 1; }
   footer {
     text-align: center;
     margin-top: 30px;
@@ -173,10 +247,9 @@
     <div class="content">
       <table>
         <tr><th>Time</th><th>Practice</th></tr>
-        <tr><td>3:30 AM – 5:00 AM</td><td>Shakti Chalan Kriya, Sambhavi Kriya, Mahamantra Jap</td></tr>
-        <tr><td>Twice daily</td><td>Shoonya</td></tr>
-        <tr><td>Once at night</td><td>Breath watching</td></tr>
-        <tr><td>20× through the day</td><td>Recall one Inner Engineering rule + observe breath and sensation at the nostril</td></tr>
+        <tr><td>3:30 AM – 5:00 AM</td><td>Surya Shakti, Shakti Chalan Kriya, Sambhavi Kriya, AUM chanting - 10 mins</td></tr>
+        <tr><td>Once daily (1 PM)</td><td>Shoonya</td></tr>
+        <tr><td>20× through the day</td><td>Recall one Inner Engineering rule + breath watching and do samyama - for 10 mins</td></tr>
       </table>
     </div>
   </details>
@@ -249,6 +322,24 @@
     </div>
   </details>
 
+  <details class="collapsible" id="tracker-section">
+    <summary>Today's Tracker</summary>
+    <div class="content">
+      <div class="tracker-label">Samyama <span id="samyama-count">0</span> / 20</div>
+      <div id="samyama-grid">
+        <!-- 20 dots injected by JS -->
+      </div>
+      <div class="tracker-row" style="margin-top:18px;">
+        <label class="shoonya-label">
+          <input type="checkbox" id="shoonya-check">
+          <span class="shoonya-box"></span>
+          Shoonya (1 PM)
+        </label>
+      </div>
+      <div class="tracker-reset" onclick="resetTracker()">reset today</div>
+    </div>
+  </details>
+
   <details class="collapsible vow">
     <summary>The Vow</summary>
     <div class="content">
@@ -265,5 +356,67 @@
   <footer>Result to be reviewed in September 2027.</footer>
 
 </div>
+<script>
+  const TODAY = new Date().toISOString().slice(0, 10);
+  const KEY_S = 'samyama_' + TODAY;
+  const KEY_SH = 'shoonya_' + TODAY;
+
+  function loadState() {
+    try {
+      return {
+        samyama: JSON.parse(localStorage.getItem(KEY_S) || '[]'),
+        shoonya: localStorage.getItem(KEY_SH) === '1'
+      };
+    } catch(e) { return { samyama: [], shoonya: false }; }
+  }
+
+  function saveState(samyama, shoonya) {
+    try {
+      localStorage.setItem(KEY_S, JSON.stringify(samyama));
+      localStorage.setItem(KEY_SH, shoonya ? '1' : '0');
+    } catch(e) {}
+  }
+
+  function renderDots(done) {
+    const grid = document.getElementById('samyama-grid');
+    grid.innerHTML = '';
+    for (let i = 0; i < 20; i++) {
+      const d = document.createElement('div');
+      d.className = 'dot' + (done.includes(i) ? ' done' : '');
+      d.textContent = i + 1;
+      d.style.color = done.includes(i) ? '#fff' : 'transparent';
+      d.addEventListener('click', () => toggleDot(i));
+      grid.appendChild(d);
+    }
+    document.getElementById('samyama-count').textContent = done.length;
+  }
+
+  function toggleDot(i) {
+    const state = loadState();
+    const idx = state.samyama.indexOf(i);
+    if (idx === -1) state.samyama.push(i);
+    else state.samyama.splice(idx, 1);
+    saveState(state.samyama, state.shoonya);
+    renderDots(state.samyama);
+  }
+
+  function resetTracker() {
+    saveState([], false);
+    const s = loadState();
+    renderDots(s.samyama);
+    document.getElementById('shoonya-check').checked = false;
+  }
+
+  (function init() {
+    const state = loadState();
+    renderDots(state.samyama);
+    const sc = document.getElementById('shoonya-check');
+    sc.checked = state.shoonya;
+    sc.addEventListener('change', () => {
+      const s = loadState();
+      saveState(s.samyama, sc.checked);
+    });
+  })();
+</script>
 </body>
 </html>
