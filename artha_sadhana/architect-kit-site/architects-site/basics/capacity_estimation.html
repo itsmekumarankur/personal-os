@@ -33,18 +33,62 @@
   .footer{color:var(--muted);font-size:14px;margin-top:40px}
   @media print{body{background:white}.wrap{max-width:none;padding:0}.card,header,table{break-inside:avoid}pre{white-space:pre-wrap}}
 
-.answer-toggle{margin-top:16px;border:1px solid #dfe3ea;border-radius:10px;background:#fafbfc;overflow:hidden}.answer-toggle summary{cursor:pointer;list-style:none;padding:12px 16px;font-weight:700;color:#315efb;background:#f5f7ff;user-select:none}.answer-toggle summary::-webkit-details-marker{display:none}.answer-toggle summary:before{content:"▶";display:inline-block;margin-right:9px;font-size:12px;transition:transform .15s ease}.answer-toggle[open] summary:before{transform:rotate(90deg)}.answer-content{padding:2px 16px 14px}.answer-content>:first-child{margin-top:12px}.answer-controls{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 20px}.answer-controls button{border:1px solid #d1d5db;border-radius:8px;padding:8px 13px;background:white;cursor:pointer;font-weight:600}.answer-controls button:hover{background:#f3f4f6}
+
 </style>
 <style>
-.point-toggle{margin:10px 0 14px;padding:9px 14px;border:1px solid #bbb;border-radius:7px;background:#f5f5f5;cursor:pointer;font-weight:600;font-size:14px}
-.point-toggle:hover{filter:brightness(.97)}
-.point-answer{display:none;margin:0 0 18px;padding:0 0 2px}
-.point-answer.open{display:block}
-.global-toggle-bar{display:flex;gap:10px;margin:16px 0 24px;flex-wrap:wrap}
-.global-toggle-bar button{padding:9px 14px;border:1px solid #aaa;border-radius:7px;background:#fff;cursor:pointer;font-weight:600}
-</style></head>
-<body><div class="global-toggle-bar"><button onclick="expandAll()">Expand All Points</button><button onclick="collapseAll()">Collapse All Points</button></div>
-<div class="wrap"><div class="answer-controls"><button id="expandAllAnswers" type="button">Expand All Answers</button><button id="collapseAllAnswers" type="button">Collapse All Answers</button></div>
+.qa-head{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  cursor:pointer;user-select:none;
+  padding:6px 10px 16px;margin:-6px -10px 0;
+  border-bottom:2px solid var(--border);
+  border-radius:8px 8px 0 0;
+  transition:background .15s ease;
+}
+.qa-head:hover{background:color-mix(in srgb, var(--accent) 7%, var(--card))}
+.qa-head h2{margin:0;border:none;padding:0;flex:1 1 auto}
+.qa-head:hover h2{color:var(--accent)}
+.qa-head .chev{
+  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+  width:28px;height:28px;border-radius:50%;
+  background:var(--card);border:1.5px solid var(--border);color:var(--muted);
+  font-size:14px;line-height:1;
+  transition:transform .2s ease,color .2s ease,border-color .2s ease,background .2s ease;
+}
+.qa-head.open .chev{transform:rotate(90deg);color:#fff;background:var(--accent);border-color:var(--accent)}
+.point-answer{display:none;margin:0 0 4px;padding:18px 2px 2px}
+.point-answer.open{display:block;animation:qaFadeIn .16s ease}
+@keyframes qaFadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.global-toggle-bar{
+  position:sticky;top:14px;z-index:20;
+  display:flex;gap:10px;margin:0 0 22px;flex-wrap:wrap;
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:10px;box-shadow:0 4px 14px rgba(15,23,42,.08);
+  backdrop-filter:blur(6px);
+}
+.global-toggle-bar button{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:9px 16px;border:1px solid var(--border);border-radius:9px;
+  background:var(--card);color:var(--muted);cursor:pointer;font-weight:700;font-size:14px;
+  transition:background .15s ease,color .15s ease,border-color .15s ease,transform .1s ease;
+}
+.global-toggle-bar button:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+.global-toggle-bar button:active{transform:scale(.97)}
+</style><style>
+/* compact font sizing */
+body{font-size:14px}
+h1{font-size:22px}
+h2{font-size:16.5px}
+h3{font-size:14.5px}
+.subtitle{font-size:13.5px}
+.formula{font-size:15px}
+pre{font-size:12.5px}
+.tag{font-size:11px}
+.footer{font-size:12px}
+table{font-size:13px}
+</style>
+</head>
+<body><div class="global-toggle-bar"><button onclick="expandAll()">⊕ Expand all</button><button onclick="collapseAll()">⊖ Collapse all</button></div>
+<div class="wrap">
 <header>
 <h1>Capacity Estimation — System Design Notes</h1>
 <div class="subtitle">Easy-to-understand, interview-oriented notes with ASCII diagrams</div>
@@ -56,7 +100,7 @@
 <span class="tag">Autoscaling</span>
 </div>
 </header>
-<section><h2>1. What is Capacity Estimation?</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
+<section><div class="qa-head" onclick="togglePoint(this)"><h2>1. What is Capacity Estimation?</h2><span class="chev" aria-hidden="true">›</span></div><div class="point-answer">
 
 <p>Capacity estimation answers one fundamental question:</p>
 <div class="callout"><strong>“How much infrastructure do I need to handle the expected load while meeting my SLO?”</strong></div>
@@ -76,7 +120,7 @@
 </pre>
 <p>It is essentially <strong>back-of-the-envelope calculation</strong>. Exact numbers are less important than reasonable assumptions, correct order of magnitude, and understanding the architectural consequences.</p>
 </div></section>
-<section><h2>2. The Three Things You Need First</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
+<section><div class="qa-head" onclick="togglePoint(this)"><h2>2. The Three Things You Need First</h2><span class="chev" aria-hidden="true">›</span></div><div class="point-answer">
 
 <pre>
                 CAPACITY ESTIMATION
@@ -118,7 +162,7 @@ must finish within
 </div>
 </div>
 </div></section>
-<section><h2>3. Acceptable Backlog per Instance</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
+<section><div class="qa-head" onclick="togglePoint(this)"><h2>3. Acceptable Backlog per Instance</h2><span class="chev" aria-hidden="true">›</span></div><div class="point-answer">
 
 <p>Suppose:</p>
 <ul>
@@ -140,7 +184,7 @@ must finish within
 </pre>
 <p>Think of this number as the approximate amount of work an instance can carry while still satisfying the latency objective.</p>
 </div></section>
-<section><h2>4. The Two Numbers to Remember</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
+<section><div class="qa-head" onclick="togglePoint(this)"><h2>4. The Two Numbers to Remember</h2><span class="chev" aria-hidden="true">›</span></div><div class="point-answer">
 
 <pre>
                     CAPACITY
@@ -173,7 +217,7 @@ must finish within
 </div>
 </div>
 </div></section>
-<section><h2>5. Calculate Number of Servers</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
+<section><div class="qa-head" onclick="togglePoint(this)"><h2>5. Calculate Number of Servers</h2><span class="chev" aria-hidden="true">›</span></div><div class="point-answer">
 
 <pre>
                     Demand
@@ -206,7 +250,7 @@ must finish within
 <tr><td>Required instances</td><td>24 ÷ 3 = <strong>8</strong></td></tr>
 </table>
 </div></section>
-<section><h2>6. Traffic Increase → Scale Out</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
+<section><div class="qa-head" onclick="togglePoint(this)"><h2>6. Traffic Increase → Scale Out</h2><span class="chev" aria-hidden="true">›</span></div><div class="point-answer">
 
 <p>Normal traffic:</p>
 <pre>
@@ -243,7 +287,7 @@ SCALE OUT
 <p>Required capacity:</p>
 <div class="formula">96 ÷ 3 = 32 servers</div>
 </div></section>
-<section><h2>7. Autoscaling Feedback Loop</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
+<section><div class="qa-head" onclick="togglePoint(this)"><h2>7. Autoscaling Feedback Loop</h2><span class="chev" aria-hidden="true">›</span></div><div class="point-answer">
 
 <pre>
                     TRAFFIC
@@ -282,7 +326,7 @@ SCALE OUT
                   Recalculate
 </pre>
 </div></section>
-<section><h2>8. Traffic Falls → Scale In</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
+<section><div class="qa-head" onclick="togglePoint(this)"><h2>8. Traffic Falls → Scale In</h2><span class="chev" aria-hidden="true">›</span></div><div class="point-answer">
 
 <p>Suppose traffic falls back to 24 RPS but we still have 32 servers:</p>
 <div class="formula">24 ÷ 32 = 0.75 RPS/server</div>
@@ -303,7 +347,7 @@ Eventually:
 HEALTHY
 </pre>
 </div></section>
-<section><h2>9. Complete Architecture View</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
+<section><div class="qa-head" onclick="togglePoint(this)"><h2>9. Complete Architecture View</h2><span class="chev" aria-hidden="true">›</span></div><div class="point-answer">
 
 <pre>
              TRAFFIC
@@ -345,7 +389,7 @@ HEALTHY
    Add servers      Remove servers
 </pre>
 </div></section>
-<section><h2>10. Don't Stop at RPS</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
+<section><div class="qa-head" onclick="togglePoint(this)"><h2>10. Don't Stop at RPS</h2><span class="chev" aria-hidden="true">›</span></div><div class="point-answer">
 
 <pre>
                  CAPACITY ESTIMATION
@@ -367,7 +411,7 @@ HEALTHY
 <div class="card"><strong>Scaling</strong><br/>Horizontal scaling, autoscaling, peak factor</div>
 </div>
 </div></section>
-<section><h2>11. Interview Reasoning Flow</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
+<section><div class="qa-head" onclick="togglePoint(this)"><h2>11. Interview Reasoning Flow</h2><span class="chev" aria-hidden="true">›</span></div><div class="point-answer">
 
 <pre>
 Business requirement
@@ -393,7 +437,7 @@ Autoscaling strategy
 Instead explain the assumptions and calculations that lead to the number.
 </div>
 </div></section>
-<section><h2>12. One-Minute Interview Framework</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
+<section><div class="qa-head" onclick="togglePoint(this)"><h2>12. One-Minute Interview Framework</h2><span class="chev" aria-hidden="true">›</span></div><div class="point-answer">
 
 <pre>
              ┌─────────────────────┐
@@ -432,7 +476,7 @@ Instead explain the assumptions and calculations that lead to the number.
              └─────────────────────┘
 </pre>
 </div></section>
-<section><h2>13. Formula Cheat Sheet</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
+<section><div class="qa-head" onclick="togglePoint(this)"><h2>13. Formula Cheat Sheet</h2><span class="chev" aria-hidden="true">›</span></div><div class="point-answer">
 
 <table>
 <tr><th>Calculation</th><th>Formula</th></tr>
@@ -445,7 +489,7 @@ Instead explain the assumptions and calculations that lead to the number.
 <tr><td>Bandwidth</td><td>RPS × Average Payload Size</td></tr>
 </table>
 </div></section>
-<section><h2>14. Quick Example to Memorize</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
+<section><div class="qa-head" onclick="togglePoint(this)"><h2>14. Quick Example to Memorize</h2><span class="chev" aria-hidden="true">›</span></div><div class="point-answer">
 
 <div class="card">
 <p><strong>Given:</strong></p>
@@ -467,7 +511,7 @@ Instead explain the assumptions and calculations that lead to the number.
 <p><strong>Architectural conclusion:</strong> design for horizontal scaling from approximately 8 instances at normal load to approximately 32 instances at the assumed peak, with autoscaling driven by load per instance and protected by sensible scale-out/scale-in policies.</p>
 </div>
 </div></section>
-<section><h2>15. Final Mental Model</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
+<section><div class="qa-head" onclick="togglePoint(this)"><h2>15. Final Mental Model</h2><span class="chev" aria-hidden="true">›</span></div><div class="point-answer">
 
 <pre>
               DEMAND
@@ -531,14 +575,19 @@ Capacity estimation = <strong>quantify demand + quantify per-unit capacity + res
   Capacity Estimation — System Design Interview Notes
 </div>
 </div>
-<script>const a=()=>document.querySelectorAll("details.answer-toggle");document.getElementById("expandAllAnswers")?.addEventListener("click",()=>a().forEach(x=>x.open=true));document.getElementById("collapseAllAnswers")?.addEventListener("click",()=>a().forEach(x=>x.open=false));</script><script>
-function togglePoint(btn){
-  const answer=btn.nextElementSibling;
-  const open=answer.classList.toggle('open');
-  btn.setAttribute('aria-expanded',open?'true':'false');
-  btn.textContent=(open?'▼ Hide Answer':'▶ Show Answer');
+<script>
+function togglePoint(head){
+  const answer = head.nextElementSibling;
+  const open = answer.classList.toggle('open');
+  head.classList.toggle('open', open);
 }
-function expandAll(){document.querySelectorAll('.point-answer').forEach(a=>a.classList.add('open'));document.querySelectorAll('.point-toggle').forEach(b=>{b.setAttribute('aria-expanded','true');b.textContent='▼ Hide Answer';});}
-function collapseAll(){document.querySelectorAll('.point-answer').forEach(a=>a.classList.remove('open'));document.querySelectorAll('.point-toggle').forEach(b=>{b.setAttribute('aria-expanded','false');b.textContent='▶ Show Answer';});}
+function expandAll(){
+  document.querySelectorAll('.point-answer').forEach(a=>a.classList.add('open'));
+  document.querySelectorAll('.qa-head').forEach(h=>h.classList.add('open'));
+}
+function collapseAll(){
+  document.querySelectorAll('.point-answer').forEach(a=>a.classList.remove('open'));
+  document.querySelectorAll('.qa-head').forEach(h=>h.classList.remove('open'));
+}
 </script></body>
 </html>
