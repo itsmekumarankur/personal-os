@@ -1,8 +1,9 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Capacity Estimation — System Design Notes</title>
 <style>
   :root {
@@ -31,28 +32,34 @@
   .checklist li{margin:8px 0}
   .footer{color:var(--muted);font-size:14px;margin-top:40px}
   @media print{body{background:white}.wrap{max-width:none;padding:0}.card,header,table{break-inside:avoid}pre{white-space:pre-wrap}}
+
+.answer-toggle{margin-top:16px;border:1px solid #dfe3ea;border-radius:10px;background:#fafbfc;overflow:hidden}.answer-toggle summary{cursor:pointer;list-style:none;padding:12px 16px;font-weight:700;color:#315efb;background:#f5f7ff;user-select:none}.answer-toggle summary::-webkit-details-marker{display:none}.answer-toggle summary:before{content:"▶";display:inline-block;margin-right:9px;font-size:12px;transition:transform .15s ease}.answer-toggle[open] summary:before{transform:rotate(90deg)}.answer-content{padding:2px 16px 14px}.answer-content>:first-child{margin-top:12px}.answer-controls{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 20px}.answer-controls button{border:1px solid #d1d5db;border-radius:8px;padding:8px 13px;background:white;cursor:pointer;font-weight:600}.answer-controls button:hover{background:#f3f4f6}
 </style>
-</head>
-<body>
-<div class="wrap">
-
+<style>
+.point-toggle{margin:10px 0 14px;padding:9px 14px;border:1px solid #bbb;border-radius:7px;background:#f5f5f5;cursor:pointer;font-weight:600;font-size:14px}
+.point-toggle:hover{filter:brightness(.97)}
+.point-answer{display:none;margin:0 0 18px;padding:0 0 2px}
+.point-answer.open{display:block}
+.global-toggle-bar{display:flex;gap:10px;margin:16px 0 24px;flex-wrap:wrap}
+.global-toggle-bar button{padding:9px 14px;border:1px solid #aaa;border-radius:7px;background:#fff;cursor:pointer;font-weight:600}
+</style></head>
+<body><div class="global-toggle-bar"><button onclick="expandAll()">Expand All Points</button><button onclick="collapseAll()">Collapse All Points</button></div>
+<div class="wrap"><div class="answer-controls"><button id="expandAllAnswers" type="button">Expand All Answers</button><button id="collapseAllAnswers" type="button">Collapse All Answers</button></div>
 <header>
-  <h1>Capacity Estimation — System Design Notes</h1>
-  <div class="subtitle">Easy-to-understand, interview-oriented notes with ASCII diagrams</div>
-  <div style="margin-top:16px">
-    <span class="tag">Demand</span>
-    <span class="tag">RPS</span>
-    <span class="tag">SLO</span>
-    <span class="tag">Server Capacity</span>
-    <span class="tag">Autoscaling</span>
-  </div>
+<h1>Capacity Estimation — System Design Notes</h1>
+<div class="subtitle">Easy-to-understand, interview-oriented notes with ASCII diagrams</div>
+<div style="margin-top:16px">
+<span class="tag">Demand</span>
+<span class="tag">RPS</span>
+<span class="tag">SLO</span>
+<span class="tag">Server Capacity</span>
+<span class="tag">Autoscaling</span>
+</div>
 </header>
+<section><h2>1. What is Capacity Estimation?</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 
-<section>
-<h2>1. What is Capacity Estimation?</h2>
 <p>Capacity estimation answers one fundamental question:</p>
 <div class="callout"><strong>“How much infrastructure do I need to handle the expected load while meeting my SLO?”</strong></div>
-
 <pre>
                     SYSTEM DESIGN
                          |
@@ -67,12 +74,10 @@
                          v
                  CAPACITY ESTIMATION
 </pre>
-
 <p>It is essentially <strong>back-of-the-envelope calculation</strong>. Exact numbers are less important than reasonable assumptions, correct order of magnitude, and understanding the architectural consequences.</p>
-</section>
+</div></section>
+<section><h2>2. The Three Things You Need First</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 
-<section>
-<h2>2. The Three Things You Need First</h2>
 <pre>
                 CAPACITY ESTIMATION
                          |
@@ -85,7 +90,6 @@
        "How fast?"   "How much?"   "How fast
                                     is 1 server?"
 </pre>
-
 <div class="grid">
 <div class="card">
 <h3>A. SLO</h3>
@@ -98,35 +102,30 @@ must finish within
        v
     100 ms</pre>
 </div>
-
 <div class="card">
 <h3>B. Demand</h3>
 <p>Example: <strong>2,000,000 requests/day</strong>.</p>
 <div class="formula">2,000,000 ÷ 86,400 ≈ 23.1 RPS ≈ 24 RPS</div>
 </div>
-
 <div class="card">
 <h3>C. Instance Capacity</h3>
 <p>Performance testing tells us how much work one instance can process while meeting the SLO.</p>
 <pre>1 server
    |
-   +---- Request 1 --> 35 ms
-   +---- Request 2 --> 35 ms
-   +---- Request 3 --> 35 ms</pre>
+   +---- Request 1 --&gt; 35 ms
+   +---- Request 2 --&gt; 35 ms
+   +---- Request 3 --&gt; 35 ms</pre>
 </div>
 </div>
-</section>
+</div></section>
+<section><h2>3. Acceptable Backlog per Instance</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 
-<section>
-<h2>3. Acceptable Backlog per Instance</h2>
 <p>Suppose:</p>
 <ul>
 <li>SLO = 100 ms</li>
 <li>Processing time per request = 35 ms</li>
 </ul>
-
 <div class="formula">Acceptable Backlog / Instance = SLO ÷ Processing Time = 100 ÷ 35 ≈ 3</div>
-
 <pre>
         +----------------+
         |    SERVER 1    |
@@ -139,12 +138,10 @@ must finish within
 
         ≈ 3 requests
 </pre>
-
 <p>Think of this number as the approximate amount of work an instance can carry while still satisfying the latency objective.</p>
-</section>
+</div></section>
+<section><h2>4. The Two Numbers to Remember</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 
-<section>
-<h2>4. The Two Numbers to Remember</h2>
 <pre>
                     CAPACITY
                        |
@@ -165,7 +162,6 @@ must finish within
               "How much LOAD
                is each server getting?"
 </pre>
-
 <div class="grid">
 <div class="card">
 <h3>Acceptable Load</h3>
@@ -176,10 +172,9 @@ must finish within
 <div class="formula">Demand ÷ Number of Instances</div>
 </div>
 </div>
-</section>
+</div></section>
+<section><h2>5. Calculate Number of Servers</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 
-<section>
-<h2>5. Calculate Number of Servers</h2>
 <pre>
                     Demand
                        |
@@ -203,19 +198,16 @@ must finish within
                       v
                  8 SERVERS
 </pre>
-
 <div class="formula">Required Instances = Demand ÷ Acceptable Load per Instance</div>
-
 <table>
 <tr><th>Input</th><th>Value</th></tr>
 <tr><td>Demand</td><td>24 RPS</td></tr>
 <tr><td>Acceptable capacity / instance</td><td>3 RPS</td></tr>
 <tr><td>Required instances</td><td>24 ÷ 3 = <strong>8</strong></td></tr>
 </table>
-</section>
+</div></section>
+<section><h2>6. Traffic Increase → Scale Out</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 
-<section>
-<h2>6. Traffic Increase → Scale Out</h2>
 <p>Normal traffic:</p>
 <pre>
 Traffic = 24 RPS
@@ -228,7 +220,6 @@ Actual = Target
       v
    HEALTHY
 </pre>
-
 <p>Now traffic jumps to 96 RPS:</p>
 <pre>
              96 RPS
@@ -244,18 +235,16 @@ Actual = Target
 Acceptable = 3
 Actual     = 12
 
-12 > 3
+12 &gt; 3
   |
   v
 SCALE OUT
 </pre>
-
 <p>Required capacity:</p>
 <div class="formula">96 ÷ 3 = 32 servers</div>
-</section>
+</div></section>
+<section><h2>7. Autoscaling Feedback Loop</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 
-<section>
-<h2>7. Autoscaling Feedback Loop</h2>
 <pre>
                     TRAFFIC
                        |
@@ -279,7 +268,7 @@ SCALE OUT
              +---------+---------+
              |                   |
              v                   v
-          > 3                  < 3
+          &gt; 3                  &lt; 3
              |                   |
              v                   v
         SCALE OUT           SCALE IN
@@ -292,19 +281,16 @@ SCALE OUT
                        v
                   Recalculate
 </pre>
-</section>
+</div></section>
+<section><h2>8. Traffic Falls → Scale In</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 
-<section>
-<h2>8. Traffic Falls → Scale In</h2>
 <p>Suppose traffic falls back to 24 RPS but we still have 32 servers:</p>
-
 <div class="formula">24 ÷ 32 = 0.75 RPS/server</div>
-
 <pre>
 Actual load = 0.75
 Target       = 3
 
-0.75 < 3
+0.75 &lt; 3
    |
    v
 SCALE IN
@@ -316,10 +302,9 @@ Eventually:
    v
 HEALTHY
 </pre>
-</section>
+</div></section>
+<section><h2>9. Complete Architecture View</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 
-<section>
-<h2>9. Complete Architecture View</h2>
 <pre>
              TRAFFIC
                 |
@@ -351,7 +336,7 @@ HEALTHY
                 |
         +-------+-------+
         |               |
-      > 3              < 3
+      &gt; 3              &lt; 3
         |               |
         v               v
     SCALE OUT        SCALE IN
@@ -359,10 +344,9 @@ HEALTHY
         v               v
    Add servers      Remove servers
 </pre>
-</section>
+</div></section>
+<section><h2>10. Don't Stop at RPS</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 
-<section>
-<h2>10. Don't Stop at RPS</h2>
 <pre>
                  CAPACITY ESTIMATION
                          |
@@ -374,19 +358,17 @@ HEALTHY
        v         v                v         v
       RPS       GB/TB            Mbps       GB
 </pre>
-
 <div class="grid">
-<div class="card"><strong>Traffic</strong><br>Users, DAU/MAU, requests/day, average RPS, peak RPS</div>
-<div class="card"><strong>Data</strong><br>Storage/day, storage/year, database growth</div>
-<div class="card"><strong>Network</strong><br>Bandwidth, request/response payload sizes</div>
-<div class="card"><strong>Compute</strong><br>CPU, memory, instances, per-instance benchmark</div>
-<div class="card"><strong>Database</strong><br>Read/write ratio, QPS, replication, storage</div>
-<div class="card"><strong>Scaling</strong><br>Horizontal scaling, autoscaling, peak factor</div>
+<div class="card"><strong>Traffic</strong><br/>Users, DAU/MAU, requests/day, average RPS, peak RPS</div>
+<div class="card"><strong>Data</strong><br/>Storage/day, storage/year, database growth</div>
+<div class="card"><strong>Network</strong><br/>Bandwidth, request/response payload sizes</div>
+<div class="card"><strong>Compute</strong><br/>CPU, memory, instances, per-instance benchmark</div>
+<div class="card"><strong>Database</strong><br/>Read/write ratio, QPS, replication, storage</div>
+<div class="card"><strong>Scaling</strong><br/>Horizontal scaling, autoscaling, peak factor</div>
 </div>
-</section>
+</div></section>
+<section><h2>11. Interview Reasoning Flow</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 
-<section>
-<h2>11. Interview Reasoning Flow</h2>
 <pre>
 Business requirement
        ↓
@@ -406,15 +388,13 @@ Number of servers
        ↓
 Autoscaling strategy
 </pre>
-
 <div class="callout">
-<strong>Do not simply say:</strong> “We need 20 servers.”<br><br>
+<strong>Do not simply say:</strong> “We need 20 servers.”<br/><br/>
 Instead explain the assumptions and calculations that lead to the number.
 </div>
-</section>
+</div></section>
+<section><h2>12. One-Minute Interview Framework</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 
-<section>
-<h2>12. One-Minute Interview Framework</h2>
 <pre>
              ┌─────────────────────┐
              │ 1. USERS            │
@@ -451,10 +431,9 @@ Instead explain the assumptions and calculations that lead to the number.
              │ horizontal + auto   │
              └─────────────────────┘
 </pre>
-</section>
+</div></section>
+<section><h2>13. Formula Cheat Sheet</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 
-<section>
-<h2>13. Formula Cheat Sheet</h2>
 <table>
 <tr><th>Calculation</th><th>Formula</th></tr>
 <tr><td>Average RPS</td><td>Requests/day ÷ 86,400</td></tr>
@@ -465,10 +444,9 @@ Instead explain the assumptions and calculations that lead to the number.
 <tr><td>Storage</td><td>Records × Record Size × Retention Period</td></tr>
 <tr><td>Bandwidth</td><td>RPS × Average Payload Size</td></tr>
 </table>
-</section>
+</div></section>
+<section><h2>14. Quick Example to Memorize</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 
-<section>
-<h2>14. Quick Example to Memorize</h2>
 <div class="card">
 <p><strong>Given:</strong></p>
 <ul>
@@ -476,28 +454,21 @@ Instead explain the assumptions and calculations that lead to the number.
 <li>P90 SLO = 100 ms</li>
 <li>Request processing time = 35 ms</li>
 </ul>
-
 <p><strong>Step 1 — Average RPS</strong></p>
 <div class="formula">2,000,000 ÷ 86,400 ≈ 24 RPS</div>
-
 <p><strong>Step 2 — Acceptable load / instance</strong></p>
 <div class="formula">100 ÷ 35 ≈ 3</div>
-
 <p><strong>Step 3 — Required instances</strong></p>
 <div class="formula">24 ÷ 3 = 8 servers</div>
-
 <p><strong>Step 4 — Peak traffic at 4×</strong></p>
 <div class="formula">24 × 4 = 96 RPS</div>
-
 <p><strong>Step 5 — Peak instances</strong></p>
 <div class="formula">96 ÷ 3 = 32 servers</div>
-
 <p><strong>Architectural conclusion:</strong> design for horizontal scaling from approximately 8 instances at normal load to approximately 32 instances at the assumed peak, with autoscaling driven by load per instance and protected by sensible scale-out/scale-in policies.</p>
 </div>
-</section>
+</div></section>
+<section><h2>15. Final Mental Model</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 
-<section>
-<h2>15. Final Mental Model</h2>
 <pre>
               DEMAND
                  |
@@ -536,12 +507,10 @@ Instead explain the assumptions and calculations that lead to the number.
                   v
              AUTOSCALING
 </pre>
-
 <div class="callout">
-<strong>One line to remember:</strong><br>
+<strong>One line to remember:</strong><br/>
 Capacity estimation = <strong>quantify demand + quantify per-unit capacity + respect the SLO + size for peak + translate the result into architecture.</strong>
 </div>
-
 <h2>16. Interview Checklist</h2>
 <ul class="checklist">
 <li>Clarify the functional workload.</li>
@@ -557,12 +526,19 @@ Capacity estimation = <strong>quantify demand + quantify per-unit capacity + res
 <li>Explain horizontal scaling and autoscaling.</li>
 <li>State assumptions explicitly.</li>
 </ul>
-</section>
-
+</div></section>
 <div class="footer">
   Capacity Estimation — System Design Interview Notes
 </div>
-
 </div>
-</body>
+<script>const a=()=>document.querySelectorAll("details.answer-toggle");document.getElementById("expandAllAnswers")?.addEventListener("click",()=>a().forEach(x=>x.open=true));document.getElementById("collapseAllAnswers")?.addEventListener("click",()=>a().forEach(x=>x.open=false));</script><script>
+function togglePoint(btn){
+  const answer=btn.nextElementSibling;
+  const open=answer.classList.toggle('open');
+  btn.setAttribute('aria-expanded',open?'true':'false');
+  btn.textContent=(open?'▼ Hide Answer':'▶ Show Answer');
+}
+function expandAll(){document.querySelectorAll('.point-answer').forEach(a=>a.classList.add('open'));document.querySelectorAll('.point-toggle').forEach(b=>{b.setAttribute('aria-expanded','true');b.textContent='▼ Hide Answer';});}
+function collapseAll(){document.querySelectorAll('.point-answer').forEach(a=>a.classList.remove('open'));document.querySelectorAll('.point-toggle').forEach(b=>{b.setAttribute('aria-expanded','false');b.textContent='▶ Show Answer';});}
+</script></body>
 </html>

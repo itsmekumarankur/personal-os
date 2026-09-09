@@ -1,8 +1,9 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>System Design Notes — From a Single Server to Global Scale</title>
 <style>
   :root {
@@ -58,17 +59,24 @@
   ul { padding-left: 24px; }
   .tag { display: inline-block; background: var(--code); border: 1px solid var(--border); border-radius: 999px; padding: 3px 10px; margin: 2px; font-size: 13px; }
   footer { color: var(--muted); text-align: center; margin-top: 35px; }
+
+.answer-toggle{margin-top:16px;border:1px solid #dfe3ea;border-radius:10px;background:#fafbfc;overflow:hidden}.answer-toggle summary{cursor:pointer;list-style:none;padding:12px 16px;font-weight:700;color:#315efb;background:#f5f7ff;user-select:none}.answer-toggle summary::-webkit-details-marker{display:none}.answer-toggle summary:before{content:"▶";display:inline-block;margin-right:9px;font-size:12px;transition:transform .15s ease}.answer-toggle[open] summary:before{transform:rotate(90deg)}.answer-content{padding:2px 16px 14px}.answer-content>:first-child{margin-top:12px}.answer-controls{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 20px}.answer-controls button{border:1px solid #d1d5db;border-radius:8px;padding:8px 13px;background:white;cursor:pointer;font-weight:600}.answer-controls button:hover{background:#f3f4f6}
 </style>
-</head>
-<body>
-<div class="container">
-
+<style>
+.point-toggle{margin:10px 0 14px;padding:9px 14px;border:1px solid #bbb;border-radius:7px;background:#f5f5f5;cursor:pointer;font-weight:600;font-size:14px}
+.point-toggle:hover{filter:brightness(.97)}
+.point-answer{display:none;margin:0 0 18px;padding:0 0 2px}
+.point-answer.open{display:block}
+.global-toggle-bar{display:flex;gap:10px;margin:16px 0 24px;flex-wrap:wrap}
+.global-toggle-bar button{padding:9px 14px;border:1px solid #aaa;border-radius:7px;background:#fff;cursor:pointer;font-weight:600}
+</style></head>
+<body><div class="global-toggle-bar"><button onclick="expandAll()">Expand All Points</button><button onclick="collapseAll()">Collapse All Points</button></div>
+<div class="container"><div class="answer-controls"><button id="expandAllAnswers" type="button">Expand All Answers</button><button id="collapseAllAnswers" type="button">Collapse All Answers</button></div>
 <header>
-  <h1>From a Single Server to Global Scale</h1>
-  <div class="subtitle">Complete System Design &amp; Software Architecture Notes — Sections 1–67</div>
-  <p><strong>Core principle:</strong> Don't add architecture because it is fashionable. Add it because a measurable bottleneck or reliability requirement demands it.</p>
+<h1>From a Single Server to Global Scale</h1>
+<div class="subtitle">Complete System Design &amp; Software Architecture Notes — Sections 1–67</div>
+<p><strong>Core principle:</strong> Don't add architecture because it is fashionable. Add it because a measurable bottleneck or reliability requirement demands it.</p>
 </header>
-
 <nav>
 <strong>Contents</strong>
 <a href="#1">1. Requirements</a>
@@ -139,8 +147,7 @@
 <a href="#66">66. Consistency</a>
 <a href="#67">67. Final Architecture</a>
 </nav>
-
-<section id="1"><h2>1. Requirements Come First</h2>
+<section id="1"><h2>1. Requirements Come First</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <p>Before designing anything, establish what the system must do and how well it must perform.</p>
 <h3>Functional requirements</h3>
 <pre>User
@@ -162,9 +169,8 @@ p99 latency &lt; 300 ms
 RPO &lt; 5 minutes
 RTO &lt; 30 minutes</pre>
 <div class="callout"><strong>Architectural rule:</strong> Architecture follows requirements.</div>
-</section>
-
-<section id="2"><h2>2. Capacity Estimation</h2>
+</div></section>
+<section id="2"><h2>2. Capacity Estimation</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <p>Before adding infrastructure, estimate the workload.</p>
 <pre>Users                  = 10M
 Daily active users     = 1M
@@ -181,9 +187,8 @@ Average RPS
 Assume peak is 10× average:
 Peak RPS ≈ 11,570</pre>
 <p>Capacity estimates give quantitative justification for architectural decisions.</p>
-</section>
-
-<section id="3"><h2>3. Stage 1 — Single Server</h2>
+</div></section>
+<section id="3"><h2>3. Stage 1 — Single Server</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>             Internet
                  |
                  v
@@ -210,9 +215,8 @@ Peak RPS ≈ 11,570</pre>
         |
         v
    EVERYTHING DOWN</pre>
-</section>
-
-<section id="4"><h2>4. Vertical Scaling</h2>
+</div></section>
+<section id="4"><h2>4. Vertical Scaling</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>Small Server
      |
      v
@@ -224,9 +228,8 @@ Even Bigger Server</pre>
 <h3>Advantages</h3><ul><li>Simple</li><li>No application changes</li><li>No distributed coordination</li><li>Easy operational model</li></ul>
 <h3>Problems</h3><ul><li>Hardware ceiling</li><li>Increasing cost</li><li>Still one failure domain</li><li>Scaling is not instantaneous</li><li>Cannot provide unlimited capacity</li></ul>
 <div class="callout"><strong>Key lesson:</strong> Vertical scaling buys time; horizontal scaling changes the scalability model.</div>
-</section>
-
-<section id="5"><h2>5. Stage 2 — Separate Concerns</h2>
+</div></section>
+<section id="5"><h2>5. Stage 2 — Separate Concerns</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>                  Internet
                      |
                      v
@@ -239,9 +242,8 @@ Even Bigger Server</pre>
                | Database  |
                +-----------+</pre>
 <p>Application and database workloads often need different resources. The application may be CPU-heavy, while the database may need RAM and fast storage.</p>
-</section>
-
-<section id="6"><h2>6. Functional Partitioning</h2>
+</div></section>
+<section id="6"><h2>6. Functional Partitioning</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>                 Users
                    |
           +--------+--------+
@@ -252,9 +254,8 @@ Even Bigger Server</pre>
           v                 v
        Main DB          Admin DB</pre>
 <p>Partition by feature or user type when workloads have different traffic, performance, or reliability requirements.</p>
-</section>
-
-<section id="7"><h2>7. Stage 3 — Load Balancer</h2>
+</div></section>
+<section id="7"><h2>7. Stage 3 — Load Balancer</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>                    Users
                       |
                       v
@@ -267,9 +268,8 @@ Even Bigger Server</pre>
           v           v           v
        App-1       App-2       App-3</pre>
 <p>When one application server cannot handle traffic, introduce multiple servers behind a load balancer.</p>
-</section>
-
-<section id="8"><h2>8. Load-Balancing Algorithms</h2>
+</div></section>
+<section id="8"><h2>8. Load-Balancing Algorithms</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <h3>Round Robin</h3><pre>Request 1 → App-1
 Request 2 → App-2
 Request 3 → App-3
@@ -279,9 +279,8 @@ Request 5 → App-2</pre>
 App-2 → weight 3
 App-3 → weight 2</pre>
 <h3>Other approaches</h3><ul><li>Least Connections</li><li>Least Response Time</li><li>Consistent Hashing</li></ul>
-</section>
-
-<section id="9"><h2>9. Sticky Sessions vs Stateless Servers</h2>
+</div></section>
+<section id="9"><h2>9. Sticky Sessions vs Stateless Servers</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>User A ─────────→ App-1
                    ^
                    |
@@ -292,16 +291,14 @@ User A always -----+</pre>
    v
 User session disappears</pre>
 <p>A better approach is to externalize session state.</p>
-</section>
-
-<section id="10"><h2>10. What Does Stateless Mean?</h2>
+</div></section>
+<section id="10"><h2>10. What Does Stateless Mean?</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>App-1 ----+
 App-2 ----+----&gt; Redis / DB
 App-3 ----+</pre>
 <p>Stateless means application instances do not own critical user state locally. Any instance can process any request.</p>
-</section>
-
-<section id="11"><h2>11. Health Checks</h2>
+</div></section>
+<section id="11"><h2>11. Health Checks</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>Load Balancer
       |
       +---- App-1 → /health → 200 OK
@@ -311,9 +308,8 @@ App-3 ----+</pre>
       +---- App-3 → /health → 200 OK</pre>
 <p>Traffic should stop going to unhealthy instances.</p>
 <ul><li><strong>Liveness:</strong> Is the process alive?</li><li><strong>Readiness:</strong> Can this instance safely receive traffic?</li></ul>
-</section>
-
-<section id="12"><h2>12. Stage 4 — Database Becomes Bottleneck</h2>
+</div></section>
+<section id="12"><h2>12. Stage 4 — Database Becomes Bottleneck</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>             Load Balancer
                    |
         +----------+----------+
@@ -326,9 +322,8 @@ App-3 ----+</pre>
                    v
              Single DB</pre>
 <p>Eventually database query latency, CPU, I/O, locking, and connection pressure become the bottleneck.</p>
-</section>
-
-<section id="13"><h2>13. Primary–Replica Architecture</h2>
+</div></section>
+<section id="13"><h2>13. Primary–Replica Architecture</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>                  Application
                        |
              +---------+---------+
@@ -337,16 +332,15 @@ App-3 ----+</pre>
              |                   |
              v                   v
        +-----------+      +-----------+
-       |  Primary  |----->|  Replica  |
+       |  Primary  |-----&gt;|  Replica  |
        |    DB     |      |    DB     |
        +-----------+      +-----------+
                               |
                               v
                          Replica-2</pre>
 <p>Writes go to the primary; reads can be distributed to replicas.</p>
-</section>
-
-<section id="14"><h2>14. Why Replicas Help</h2>
+</div></section>
+<section id="14"><h2>14. Why Replicas Help</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>100,000 requests/sec
 90,000 = reads
 10,000 = writes
@@ -357,9 +351,8 @@ App-3 ----+</pre>
 30K → Replica-2
 30K → Replica-3</pre>
 <p>Read replication increases read capacity while preserving a primary write path.</p>
-</section>
-
-<section id="15"><h2>15. Replication Lag</h2>
+</div></section>
+<section id="15"><h2>15. Replication Lag</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>Client
   |
   | WRITE
@@ -367,15 +360,14 @@ App-3 ----+</pre>
 Primary
   |
   | replication
-  +-----> Replica
+  +-----&gt; Replica
            |
            | lag
            v
       older data</pre>
 <p>Replicas may temporarily contain stale data. This creates a consistency trade-off.</p>
-</section>
-
-<section id="16"><h2>16. Read-After-Write Consistency</h2>
+</div></section>
+<section id="16"><h2>16. Read-After-Write Consistency</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>POST /payment
       |
       v
@@ -387,9 +379,8 @@ GET /payment/status
       v
    Primary</pre>
 <p>For a short period after a write, route dependent reads to the primary. Other techniques include session affinity, replica-lag awareness, or consistency tokens.</p>
-</section>
-
-<section id="17"><h2>17. Failover</h2>
+</div></section>
+<section id="17"><h2>17. Failover</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>                Primary
                    X
                    |
@@ -401,9 +392,8 @@ Replica-1
     v
 Promoted to Primary</pre>
 <p>Failover requires failure detection, promotion, connection reconfiguration, retry handling, and explicit data-loss/RPO decisions.</p>
-</section>
-
-<section id="18"><h2>18. Stage 5 — Cache Layer</h2>
+</div></section>
+<section id="18"><h2>18. Stage 5 — Cache Layer</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>Application
     |
     v
@@ -419,9 +409,8 @@ Promoted to Primary</pre>
           v
         Cache</pre>
 <p>Use a cache to avoid repeatedly executing expensive database reads. Common technologies include Redis and Memcached.</p>
-</section>
-
-<section id="19"><h2>19. Cache-Aside Pattern</h2>
+</div></section>
+<section id="19"><h2>19. Cache-Aside Pattern</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>value = cache.get(key)
 
 if value exists:
@@ -433,9 +422,8 @@ cache.set(key, value)
 
 return value</pre>
 <p>The application explicitly reads the cache first and populates it after a miss.</p>
-</section>
-
-<section id="20"><h2>20. Cache Invalidation</h2>
+</div></section>
+<section id="20"><h2>20. Cache Invalidation</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>DB:
 Balance = ₹10,000
 
@@ -445,9 +433,8 @@ Balance = ₹10,000
 DB updated → ₹8,000
 Cache → ₹10,000</pre>
 <p>Common strategies: TTL, explicit invalidation, write-through, and write-behind. The correct choice depends on consistency and durability requirements.</p>
-</section>
-
-<section id="21"><h2>21. Cache Failure</h2>
+</div></section>
+<section id="21"><h2>21. Cache Failure</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>Cache DOWN
     |
     v
@@ -459,20 +446,17 @@ DB overloaded
     v
 Cascading failure</pre>
 <p>Mitigations include TTL jitter, request coalescing, locks, rate limiting, circuit breakers, cache warming, and graceful degradation.</p>
-</section>
-
-<section id="22"><h2>22. Cache Eviction</h2>
+</div></section>
+<section id="22"><h2>22. Cache Eviction</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <ul><li><strong>LRU:</strong> Least Recently Used</li><li><strong>LFU:</strong> Least Frequently Used</li><li><strong>FIFO:</strong> First In First Out</li></ul>
 <p>Eviction policies determine which entries leave when cache capacity is exhausted.</p>
-</section>
-
-<section id="23"><h2>23. What Should Be Cached?</h2>
+</div></section>
+<section id="23"><h2>23. What Should Be Cached?</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <p>Good candidates are frequently read, rarely changed, or expensive to calculate.</p>
 <ul><li>Product catalog</li><li>User preferences</li><li>Configuration</li><li>Popular content</li><li>Reference data</li></ul>
 <p>Be careful with highly sensitive, frequently changing, or strongly consistent financial state unless the consistency model is explicitly designed.</p>
-</section>
-
-<section id="24"><h2>24. Cache vs Database</h2>
+</div></section>
+<section id="24"><h2>24. Cache vs Database</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>Database
     ↓
 System of Record
@@ -481,9 +465,8 @@ Cache
     ↓
 Performance Optimization</pre>
 <p>The cache normally serves performance; the database remains the authoritative source unless the architecture explicitly defines otherwise.</p>
-</section>
-
-<section id="25"><h2>25. Stage 6 — Database Sharding</h2>
+</div></section>
+<section id="25"><h2>25. Stage 6 — Database Sharding</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>                    Application
                          |
              +-----------+-----------+
@@ -493,9 +476,8 @@ Performance Optimization</pre>
           Users       Users       Users
           1-1M        1M-2M       2M-3M</pre>
 <p>Sharding horizontally partitions data across multiple database instances.</p>
-</section>
-
-<section id="26"><h2>26. Sharding Key</h2>
+</div></section>
+<section id="26"><h2>26. Sharding Key</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>hash(user_id) % 4
 
 User 101 → Shard 1
@@ -503,16 +485,14 @@ User 102 → Shard 3
 User 103 → Shard 0
 User 104 → Shard 2</pre>
 <p>The shard key determines where a record lives and how requests are routed.</p>
-</section>
-
-<section id="27"><h2>27. Range-Based Sharding</h2>
+</div></section>
+<section id="27"><h2>27. Range-Based Sharding</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>Shard 1: user_id 1 - 1M
 Shard 2: user_id 1M - 2M
 Shard 3: user_id 2M - 3M</pre>
 <p>Range sharding is simple but can create hotspots when new or popular data concentrates in one range.</p>
-</section>
-
-<section id="28"><h2>28. Hash Sharding</h2>
+</div></section>
+<section id="28"><h2>28. Hash Sharding</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>hash(user_id)
       |
       v
@@ -520,9 +500,8 @@ Shard 3: user_id 2M - 3M</pre>
 | S0  | S1  | S2  | S3  |
 +-----+-----+-----+-----+</pre>
 <p>Hashing generally distributes records more evenly, but changing shard count can cause substantial data movement.</p>
-</section>
-
-<section id="29"><h2>29. Consistent Hashing</h2>
+</div></section>
+<section id="29"><h2>29. Consistent Hashing</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>             Consistent Hash Ring
 
                  S1
@@ -531,9 +510,8 @@ Shard 3: user_id 2M - 3M</pre>
               \      /
                  S3</pre>
 <p>Consistent hashing reduces the amount of data that must move when nodes are added or removed. It is particularly important in distributed caches and some distributed data systems.</p>
-</section>
-
-<section id="30"><h2>30. Sharding Problems</h2>
+</div></section>
+<section id="30"><h2>30. Sharding Problems</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <ul><li>Cross-shard queries</li><li>Cross-shard transactions</li><li>Rebalancing</li><li>Hot shards</li><li>Operational complexity</li></ul>
 <pre>Transaction
    |
@@ -541,15 +519,13 @@ Shard 3: user_id 2M - 3M</pre>
    |
    +---- Shard 2</pre>
 <p>Distributed transactions are significantly harder than a transaction within one database.</p>
-</section>
-
-<section id="31"><h2>31. Choosing a Good Shard Key</h2>
+</div></section>
+<section id="31"><h2>31. Choosing a Good Shard Key</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <p>A good shard key should provide:</p>
 <ul><li>High cardinality</li><li>Good distribution</li><li>Predictable routing</li><li>Minimal cross-shard queries</li><li>Minimal hotspots</li></ul>
 <p>Common candidates include user_id, account_id, or tenant_id depending on the workload.</p>
-</section>
-
-<section id="32"><h2>32. Stage 7 — Static Content</h2>
+</div></section>
+<section id="32"><h2>32. Stage 7 — Static Content</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>User
  |
  v
@@ -564,9 +540,8 @@ Disk
  v
 image.jpg</pre>
 <p>Images, videos, CSS, JavaScript, fonts, and documents do not necessarily need to be served by application servers.</p>
-</section>
-
-<section id="33"><h2>33. Object Storage</h2>
+</div></section>
+<section id="33"><h2>33. Object Storage</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>Application
      |
      v
@@ -578,9 +553,8 @@ Object Storage
      +-- JS
      +-- CSS</pre>
 <p>Object storage offloads static file serving from application servers and is designed for scalable storage and delivery.</p>
-</section>
-
-<section id="34"><h2>34. CDN</h2>
+</div></section>
+<section id="34"><h2>34. CDN</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>                 User
                    |
                    v
@@ -595,9 +569,8 @@ Object Storage
              v
        Object Storage</pre>
 <p>A CDN caches content at geographically distributed edge locations, reducing latency and origin load.</p>
-</section>
-
-<section id="35"><h2>35. CDN Cache Hit</h2>
+</div></section>
+<section id="35"><h2>35. CDN Cache Hit</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>India User
      |
      v
@@ -606,9 +579,8 @@ India / nearby Edge
      v
 Image</pre>
 <p>When content is already at the edge, the request does not need to travel to the origin.</p>
-</section>
-
-<section id="36"><h2>36. CDN Cache Miss</h2>
+</div></section>
+<section id="36"><h2>36. CDN Cache Miss</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>User
  |
  v
@@ -626,15 +598,13 @@ Edge
        |
        v
       User</pre>
-</section>
-
-<section id="37"><h2>37. Cache-Control</h2>
+</div></section>
+<section id="37"><h2>37. Cache-Control</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <p>Important HTTP caching mechanisms include:</p>
 <ul><li>Cache-Control</li><li>ETag</li><li>Last-Modified</li><li>Expires</li></ul>
 <pre>Cache-Control: public, max-age=86400</pre>
-</section>
-
-<section id="38"><h2>38. CDN Invalidation</h2>
+</div></section>
+<section id="38"><h2>38. CDN Invalidation</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <p>A strong strategy is versioned or content-hashed assets.</p>
 <pre>app.js
 
@@ -646,9 +616,8 @@ or
 
 app.8f32a1.js</pre>
 <p>Changing the URL makes new content naturally distinct and reduces dependence on global cache invalidation.</p>
-</section>
-
-<section id="39"><h2>39. Stage 8 — Microservices</h2>
+</div></section>
+<section id="39"><h2>39. Stage 8 — Microservices</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>                 API Gateway
                      |
        +-------------+-------------+
@@ -659,14 +628,12 @@ app.8f32a1.js</pre>
        v             v             v
      DB-1          DB-2          DB-3</pre>
 <p>Microservices decompose a large application into independently deployable services aligned with business/domain boundaries.</p>
-</section>
-
-<section id="40"><h2>40. Why Microservices?</h2>
+</div></section>
+<section id="40"><h2>40. Why Microservices?</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <ul><li>Independent scaling</li><li>Independent deployment</li><li>Team autonomy</li><li>Fault isolation</li><li>Technology independence</li><li>Domain boundaries</li></ul>
 <p>For example, a payment service processing 10K TPS may need very different scaling characteristics from a notification service processing 100 TPS.</p>
-</section>
-
-<section id="41"><h2>41. Microservices Are Not Automatically Better</h2>
+</div></section>
+<section id="41"><h2>41. Microservices Are Not Automatically Better</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>Service A
    |
    | network
@@ -678,9 +645,8 @@ Service B
 Service C</pre>
 <p>Microservices introduce network calls, distributed tracing, service discovery, retries, timeouts, partial failures, consistency problems, deployment complexity, and operational overhead.</p>
 <div class="callout"><strong>Architectural rule:</strong> A modular monolith may be the better choice when service boundaries and operational scale do not justify distributed complexity.</div>
-</section>
-
-<section id="42"><h2>42. Database-per-Service</h2>
+</div></section>
+<section id="42"><h2>42. Database-per-Service</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>Order Service
      |
     DB1
@@ -693,9 +659,8 @@ User Service
      |
     DB3</pre>
 <p>Database ownership by service reduces tight coupling but creates distributed data and transaction challenges.</p>
-</section>
-
-<section id="43"><h2>43. Distributed Transactions</h2>
+</div></section>
+<section id="43"><h2>43. Distributed Transactions</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>Place Order
 
 1. Create order
@@ -708,9 +673,8 @@ Order
   |
   +---- Inventory</pre>
 <p>A single database transaction cannot normally span independent service databases without additional distributed transaction machinery.</p>
-</section>
-
-<section id="44"><h2>44. Saga Pattern</h2>
+</div></section>
+<section id="44"><h2>44. Saga Pattern</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>Create Order
      |
      v
@@ -727,9 +691,8 @@ Inventory failed
 
 → Refund payment
 → Cancel order</pre>
-</section>
-
-<section id="45"><h2>45. Synchronous vs Asynchronous Communication</h2>
+</div></section>
+<section id="45"><h2>45. Synchronous vs Asynchronous Communication</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <h3>Synchronous</h3>
 <pre>A → B → C → response</pre>
 <p>If B is slow, A waits.</p>
@@ -743,9 +706,8 @@ Message Queue
  |
  +----&gt; C</pre>
 <p>Asynchronous communication decouples producers and consumers and is useful when immediate completion is not required.</p>
-</section>
-
-<section id="46"><h2>46. Message Queues</h2>
+</div></section>
+<section id="46"><h2>46. Message Queues</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>Producer
    |
    v
@@ -760,9 +722,8 @@ Message Queue
      +----&gt; Consumer-3</pre>
 <p>Useful for email, notifications, image processing, reports, analytics, order events, and background jobs.</p>
 <p>Benefits include decoupling, buffering, asynchronous processing, load smoothing, and independent scaling.</p>
-</section>
-
-<section id="47"><h2>47. Backpressure</h2>
+</div></section>
+<section id="47"><h2>47. Backpressure</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>Producer = 100K msg/sec
 Consumer = 20K msg/sec
 
@@ -771,9 +732,8 @@ Queue
   v
 Backlog ↑↑↑</pre>
 <p>Systems need rate limiting, backpressure, autoscaling, load shedding, and dead-letter queues when producers can outpace consumers.</p>
-</section>
-
-<section id="48"><h2>48. Retries Are Dangerous</h2>
+</div></section>
+<section id="48"><h2>48. Retries Are Dangerous</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>Payment request
      |
      v
@@ -786,17 +746,15 @@ Client retries</pre>
 <pre>Attempt 1 → ₹1,000 charged
 Attempt 2 → ₹1,000 charged again</pre>
 <p>Critical operations therefore require idempotency.</p>
-</section>
-
-<section id="49"><h2>49. Idempotency</h2>
+</div></section>
+<section id="49"><h2>49. Idempotency</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>Idempotency-Key: ABC123
 
 ABC123 → Payment Result</pre>
 <p>If the same request arrives again with the same key, return the previously recorded result rather than executing the business operation twice.</p>
 <p>Especially important for payments, orders, money transfers, bookings, and other financial transactions.</p>
-</section>
-
-<section id="50"><h2>50. Stage 9 — GeoDNS</h2>
+</div></section>
+<section id="50"><h2>50. Stage 9 — GeoDNS</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>                  Global Users
                  /     |      \
                 /      |       \
@@ -805,9 +763,8 @@ ABC123 → Payment Result</pre>
                 v       v        v
              Region-A Region-B Region-C</pre>
 <p>GeoDNS can route users toward an appropriate geographic region.</p>
-</section>
-
-<section id="51"><h2>51. Multi-Region Architecture</h2>
+</div></section>
+<section id="51"><h2>51. Multi-Region Architecture</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>                         Global Users
                               |
                            GeoDNS
@@ -821,9 +778,8 @@ ABC123 → Payment Result</pre>
         |         |      |         |      |         |
        App       DB     App       DB     App       DB</pre>
 <p>Multi-region design introduces the question: where is the source of truth, and what consistency model is required?</p>
-</section>
-
-<section id="52"><h2>52. Multi-Region Database Strategies</h2>
+</div></section>
+<section id="52"><h2>52. Multi-Region Database Strategies</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <h3>Single primary region</h3>
 <pre>India ───────┐
 Europe ──────┼──→ Primary DB
@@ -834,9 +790,8 @@ USA ─────────┘</pre>
 Europe → Europe DB
 USA → USA DB</pre>
 <p>This reduces write latency but requires conflict resolution and replication strategy.</p>
-</section>
-
-<section id="53"><h2>53. Active-Passive</h2>
+</div></section>
+<section id="53"><h2>53. Active-Passive</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>             Users
                |
                v
@@ -845,9 +800,8 @@ USA → USA DB</pre>
                v
           Secondary Region</pre>
 <p>The secondary is standby. If the primary fails, the secondary can be promoted.</p>
-</section>
-
-<section id="54"><h2>54. Active-Active</h2>
+</div></section>
+<section id="54"><h2>54. Active-Active</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>              Users
                 |
        +--------+--------+
@@ -860,9 +814,8 @@ USA → USA DB</pre>
                 |
              Replication</pre>
 <p>Both regions actively serve traffic. This can improve availability and latency but makes data consistency and conflict resolution harder.</p>
-</section>
-
-<section id="55"><h2>55. Edge Servers</h2>
+</div></section>
+<section id="55"><h2>55. Edge Servers</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>                   Global User
                         |
                         v
@@ -875,9 +828,8 @@ USA → USA DB</pre>
                                   v
                               Origin</pre>
 <p>Edge infrastructure can perform routing, TLS termination, authentication-related processing, rate limiting, WAF rules, A/B testing, and lightweight computation closer to users.</p>
-</section>
-
-<section id="56"><h2>56. WAF</h2>
+</div></section>
+<section id="56"><h2>56. WAF</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>User
  |
  v
@@ -895,9 +847,8 @@ Load Balancer
  v
 Application</pre>
 <p>A Web Application Firewall helps protect internet-facing applications from common malicious HTTP traffic patterns, including SQL injection and XSS.</p>
-</section>
-
-<section id="57"><h2>57. API Gateway</h2>
+</div></section>
+<section id="57"><h2>57. API Gateway</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>Client
   |
   v
@@ -909,9 +860,8 @@ API Gateway
   +---- Portfolio Service</pre>
 <p>An API gateway can centralize authentication, authorization, rate limiting, routing, TLS termination, request transformation, observability, and API versioning.</p>
 <p>Do not turn the gateway into a giant business-logic layer.</p>
-</section>
-
-<section id="58"><h2>58. Rate Limiting</h2>
+</div></section>
+<section id="58"><h2>58. Rate Limiting</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>Client A → 100 requests/sec
 Client B → 100 requests/sec
 Client C → 100 requests/sec
@@ -921,15 +871,13 @@ Client D → 100,000 requests/sec
                v
            overloaded</pre>
 <p>Common algorithms include Token Bucket, Leaky Bucket, Fixed Window, and Sliding Window.</p>
-</section>
-
-<section id="59"><h2>59. Reliability Layer</h2>
+</div></section>
+<section id="59"><h2>59. Reliability Layer</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <p>At scale, failures are expected.</p>
 <div><span class="tag">Timeouts</span><span class="tag">Retries</span><span class="tag">Circuit Breakers</span><span class="tag">Bulkheads</span><span class="tag">Health Checks</span><span class="tag">Failover</span><span class="tag">Graceful Degradation</span><span class="tag">Load Shedding</span></div>
 <p>Architecture must assume server, database, network, region, dependency, queue, cache, and deployment failures can occur.</p>
-</section>
-
-<section id="60"><h2>60. Circuit Breaker</h2>
+</div></section>
+<section id="60"><h2>60. Circuit Breaker</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>       CLOSED
          |
       failures
@@ -948,16 +896,14 @@ Client D → 100,000 requests/sec
    |             |
  CLOSED          OPEN</pre>
 <p>Circuit breakers prevent repeated calls to a failing dependency from creating cascading failures.</p>
-</section>
-
-<section id="61"><h2>61. Observability</h2>
+</div></section>
+<section id="61"><h2>61. Observability</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>       Observability
        /     |      \
    Logs    Metrics   Traces</pre>
 <ul><li><strong>Logs:</strong> What happened?</li><li><strong>Metrics:</strong> How much/how often?</li><li><strong>Traces:</strong> Where did time go?</li></ul>
-</section>
-
-<section id="62"><h2>62. Distributed Tracing</h2>
+</div></section>
+<section id="62"><h2>62. Distributed Tracing</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>User
  |
  v
@@ -972,9 +918,8 @@ Payment Service
  v
 Database</pre>
 <p>Propagate a trace ID such as <code>ABC123</code> through the request path so the complete distributed transaction can be reconstructed.</p>
-</section>
-
-<section id="63"><h2>63. Latency Budget</h2>
+</div></section>
+<section id="63"><h2>63. Latency Budget</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>Requirement:
 p99 &lt; 300 ms
 
@@ -987,9 +932,8 @@ Network          30 ms
 ----------------------
 Total            270 ms</pre>
 <p>Every distributed hop consumes part of the end-to-end latency budget.</p>
-</section>
-
-<section id="64"><h2>64. Availability</h2>
+</div></section>
+<section id="64"><h2>64. Availability</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <table>
 <tr><th>Availability</th><th>Approx. annual downtime</th></tr>
 <tr><td>99%</td><td>3.65 days</td></tr>
@@ -998,18 +942,16 @@ Total            270 ms</pre>
 <tr><td>99.999%</td><td>5.26 minutes</td></tr>
 </table>
 <p>The higher the availability requirement, the more redundancy, automation, operational maturity, and cost are generally required.</p>
-</section>
-
-<section id="65"><h2>65. CAP Theorem</h2>
+</div></section>
+<section id="65"><h2>65. CAP Theorem</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>          Network Partition
                  |
        +---------+---------+
        |                   |
 Consistency           Availability</pre>
 <p>CAP is specifically about behavior during a network partition: a distributed system cannot simultaneously guarantee both strong consistency and availability under the partition while also tolerating the partition.</p>
-</section>
-
-<section id="66"><h2>66. Strong vs Eventual Consistency</h2>
+</div></section>
+<section id="66"><h2>66. Strong vs Eventual Consistency</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <h3>Strong consistency</h3>
 <pre>WRITE
   |
@@ -1030,9 +972,8 @@ Temporary stale reads
   v
 Eventually converge</pre>
 <p>Eventual consistency can be appropriate for social likes, search indexing, analytics, recommendations, and similar workloads. Strong consistency is generally more important for account balances, money transfers, inventory reservations, and other critical financial state.</p>
-</section>
-
-<section id="67"><h2>67. Final Global Architecture</h2>
+</div></section>
+<section id="67"><h2>67. Final Global Architecture</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 <pre>
                          INTERNET
                             |
@@ -1086,10 +1027,9 @@ Eventually converge</pre>
         v          v          v
     Analytics   Search    Notifications
 </pre>
-</section>
+</div></section>
+<section><h2>Architecture Evolution — One-Page Summary</h2><button aria-expanded="false" class="point-toggle" onclick="togglePoint(this)" type="button">▶ Show Answer</button><div class="point-answer">
 
-<section>
-<h2>Architecture Evolution — One-Page Summary</h2>
 <table>
 <tr><th>Stage</th><th>Problem</th><th>Solution</th></tr>
 <tr><td>1</td><td>Small workload</td><td>Single server</td></tr>
@@ -1110,7 +1050,6 @@ Eventually converge</pre>
 <tr><td>16</td><td>Service failures</td><td>Circuit breakers/timeouts</td></tr>
 <tr><td>17</td><td>Operational complexity</td><td>Observability</td></tr>
 </table>
-
 <div class="callout">
 <strong>The Architect's Mental Model</strong>
 <pre>Requirements
@@ -1139,17 +1078,22 @@ Analyze cost
      ↓
 Multi-region / disaster recovery</pre>
 </div>
-
 <div class="callout">
 <strong>Golden principle:</strong> System design is the controlled evolution of architecture: start with the simplest system that satisfies today's requirements, identify the actual bottleneck, scale that bottleneck, and consciously accept/manage the new complexity introduced by the solution.
 </div>
-
-</section>
-
+</div></section>
 <footer>
   System Design Notes — Sections 1–67 · Prepared as a study/reference document
 </footer>
-
 </div>
-</body>
+<script>const a=()=>document.querySelectorAll("details.answer-toggle");document.getElementById("expandAllAnswers")?.addEventListener("click",()=>a().forEach(x=>x.open=true));document.getElementById("collapseAllAnswers")?.addEventListener("click",()=>a().forEach(x=>x.open=false));</script><script>
+function togglePoint(btn){
+  const answer=btn.nextElementSibling;
+  const open=answer.classList.toggle('open');
+  btn.setAttribute('aria-expanded',open?'true':'false');
+  btn.textContent=(open?'▼ Hide Answer':'▶ Show Answer');
+}
+function expandAll(){document.querySelectorAll('.point-answer').forEach(a=>a.classList.add('open'));document.querySelectorAll('.point-toggle').forEach(b=>{b.setAttribute('aria-expanded','true');b.textContent='▼ Hide Answer';});}
+function collapseAll(){document.querySelectorAll('.point-answer').forEach(a=>a.classList.remove('open'));document.querySelectorAll('.point-toggle').forEach(b=>{b.setAttribute('aria-expanded','false');b.textContent='▶ Show Answer';});}
+</script></body>
 </html>
