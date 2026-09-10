@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Past Projects — Interview Prep Notes</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 20px 80px;
+    line-height: 1.55;
+    color: #1a1a1a;
+    background: #ffffff;
+  }
+  h1 { font-size: 1.4em; margin-bottom: 4px; }
+  .intro {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #ddd;
+  }
+  details.category {
+    border: 1px solid #bbb;
+    border-radius: 6px;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+  details.category summary {
+    cursor: pointer;
+    padding: 12px 14px;
+    font-weight: 700;
+    font-size: 1.05em;
+    background: #e8e8e8;
+    list-style: none;
+  }
+  details.category summary::-webkit-details-marker { display: none; }
+  details.category summary::before { content: "▶ "; display: inline-block; }
+  details.category[open] summary::before { content: "▼ "; }
+  details.category .range { font-weight: 400; color: #555; font-size: 0.85em; }
+  .cat-body { padding: 12px; background: #fcfcfc; }
+  details.section {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    background: #fff;
+  }
+  details.section summary {
+    cursor: pointer;
+    padding: 10px 14px;
+    font-weight: 600;
+    background: #f5f5f5;
+    list-style: none;
+  }
+  details.section summary::-webkit-details-marker { display: none; }
+  details.section summary::before { content: "▶ "; display: inline-block; }
+  details.section[open] summary::before { content: "▼ "; }
+  details.section .num { color: #555; margin-right: 4px; }
+  .body { padding: 12px 16px 16px; }
+  pre.ascii {
+    background: #f7f7f7;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 12px;
+    overflow-x: auto;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 13px;
+    line-height: 1.35;
+    white-space: pre;
+  }
+  p { margin: 10px 0; }
+  blockquote {
+    margin: 10px 0;
+    padding: 8px 14px;
+    border-left: 3px solid #999;
+    background: #fafafa;
+    color: #333;
+  }
+  ul { margin: 8px 0; padding-left: 22px; }
+  li { margin: 3px 0; }
+  h4 { margin: 14px 0 6px; }
+  code {
+    background: #f0f0f0;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: Consolas, monospace;
+    font-size: 0.9em;
+  }
+  .controls { margin: 10px 0 20px; }
+  .controls button {
+    font-size: 13px;
+    padding: 6px 12px;
+    margin-right: 8px;
+    border: 1px solid #ccc;
+    background: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .controls button:hover { background: #f0f0f0; }
+</style>
+</head>
+<body>
+<h1>Past Projects — Interview Prep Notes</h1>
+<div class="intro">
+<p>Yes. The safest approach is <strong>not to pretend you built these systems end-to-end</strong>. Instead, prepare yourself to explain the architecture, your claimed contribution, the data flow, and the operational concepts clearly.</p>
+<p>I would structure this into <strong>3 interview-ready architectures</strong>:</p>
+<p>1. <strong>IDFC – PFM Transaction Categorization + Spend Insights MLOps</strong> 2. <strong>PayPal – Fraud Detection Framework</strong> 3. <strong>PayPal – Transaction Risk Scoring MLOps</strong></p>
+<p>For each, I'll give you:</p>
+<ul><li>Architecture diagram</li><li>What each component does</li><li>End-to-end flow</li><li>Simple explanation you can say in an interview</li><li>Example at scale</li><li>Failure scenarios</li><li>Likely interviewer questions</li><li>What <em>your contribution</em> should be described as</li></ul>
+</div>
+<div class="controls">
+  <button onclick="document.querySelectorAll('details').forEach(d=>d.open=true)">Expand all</button>
+  <button onclick="document.querySelectorAll('details').forEach(d=>d.open=false)">Collapse all</button>
+</div>
+<details class="category">
+<summary>Project 1 — IDFC PFM: Transaction Categorization + Spend Insights <span class="range">(sections 1–7)</span></summary>
+<div class="cat-body">
+<details class="section">
+<summary><span class="num">1.</span> 1. IDFC — PFM Transaction Categorization + Spend Insights</summary>
+<div class="body">
+<h4>What is the problem?</h4>
+<p>Suppose a customer makes:</p>
+<blockquote><code>₹2,500 paid to Swiggy</code></blockquote>
+<p>The banking system initially only knows:</p>
+<pre class="ascii">Merchant = Swiggy
+Amount   = ₹2,500
+Date     = 10-Sep
+</pre>
+<p>PFM = <strong>Personal Financial Management</strong> wants to convert that into:</p>
+<pre class="ascii">Category = Food
+Subcategory = Food Delivery
+</pre>
+<p>Then it can generate:</p>
+<pre class="ascii">Monthly Food Spend = ₹8,500
+Monthly Shopping  = ₹12,000
+Monthly Travel    = ₹5,000
+</pre>
+<p>The ML model performs the categorization.</p>
+</div>
+</details>
+<details class="section">
+<summary><span class="num">2.</span> Architecture</summary>
+<div class="body">
+
+<pre class="ascii">                    CUSTOMER TRANSACTION
+                            |
+                            v
+                  +--------------------+
+                  | Transaction System |
+                  | / Payment System   |
+                  +---------+----------+
+                            |
+                            v
+                    +---------------+
+                    | Kafka / Event |
+                    |     Bus       |
+                    +-------+-------+
+                            |
+                            v
+                +---------------------+
+                | Feature Engineering |
+                |     Pipeline        |
+                +----------+----------+
+                           |
+                           v
+                 +--------------------+
+                 | Transaction        |
+                 | Categorization ML  |
+                 | Model              |
+                 +---------+----------+
+                           |
+                 +---------+---------+
+                 |                   |
+                 v                   v
+        +----------------+   +----------------+
+        | Category       |   | Confidence     |
+        | Food           |   | 0.94           |
+        +-------+--------+   +----------------+
+                |
+                v
+        +--------------------+
+        | PFM Transaction DB |
+        +---------+----------+
+                  |
+                  v
+        +--------------------+
+        | Spend Analytics    |
+        | / Insights Engine  |
+        +---------+----------+
+                  |
+                  v
+        +--------------------+
+        | Mobile / Web App   |
+        +--------------------+
+
+
+              MLOps CONTROL PLANE
+              -------------------
+
+       Training Data
+             |
+             v
+     +---------------+
+     | Model Training|
+     +-------+-------+
+             |
+             v
+     +---------------+
+     | Model Registry|
+     | v1 / v2 / v3  |
+     +-------+-------+
+             |
+             v
+     +---------------+
+     | CI/CD         |
+     +-------+-------+
+             |
+             v
+     Production Model
+
+             ^
+             |
+     +-------+---------+
+     | Model Monitoring|
+     +-------+---------+
+             |
+       Accuracy / Drift
+             |
+       Drift detected?
+             |
+            YES
+             |
+             v
+       Retraining Job
+             |
+             +------------&gt; Model Registry
+</pre>
+
+</div>
+</details>
+<details class="section">
+<summary><span class="num">3.</span> How this works</summary>
+<div class="body">
+<h4>Step 1 — Transaction arrives</h4>
+<p>Example:</p>
+<pre class="ascii">Customer → ₹1,200 → Amazon
+</pre>
+<p>The transaction event goes into Kafka.</p>
+<p>Why Kafka?</p>
+<p>Because you don't want the transaction processing system to wait for ML processing.</p>
+<h4>Step 2 — Feature generation</h4>
+<p>The system creates features such as:</p>
+<pre class="ascii">merchant       = Amazon
+amount         = 1200
+transaction_type = UPI
+time           = 20:30
+historical_merchant_category = Shopping
+customer_history = Shopping
+</pre>
+<p>These features are sent to the model.</p>
+<h4>Step 3 — ML prediction</h4>
+<p>Model returns:</p>
+<pre class="ascii">Category = Shopping
+Confidence = 96%
+</pre>
+<p>You can imagine the API as:</p>
+<pre class="ascii">POST /categorize
+
+{
+   &quot;merchant&quot;: &quot;Amazon&quot;,
+   &quot;amount&quot;: 1200,
+   &quot;payment_type&quot;: &quot;UPI&quot;
+}
+</pre>
+<p>Response:</p>
+<pre class="ascii">{
+  &quot;category&quot;: &quot;Shopping&quot;,
+  &quot;confidence&quot;: 0.96
+}
+</pre>
+<h4>Step 4 — Store result</h4>
+<pre class="ascii">Transaction
+     |
+     +--&gt; Category
+     +--&gt; Subcategory
+     +--&gt; Confidence
+</pre>
+<p>Stored in PFM data store.</p>
+<h4>Step 5 — Spend insights</h4>
+<p>Now the analytics layer can calculate:</p>
+<pre class="ascii">Food       ₹8,500
+Shopping   ₹12,000
+Travel     ₹5,000
+Bills      ₹15,000
+</pre>
+<p>The application can show:</p>
+<blockquote>"Your shopping expenditure increased 25% this month."</blockquote>
+</div>
+</details>
+<details class="section">
+<summary><span class="num">4.</span> The important MLOps part</summary>
+<div class="body">
+<p>This is what you need to understand very well.</p>
+<p>The model is not:</p>
+<pre class="ascii">Train once → Deploy → Done
+</pre>
+<p>Instead:</p>
+<pre class="ascii">Training
+   |
+   v
+Model v1
+   |
+   v
+Production
+   |
+   v
+Monitoring
+   |
+   +---- Accuracy ↓
+   |
+   +---- Data Drift
+   |
+   +---- Prediction Drift
+   |
+   v
+Retraining
+   |
+   v
+Model v2
+</pre>
+<h4>Model Registry</h4>
+<p>Think of Model Registry as <strong>GitHub for ML models</strong>.</p>
+<pre class="ascii">Model Registry
+
+transaction-model
+   |
+   +-- v1.0
+   +-- v1.1
+   +-- v2.0
+   +-- v2.1
+</pre>
+<p>You know exactly which model is running in production.</p>
+</div>
+</details>
+<details class="section">
+<summary><span class="num">5.</span> What is drift?</summary>
+<div class="body">
+<p>This is extremely important for an interview.</p>
+<p>Suppose the model was trained in 2024.</p>
+<p>At that time:</p>
+<pre class="ascii">UPI merchants
+Amazon
+Flipkart
+Swiggy
+Zomato
+</pre>
+<p>But in 2026 new merchants appear.</p>
+<p>The distribution changes.</p>
+<pre class="ascii">Old data
+
+Amazon      20%
+Flipkart    15%
+Swiggy      10%
+
+New data
+
+QuickCommerce merchants
+Digital subscriptions
+New UPI merchants
+</pre>
+<p>The model starts becoming less accurate.</p>
+<p>That's <strong>model/data drift</strong>.</p>
+</div>
+</details>
+<details class="section">
+<summary><span class="num">6.</span> Retraining</summary>
+<div class="body">
+<p>The monitoring system detects:</p>
+<pre class="ascii">Accuracy &lt; threshold
+</pre>
+<p>or:</p>
+<pre class="ascii">Data distribution changed significantly
+</pre>
+<p>Then:</p>
+<pre class="ascii">             Drift
+               |
+               v
+       Retraining Pipeline
+               |
+               v
+        Training Dataset
+               |
+               v
+          Train Model
+               |
+               v
+       Evaluate Model
+               |
+          Accuracy &gt; threshold?
+             /       \
+           NO         YES
+           |           |
+        Reject       Register
+                       |
+                       v
+                    Deploy
+</pre>
+
+</div>
+</details>
+<details class="section">
+<summary><span class="num">7.</span> What you can say in an interview</summary>
+<div class="body">
+<p>Don't say:</p>
+<blockquote>"I built the complete ML platform."</blockquote>
+<p>Instead:</p>
+<blockquote><strong>"I was involved in introducing the early MLOps practices around the PFM transaction-categorization models. The key idea was to move from a static model deployment approach toward a lifecycle where model versions were tracked, production performance was monitored, and degradation or drift could trigger retraining."</strong></blockquote>
+<p>Then explain:</p>
+<blockquote>"The transaction flow itself was event-driven. Transactions were consumed, features were generated, the categorization model predicted the category, and the result was persisted for the PFM insights layer."</blockquote>
+<p>That's credible and technically strong.</p>
+</div>
+</details>
+</div>
+</details>
+<details class="category">
+<summary>Project 2 — PayPal: Fraud Detection Framework <span class="range">(sections 8–13)</span></summary>
+<div class="cat-body">
+<details class="section">
+<summary><span class="num">8.</span> 2. PayPal — Fraud Detection Framework</summary>
+<div class="body">
+<p>Now this is different.</p>
+<p>Here the objective isn't:</p>
+<blockquote>"What category is this transaction?"</blockquote>
+<p>It is:</p>
+<blockquote><strong>"Is this transaction suspicious?"</strong></blockquote>
+<p>Example:</p>
+<pre class="ascii">Customer normally:
+
+India
+₹500 - ₹5,000
+UPI
+Normal hours
+
+Suddenly:
+
+US
+₹2,50,000
+New merchant
+3:00 AM
+New device
+</pre>
+<p>The fraud engine should flag it.</p>
+</div>
+</details>
+<details class="section">
+<summary><span class="num">9.</span> Architecture</summary>
+<div class="body">
+
+<pre class="ascii">                  PAYMENT REQUEST
+                        |
+                        v
+              +-------------------+
+              | Payment Gateway   |
+              +---------+---------+
+                        |
+                        v
+              +-------------------+
+              | Fraud Detection   |
+              | Engine            |
+              +---------+---------+
+                        |
+             +----------+----------+
+             |                     |
+             v                     v
+       +-----------+         +-------------+
+       | Real-time |         | Customer /  |
+       | Features  |         | Transaction |
+       +-----+-----+         | History     |
+             |               +------+------+
+             |                      |
+             +----------+-----------+
+                        |
+                        v
+              +-------------------+
+              | Rule Engine       |
+              +---------+---------+
+                        |
+                        v
+             +--------------------+
+             | Risk Decision      |
+             +--------------------+
+               /       |        \
+              /        |         \
+             v         v          v
+          APPROVE    REVIEW      DECLINE
+             |         |          |
+             v         v          v
+          Payment   Fraud Ops   Block
+</pre>
+
+</div>
+</details>
+<details class="section">
+<summary><span class="num">10.</span> Example</summary>
+<div class="body">
+<p>Transaction:</p>
+<pre class="ascii">Amount = $4,000
+Country = US
+Device = New
+Merchant = New
+Customer = India
+Time = 3 AM
+</pre>
+<p>Rules might be:</p>
+<pre class="ascii">Rule 1:
+New device + high amount
+        → suspicious
+
+Rule 2:
+New country + high amount
+        → suspicious
+
+Rule 3:
+Multiple transactions within 1 minute
+        → suspicious
+</pre>
+<p>Each rule produces a signal.</p>
+<pre class="ascii">Rule 1 → +30
+Rule 2 → +25
+Rule 3 → +40
+
+Total = 95
+</pre>
+<p>Then:</p>
+<pre class="ascii">0 - 30   → LOW
+31 - 70  → MEDIUM
+71 - 100 → HIGH
+</pre>
+<p>Decision:</p>
+<pre class="ascii">HIGH → Manual Review / Decline
+</pre>
+
+</div>
+</details>
+<details class="section">
+<summary><span class="num">11.</span> Why rules instead of ML?</summary>
+<div class="body">
+<p>This is an important interview question.</p>
+<p>Because rules provide:</p>
+<h4>Explainability</h4>
+<p>You can say:</p>
+<blockquote>"Transaction was flagged because it came from a new device and unusual geography."</blockquote>
+<p>ML might simply say:</p>
+<pre class="ascii">Fraud probability = 0.92
+</pre>
+<p>Rules are therefore useful for:</p>
+<ul><li>regulatory requirements</li><li>explainability</li><li>immediate policy changes</li><li>deterministic controls</li><li>known fraud patterns</li></ul>
+<p>Usually real systems use <strong>rules + ML</strong>, not only one.</p>
+</div>
+</details>
+<details class="section">
+<summary><span class="num">12.</span> Global payment flow</summary>
+<div class="body">
+<p>PayPal operates across many countries.</p>
+<p>So the architecture might look like:</p>
+<pre class="ascii">                Global Transactions
+                        |
+        +---------------+---------------+
+        |               |               |
+        v               v               v
+      US Region       EU Region       APAC
+        |               |               |
+        +---------------+---------------+
+                        |
+                        v
+                Fraud Platform
+                        |
+             +----------+----------+
+             |                     |
+             v                     v
+        Rule Engine          Risk Models
+             |                     |
+             +----------+----------+
+                        |
+                        v
+                  Risk Decision
+</pre>
+<p>The important architectural concepts are:</p>
+<ul><li>low latency</li><li>high availability</li><li>regional processing</li><li>idempotency</li><li>fault tolerance</li><li>auditability</li></ul>
+<p>Fraud detection cannot take 5 seconds if you're trying to authorize a payment synchronously.</p>
+</div>
+</details>
+<details class="section">
+<summary><span class="num">13.</span> What you can say</summary>
+<div class="body">
+<blockquote><strong>"My contribution was around the fraud-detection framework, particularly the data models and rule-based detection layer. The architecture evaluated transaction and customer signals in real time, applied configurable fraud rules, generated risk indicators, and routed suspicious transactions for review."</strong></blockquote>
+<p>If asked:</p>
+<h4>"Did you build the ML model?"</h4>
+<p>Say:</p>
+<blockquote>"No, my involvement was more on the platform and detection-framework side rather than developing the underlying ML algorithms."</blockquote>
+<p>That is a much safer answer.</p>
+</div>
+</details>
+</div>
+</details>
+<details class="category">
+<summary>Project 3 — PayPal: Transaction Risk Scoring MLOps <span class="range">(sections 14–18)</span></summary>
+<div class="cat-body">
+<details class="section">
+<summary><span class="num">14.</span> 3. PayPal — Transaction Risk Scoring MLOps</summary>
+<div class="body">
+<p>This is the most interesting one.</p>
+<p>Here the ML model produces something like:</p>
+<pre class="ascii">Transaction Risk Score
+
+0.01 → Very Low Risk
+0.35 → Medium Risk
+0.92 → Very High Risk
+</pre>
+
+</div>
+</details>
+<details class="section">
+<summary><span class="num">15.</span> Architecture</summary>
+<div class="body">
+
+<pre class="ascii">                   TRANSACTION
+                        |
+                        v
+              +-------------------+
+              | Event / Streaming  |
+              | Platform           |
+              +---------+---------+
+                        |
+                        v
+              +-------------------+
+              | Feature Pipeline  |
+              +---------+---------+
+                        |
+             +----------+----------+
+             |                     |
+             v                     v
+      Transaction Features   Historical Features
+             |                     |
+             +----------+----------+
+                        |
+                        v
+              +-------------------+
+              | Risk Scoring Model|
+              |                   |
+              | Model v12         |
+              +---------+---------+
+                        |
+                        v
+                 Risk Score
+                    0.87
+                        |
+                        v
+              +-------------------+
+              | Fraud Decision    |
+              | Engine            |
+              +---------+---------+
+                        |
+                 +------+------+
+                 |             |
+                 v             v
+             APPROVE        REVIEW
+
+
+                 MLOps
+                 -----
+
+ Training Data
+      |
+      v
+ Feature Pipeline
+      |
+      v
+ Model Training
+      |
+      v
+ Model Evaluation
+      |
+      v
+ Model Registry
+      |
+      v
+ Deployment
+      |
+      v
+ Production
+      |
+      v
+ Monitoring
+      |
+      +---- Performance degradation
+      |
+      +---- Feature drift
+      |
+      +---- Prediction drift
+      |
+      v
+ Retraining
+</pre>
+
+</div>
+</details>
+<details class="section">
+<summary><span class="num">16.</span> What is Feature Pipeline Automation?</summary>
+<div class="body">
+<p>Suppose the model requires:</p>
+<pre class="ascii">transaction_amount
+customer_age
+merchant_history
+device_history
+transaction_frequency
+country
+previous_fraud_count
+</pre>
+<p>You don't want developers manually prepare this every day.</p>
+<p>Instead:</p>
+<pre class="ascii">Raw Transactions
+       |
+       v
+Feature Pipeline
+       |
+       +--&gt; Cleaning
+       |
+       +--&gt; Transformation
+       |
+       +--&gt; Aggregation
+       |
+       +--&gt; Validation
+       |
+       v
+ML Features
+</pre>
+<p>Example:</p>
+<pre class="ascii">Raw:
+
+Customer A
+10 transactions
+₹5,000 each
+</pre>
+<p>Pipeline calculates:</p>
+<pre class="ascii">transactions_last_24h = 10
+amount_last_24h = ₹50,000
+average_amount = ₹5,000
+</pre>
+<p>These become ML features.</p>
+</div>
+</details>
+<details class="section">
+<summary><span class="num">17.</span> Production monitoring</summary>
+<div class="body">
+<p>You don't just monitor:</p>
+<pre class="ascii">CPU
+Memory
+Latency
+</pre>
+<p>You also monitor <strong>model health</strong>.</p>
+<p>For example:</p>
+<pre class="ascii">Model Performance
+
+Precision       94%
+Recall          91%
+False Positive   6%
+Prediction Latency 45ms
+</pre>
+<p>And:</p>
+<pre class="ascii">Feature Drift
+
+amount             NORMAL
+device_type        NORMAL
+country            DRIFT
+merchant_category  DRIFT
+</pre>
+
+</div>
+</details>
+<details class="section">
+<summary><span class="num">18.</span> Why model degradation matters</summary>
+<div class="body">
+<p>Imagine:</p>
+<pre class="ascii">January
+
+Precision = 95%
+Recall    = 92%
+</pre>
+<p>Six months later:</p>
+<pre class="ascii">Precision = 82%
+Recall    = 76%
+</pre>
+<p>Something changed.</p>
+<p>Possible reasons:</p>
+<pre class="ascii">New fraud pattern
+      |
+New merchants
+      |
+New payment methods
+      |
+Customer behavior changed
+      |
+Feature distribution changed
+</pre>
+<p>Therefore:</p>
+<pre class="ascii">Monitoring
+    |
+    v
+Detect degradation
+    |
+    v
+Investigate
+    |
+    v
+Retrain
+    |
+    v
+Evaluate
+    |
+    v
+Deploy
+</pre>
+
+</div>
+</details>
+</div>
+</details>
+<details class="category">
+<summary>Cross-Project Summary &amp; Key Diagrams to Memorize <span class="range">(sections 19–20)</span></summary>
+<div class="cat-body">
+<details class="section">
+<summary><span class="num">19.</span> The 3 architectures together</summary>
+<div class="body">
+<p>You should remember them like this:</p>
+<pre class="ascii">                 ML SYSTEM
+                    |
+        +-----------+-----------+
+        |           |           |
+        v           v           v
+
+     IDFC         PayPal       PayPal
+     PFM          Fraud        Risk Score
+        |           |           |
+        v           v           v
+   Categorize    Detect       Predict
+   transaction   fraud        risk
+        |           |           |
+        v           v           v
+   Food/Travel   Rules + ML   Risk Score
+        |           |           |
+        +-----------+-----------+
+                    |
+                    v
+                  MLOps
+                    |
+        +-----------+-----------+
+        |           |           |
+        v           v           v
+   Versioning   Monitoring   Retraining
+</pre>
+
+</div>
+</details>
+<details class="section">
+<summary><span class="num">20.</span> The MLOps lifecycle you should memorize</summary>
+<div class="body">
+<p>This is probably the <strong>single most important diagram</strong> for your interviews.</p>
+<pre class="ascii">                 +----------------+
+                 | Training Data  |
+                 +-------+--------+
+                         |
+                         v
+                 +----------------+
+                 | Feature        |
+                 | Engineering    |
+                 +-------+--------+
+                         |
+                         v
+                 +----------------+
+                 | Model Training |
+                 +-------+--------+
+                         |
+                         v
+                 +----------------+
+                 | Model          |
+                 | Evaluation     |
+                 +-------+--------+
+                         |
+                  Good Model?
+                    /     \
+                  NO       YES
+                  |         |
+                Reject      v
+                       +----------+
+                       | Registry |
+                       +----+-----+
+                            |
+                            v
+                       Deployment
+                            |
+                            v
+                       Production
+                            |
+                            v
+                     Monitoring
+                       /    \
+                      /      \
+                Healthy      Drift
+                   |           |
+                   |           v
+                   |       Retraining
+                   |           |
+                   +-----------+
+</pre>
+<h4>Remember this sentence:</h4>
+<blockquote><strong>"MLOps is basically applying software engineering discipline to the complete ML lifecycle — data, features, training, model versioning, deployment, monitoring and retraining."</strong></blockquote>
+</div>
+</details>
+</div>
+</details>
+<details class="category">
+<summary>Likely Interviewer Questions &amp; Answers <span class="range">(sections 21)</span></summary>
+<div class="cat-body">
+<details class="section">
+<summary><span class="num">21.</span> What interviewers may ask you</summary>
+<div class="body">
+<p>Given your resume wording, I would expect these questions.</p>
+<h4>IDFC</h4>
+<p><strong>Q1. What exactly was the model predicting?</strong></p>
+<p>Answer:</p>
+<blockquote>"The primary use case was transaction categorization — mapping raw transaction information to categories such as food, shopping, travel, utilities etc., which then supported PFM spend analytics."</blockquote>
+<p><strong>Q2. How did you detect drift?</strong></p>
+<blockquote>"We looked at changes in the production data and model-performance indicators. Feature distribution changes could indicate data drift, while degradation in metrics such as accuracy or precision/recall could indicate model performance degradation."</blockquote>
+<p><strong>Q3. What happened after drift?</strong></p>
+<blockquote>"The pipeline could trigger retraining using more recent data, evaluate the candidate model against the existing production model, and only promote it if it met predefined quality thresholds."</blockquote>
+<h4>PayPal Fraud</h4>
+<p><strong>Q4. Why use rules?</strong></p>
+<blockquote>"Rules are deterministic, explainable and can be changed quickly when a known fraud pattern emerges. They complement ML models rather than necessarily replacing them."</blockquote>
+<p><strong>Q5. What happens if the fraud engine goes down?</strong></p>
+<p>A strong architectural answer:</p>
+<blockquote>"The payment path needs a defined fail-open versus fail-closed strategy based on risk. For high-risk operations we may prefer fail-closed or step-up authentication, while lower-risk scenarios could use graceful degradation. The decision also depends on latency and business risk."</blockquote>
+<p>That's a <strong>very good architecture interview answer</strong>.</p>
+<h4>PayPal Risk MLOps</h4>
+<p><strong>Q6. What do you monitor?</strong></p>
+<p>Think in 4 buckets:</p>
+<pre class="ascii">1. Infrastructure
+   CPU / Memory / Latency
+
+2. Data
+   Missing values / Schema / Drift
+
+3. Model
+   Accuracy / Precision / Recall
+
+4. Business
+   Fraud loss / False positives /
+   Review rate / Approval rate
+</pre>
+<p>This distinction is important.</p>
+</div>
+</details>
+</div>
+</details>
+<details class="category">
+<summary>Final Recommendation <span class="range">(sections 22)</span></summary>
+<div class="cat-body">
+<details class="section">
+<summary><span class="num">22.</span> One thing I strongly recommend</summary>
+<div class="body">
+<p>Your resume statements are currently <strong>slightly stronger than what you've actually done</strong>.</p>
+<p>For interviews, don't memorize fake implementation details such as:</p>
+<blockquote>"We used Kubeflow + MLflow + SageMaker + Airflow..."</blockquote>
+<p>unless you can defend every component.</p>
+<p>Instead, learn the <strong>architecture and principles</strong> and anchor your contribution to:</p>
+<pre class="ascii">IDFC
+  ↓
+MLOps foundations
+  ↓
+Model versioning
+Monitoring
+Retraining
+
+PayPal Fraud
+  ↓
+Fraud framework
+  ↓
+Data models
+Rules
+Risk signals
+Review workflow
+
+PayPal Risk
+  ↓
+MLOps
+  ↓
+Feature automation
+Production monitoring
+Model degradation
+</pre>
+<p>If the interviewer goes deep, you can then say exactly <strong>where your involvement stopped</strong>.</p>
+<p>That is much better than claiming you personally implemented an ML platform and then getting trapped by questions about Kubernetes, feature stores, model serving, A/B deployment, precision/recall, ROC-AUC, drift algorithms, or model governance.</p>
+</div>
+</details>
+</div>
+</details>
+</body>
+</html>
