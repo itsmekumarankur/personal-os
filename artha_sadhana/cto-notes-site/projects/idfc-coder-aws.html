@@ -1,0 +1,1671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>IDFC Coder — Architecture Interview Notes</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 20px 80px;
+    line-height: 1.55;
+    color: #1a1a1a;
+    background: #ffffff;
+  }
+  h1 {
+    font-size: 1.4em;
+    margin-bottom: 4px;
+  }
+  .intro {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #ddd;
+  }
+  details.section {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    padding: 0;
+    overflow: hidden;
+  }
+  details.section summary {
+    cursor: pointer;
+    padding: 10px 14px;
+    font-weight: 600;
+    background: #f5f5f5;
+    list-style: none;
+  }
+  details.section summary::-webkit-details-marker { display: none; }
+  details.section summary::before {
+    content: "▶ ";
+    display: inline-block;
+    transition: transform 0.15s;
+  }
+  details.section[open] summary::before {
+    content: "▼ ";
+  }
+  details.section .num {
+    color: #555;
+    margin-right: 4px;
+  }
+  .body {
+    padding: 12px 16px 16px;
+  }
+  pre.ascii {
+    background: #f7f7f7;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 12px;
+    overflow-x: auto;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 13px;
+    line-height: 1.35;
+    white-space: pre;
+  }
+  p { margin: 10px 0; }
+  blockquote {
+    margin: 10px 0;
+    padding: 8px 14px;
+    border-left: 3px solid #999;
+    background: #fafafa;
+    color: #333;
+  }
+  ul { margin: 8px 0; padding-left: 22px; }
+  li { margin: 3px 0; }
+  h4 { margin: 14px 0 6px; }
+  table.md-table {
+    border-collapse: collapse;
+    margin: 10px 0;
+    font-size: 14px;
+    width: 100%;
+  }
+  table.md-table th, table.md-table td {
+    border: 1px solid #ccc;
+    padding: 5px 10px;
+    text-align: left;
+  }
+  table.md-table th {
+    background: #f0f0f0;
+  }
+  code {
+    background: #f0f0f0;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: Consolas, monospace;
+    font-size: 0.9em;
+  }
+  .controls {
+    margin: 10px 0 20px;
+  }
+  .controls button {
+    font-size: 13px;
+    padding: 6px 12px;
+    margin-right: 8px;
+    border: 1px solid #ccc;
+    background: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .controls button:hover { background: #f0f0f0; }
+</style>
+</head>
+<body>
+<h1>IDFC Coder — Architecture Interview Notes</h1>
+<div class="intro">
+<p>Yes. For your <strong>IDFC Coder</strong> story, I would build the architecture explanation around one simple flow:</p>
+<blockquote><strong>Developer enters prompt → authentication → API layer → prompt/security processing → request queue → GPU inference cluster → LLM/vLLM → response streaming → developer IDE/UI</strong></blockquote>
+<p>Your uploaded architect notes already establish the important GPU decision chain: <strong>workload → VRAM → GPU → concurrency → GPU count → infrastructure cost → TCO</strong>.</p>
+<p>One important distinction: <strong>I can give you a production-grade AWS reference architecture and sizing model, but I can't represent the exact internal IDFC Coder production topology as fact unless you have internal architecture evidence.</strong> For an interview, present the numbers below as <em>design assumptions / sizing decisions</em> unless you actually operated those resources.</p>
+</div>
+<div class="controls">
+  <button onclick="document.querySelectorAll('details.section').forEach(d=>d.open=true)">Expand all</button>
+  <button onclick="document.querySelectorAll('details.section').forEach(d=>d.open=false)">Collapse all</button>
+</div>
+<details class="section">
+<summary><span class="num">1.</span> The architecture I would present</summary>
+<div class="body">
+<p>Assume:</p>
+<ul><li>10,000 registered developers</li><li>~2,000 daily active users</li><li>~500 peak concurrent users</li><li>~100 AI requests/sec peak</li><li>Average generation: 300–800 output tokens</li><li>Context: 2K–8K tokens</li><li>33B coding model</li><li>INT4 quantization</li><li>vLLM inference</li><li>AWS</li><li>Multi-AZ</li><li>Private GPU subnet</li><li>Streaming responses</li></ul>
+<pre class="ascii">                         AWS CLOUD
+┌───────────────────────────────────────────────────────────────┐
+│                                                               │
+│  Developer                                                   │
+│      │                                                        │
+│      │ Prompt                                                 │
+│      ▼                                                        │
+│  ┌───────────────┐                                            │
+│  │ IDE / Web UI  │                                            │
+│  │ IDFC Coder    │                                            │
+│  └───────┬───────┘                                            │
+│          │ HTTPS                                               │
+│          ▼                                                     │
+│  ┌─────────────────┐                                           │
+│  │ Route 53        │                                           │
+│  └────────┬────────┘                                           │
+│           ▼                                                    │
+│  ┌─────────────────┐                                           │
+│  │ CloudFront      │                                           │
+│  └────────┬────────┘                                           │
+│           ▼                                                    │
+│  ┌─────────────────┐                                           │
+│  │ AWS WAF         │                                           │
+│  └────────┬────────┘                                           │
+│           ▼                                                    │
+│  ┌─────────────────┐                                           │
+│  │ ALB             │                                           │
+│  └────────┬────────┘                                           │
+│           │                                                    │
+│      ┌────┴─────────────────────────────┐                      │
+│      │                                  │                      │
+│      ▼                                  ▼                      │
+│ ┌──────────────┐                  ┌───────────────┐            │
+│ │ API Service  │                  │ Auth Service  │            │
+│ │ ECS / EC2    │                  │ SSO / IdP     │            │
+│ └──────┬───────┘                  └───────────────┘            │
+│        │                                                       │
+│        ▼                                                       │
+│ ┌──────────────────┐                                           │
+│ │ Prompt Gateway   │                                           │
+│ │                  │                                           │
+│ │ - validation     │                                           │
+│ │ - authorization  │                                           │
+│ │ - rate limit     │                                           │
+│ │ - prompt policy  │                                           │
+│ │ - context build  │                                           │
+│ └────────┬─────────┘                                           │
+│          │                                                     │
+│          ▼                                                     │
+│ ┌──────────────────┐                                           │
+│ │ Redis            │                                           │
+│ │ cache / limits   │                                           │
+│ └──────────────────┘                                           │
+│          │                                                     │
+│          ▼                                                     │
+│ ┌──────────────────┐                                           │
+│ │ Kafka / SQS      │                                           │
+│ │ Request Queue    │                                           │
+│ └────────┬─────────┘                                           │
+│          │                                                     │
+│          ▼                                                     │
+│ ┌──────────────────────────────────────────┐                   │
+│ │          GPU INFERENCE CLUSTER           │                   │
+│ │                                          │                   │
+│ │  ┌────────────┐ ┌────────────┐           │                   │
+│ │  │ GPU Node 1 │ │ GPU Node 2 │           │                   │
+│ │  │ L4 24GB    │ │ L4 24GB    │           │                   │
+│ │  │            │ │            │           │                   │
+│ │  │ vLLM       │ │ vLLM       │           │                   │
+│ │  │ 33B INT4   │ │ 33B INT4   │           │                   │
+│ │  └────────────┘ └────────────┘           │                   │
+│ │                                          │                   │
+│ │  ┌────────────┐ ┌────────────┐           │                   │
+│ │  │ GPU Node 3 │ │ GPU Node 4 │           │                   │
+│ │  │ L4 24GB    │ │ L4 24GB    │           │                   │
+│ │  │ vLLM       │ │ vLLM       │           │                   │
+│ │  └────────────┘ └────────────┘           │                   │
+│ └──────────────────────┬───────────────────┘                   │
+│                        │                                       │
+│                        ▼                                       │
+│                Streaming response                              │
+│                        │                                       │
+│                        ▼                                       │
+│                    Developer                                 │
+│                                                               │
+└───────────────────────────────────────────────────────────────┘
+</pre>
+
+</div>
+</details>
+<details class="section">
+<summary><span class="num">2.</span> First thing interviewer will ask</summary>
+<div class="body">
+<p>They will probably ask:</p>
+<blockquote><strong>"Walk me through what happens when a developer enters 'Generate code for this requirement'."</strong></blockquote>
+<p>Your answer should be extremely systematic.</p>
+<pre class="ascii">Developer
+   │
+   │ 1. Prompt
+   ▼
+IDFC Coder Client
+   │
+   │ HTTPS
+   ▼
+Route 53
+   │
+   ▼
+CloudFront
+   │
+   ▼
+AWS WAF
+   │
+   ▼
+ALB
+   │
+   ▼
+API Service
+   │
+   ├── Authenticate
+   ├── Authorize
+   ├── Validate
+   ├── Rate-limit
+   └── Build context
+           │
+           ▼
+       Redis
+           │
+           ▼
+     Request Queue
+           │
+           ▼
+   Inference Router
+           │
+           ▼
+       GPU Pool
+           │
+           ▼
+        vLLM
+           │
+           ▼
+       33B LLM
+           │
+           ▼
+    Generated tokens
+           │
+           ▼
+     Streaming API
+           │
+           ▼
+      Developer
+</pre>
+
+</div>
+</details>
+<details class="section">
+<summary><span class="num">3.</span> Step 1 — Developer sends prompt</summary>
+<div class="body">
+<p>Suppose developer enters:</p>
+<pre class="ascii">&quot;Create a REST API in Go
+for fetching mutual fund holdings.
+Use Redis caching and MongoDB.&quot;
+</pre>
+<p>The IDFC Coder plugin/client sends something conceptually like:</p>
+<pre class="ascii">{
+  &quot;user_id&quot;: &quot;12345&quot;,
+  &quot;repository&quot;: &quot;wealth-api&quot;,
+  &quot;language&quot;: &quot;go&quot;,
+  &quot;prompt&quot;: &quot;Create a REST API...&quot;,
+  &quot;files&quot;: [
+    &quot;holding.go&quot;,
+    &quot;repository.go&quot;,
+    &quot;handler.go&quot;
+  ],
+  &quot;context&quot;: {
+    &quot;branch&quot;: &quot;feature/mf-holdings&quot;
+  }
+}
+</pre>
+<p>Don't send the entire repository blindly.</p>
+<p>Instead:</p>
+<pre class="ascii">Repository
+     │
+     ▼
+Context Engine
+     │
+     ├── relevant files
+     ├── symbols
+     ├── imports
+     ├── recent changes
+     └── developer prompt
+             │
+             ▼
+       Context Window
+</pre>
+<p>This is an important architectural point.</p>
+</div>
+</details>
+<details class="section">
+<summary><span class="num">4.</span> Step 2 — Authentication</summary>
+<div class="body">
+<p>The request first reaches the edge.</p>
+<pre class="ascii">Developer
+    │
+    ▼
+Route 53
+    │
+    ▼
+CloudFront
+    │
+    ▼
+WAF
+    │
+    ▼
+ALB
+    │
+    ▼
+Auth
+</pre>
+<p>For an enterprise banking environment, I'd explain:</p>
+<pre class="ascii">Corporate User
+      │
+      ▼
+Corporate SSO / Identity Provider
+      │
+      ▼
+JWT / OAuth token
+      │
+      ▼
+IDFC Coder API
+</pre>
+<p>The API validates:</p>
+<pre class="ascii">Token
+ │
+ ├── signature
+ ├── expiry
+ ├── user identity
+ ├── role
+ └── permissions
+</pre>
+
+</div>
+</details>
+<details class="section">
+<summary><span class="num">5.</span> Step 3 — WAF</summary>
+<div class="body">
+<p>WAF protects the public-facing layer.</p>
+<pre class="ascii">                    INTERNET
+                       │
+                       ▼
+                  CloudFront
+                       │
+                       ▼
+                     WAF
+                       │
+              ┌────────┴────────┐
+              │                 │
+           BLOCK              ALLOW
+              │                 │
+              X                 ▼
+                           ALB
+</pre>
+<p>WAF controls things like:</p>
+<pre class="ascii">IP reputation
+Rate abuse
+Malicious payloads
+Common web attacks
+Request size
+Bot patterns
+</pre>
+<p>But don't claim WAF protects the LLM itself.</p>
+<p>You still need:</p>
+<pre class="ascii">Prompt Security Layer
+        │
+        ├── prompt validation
+        ├── sensitive data detection
+        ├── policy checks
+        ├── authorization
+        └── output checks
+</pre>
+
+</div>
+</details>
+<details class="section">
+<summary><span class="num">6.</span> Step 4 — ALB</summary>
+<div class="body">
+<p>ALB distributes traffic across API servers.</p>
+<pre class="ascii">                     ALB
+                      │
+          ┌───────────┼───────────┐
+          ▼           ▼           ▼
+       API-01      API-02      API-03
+       EC2/ECS     EC2/ECS     EC2/ECS
+</pre>
+<p>For 10K registered users, you <strong>don't size EC2 based on 10,000</strong>.</p>
+<p>You size based on:</p>
+<pre class="ascii">Peak requests/sec
+        +
+CPU utilization
+        +
+memory
+        +
+network
+        +
+availability requirement
+</pre>
+<p>A reasonable starting production topology:</p>
+<pre class="ascii">                    ALB
+                     │
+          ┌──────────┼──────────┐
+          ▼          ▼          ▼
+        AZ-A       AZ-B       AZ-C
+
+        4 API       4 API       4 API
+        nodes       nodes       nodes
+
+             TOTAL = 12
+</pre>
+<p>For example:</p>
+<pre class="ascii">12 × API instances
+</pre>
+<p>with autoscaling:</p>
+<pre class="ascii">Minimum = 6
+Desired = 12
+Maximum = 30
+</pre>
+<p>The exact number must ultimately come from load testing.</p>
+</div>
+</details>
+<details class="section">
+<summary><span class="num">7.</span> Step 5 — Prompt Gateway</summary>
+<div class="body">
+<p>This is one of the most important components.</p>
+<pre class="ascii">                 API
+                  │
+                  ▼
+          ┌───────────────┐
+          │ Prompt Gateway│
+          └───────┬───────┘
+                  │
+       ┌──────────┼───────────┐
+       ▼          ▼           ▼
+ Authentication  Policy     Rate Limit
+       │          │           │
+       └──────────┼───────────┘
+                  ▼
+            Context Engine
+</pre>
+<p>It decides:</p>
+<pre class="ascii">Can this user make the request?
+              │
+              ▼
+Is the request allowed?
+              │
+              ▼
+How much context should we send?
+              │
+              ▼
+Which model should process it?
+              │
+              ▼
+Which GPU pool?
+</pre>
+
+</div>
+</details>
+<details class="section">
+<summary><span class="num">8.</span> Step 6 — Redis</summary>
+<div class="body">
+<p>Redis can serve several purposes.</p>
+<pre class="ascii">                  Redis
+                    │
+        ┌───────────┼────────────┐
+        ▼           ▼            ▼
+   Rate Limits   Sessions      Cache
+</pre>
+<p>For example:</p>
+<pre class="ascii">user:12345:requests
+       │
+       └── 50 requests/minute
+</pre>
+<p>You can also cache:</p>
+<pre class="ascii">Prompt → response
+</pre>
+<p>for deterministic/common requests where appropriate.</p>
+<p>But don't cache every generated response blindly.</p>
+</div>
+</details>
+<details class="section">
+<summary><span class="num">9.</span> Step 7 — Queue</summary>
+<div class="body">
+<p>This is where the architecture becomes resilient.</p>
+<pre class="ascii">API Servers
+     │
+     ▼
+┌───────────────┐
+│ Request Queue │
+│ Kafka / SQS   │
+└───────┬───────┘
+        │
+        ▼
+Inference Router
+</pre>
+<p>Why?</p>
+<p>Because:</p>
+<pre class="ascii">500 users suddenly request code
+             │
+             ▼
+        GPU capacity
+             │
+             X
+      cannot process all
+      simultaneously
+</pre>
+<p>Without queueing:</p>
+<pre class="ascii">Traffic spike
+     │
+     ▼
+GPU overload
+     │
+     ▼
+Latency ↑
+     │
+     ▼
+Timeouts
+     │
+     ▼
+Retries
+     │
+     ▼
+More load
+     │
+     ▼
+Cascading failure
+</pre>
+<p>With queueing:</p>
+<pre class="ascii">Traffic spike
+     │
+     ▼
+Queue
+     │
+     ├── request 1
+     ├── request 2
+     ├── request 3
+     ├── request 4
+     └── ...
+          │
+          ▼
+     GPU workers
+</pre>
+
+</div>
+</details>
+<details class="section">
+<summary><span class="num">10.</span> The GPU architecture</summary>
+<div class="body">
+<p>Now you get into the part from your uploaded architect notes.</p>
+<p>For the 33B model:</p>
+<pre class="ascii">33B parameters
+
+FP16
+33B × 2 bytes
+≈ 66 GB
+
+INT8
+33B × 1 byte
+≈ 33 GB
+
+INT4
+33B × 0.5 byte
+≈ 16.5 GB
+</pre>
+<p>Your notes emphasize that <strong>16.5 GB is not the actual production requirement</strong> because you also need KV cache, activations, runtime and headroom.</p>
+<p>Your source gives an illustrative production calculation:</p>
+<pre class="ascii">Weights             ~17 GB
+KV cache             ~2 GB
+Activations          ~1 GB
+Runtime              ~2 GB
+Headroom             ~1 GB
+                     -------
+Total                ~23 GB
+</pre>
+<p>Therefore:</p>
+<pre class="ascii">T4
+16 GB
+  │
+  X
+  │
+Cannot fit
+
+
+L4
+24 GB
+  │
+  ✓
+  │
+Can fit
+</pre>
+<p>This is exactly the architectural reasoning in your notes.</p>
+</div>
+</details>
+<details class="section">
+<summary><span class="num">11.</span> GPU cluster</summary>
+<div class="body">
+<p>I would present it like this:</p>
+<pre class="ascii">                  GPU INFERENCE CLUSTER
+                           │
+             ┌─────────────┼─────────────┐
+             │             │             │
+             ▼             ▼             ▼
+
+          AZ-A           AZ-B          AZ-C
+
+       ┌─────────┐     ┌─────────┐    ┌─────────┐
+       │ L4 #01  │     │ L4 #03  │    │ L4 #05  │
+       │ 24 GB   │     │ 24 GB   │    │ 24 GB   │
+       │ vLLM    │     │ vLLM    │    │ vLLM    │
+       └─────────┘     └─────────┘    └─────────┘
+
+       ┌─────────┐     ┌─────────┐    ┌─────────┐
+       │ L4 #02  │     │ L4 #04  │    │ L4 #06  │
+       │ 24 GB   │     │ 24 GB   │    │ 24 GB   │
+       │ vLLM    │     │ vLLM    │    │ vLLM    │
+       └─────────┘     └─────────┘    └─────────┘
+</pre>
+<p>So an initial production sizing could be:</p>
+<pre class="ascii">6 GPU nodes
++
+1 LLM replica per GPU node
+=
+6 model replicas
+</pre>
+<p>But here's the critical interview point:</p>
+<p><strong>You cannot derive the correct number of GPUs from "10,000 users."</strong></p>
+<p>Your source itself frames GPU count as a consequence of workload, VRAM and concurrency rather than user count.</p>
+</div>
+</details>
+<details class="section">
+<summary><span class="num">12.</span> How I would actually calculate 6 GPUs</summary>
+<div class="body">
+<p>Start here:</p>
+<pre class="ascii">10,000 registered users
+          │
+          ▼
+2,000 daily active
+          │
+          ▼
+500 peak concurrent
+          │
+          ▼
+100 requests/sec peak
+          │
+          ▼
+LLM benchmark
+          │
+          ▼
+X requests/sec/GPU
+          │
+          ▼
+Required GPU count
+</pre>
+<p>Suppose load testing gives:</p>
+<pre class="ascii">1 L4 + vLLM
+
+= 20 concurrent generations
+while meeting our latency SLA
+</pre>
+<p>Then:</p>
+<pre class="ascii">500 concurrent users
+        │
+        ▼
+20 concurrent/GPU
+        │
+        ▼
+500 / 20
+        │
+        ▼
+25 GPUs
+</pre>
+<p>Then add HA/headroom:</p>
+<pre class="ascii">25 × 1.2
+≈ 30 GPUs
+</pre>
+<p>So the answer could become:</p>
+<pre class="ascii">Production
+    │
+    ├── 30 GPU nodes
+    ├── 30 LLM replicas
+    ├── 3 AZs
+    └── autoscaling
+</pre>
+<p><strong>This is only an example.</strong></p>
+<p>If benchmarking instead shows:</p>
+<pre class="ascii">1 GPU = 80 concurrent requests
+</pre>
+<p>then:</p>
+<pre class="ascii">500 / 80
+≈ 7 GPUs
+</pre>
+<p>with redundancy:</p>
+<pre class="ascii">~10 GPUs
+</pre>
+<p>That's why an architect should never say:</p>
+<blockquote>"10K users means 10 GPUs."</blockquote>
+</div>
+</details>
+<details class="section">
+<summary><span class="num">13.</span> The inference layer</summary>
+<div class="body">
+<p>Inside each GPU node:</p>
+<pre class="ascii">               GPU EC2
+                  │
+          ┌───────┴────────┐
+          │                │
+        Linux           NVIDIA Driver
+          │                │
+          └───────┬────────┘
+                  ▼
+              CUDA
+                  │
+                  ▼
+               PyTorch
+                  │
+                  ▼
+                vLLM
+                  │
+          ┌───────┴────────┐
+          │                │
+       Scheduler        KV Cache
+          │                │
+          └───────┬────────┘
+                  ▼
+             33B INT4
+                LLM
+</pre>
+<p>vLLM handles:</p>
+<pre class="ascii">request scheduling
+continuous batching
+KV-cache management
+token generation
+GPU utilization
+streaming
+</pre>
+
+</div>
+</details>
+<details class="section">
+<summary><span class="num">14.</span> What happens inside vLLM</summary>
+<div class="body">
+<p>Suppose:</p>
+<pre class="ascii">User A → Generate REST API
+User B → Fix this Java code
+User C → Write unit tests
+User D → Explain this function
+</pre>
+<p>Instead of:</p>
+<pre class="ascii">GPU
+ │
+ ├── A complete
+ ├── B complete
+ ├── C complete
+ └── D complete
+</pre>
+<p>the inference engine can use batching/scheduling:</p>
+<pre class="ascii">                 vLLM
+                   │
+          ┌────────┼─────────┐
+          ▼        ▼         ▼
+        Req A    Req B     Req C
+          │        │         │
+          └────────┼─────────┘
+                   ▼
+             GPU execution
+                   │
+                   ▼
+             Token streams
+</pre>
+<p>This is why <strong>concurrency and batching become architectural variables</strong> after the model fits. Your notes explicitly distinguish fit from subsequent latency/throughput/concurrency optimization.</p>
+</div>
+</details>
+<details class="section">
+<summary><span class="num">15.</span> Model storage</summary>
+<div class="body">
+<p>Don't store your 33B model inside the container image.</p>
+<p>Use:</p>
+<pre class="ascii">                    S3
+                     │
+                     │ model artifact
+                     ▼
+              Model Registry
+                     │
+                     ▼
+                GPU startup
+                     │
+                     ▼
+              Local NVMe/EBS
+                     │
+                     ▼
+                  vLLM
+</pre>
+<p>For example:</p>
+<pre class="ascii">S3
+ │
+ ├── model-v1/
+ ├── model-v2/
+ ├── tokenizer/
+ └── configuration/
+</pre>
+<p>Then deployment becomes:</p>
+<pre class="ascii">New Model
+    │
+    ▼
+S3
+    │
+    ▼
+Validation
+    │
+    ▼
+Benchmark
+    │
+    ▼
+Security scan
+    │
+    ▼
+Canary deployment
+    │
+    ▼
+Production
+</pre>
+
+</div>
+</details>
+<details class="section">
+<summary><span class="num">16.</span> Model deployment</summary>
+<div class="body">
+<p>This is where your DevOps story becomes strong.</p>
+<pre class="ascii">Developer
+    │
+    ▼
+Git
+    │
+    ▼
+CI/CD
+    │
+    ├── Unit tests
+    ├── Security scan
+    ├── Container scan
+    ├── Model validation
+    ├── Performance benchmark
+    └── Integration tests
+            │
+            ▼
+        Container
+            │
+            ▼
+       ECR Registry
+            │
+            ▼
+       Deployment
+            │
+            ▼
+       GPU Cluster
+</pre>
+
+</div>
+</details>
+<details class="section">
+<summary><span class="num">17.</span> Kubernetes/EKS version</summary>
+<div class="body">
+<p>If you want to demonstrate stronger DevOps knowledge, I would use <strong>EKS</strong> for the inference platform rather than manually managing dozens of GPU EC2 instances.</p>
+<pre class="ascii">                         EKS
+                          │
+             ┌────────────┼────────────┐
+             ▼            ▼            ▼
+          AZ-A          AZ-B          AZ-C
+             │            │            │
+        ┌────────┐   ┌────────┐   ┌────────┐
+        │ GPU    │   │ GPU    │   │ GPU    │
+        │ Nodes  │   │ Nodes  │   │ Nodes  │
+        └───┬────┘   └───┬────┘   └───┬────┘
+            │            │            │
+            ▼            ▼            ▼
+         vLLM Pod     vLLM Pod     vLLM Pod
+            │            │            │
+            └────────────┼────────────┘
+                         ▼
+                     33B LLM
+</pre>
+<p>Then you can explain:</p>
+<pre class="ascii">EKS Control Plane
+        │
+        ├── deployment
+        ├── scheduling
+        ├── health checks
+        ├── rolling update
+        └── node management
+</pre>
+<p>while:</p>
+<pre class="ascii">GPU Node
+    │
+    └── NVIDIA GPU
+           │
+           └── vLLM Pod
+</pre>
+
+</div>
+</details>
+<details class="section">
+<summary><span class="num">18.</span> Autoscaling</summary>
+<div class="body">
+<p>This is a very important interview question.</p>
+<p><strong>CPU autoscaling alone is wrong for an LLM workload.</strong></p>
+<p>You care about:</p>
+<pre class="ascii">Queue depth
+GPU utilization
+Tokens/sec
+Request latency
+Time-to-first-token
+Active generations
+KV-cache utilization
+</pre>
+<p>Architecture:</p>
+<pre class="ascii">                    Metrics
+                       │
+        ┌──────────────┼──────────────┐
+        ▼              ▼              ▼
+    Queue depth     GPU usage       TTFT
+        │              │              │
+        └──────────────┼──────────────┘
+                       ▼
+                  Autoscaler
+                       │
+                       ▼
+                 GPU Node Count
+                       │
+             ┌─────────┴─────────┐
+             ▼                   ▼
+         Scale Out            Scale In
+</pre>
+<p>Example:</p>
+<pre class="ascii">Queue depth &lt; 20
+       │
+       ▼
+     6 GPUs
+
+Queue depth &gt; 100
+       │
+       ▼
+     10 GPUs
+
+Queue depth &gt; 250
+       │
+       ▼
+     16 GPUs
+</pre>
+
+</div>
+</details>
+<details class="section">
+<summary><span class="num">19.</span> What happens if one GPU dies?</summary>
+<div class="body">
+<p>This is a classic CTO/architect question.</p>
+<pre class="ascii">                 Inference Router
+                       │
+        ┌──────────────┼──────────────┐
+        ▼              ▼              ▼
+      GPU-01         GPU-02         GPU-03
+        │              │              │
+       OK              X              OK
+</pre>
+<p>Health check detects:</p>
+<pre class="ascii">GPU-02 unhealthy
+       │
+       ▼
+Remove from routing
+       │
+       ▼
+Requests → GPU-01 / GPU-03
+       │
+       ▼
+Auto-replace GPU-02
+</pre>
+<p>The key is:</p>
+<blockquote><strong>Never make one GPU a single point of failure.</strong></blockquote>
+</div>
+</details>
+<details class="section">
+<summary><span class="num">20.</span> What if the whole AZ fails?</summary>
+<div class="body">
+
+<pre class="ascii">                 Router
+                    │
+        ┌───────────┼───────────┐
+        ▼           ▼           ▼
+       AZ-A        AZ-B        AZ-C
+        │           │           │
+      GPU ×        GPU ✓       GPU ✓
+</pre>
+<p>Traffic shifts:</p>
+<pre class="ascii">AZ-A
+ X
+
+AZ-B
+ ✓  ← traffic increases
+
+AZ-C
+ ✓  ← traffic increases
+</pre>
+<p>You maintain enough spare capacity to survive the AZ failure.</p>
+</div>
+</details>
+<details class="section">
+<summary><span class="num">21.</span> Complete production architecture</summary>
+<div class="body">
+<p>This is the <strong>one diagram I recommend memorizing</strong>.</p>
+<pre class="ascii">                         DEVELOPERS
+                    10,000 registered
+                            │
+                            ▼
+                   ┌────────────────┐
+                   │ IDFC CODER IDE │
+                   └───────┬────────┘
+                           │
+                         HTTPS
+                           │
+                           ▼
+                    ┌──────────────┐
+                    │   Route 53   │
+                    └──────┬───────┘
+                           │
+                           ▼
+                    ┌──────────────┐
+                    │  CloudFront  │
+                    └──────┬───────┘
+                           │
+                           ▼
+                    ┌──────────────┐
+                    │     WAF      │
+                    └──────┬───────┘
+                           │
+                           ▼
+                    ┌──────────────┐
+                    │     ALB      │
+                    └──────┬───────┘
+                           │
+          ┌────────────────┼─────────────────┐
+          │                │                 │
+          ▼                ▼                 ▼
+      API-01            API-02            API-N
+      ECS/EC2           ECS/EC2           ECS/EC2
+          │                │                 │
+          └────────────────┼─────────────────┘
+                           │
+                           ▼
+                 ┌──────────────────┐
+                 │ Prompt Gateway   │
+                 │                  │
+                 │ Auth             │
+                 │ Rate Limit       │
+                 │ Policy           │
+                 │ Context          │
+                 └────────┬─────────┘
+                          │
+              ┌───────────┼────────────┐
+              │           │            │
+              ▼           ▼            ▼
+           Redis       Metadata      Audit
+                         DB           Logs
+              │
+              ▼
+        ┌───────────────┐
+        │ Kafka / SQS   │
+        │ Request Queue │
+        └───────┬───────┘
+                │
+                ▼
+       ┌─────────────────────┐
+       │ Inference Router    │
+       └──────────┬──────────┘
+                  │
+       ┌──────────┼───────────┐
+       │          │           │
+       ▼          ▼           ▼
+     AZ-A       AZ-B        AZ-C
+       │          │           │
+   ┌───┴───┐  ┌───┴───┐   ┌───┴───┐
+   │GPU    │  │GPU    │   │GPU    │
+   │L4     │  │L4     │   │L4     │
+   ├───────┤  ├───────┤   ├───────┤
+   │vLLM   │  │vLLM   │   │vLLM   │
+   │33B    │  │33B    │   │33B    │
+   │INT4   │  │INT4   │   │INT4   │
+   └───┬───┘  └───┬───┘   └───┬───┘
+       │          │           │
+       └──────────┼───────────┘
+                  │
+                  ▼
+             Generated Code
+                  │
+                  ▼
+             Token Streaming
+                  │
+                  ▼
+              Developer
+</pre>
+
+</div>
+</details>
+<details class="section">
+<summary><span class="num">22.</span> Supporting AWS services</summary>
+<div class="body">
+<p>I would explain the AWS services in groups rather than listing 30 services.</p>
+<pre class="ascii">EDGE
+│
+├── Route 53
+├── CloudFront
+└── WAF
+
+COMPUTE
+│
+├── EC2
+├── EKS
+└── Auto Scaling
+
+GPU
+│
+└── L4 GPU EC2 instances
+
+NETWORK
+│
+├── VPC
+├── Public Subnets
+├── Private Subnets
+├── NAT Gateway
+├── ALB
+└── Security Groups
+
+DATA
+│
+├── S3
+├── RDS / Aurora
+├── DynamoDB
+├── ElastiCache Redis
+└── EBS/NVMe
+
+MESSAGING
+│
+├── Kafka / MSK
+└── SQS
+
+CONTAINER
+│
+└── ECR
+
+SECURITY
+│
+├── IAM
+├── KMS
+├── Secrets Manager
+└── CloudTrail
+
+OBSERVABILITY
+│
+├── CloudWatch
+├── Prometheus
+├── Grafana
+└── OpenTelemetry
+
+DEVOPS
+│
+├── CodePipeline/GitHub
+├── CI/CD
+├── ECR
+└── EKS deployment
+</pre>
+
+</div>
+</details>
+<details class="section">
+<summary><span class="num">23.</span> Network architecture — the part you should know deeply</summary>
+<div class="body">
+<p>This is how I would draw the VPC.</p>
+<pre class="ascii">                         AWS VPC
+                    10.0.0.0/16
+                         │
+        ┌────────────────┼────────────────┐
+        │                │                │
+        ▼                ▼                ▼
+       AZ-A             AZ-B             AZ-C
+        │                │                │
+ ┌──────┼──────┐  ┌──────┼──────┐  ┌──────┼──────┐
+ │             │  │             │  │             │
+ ▼             ▼  ▼             ▼  ▼             ▼
+
+Public        Private          Public        Private
+Subnet        Subnet           Subnet        Subnet
+ │               │               │              │
+ ▼               ▼               ▼              ▼
+ALB             API             ALB            API
+                │
+                ▼
+             Redis
+                │
+                ▼
+             Kafka
+                │
+                ▼
+            GPU Nodes
+</pre>
+<p>And importantly:</p>
+<pre class="ascii">INTERNET
+   │
+   ▼
+CloudFront
+   │
+   ▼
+WAF
+   │
+   ▼
+ALB
+   │
+   ▼
+PRIVATE SUBNET
+   │
+   ├── API
+   ├── Redis
+   ├── Kafka
+   └── GPU
+</pre>
+<p><strong>GPU instances should not be directly exposed to the internet.</strong></p>
+</div>
+</details>
+<details class="section">
+<summary><span class="num">24.</span> Security architecture</summary>
+<div class="body">
+<p>For a banking environment, I would emphasize:</p>
+<pre class="ascii">                  Developer
+                     │
+                  HTTPS/TLS
+                     │
+                     ▼
+                    WAF
+                     │
+                     ▼
+                    ALB
+                     │
+                     ▼
+                  API Layer
+                     │
+            ┌────────┼─────────┐
+            ▼        ▼         ▼
+           IAM     Secrets    KMS
+                     │
+                     ▼
+               Private Network
+                     │
+                     ▼
+                GPU Cluster
+                     │
+                     ▼
+                   LLM
+</pre>
+<p>Security controls:</p>
+<pre class="ascii">IAM
+ │
+ ├── least privilege
+ ├── role-based access
+ └── workload identity
+
+KMS
+ │
+ ├── S3 encryption
+ ├── DB encryption
+ └── secrets encryption
+
+Secrets Manager
+ │
+ └── API credentials
+
+Security Groups
+ │
+ └── service-to-service restrictions
+
+Private Subnets
+ │
+ └── GPU isolation
+</pre>
+
+</div>
+</details>
+<details class="section">
+<summary><span class="num">25.</span> Observability</summary>
+<div class="body">
+<p>This is another area where you can demonstrate real DevOps thinking.</p>
+<p>Don't only monitor:</p>
+<pre class="ascii">CPU = 50%
+</pre>
+<p>For LLM infrastructure monitor:</p>
+<pre class="ascii">                    OBSERVABILITY
+                          │
+          ┌───────────────┼────────────────┐
+          ▼               ▼                ▼
+       API Layer       GPU Layer        LLM Layer
+          │               │                │
+          ├─ RPS          ├─ GPU %         ├─ TTFT
+          ├─ latency      ├─ VRAM          ├─ tokens/sec
+          ├─ errors       ├─ temperature   ├─ queue time
+          └─ 5xx         └─ utilization   ├─ KV cache
+                                           └─ generation time
+</pre>
+<p>A very useful dashboard:</p>
+<pre class="ascii">IDFC CODER — PRODUCTION DASHBOARD
+
+Requests/sec                 87
+Active users                421
+Queue depth                  32
+
+P50 latency               1.2 sec
+P95 latency               4.8 sec
+P99 latency              10.3 sec
+
+TTFT                       0.9 sec
+Tokens/sec/GPU              65
+
+GPU utilization             82%
+GPU VRAM                    78%
+
+Error rate                 0.12%
+5xx rate                   0.03%
+
+Healthy GPUs                  28
+Total GPUs                   30
+</pre>
+
+</div>
+</details>
+<details class="section">
+<summary><span class="num">26.</span> Disaster recovery</summary>
+<div class="body">
+<p>You should be able to answer:</p>
+<blockquote>"What happens if the inference cluster goes down?"</blockquote>
+<pre class="ascii">Primary Region
+      │
+      ├── API
+      ├── Redis
+      ├── Kafka
+      └── GPU Cluster
+             │
+             X
+          FAILURE
+             │
+             ▼
+       DR Strategy
+             │
+             ▼
+      Secondary Region
+             │
+             ▼
+       GPU capacity
+</pre>
+<p>But there is a major cost decision:</p>
+<pre class="ascii">FULL GPU DR
+     │
+     ├── Excellent RTO
+     └── Very expensive
+
+WARM DR
+     │
+     ├── Some GPU capacity
+     └── Moderate cost
+
+COLD DR
+     │
+     ├── Provision GPUs on demand
+     └── Cheap but high RTO
+</pre>
+<p>This connects directly back to your TCO reasoning: infrastructure isn't just GPU price; it includes operations, networking, monitoring, security, backup/DR and engineering cost.</p>
+</div>
+</details>
+<details class="section">
+<summary><span class="num">27.</span> Production numbers — how I would present them</summary>
+<div class="body">
+<p>Don't say:</p>
+<blockquote>"We had 10,000 users, therefore we deployed 100 EC2s."</blockquote>
+<p>Instead:</p>
+<pre class="ascii">BUSINESS
+   │
+   ▼
+10,000 registered users
+   │
+   ▼
+2,000 DAU
+   │
+   ▼
+500 peak concurrent
+   │
+   ▼
+100 peak AI RPS
+   │
+   ▼
+LLM benchmark
+   │
+   ├── latency SLA
+   ├── tokens/sec
+   ├── concurrency/GPU
+   └── VRAM
+          │
+          ▼
+       GPU count
+          │
+          ▼
+    + HA/headroom
+          │
+          ▼
+   Production capacity
+</pre>
+<p>That is <strong>architect thinking</strong>.</p>
+</div>
+</details>
+<details class="section">
+<summary><span class="num">28.</span> The most important sizing table</summary>
+<div class="body">
+<p>For your interview preparation, memorize this structure:</p>
+<table class="md-table">
+<thead><tr><th>Layer</th><th>Initial production sizing</th></tr></thead>
+<tbody>
+<tr><td>Registered users</td><td>10,000</td></tr>
+<tr><td>Peak concurrent</td><td>~500*</td></tr>
+<tr><td>API instances</td><td>6–12 minimum/desired*</td></tr>
+<tr><td>Max API instances</td><td>~30*</td></tr>
+<tr><td>Redis</td><td>Multi-AZ / managed</td></tr>
+<tr><td>Queue</td><td>Kafka/SQS</td></tr>
+<tr><td>GPU type</td><td>L4 24 GB*</td></tr>
+<tr><td>Model</td><td>33B INT4*</td></tr>
+<tr><td>vLLM replicas</td><td>1 per GPU*</td></tr>
+<tr><td>GPU nodes</td><td>~10–30 depending on benchmark*</td></tr>
+<tr><td>Availability zones</td><td>3</td></tr>
+<tr><td>Model storage</td><td>S3</td></tr>
+<tr><td>Container registry</td><td>ECR</td></tr>
+<tr><td>Container orchestration</td><td>EKS</td></tr>
+<tr><td>Monitoring</td><td>CloudWatch + Prometheus/Grafana</td></tr>
+<tr><td>Secrets</td><td>Secrets Manager</td></tr>
+<tr><td>Encryption</td><td>KMS</td></tr>
+<tr><td>Edge security</td><td>WAF</td></tr>
+<tr><td>Load balancing</td><td>ALB</td></tr>
+</tbody>
+</table>
+<p><code>*</code> = <strong>illustrative capacity assumptions, not facts about actual IDFC Coder production.</strong></p>
+</div>
+</details>
+<details class="section">
+<summary><span class="num">29.</span> The interviewer will attack your numbers</summary>
+<div class="body">
+<p>Be ready for:</p>
+<h4>"Why 500 concurrent users?"</h4>
+<p>Answer:</p>
+<pre class="ascii">10K registered users
+       ↓
+Historical DAU
+       ↓
+Peak active users
+       ↓
+Peak simultaneous AI requests
+       ↓
+Load-test validation
+</pre>
+<h4>"Why L4?"</h4>
+<pre class="ascii">33B model
+   ↓
+INT4
+   ↓
+~17GB weights
+   ↓
++ KV
++ runtime
++ activation
++ headroom
+   ↓
+~23GB
+   ↓
+24GB GPU
+   ↓
+L4/A10G class
+</pre>
+<p>The uploaded notes specifically show the same reasoning: L4/A10G at 24 GB can fit the illustrative workload, while T4 at 16 GB cannot.</p>
+<h4>"Why not T4?"</h4>
+<pre class="ascii">T4
+16GB
+ │
+ ▼
+33B INT4
+~16.5GB
+ │
+ X
+ │
+No room for
+KV/runtime/headroom
+</pre>
+<h4>"Why not A100?"</h4>
+<pre class="ascii">A100
+80GB
+ │
+ ✓
+ │
+But:
+ │
+ ├── significantly higher cost
+ └── unused memory for this workload
+
+L4
+24GB
+ │
+ ✓
+ │
+ └── better cost/workload fit
+</pre>
+<p>The architectural principle from your notes is:</p>
+<blockquote><strong>Choose the cheapest GPU that satisfies fit, quality, latency and concurrency—not simply the cheapest GPU.</strong></blockquote>
+</div>
+</details>
+<details class="section">
+<summary><span class="num">30.</span> The CTO-level answer</summary>
+<div class="body">
+<p>If the interviewer asks:</p>
+<blockquote><strong>"Why did you architect IDFC Coder this way?"</strong></blockquote>
+<p>Your answer structure should be:</p>
+<pre class="ascii">I started with the workload,
+not the infrastructure.
+
+              ↓
+
+10K users
+              ↓
+
+Peak concurrency
+              ↓
+
+Request rate
+              ↓
+
+Model/context requirements
+              ↓
+
+VRAM
+              ↓
+
+Quantization
+              ↓
+
+GPU selection
+              ↓
+
+Inference benchmark
+              ↓
+
+GPU count
+              ↓
+
+Multi-AZ architecture
+              ↓
+
+Autoscaling
+              ↓
+
+Security
+              ↓
+
+Observability
+              ↓
+
+DR
+              ↓
+
+TCO
+</pre>
+<p>That is much stronger than saying:</p>
+<blockquote>"We used EC2, EKS, Redis and GPU."</blockquote>
+</div>
+</details>
+<details class="section">
+<summary><span class="num">31.</span> The mental model I want you to memorize</summary>
+<div class="body">
+<p>When somebody gives you <strong>any LLM system-design problem</strong>, immediately draw:</p>
+<pre class="ascii">USER
+ │
+ ▼
+EDGE
+ │
+ ▼
+AUTH
+ │
+ ▼
+API
+ │
+ ▼
+PROMPT GATEWAY
+ │
+ ├── RATE LIMIT
+ ├── SECURITY
+ ├── CONTEXT
+ └── ROUTING
+ │
+ ▼
+QUEUE
+ │
+ ▼
+INFERENCE ROUTER
+ │
+ ├──────────────┬──────────────┐
+ ▼              ▼              ▼
+GPU            GPU            GPU
+ │              │              │
+vLLM           vLLM           vLLM
+ │              │              │
+LLM            LLM            LLM
+ └──────────────┼──────────────┘
+                ▼
+          STREAM RESPONSE
+                │
+                ▼
+              USER
+</pre>
+<p>Then ask yourself <strong>seven questions</strong>:</p>
+<pre class="ascii">1. How many users?
+
+2. How many concurrent?
+
+3. How many requests/sec?
+
+4. What model and context size?
+
+5. How much VRAM?
+
+6. How many requests can ONE GPU serve?
+
+7. What happens when one GPU / AZ / region fails?
+</pre>
+<p>Once you can answer those seven, you can defend almost the entire architecture.</p>
+<p><strong>And one correction to keep your interview story credible:</strong> if you didn't personally implement every component, don't claim that you did. Say <strong>"I designed/led the architecture"</strong>, <strong>"my design was..."</strong>, or <strong>"the production design would..."</strong> as appropriate. You can still demonstrate end-to-end DevOps knowledge without making a factual claim about hands-on implementation you didn't perform.</p>
+</div>
+</details>
+</body>
+</html>
