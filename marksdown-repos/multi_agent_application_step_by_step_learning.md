@@ -1,0 +1,879 @@
+# Building a Multi-Agent Application — Step-by-Step Learning Guide
+
+## Goal
+
+Build a **Multi-Agent Software Engineering Assistant** while learning AI agents, tools, orchestration, memory, evaluation, harnesses, and long-running agents.
+
+```text
+                         USER
+                           |
+                           v
+                  +----------------+
+                  | ORCHESTRATOR   |
+                  +-------+--------+
+                          |
+          +---------------+---------------+
+          |               |               |
+          v               v               v
+      Architect         Coder           Tester
+          |               |               |
+          +---------------+---------------+
+                          |
+                          v
+                       Reviewer
+                          |
+                          v
+                    Final Response
+```
+
+---
+
+# Phase 0 — Understand the Problem
+
+### Prompt 1 — Act as my AI Architect
+
+```text
+I want to learn how to build AI agents and multi-agent systems.
+
+You are my AI Architect and mentor.
+
+We are going to build a Multi-Agent Software Engineering Assistant.
+
+The system should eventually have:
+
+1. Orchestrator Agent
+2. Requirements Agent
+3. Architect Agent
+4. Coding Agent
+5. Testing Agent
+6. Code Review Agent
+
+Do NOT write code yet.
+
+First explain:
+
+1. What problem our application solves
+2. What each agent does
+3. Which decisions should be made by the orchestrator
+4. Which parts should be deterministic
+5. What tools each agent will need
+6. What information needs to persist between agents
+7. How agents communicate
+
+Use simple language and ASCII diagrams.
+
+Act as a teacher. I want to understand the architecture before implementation.
+```
+
+### What you learn
+
+```text
+Problem
+   ↓
+Agents
+   ↓
+Responsibilities
+   ↓
+Tools
+   ↓
+Memory
+   ↓
+Communication
+```
+
+---
+
+# Phase 1 — Start With ONE LLM
+
+Do **not** build multi-agent yet.
+
+### Prompt 2 — Build the simplest version
+
+```text
+Now build Version 1 of the application.
+
+Important:
+Do NOT create multiple agents.
+
+Create the simplest possible application:
+
+User
+  ↓
+LLM
+  ↓
+Response
+
+The user should be able to enter a software requirement and receive an architecture proposal.
+
+Use Python.
+
+Explain:
+
+1. Project structure
+2. Dependencies
+3. How the LLM call works
+4. How prompts are constructed
+5. How the response is returned
+
+Keep the implementation simple.
+
+After giving the design, generate the code.
+
+Explain every important piece because I am learning.
+```
+
+You learn:
+
+```text
+Application
+     |
+     v
+Prompt
+     |
+     v
+LLM API
+     |
+     v
+Response
+```
+
+---
+
+# Phase 2 — Add Tools
+
+### Prompt 3 — Add a tool
+
+```text
+Extend Version 1.
+
+Add a simple tool called:
+
+get_project_files()
+
+The tool should return the files available in the project.
+
+The LLM should be able to decide when it needs this tool.
+
+Do NOT introduce multiple agents yet.
+
+Explain:
+
+1. What is a tool?
+2. How does the LLM decide to call it?
+3. What happens after the tool returns?
+4. How does the result come back to the LLM?
+
+Show the execution loop using ASCII.
+
+Then implement it.
+```
+
+You should now understand:
+
+```text
+             LLM
+              |
+        "I need files"
+              |
+              v
+            TOOL
+              |
+              v
+          Tool Result
+              |
+              v
+             LLM
+              |
+              v
+           Answer
+```
+
+This is the basic **agent loop**.
+
+---
+
+# Phase 3 — Add the First Agent
+
+### Prompt 4 — Requirements Agent
+
+```text
+Now convert our single-agent application into an agent-based system.
+
+Create:
+
+RequirementsAgent
+
+Its responsibility is ONLY:
+
+1. Understand the user's requirement
+2. Identify missing information
+3. Convert the requirement into structured requirements
+4. Produce acceptance criteria
+
+Do not allow this agent to write code.
+
+Create a clear interface:
+
+RequirementsAgent.run(requirement)
+
+Return structured JSON.
+
+Show:
+
+User
+ ↓
+Requirements Agent
+ ↓
+Structured Requirements
+
+Explain why this is an agent rather than just another function.
+
+Then implement it.
+```
+
+**Lesson:** An agent should have a clear responsibility.
+
+---
+
+# Phase 4 — Add the Architect Agent
+
+### Prompt 5 — Architect Agent
+
+```text
+Add an ArchitectAgent.
+
+Responsibilities:
+
+1. Receive the structured requirements from RequirementsAgent
+2. Design the system architecture
+3. Identify services/components
+4. Define APIs
+5. Define database requirements
+6. Identify important technical risks
+
+The ArchitectAgent must NOT write implementation code.
+
+Create this flow:
+
+User
+ ↓
+RequirementsAgent
+ ↓
+ArchitectAgent
+ ↓
+Architecture
+
+Show the data contract between the two agents.
+
+Use typed Python models for the communication.
+
+Then implement it.
+
+Explain why structured output is better than passing free-form text between agents.
+```
+
+Now:
+
+```text
+User
+ |
+ v
+Requirements Agent
+ |
+ | JSON
+ v
+Architect Agent
+ |
+ v
+Architecture
+```
+
+---
+
+# Phase 5 — Introduce the Orchestrator
+
+### Prompt 6 — Orchestrator
+
+```text
+Now introduce an OrchestratorAgent.
+
+The orchestrator is responsible for coordinating the other agents.
+
+It should decide:
+
+1. Which agent should run
+2. What information should be passed
+3. Whether another agent is required
+4. When the workflow is complete
+
+Initial workflow:
+
+User
+ ↓
+Orchestrator
+ ↓
+RequirementsAgent
+ ↓
+ArchitectAgent
+ ↓
+Orchestrator
+ ↓
+Final Result
+
+Important:
+
+Do NOT let agents directly call each other.
+
+The Orchestrator should control the workflow.
+
+Explain why centralized orchestration is useful.
+
+Show the state machine using ASCII.
+
+Then implement it.
+```
+
+You should now understand:
+
+```text
+                 ORCHESTRATOR
+                /      |                     v       v       v
+       Requirements Architect  Coder
+```
+
+The orchestrator is the **manager of your AI team**.
+
+---
+
+# Phase 6 — Add Coding Agent
+
+### Prompt 7 — Coding Agent
+
+```text
+Add a CodingAgent.
+
+The CodingAgent receives:
+
+1. Structured requirements
+2. Architecture
+3. Existing project files
+
+Its responsibility is to implement ONE feature at a time.
+
+Important rules:
+
+- Never modify unrelated files
+- Explain what it intends to change
+- Make the smallest useful change
+- Run tests after implementation
+- Return changed files and test results
+
+Do not allow the CodingAgent to decide the overall project plan.
+
+The Orchestrator remains responsible for coordination.
+
+Implement this and explain the architecture.
+```
+
+Now:
+
+```text
+                 ORCHESTRATOR
+                       |
+              +--------+--------+
+              |                 |
+              v                 v
+       Requirements         Architect
+              |                 |
+              +--------+--------+
+                       |
+                       v
+                     Coder
+                       |
+                       v
+                    Code
+```
+
+---
+
+# Phase 7 — Add Testing Agent
+
+### Prompt 8 — Testing Agent
+
+```text
+Add a TestingAgent.
+
+The TestingAgent receives the current project state.
+
+Responsibilities:
+
+1. Understand the intended behavior
+2. Create/run appropriate tests
+3. Identify failures
+4. Return structured test results
+5. Never silently declare success
+
+Return:
+
+{
+  "passed": true/false,
+  "failures": [],
+  "recommendations": []
+}
+
+The Orchestrator should decide what to do with the result.
+
+Create this loop:
+
+Coder
+ ↓
+TestingAgent
+ ↓
+PASS?
+ ├── YES → Reviewer
+ └── NO  → Coder
+
+Implement this.
+
+Explain why the testing agent should be independent from the coding agent.
+```
+
+Now:
+
+```text
+             +----------------+
+             | ORCHESTRATOR   |
+             +-------+--------+
+                     |
+                     v
+                   CODER
+                     |
+                     v
+                  TESTER
+                     |
+                +----+----+
+                |         |
+              PASS      FAIL
+                |         |
+                v         v
+             REVIEW      CODER
+```
+
+You've built an **agent feedback loop**.
+
+---
+
+# Phase 8 — Add Code Reviewer
+
+### Prompt 9 — Reviewer Agent
+
+```text
+Add a CodeReviewAgent.
+
+The reviewer should independently review the implementation.
+
+Check:
+
+1. Correctness
+2. Security
+3. Maintainability
+4. Architecture compliance
+5. Error handling
+6. Test coverage
+7. Performance concerns
+
+The reviewer must NOT modify code.
+
+Return structured findings:
+
+CRITICAL
+HIGH
+MEDIUM
+LOW
+
+The Orchestrator decides whether the CodingAgent should fix anything.
+
+Implement this.
+
+Show the complete multi-agent flow using ASCII.
+```
+
+Now:
+
+```text
+             ORCHESTRATOR
+                  |
+                  v
+                CODER
+                  |
+                  v
+               TESTER
+                  |
+                 PASS
+                  |
+                  v
+              REVIEWER
+                  |
+             +----+----+
+             |         |
+           GOOD       ISSUES
+             |         |
+             v         v
+            DONE      CODER
+```
+
+---
+
+# Phase 9 — Add Agent Memory
+
+### Prompt 10 — Persistent State
+
+```text
+Our application currently loses important state between runs.
+
+Add persistent project state.
+
+Create:
+
+project_state.json
+
+It should contain:
+
+1. Requirements
+2. Architecture
+3. Features
+4. Completed features
+5. Current feature
+6. Test results
+7. Review results
+8. Known issues
+
+The agents should never rely only on their context window.
+
+Show:
+
+Context Window
+      ≠
+Project Memory
+
+Explain how persistent state allows a new agent session to continue previous work.
+
+Implement this.
+```
+
+Now:
+
+```text
+             PROJECT MEMORY
+                   |
+       +-----------+-----------+
+       |           |           |
+ Requirements  Architecture  Progress
+       |           |           |
+       +-----------+-----------+
+                   |
+                   v
+               Agents
+```
+
+---
+
+# Phase 10 — Add Git
+
+### Prompt 11 — Git as Memory
+
+```text
+Add Git integration to the application.
+
+After every successful feature:
+
+1. Run tests
+2. Run review
+3. Update project state
+4. Create a Git commit
+5. Store a meaningful commit message
+
+If implementation fails, do not commit broken work.
+
+The agent should be able to inspect Git history before starting work.
+
+Explain why Git is useful as external memory and recovery.
+
+Implement this safely.
+```
+
+Your architecture now has:
+
+```text
+             PROJECT
+                |
+       +--------+--------+
+       |        |        |
+      Code     State     Git
+       |        |        |
+       +--------+--------+
+                |
+              Agents
+```
+
+---
+
+# Phase 11 — Add Feature Planning
+
+### Prompt 12 — Feature Planner
+
+```text
+Add a FeaturePlannerAgent.
+
+Input:
+
+A large software requirement.
+
+Output:
+
+A list of small independently testable features.
+
+Example:
+
+"Build an e-commerce platform"
+
+becomes:
+
+1. User registration
+2. Login
+3. Product listing
+4. Product details
+5. Shopping cart
+6. Checkout
+7. Payment
+8. Order history
+
+Each feature must have:
+
+- ID
+- Description
+- Dependencies
+- Acceptance criteria
+- Status
+
+The system must implement only ONE feature at a time.
+
+Explain why this makes long-running agents more reliable.
+
+Implement it.
+```
+
+Now:
+
+```text
+BIG REQUIREMENT
+       |
+       v
+ FEATURE PLANNER
+       |
+       v
++------+------+------+------+
+| F001 | F002 | F003 | F004 |
++------+------+------+------+
+   |
+   v
+ ONE FEATURE AT A TIME
+```
+
+---
+
+# Phase 12 — Make It a True Long-Running Agent
+
+### Prompt 13 — Long-running Agent
+
+```text
+Transform the application into a long-running autonomous engineering agent.
+
+Requirements:
+
+1. It must be able to stop after completing one feature.
+2. It must persist project state.
+3. It must commit successful work.
+4. It must leave the project in a clean state.
+5. A new session must be able to continue from the previous session.
+6. It must read Git history before working.
+7. It must read project_state.json.
+8. It must select the next unfinished feature.
+9. It must run tests.
+10. It must stop when the current feature is complete.
+
+Do NOT allow the agent to blindly work on the entire project.
+
+The lifecycle should be:
+
+START
+ ↓
+READ STATE
+ ↓
+READ GIT
+ ↓
+SELECT FEATURE
+ ↓
+IMPLEMENT
+ ↓
+TEST
+ ↓
+REVIEW
+ ↓
+COMMIT
+ ↓
+UPDATE STATE
+ ↓
+CLEAN STATE
+ ↓
+STOP
+
+Explain how this implements the principles of long-running agents and harnesses.
+```
+
+This brings together the concepts from the Anthropic articles on agents, harnesses, and managed agents.
+
+---
+
+# Final Architecture
+
+After completing all the prompts:
+
+```text
+                         USER
+                           |
+                           v
+                  +----------------+
+                  | ORCHESTRATOR   |
+                  +-------+--------+
+                          |
+                    +-----+-----+
+                    |           |
+                    v           v
+               REQUIREMENTS   PLANNER
+                    |           |
+                    +-----+-----+
+                          |
+                          v
+                     ARCHITECT
+                          |
+                          v
+                       CODER
+                          |
+                          v
+                       TESTER
+                          |
+                    +-----+-----+
+                    |           |
+                   FAIL        PASS
+                    |           |
+                    v           v
+                  CODER      REVIEWER
+                                |
+                           +----+----+
+                           |         |
+                         ISSUES     GOOD
+                           |         |
+                           v         v
+                         CODER      COMMIT
+                                      |
+                                      v
+                              PROJECT STATE
+                                      |
+                                      v
+                                    Git
+```
+
+And underneath everything:
+
+```text
+                    HARNESS
+                       |
+       +---------------+---------------+
+       |               |               |
+       v               v               v
+    Agents           Tools          Memory
+       |               |               |
+       v               v               v
+    Claude          Shell/Git     Project State
+                                   + Git
+```
+
+---
+
+# The Learning Path
+
+Don't think:
+
+```text
+"I am building one application."
+```
+
+Think:
+
+```text
+I am learning AI architecture
+           |
+           v
+       LLM Call
+           |
+           v
+        Tools
+           |
+           v
+         Agent
+           |
+           v
+       Agent Loop
+           |
+           v
+        Workflow
+           |
+           v
+     Multiple Agents
+           |
+           v
+      Orchestrator
+           |
+           v
+     Feedback Loop
+           |
+           v
+        Memory
+           |
+           v
+        Harness
+           |
+           v
+    Long-Running Agent
+           |
+           v
+   Production Agent System
+```
+
+Only after understanding these concepts should you introduce a framework such as LangGraph.
+
+```text
+                 YOUR ARCHITECTURE
+                        |
+                        v
+                  LangGraph
+                  /       \
+                 /         \
+        State Machine    Tool Calling
+                 |
+                 v
+          Multi-Agent Runtime
+```
+
+The goal is to understand **what the framework is actually doing**, rather than learning a framework and assuming the framework itself is the architecture.
+
+---
+
+# Learning Rule
+
+For every piece of code Claude generates, ask:
+
+> **"Why do we need this? What problem does it solve? What would happen if we removed it?"**
+
+That habit will teach AI architecture much faster than simply following tutorials.
