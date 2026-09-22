@@ -1,4 +1,4 @@
-# https://openai.com/index/speeding-up-agentic-workflows-with-websockets/
+https://openai.com/index/speeding-up-agentic-workflows-with-websockets/
 
 # Speeding Up Agentic Workflows with WebSockets
 
