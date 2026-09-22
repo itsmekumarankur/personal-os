@@ -1,3 +1,5 @@
+# https://openai.com/index/speeding-up-agentic-workflows-with-websockets/
+
 # Speeding Up Agentic Workflows with WebSockets
 
 ## A 6-minute easy explanation from an AI + Software Architect perspective
