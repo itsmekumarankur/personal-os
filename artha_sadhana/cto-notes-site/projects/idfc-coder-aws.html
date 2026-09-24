@@ -151,7 +151,7 @@
   <button onclick="document.querySelectorAll('details').forEach(d=>d.open=false)">Collapse all</button>
 </div>
 <details class="category">
-<summary>Request Flow Walkthrough <span class="range">(sections 1–9)</span></summary>
+<summary>Request Flow Walkthrough </summary>
 <div class="cat-body">
 <details class="section">
 <summary><span class="num">1.</span> The architecture I would present</summary>
@@ -344,7 +344,11 @@ WAF decides: “Is this request safe enough to enter the application?”
 <details class="section">
 <summary><span class="num">6.</span> Step 4 — ALB</summary>
 <div class="body">
-<p>ALB distributes traffic across API servers.</p>
+ALB (Application Load Balancer) = Traffic manager for your application.
+
+Distributes traffic across multiple servers so one server doesn't get overloaded.
+Checks server health and avoids sending traffic to unhealthy servers.
+Can route requests based on URL/path, e.g. /payment → Payment Service, /order → Order Service.
 <pre class="ascii">                     ALB
                       │
           ┌───────────┼───────────┐
@@ -478,7 +482,7 @@ Inference Router
 </div>
 </details>
 <details class="category">
-<summary>GPU Capacity &amp; Inference Engine <span class="range">(sections 10–14)</span></summary>
+<summary>GPU Capacity &amp; Inference Engine </summary>
 <div class="cat-body">
 <details class="section">
 <summary><span class="num">10.</span> The GPU architecture</summary>
@@ -509,23 +513,6 @@ Headroom             ~1 GB
                      -------
 Total                ~23 GB
 </pre>
-<p>Therefore:</p>
-<pre class="ascii">T4
-16 GB
-  │
-  X
-  │
-Cannot fit
-
-
-L4
-24 GB
-  │
-  ✓
-  │
-Can fit
-</pre>
-<p>This is exactly the architectural reasoning in your notes.</p>
 </div>
 </details>
 <details class="section">
@@ -559,8 +546,7 @@ Can fit
 =
 6 model replicas
 </pre>
-<p>But here's the critical interview point:</p>
-<p><strong>You cannot derive the correct number of GPUs from "10,000 users."</strong></p>
+<p><strong>NOTE - You cannot derive the correct number of GPUs from "10,000 users."</strong></p>
 <p>Your source itself frames GPU count as a consequence of workload, VRAM and concurrency rather than user count.</p>
 </div>
 </details>
@@ -662,7 +648,7 @@ while meeting our latency SLA
              33B INT4
                 LLM
 </pre>
-<p>vLLM handles:</p>
+<p>vLLM handles:</p> 
 <pre class="ascii">request scheduling
 continuous batching
 KV-cache management
@@ -674,7 +660,7 @@ streaming
 </div>
 </details>
 <details class="section">
-<summary><span class="num">14.</span> What happens inside vLLM</summary>
+<summary><span class="num">14.</span> What happens inside vLLM</summary> vLLM = a high-performance server for running LLMs.
 <div class="body">
 <p>Suppose:</p>
 <pre class="ascii">User A → Generate REST API
@@ -704,13 +690,12 @@ User D → Explain this function
                    ▼
              Token streams
 </pre>
-<p>This is why <strong>concurrency and batching become architectural variables</strong> after the model fits. Your notes explicitly distinguish fit from subsequent latency/throughput/concurrency optimization.</p>
 </div>
 </details>
 </div>
 </details>
 <details class="category">
-<summary>Model Storage &amp; Deployment <span class="range">(sections 15–17)</span></summary>
+<summary>Model Storage &amp; Deployment </summary>
 <div class="cat-body">
 <details class="section">
 <summary><span class="num">15.</span> Model storage</summary>
@@ -842,7 +827,7 @@ CI/CD
 </div>
 </details>
 <details class="category">
-<summary>Scaling &amp; Failure Handling <span class="range">(sections 18–20)</span></summary>
+<summary>Scaling &amp; Failure Handling </summary>
 <div class="cat-body">
 <details class="section">
 <summary><span class="num">18.</span> Autoscaling</summary>
@@ -950,292 +935,9 @@ AZ-C
 </details>
 </div>
 </details>
+
 <details class="category">
-<summary>Complete Architecture &amp; Supporting Infra <span class="range">(sections 21–24)</span></summary>
-<div class="cat-body">
-<details class="section">
-<summary><span class="num">21.</span> Complete production architecture</summary>
-<div class="body">
-<p>This is the <strong>one diagram I recommend memorizing</strong>.</p>
-<pre class="ascii">                         DEVELOPERS
-                    10,000 registered
-                            │
-                            ▼
-                   ┌────────────────┐
-                   │ IDFC CODER IDE │
-                   └───────┬────────┘
-                           │
-                         HTTPS
-                           │
-                           ▼
-                    ┌──────────────┐
-                    │   Route 53   │
-                    └──────┬───────┘
-                           │
-                           ▼
-                    ┌──────────────┐
-                    │  CloudFront  │
-                    └──────┬───────┘
-                           │
-                           ▼
-                    ┌──────────────┐
-                    │     WAF      │
-                    └──────┬───────┘
-                           │
-                           ▼
-                    ┌──────────────┐
-                    │     ALB      │
-                    └──────┬───────┘
-                           │
-          ┌────────────────┼─────────────────┐
-          │                │                 │
-          ▼                ▼                 ▼
-      API-01            API-02            API-N
-      ECS/EC2           ECS/EC2           ECS/EC2
-          │                │                 │
-          └────────────────┼─────────────────┘
-                           │
-                           ▼
-                 ┌──────────────────┐
-                 │ Prompt Gateway   │
-                 │                  │
-                 │ Auth             │
-                 │ Rate Limit       │
-                 │ Policy           │
-                 │ Context          │
-                 └────────┬─────────┘
-                          │
-              ┌───────────┼────────────┐
-              │           │            │
-              ▼           ▼            ▼
-           Redis       Metadata      Audit
-                         DB           Logs
-              │
-              ▼
-        ┌───────────────┐
-        │ Kafka / SQS   │
-        │ Request Queue │
-        └───────┬───────┘
-                │
-                ▼
-       ┌─────────────────────┐
-       │ Inference Router    │
-       └──────────┬──────────┘
-                  │
-       ┌──────────┼───────────┐
-       │          │           │
-       ▼          ▼           ▼
-     AZ-A       AZ-B        AZ-C
-       │          │           │
-   ┌───┴───┐  ┌───┴───┐   ┌───┴───┐
-   │GPU    │  │GPU    │   │GPU    │
-   │L4     │  │L4     │   │L4     │
-   ├───────┤  ├───────┤   ├───────┤
-   │vLLM   │  │vLLM   │   │vLLM   │
-   │33B    │  │33B    │   │33B    │
-   │INT4   │  │INT4   │   │INT4   │
-   └───┬───┘  └───┬───┘   └───┬───┘
-       │          │           │
-       └──────────┼───────────┘
-                  │
-                  ▼
-             Generated Code
-                  │
-                  ▼
-             Token Streaming
-                  │
-                  ▼
-              Developer
-</pre>
-
-</div>
-</details>
-<details class="section">
-<summary><span class="num">22.</span> Supporting AWS services</summary>
-<div class="body">
-<p>I would explain the AWS services in groups rather than listing 30 services.</p>
-<pre class="ascii">EDGE
-│
-├── Route 53
-├── CloudFront
-└── WAF
-
-COMPUTE
-│
-├── EC2
-├── EKS
-└── Auto Scaling
-
-GPU
-│
-└── L4 GPU EC2 instances
-
-NETWORK
-│
-├── VPC
-├── Public Subnets
-├── Private Subnets
-├── NAT Gateway
-├── ALB
-└── Security Groups
-
-DATA
-│
-├── S3
-├── RDS / Aurora
-├── DynamoDB
-├── ElastiCache Redis
-└── EBS/NVMe
-
-MESSAGING
-│
-├── Kafka / MSK
-└── SQS
-
-CONTAINER
-│
-└── ECR
-
-SECURITY
-│
-├── IAM
-├── KMS
-├── Secrets Manager
-└── CloudTrail
-
-OBSERVABILITY
-│
-├── CloudWatch
-├── Prometheus
-├── Grafana
-└── OpenTelemetry
-
-DEVOPS
-│
-├── CodePipeline/GitHub
-├── CI/CD
-├── ECR
-└── EKS deployment
-</pre>
-
-</div>
-</details>
-<details class="section">
-<summary><span class="num">23.</span> Network architecture — the part you should know deeply</summary>
-<div class="body">
-<p>This is how I would draw the VPC.</p>
-<pre class="ascii">                         AWS VPC
-                    10.0.0.0/16
-                         │
-        ┌────────────────┼────────────────┐
-        │                │                │
-        ▼                ▼                ▼
-       AZ-A             AZ-B             AZ-C
-        │                │                │
- ┌──────┼──────┐  ┌──────┼──────┐  ┌──────┼──────┐
- │             │  │             │  │             │
- ▼             ▼  ▼             ▼  ▼             ▼
-
-Public        Private          Public        Private
-Subnet        Subnet           Subnet        Subnet
- │               │               │              │
- ▼               ▼               ▼              ▼
-ALB             API             ALB            API
-                │
-                ▼
-             Redis
-                │
-                ▼
-             Kafka
-                │
-                ▼
-            GPU Nodes
-</pre>
-<p>And importantly:</p>
-<pre class="ascii">INTERNET
-   │
-   ▼
-CloudFront
-   │
-   ▼
-WAF
-   │
-   ▼
-ALB
-   │
-   ▼
-PRIVATE SUBNET
-   │
-   ├── API
-   ├── Redis
-   ├── Kafka
-   └── GPU
-</pre>
-<p><strong>GPU instances should not be directly exposed to the internet.</strong></p>
-</div>
-</details>
-<details class="section">
-<summary><span class="num">24.</span> Security architecture</summary>
-<div class="body">
-<p>For a banking environment, I would emphasize:</p>
-<pre class="ascii">                  Developer
-                     │
-                  HTTPS/TLS
-                     │
-                     ▼
-                    WAF
-                     │
-                     ▼
-                    ALB
-                     │
-                     ▼
-                  API Layer
-                     │
-            ┌────────┼─────────┐
-            ▼        ▼         ▼
-           IAM     Secrets    KMS
-                     │
-                     ▼
-               Private Network
-                     │
-                     ▼
-                GPU Cluster
-                     │
-                     ▼
-                   LLM
-</pre>
-<p>Security controls:</p>
-<pre class="ascii">IAM
- │
- ├── least privilege
- ├── role-based access
- └── workload identity
-
-KMS
- │
- ├── S3 encryption
- ├── DB encryption
- └── secrets encryption
-
-Secrets Manager
- │
- └── API credentials
-
-Security Groups
- │
- └── service-to-service restrictions
-
-Private Subnets
- │
- └── GPU isolation
-</pre>
-
-</div>
-</details>
-</div>
-</details>
-<details class="category">
-<summary>Observability &amp; Disaster Recovery <span class="range">(sections 25–26)</span></summary>
+<summary>Observability <span class="range"></span></summary>
 <div class="cat-body">
 <details class="section">
 <summary><span class="num">25.</span> Observability</summary>
@@ -1283,317 +985,6 @@ Total GPUs                   30
 
 </div>
 </details>
-<details class="section">
-<summary><span class="num">26.</span> Disaster recovery</summary>
-<div class="body">
-<p>You should be able to answer:</p>
-<blockquote>"What happens if the inference cluster goes down?"</blockquote>
-<pre class="ascii">Primary Region
-      │
-      ├── API
-      ├── Redis
-      ├── Kafka
-      └── GPU Cluster
-             │
-             X
-          FAILURE
-             │
-             ▼
-       DR Strategy
-             │
-             ▼
-      Secondary Region
-             │
-             ▼
-       GPU capacity
-</pre>
-<p>But there is a major cost decision:</p>
-<pre class="ascii">FULL GPU DR
-     │
-     ├── Excellent RTO
-     └── Very expensive
 
-WARM DR
-     │
-     ├── Some GPU capacity
-     └── Moderate cost
-
-COLD DR
-     │
-     ├── Provision GPUs on demand
-     └── Cheap but high RTO
-</pre>
-<p>This connects directly back to your TCO reasoning: infrastructure isn't just GPU price; it includes operations, networking, monitoring, security, backup/DR and engineering cost.</p>
-</div>
-</details>
-</div>
-</details>
-<details class="category">
-<summary>Interview Defense — Numbers &amp; Mental Model <span class="range">(sections 27–31)</span></summary>
-<div class="cat-body">
-<details class="section">
-<summary><span class="num">27.</span> Production numbers — how I would present them</summary>
-<div class="body">
-<p>Don't say:</p>
-<blockquote>"We had 10,000 users, therefore we deployed 100 EC2s."</blockquote>
-<p>Instead:</p>
-<pre class="ascii">BUSINESS
-   │
-   ▼
-10,000 registered users
-   │
-   ▼
-2,000 DAU
-   │
-   ▼
-500 peak concurrent
-   │
-   ▼
-100 peak AI RPS
-   │
-   ▼
-LLM benchmark
-   │
-   ├── latency SLA
-   ├── tokens/sec
-   ├── concurrency/GPU
-   └── VRAM
-          │
-          ▼
-       GPU count
-          │
-          ▼
-    + HA/headroom
-          │
-          ▼
-   Production capacity
-</pre>
-<p>That is <strong>architect thinking</strong>.</p>
-</div>
-</details>
-<details class="section">
-<summary><span class="num">28.</span> The most important sizing table</summary>
-<div class="body">
-<p>For your interview preparation, memorize this structure:</p>
-<table class="md-table">
-<thead><tr><th>Layer</th><th>Initial production sizing</th></tr></thead>
-<tbody>
-<tr><td>Registered users</td><td>10,000</td></tr>
-<tr><td>Peak concurrent</td><td>~500*</td></tr>
-<tr><td>API instances</td><td>6–12 minimum/desired*</td></tr>
-<tr><td>Max API instances</td><td>~30*</td></tr>
-<tr><td>Redis</td><td>Multi-AZ / managed</td></tr>
-<tr><td>Queue</td><td>Kafka/SQS</td></tr>
-<tr><td>GPU type</td><td>L4 24 GB*</td></tr>
-<tr><td>Model</td><td>33B INT4*</td></tr>
-<tr><td>vLLM replicas</td><td>1 per GPU*</td></tr>
-<tr><td>GPU nodes</td><td>~10–30 depending on benchmark*</td></tr>
-<tr><td>Availability zones</td><td>3</td></tr>
-<tr><td>Model storage</td><td>S3</td></tr>
-<tr><td>Container registry</td><td>ECR</td></tr>
-<tr><td>Container orchestration</td><td>EKS</td></tr>
-<tr><td>Monitoring</td><td>CloudWatch + Prometheus/Grafana</td></tr>
-<tr><td>Secrets</td><td>Secrets Manager</td></tr>
-<tr><td>Encryption</td><td>KMS</td></tr>
-<tr><td>Edge security</td><td>WAF</td></tr>
-<tr><td>Load balancing</td><td>ALB</td></tr>
-</tbody>
-</table>
-<p><code>*</code> = <strong>illustrative capacity assumptions, not facts about actual IDFC Coder production.</strong></p>
-</div>
-</details>
-<details class="section">
-<summary><span class="num">29.</span> The interviewer will attack your numbers</summary>
-<div class="body">
-<p>Be ready for:</p>
-<h4>"Why 500 concurrent users?"</h4>
-<p>Answer:</p>
-<pre class="ascii">10K registered users
-       ↓
-Historical DAU
-       ↓
-Peak active users
-       ↓
-Peak simultaneous AI requests
-       ↓
-Load-test validation
-</pre>
-<h4>"Why L4?"</h4>
-<pre class="ascii">33B model
-   ↓
-INT4
-   ↓
-~17GB weights
-   ↓
-+ KV
-+ runtime
-+ activation
-+ headroom
-   ↓
-~23GB
-   ↓
-24GB GPU
-   ↓
-L4/A10G class
-</pre>
-<p>The uploaded notes specifically show the same reasoning: L4/A10G at 24 GB can fit the illustrative workload, while T4 at 16 GB cannot.</p>
-<h4>"Why not T4?"</h4>
-<pre class="ascii">T4
-16GB
- │
- ▼
-33B INT4
-~16.5GB
- │
- X
- │
-No room for
-KV/runtime/headroom
-</pre>
-<h4>"Why not A100?"</h4>
-<pre class="ascii">A100
-80GB
- │
- ✓
- │
-But:
- │
- ├── significantly higher cost
- └── unused memory for this workload
-
-L4
-24GB
- │
- ✓
- │
- └── better cost/workload fit
-</pre>
-<p>The architectural principle from your notes is:</p>
-<blockquote><strong>Choose the cheapest GPU that satisfies fit, quality, latency and concurrency—not simply the cheapest GPU.</strong></blockquote>
-</div>
-</details>
-<details class="section">
-<summary><span class="num">30.</span> The CTO-level answer</summary>
-<div class="body">
-<p>If the interviewer asks:</p>
-<blockquote><strong>"Why did you architect IDFC Coder this way?"</strong></blockquote>
-<p>Your answer structure should be:</p>
-<pre class="ascii">I started with the workload,
-not the infrastructure.
-
-              ↓
-
-10K users
-              ↓
-
-Peak concurrency
-              ↓
-
-Request rate
-              ↓
-
-Model/context requirements
-              ↓
-
-VRAM
-              ↓
-
-Quantization
-              ↓
-
-GPU selection
-              ↓
-
-Inference benchmark
-              ↓
-
-GPU count
-              ↓
-
-Multi-AZ architecture
-              ↓
-
-Autoscaling
-              ↓
-
-Security
-              ↓
-
-Observability
-              ↓
-
-DR
-              ↓
-
-TCO
-</pre>
-<p>That is much stronger than saying:</p>
-<blockquote>"We used EC2, EKS, Redis and GPU."</blockquote>
-</div>
-</details>
-<details class="section">
-<summary><span class="num">31.</span> The mental model I want you to memorize</summary>
-<div class="body">
-<p>When somebody gives you <strong>any LLM system-design problem</strong>, immediately draw:</p>
-<pre class="ascii">USER
- │
- ▼
-EDGE
- │
- ▼
-AUTH
- │
- ▼
-API
- │
- ▼
-PROMPT GATEWAY
- │
- ├── RATE LIMIT
- ├── SECURITY
- ├── CONTEXT
- └── ROUTING
- │
- ▼
-QUEUE
- │
- ▼
-INFERENCE ROUTER
- │
- ├──────────────┬──────────────┐
- ▼              ▼              ▼
-GPU            GPU            GPU
- │              │              │
-vLLM           vLLM           vLLM
- │              │              │
-LLM            LLM            LLM
- └──────────────┼──────────────┘
-                ▼
-          STREAM RESPONSE
-                │
-                ▼
-              USER
-</pre>
-<p>Then ask yourself <strong>seven questions</strong>:</p>
-<pre class="ascii">1. How many users?
-
-2. How many concurrent?
-
-3. How many requests/sec?
-
-4. What model and context size?
-
-5. How much VRAM?
-
-6. How many requests can ONE GPU serve?
-
-7. What happens when one GPU / AZ / region fails?
-</pre>
-<p>Once you can answer those seven, you can defend almost the entire architecture.</p>
-<p><strong>And one correction to keep your interview story credible:</strong> if you didn't personally implement every component, don't claim that you did. Say <strong>"I designed/led the architecture"</strong>, <strong>"my design was..."</strong>, or <strong>"the production design would..."</strong> as appropriate. You can still demonstrate end-to-end DevOps knowledge without making a factual claim about hands-on implementation you didn't perform.</p>
-</div>
-</details>
-</div>
-</details>
 </body>
 </html>
