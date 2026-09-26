@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Architect Notes</title>
+  <style>
+    :root {
+      --bg:        #0b0d14;
+      --surface:   #13161f;
+      --surface2:  #1c2030;
+      --surface3:  #232740;
+      --border:    #2a2f47;
+      --accent:    #6366f1;
+      --accent-l:  #818cf8;
+      --cyan:      #22d3ee;
+      --text:      #e2e8f0;
+      --muted:     #7c87a0;
+      --radius:    10px;
+
+      --d1: #6366f1; --d1-bg: #6366f112;
+      --d2: #06b6d4; --d2-bg: #06b6d412;
+      --d3: #a855f7; --d3-bg: #a855f712;
+      --d4: #f59e0b; --d4-bg: #f59e0b12;
+      --d5: #10b981; --d5-bg: #10b98112;
+      --d6: #f43f5e; --d6-bg: #f43f5e12;
+      --d7: #f97316; --d7-bg: #f9731612;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ══ Header ══ */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 32px 0;
+      position: sticky; top: 0; z-index: 100;
+    }
+
+    .hdr-top {
+      display: flex; align-items: center;
+      justify-content: space-between; flex-wrap: wrap;
+      gap: 12px; margin-bottom: 16px;
+    }
+
+    .logo { display: flex; align-items: center; gap: 10px; }
+
+    .logo-icon {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, var(--accent), var(--cyan));
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 19px;
+    }
+
+    h1 { font-size: 20px; font-weight: 700; letter-spacing: -.3px; }
+    .sub { color: var(--muted); font-size: 12px; margin-top: 1px; }
+
+    .stats { display: flex; gap: 20px; }
+    .stat { text-align: center; }
+    .stat-n { font-size: 20px; font-weight: 700; color: var(--cyan); line-height: 1; }
+    .stat-l { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+
+    /* ══ Search ══ */
+    .search-row {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 16px; flex-wrap: wrap;
+    }
+
+    .sw { position: relative; flex: 1; max-width: 440px; }
+    .sw svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+
+    #search {
+      width: 100%; background: var(--surface2);
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 8px 13px 8px 36px; color: var(--text); font-size: 13px;
+      outline: none; transition: border-color .15s;
+    }
+    #search:focus { border-color: var(--accent); }
+    #search::placeholder { color: var(--muted); }
+
+    /* ══ Tabs ══ */
+    .tabs {
+      display: flex; gap: 0;
+      border-bottom: none;
+    }
+
+    .tab {
+      padding: 10px 20px; font-size: 13px; font-weight: 500;
+      color: var(--muted); cursor: pointer; border: none;
+      background: none; border-bottom: 2px solid transparent;
+      transition: color .15s, border-color .15s; white-space: nowrap;
+    }
+
+    .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+    .tab:hover:not(.active) { color: var(--text); }
+
+    /* ══ Main ══ */
+    main { max-width: 1140px; margin: 0 auto; padding: 32px 24px 72px; }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ══════════════════════════════════
+       7-DAY PLAN
+    ══════════════════════════════════ */
+
+    .plan-intro {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-bottom: 28px;
+      display: flex; gap: 14px; align-items: flex-start;
+    }
+
+    .plan-intro-icon { font-size: 28px; flex-shrink: 0; margin-top: 2px; }
+
+    .plan-intro h2 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .plan-intro p { font-size: 13px; color: var(--muted); line-height: 1.7; }
+
+    .plan-intro strong { color: var(--text); }
+
+    /* Day card */
+    .day-card {
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color .15s;
+    }
+
+    .day-card:hover { border-color: #444a6e; }
+
+    .day-header {
+      display: flex; align-items: center; gap: 0;
+      cursor: pointer; user-select: none;
+    }
+
+    .day-num {
+      width: 76px; min-height: 64px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 13px; flex-shrink: 0;
+      letter-spacing: .3px;
+    }
+
+    .day-meta {
+      flex: 1; padding: 14px 16px;
+      border-left: 1px solid var(--border);
+    }
+
+    .day-title { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
+    .day-note { font-size: 12px; color: var(--muted); line-height: 1.55; }
+
+    .day-right {
+      padding: 0 16px; display: flex; flex-direction: column;
+      align-items: flex-end; gap: 6px; flex-shrink: 0;
+    }
+
+    .day-pills { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+
+    .pill {
+      font-size: 10px; font-weight: 600; padding: 2px 8px;
+      border-radius: 20px; white-space: nowrap;
+    }
+
+    .pill-topics { background: #6366f120; color: #a5b4fc; }
+    .pill-articles { background: #22d3ee15; color: #67e8f9; }
+
+    .day-toggle { color: var(--muted); font-size: 11px; transition: transform .2s; }
+    .day-card.open .day-toggle { transform: rotate(180deg); }
+
+    /* Day body */
+    .day-body {
+      display: none;
+      border-top: 1px solid var(--border);
+    }
+
+    .day-card.open .day-body { display: grid; grid-template-columns: 1fr 1fr; }
+
+    @media (max-width: 640px) {
+      .day-card.open .day-body { grid-template-columns: 1fr; }
+      .day-right { display: none; }
+    }
+
+    .day-col {
+      padding: 16px 20px;
+    }
+
+    .day-col + .day-col { border-left: 1px solid var(--border); }
+
+    .col-title {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .8px; color: var(--muted);
+      margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+    }
+
+    .col-title::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    /* Topic item inside day */
+    .topic-item {
+      display: flex; align-items: center; gap: 9px;
+      padding: 8px 10px; border-radius: 7px;
+      text-decoration: none; color: var(--text);
+      background: var(--surface2);
+      margin-bottom: 6px;
+      border: 1px solid transparent;
+      transition: border-color .15s, background .15s;
+    }
+
+    .topic-item:hover { background: var(--surface3); border-color: var(--border); }
+    .topic-item:last-child { margin-bottom: 0; }
+
+    .t-icon { font-size: 15px; flex-shrink: 0; }
+
+    .t-text { flex: 1; }
+    .t-name { font-size: 13px; font-weight: 600; }
+    .t-type { font-size: 10px; color: var(--muted); }
+
+    /* Article item inside day */
+    .art-item {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 7px 10px; border-radius: 7px;
+      text-decoration: none; color: var(--text);
+      margin-bottom: 4px;
+      transition: background .12s;
+    }
+
+    .art-item:hover { background: var(--surface2); }
+    .art-item:last-child { margin-bottom: 0; }
+
+    .art-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--border); flex-shrink: 0; margin-top: 7px;
+    }
+
+    .art-item:hover .art-dot { background: var(--cyan); }
+
+    .art-title { font-size: 12.5px; line-height: 1.45; }
+
+    .art-tag {
+      font-size: 9px; font-weight: 700; padding: 1px 5px;
+      border-radius: 3px; flex-shrink: 0; margin-top: 2px;
+      background: #6366f130; color: #a5b4fc;
+    }
+
+    /* Day color classes */
+    .d1 { background: var(--d1-bg); color: var(--d1); }
+    .d2 { background: var(--d2-bg); color: var(--d2); }
+    .d3 { background: var(--d3-bg); color: var(--d3); }
+    .d4 { background: var(--d4-bg); color: var(--d4); }
+    .d5 { background: var(--d5-bg); color: var(--d5); }
+    .d6 { background: var(--d6-bg); color: var(--d6); }
+    .d7 { background: var(--d7-bg); color: var(--d7); }
+
+    .topic-item.d1:hover { border-color: var(--d1); }
+    .topic-item.d2:hover { border-color: var(--d2); }
+    .topic-item.d3:hover { border-color: var(--d3); }
+    .topic-item.d4:hover { border-color: var(--d4); }
+    .topic-item.d5:hover { border-color: var(--d5); }
+    .topic-item.d6:hover { border-color: var(--d6); }
+    .topic-item.d7:hover { border-color: var(--d7); }
+
+    /* ══════════════════════════════════
+       ALL ARTICLES VIEW
+    ══════════════════════════════════ */
+
+    .sec-hdr {
+      display: flex; align-items: center; gap: 10px;
+      margin: 36px 0 16px;
+    }
+
+    .sec-hdr:first-child { margin-top: 0; }
+
+    .sec-title {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .9px; color: var(--muted); white-space: nowrap;
+    }
+
+    .sec-line { flex: 1; height: 1px; background: var(--border); }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
+
+    .folder {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden; transition: border-color .15s;
+    }
+
+    .folder:hover { border-color: var(--accent); }
+
+    .fhdr {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 15px; cursor: pointer; user-select: none; gap: 8px;
+    }
+
+    .fl { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .fi { font-size: 15px; flex-shrink: 0; }
+    .fn { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .fr { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+
+    .cnt {
+      background: #6366f120; color: var(--cyan);
+      font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 20px;
+    }
+
+    .chev { color: var(--muted); font-size: 10px; transition: transform .2s; }
+    .folder.open .chev { transform: rotate(180deg); }
+
+    .flist { display: none; padding: 0 10px 10px; }
+    .folder.open .flist { display: block; }
+
+    .flink {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 6px 8px; border-radius: 6px;
+      text-decoration: none; color: var(--text);
+      transition: background .12s;
+    }
+
+    .flink:hover { background: var(--surface2); color: var(--cyan); }
+
+    .fdot { width: 4px; height: 4px; border-radius: 50%; background: var(--border); flex-shrink: 0; margin-top: 8px; }
+    .flink:hover .fdot { background: var(--cyan); }
+    .ftitle { font-size: 12.5px; line-height: 1.45; }
+
+    .ftag { font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 3px; flex-shrink: 0; margin-top: 2px; }
+    .ftag-md  { background: #6366f130; color: #a5b4fc; }
+    .ftag-txt { background: #06b6d415; color: #67e8f9; }
+
+    /* ══════════════════════════════════
+       STUDY TOPICS VIEW
+    ══════════════════════════════════ */
+
+    .ov-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+
+    .ov-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 16px;
+      text-decoration: none; color: var(--text);
+      display: flex; align-items: center; gap: 10px;
+      transition: border-color .15s, background .15s;
+    }
+
+    .ov-card:hover { border-color: var(--accent); background: var(--surface2); color: var(--cyan); }
+
+    .ov-icon { font-size: 20px; flex-shrink: 0; }
+    .ov-name { font-size: 13px; font-weight: 600; line-height: 1.4; }
+    .ov-sub { font-size: 10px; color: var(--muted); }
+
+    /* ══ No results ══ */
+    #no-results { display: none; text-align: center; color: var(--muted); padding: 60px 0; font-size: 14px; }
+
+    /* ══ Responsive ══ */
+    @media (max-width: 600px) {
+      header { padding: 14px 16px 0; }
+      main   { padding: 20px 14px 52px; }
+      .stats { gap: 14px; }
+      .grid, .ov-grid { grid-template-columns: 1fr; }
+      .tab  { padding: 9px 14px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-top">
+    <div class="logo">
+      <div class="logo-icon">🧠</div>
+      <div>
+        <h1>AI Architect Notes</h1>
+        <div class="sub">Personal knowledge base — marksdown-repos</div>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="stat-n">27</div><div class="stat-l">Articles</div></div>
+      <div class="stat"><div class="stat-n">7</div><div class="stat-l">Days</div></div>
+      <div class="stat"><div class="stat-n">15</div><div class="stat-l">Topics</div></div>
+    </div>
+  </div>
+
+  <div class="search-row">
+    <div class="sw">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input id="search" type="text" placeholder="Search anything…" autocomplete="off" />
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="plan">🗓 7-Day Plan</button>
+    <button class="tab" data-tab="articles">📄 All Articles</button>
+    <button class="tab" data-tab="topics">📚 Study Topics</button>
+  </div>
+</header>
+
+<main>
+  <div id="no-results">Nothing matched your search.</div>
+
+  <!-- ══════════════════════════════════════════
+       VIEW 1 — 7-DAY PLAN
+  ══════════════════════════════════════════ -->
+  <div class="view active" id="view-plan">
+
+    <div class="plan-intro">
+      <div class="plan-intro-icon">🎯</div>
+      <div>
+        <h2>Your 7-Day AI Architect Sprint</h2>
+        <p>
+          Each day is <strong>thematically sequenced</strong> — foundations first, then retrieval, then agents, then design, infrastructure, security, and finally operations.
+          Every day pairs <strong>overview notes</strong> (your study guide) with <strong>real articles</strong> (concrete examples).
+          Don't skip days — each one builds on the last.
+          Aim for <strong>2–3 hours per day</strong>. That's enough to go deep without burning out.
+        </p>
+      </div>
+    </div>
+
+    <!-- Day 1 -->
+    <div class="day-card open" data-day="1">
+      <div class="day-header" onclick="toggleDay(this)">
+        <div class="day-num d1">Sunday</div>
+        <div class="day-meta">
+          <div class="day-title">Foundations, Transformers &amp; LLM Architecture</div>
+          <div class="day-note">
+            Start with the <em>why before the how</em>. Understand attention and transformers before touching any framework.
+            These are the bedrock — every other topic in this plan builds directly on what you learn today.
+          </div>
+        </div>
+        <div class="day-right">
+          <div class="day-pills">
+            <span class="pill pill-topics">3 topics</span>
+            <span class="pill pill-articles">4 articles</span>
+          </div>
+          <div class="day-toggle">▼</div>
+        </div>
+      </div>
+      <div class="day-body">
+        <div class="day-col">
+          <div class="col-title">Study Topics</div>
+
+          <a class="topic-item d1" href="AI_fundamentals/overview.txt">
+            <span class="t-icon">📚</span>
+            <div class="t-text"><div class="t-name">AI Fundamentals</div><div class="t-type">overview.txt</div></div>
+          </a>
+          <a class="topic-item d1" href="LLM_architecture/overview.txt">
+            <span class="t-icon">⚡</span>
+            <div class="t-text"><div class="t-name">LLM Architecture ⭐</div><div class="t-type">overview.txt</div></div>
+          </a>
+          <a class="topic-item d1" href="inference/overview.txt">
+            <span class="t-icon">🚀</span>
+            <div class="t-text"><div class="t-name">Inference</div><div class="t-type">overview.txt</div></div>
+          </a>
+        </div>
+        <div class="day-col">
+          <div class="col-title">Articles to Read</div>
+
+          <a class="art-item" href="llm/attention_is_all_you_need_easy_notes.md">
+            <span class="art-dot"></span>
+            <span class="art-title">Attention Is All You Need — Explained Simply</span>
+            <span class="art-tag">MD</span>
+          </a>
+          <a class="art-item" href="llm/bitter_lesson_easy_notes.md">
+            <span class="art-dot"></span>
+            <span class="art-title">The Bitter Lesson — Explained Simply</span>
+            <span class="art-tag">MD</span>
+          </a>
+          <a class="art-item" href="llm/llm_engineering_easy_notes.md">
+            <span class="art-dot"></span>
+            <span class="art-title">Building LLM Applications for Production</span>
+            <span class="art-tag">MD</span>
+          </a>
+          <a class="art-item" href="llm/gpt_live_7_minute_architecture_notes.md">
+            <span class="art-dot"></span>
+            <span class="art-title">GPT-Live: Voice AI Architecture Notes</span>
+            <span class="art-tag">MD</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Day 2 -->
+    <div class="day-card" data-day="2">
+      <div class="day-header" onclick="toggleDay(this)">
+        <div class="day-num d2">Monday</div>
+        <div class="day-meta">
+          <div class="day-title">RAG &amp; Data Architecture</div>
+          <div class="day-note">
+            RAG is the most deployed AI pattern in enterprise. Master the full pipeline — ingest, chunk, embed, retrieve, rerank.
+            This single day alone can answer 40% of AI architect interview questions.
+          </div>
+        </div>
+        <div class="day-right">
+          <div class="day-pills">
+            <span class="pill pill-topics">2 topics</span>
+            <span class="pill pill-articles">3 articles</span>
+          </div>
+          <div class="day-toggle">▼</div>
+        </div>
+      </div>
+      <div class="day-body">
+        <div class="day-col">
+          <div class="col-title">Study Topics</div>
+          <a class="topic-item d2" href="RAG/overview.txt">
+            <span class="t-icon">🔍</span>
+            <div class="t-text"><div class="t-name">RAG ⭐⭐⭐</div><div class="t-type">overview.txt</div></div>
+          </a>
+          <a class="topic-item d2" href="Data_architecture/overview.txt">
+            <span class="t-icon">🗄️</span>
+            <div class="t-text"><div class="t-name">Data Architecture ⭐⭐⭐</div><div class="t-type">overview.txt</div></div>
+          </a>
+        </div>
+        <div class="day-col">
+          <div class="col-title">Articles to Read</div>
+          <a class="art-item" href="mcp/notion-vector-search-easy-notes.md">
+            <span class="art-dot"></span>
+            <span class="art-title">Notion's Vector Search — 10× Scale, 1/10th Cost</span>
+            <span class="art-tag">MD</span>
+          </a>
+          <a class="art-item" href="new articles/streaming_llm_inference_notes.md">
+            <span class="art-dot"></span>
+            <span class="art-title">Streaming LLM Inference — Continuous &amp; Interruptible</span>
+            <span class="art-tag">MD</span>
+          </a>
+          <a class="art-item" href="llm/gpt-5-6-frontier-intelligence-efficiency-6-min-read.md">
+            <span class="art-dot"></span>
+            <span class="art-title">GPT-5.6: Smarter and Cheaper to Run</span>
+            <span class="art-tag">MD</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Day 3 -->
+    <div class="day-card" data-day="3">
+      <div class="day-header" onclick="toggleDay(this)">
+        <div class="day-num d3">Tuesday</div>
+        <div class="day-meta">
+          <div class="day-title">Agentic AI &amp; Multimodal</div>
+          <div class="day-note">
+            Agents are where AI moves from Q&amp;A to autonomous work. Focus on the loop: observe → plan → act → observe.
+            Understand tool calling, memory, and LangGraph deeply — this is where most new AI Architect roles are moving.
+          </div>
+        </div>
+        <div class="day-right">
+          <div class="day-pills">
+            <span class="pill pill-topics">2 topics</span>
+            <span class="pill pill-articles">4 articles</span>
+          </div>
+          <div class="day-toggle">▼</div>
+        </div>
+      </div>
+      <div class="day-body">
+        <div class="day-col">
+          <div class="col-title">Study Topics</div>
+          <a class="topic-item d3" href="Agentic_AI/overview.txt">
+            <span class="t-icon">🤖</span>
+            <div class="t-text"><div class="t-name">Agentic AI ⭐⭐⭐</div><div class="t-type">overview.txt</div></div>
+          </a>
+          <a class="topic-item d3" href="Multimodal/overview.txt">
+            <span class="t-icon">🎨</span>
+            <div class="t-text"><div class="t-name">Multimodal</div><div class="t-type">overview.txt</div></div>
+          </a>
+        </div>
+        <div class="day-col">
+          <div class="col-title">Articles to Read</div>
+          <a class="art-item" href="ai-agents/building_effective_ai_agents_easy_notes.md">
+            <span class="art-dot"></span>
+            <span class="art-title">Building Effective AI Agents — Easy Notes</span>
+            <span class="art-tag">MD</span>
+          </a>
+          <a class="art-item" href="ai-agents/anthropic_writing_better_tools_for_ai_agents_notes.md">
+            <span class="art-dot"></span>
+            <span class="art-title">Writing Better Tools for AI Agents</span>
+            <span class="art-tag">MD</span>
+          </a>
+          <a class="art-item" href="ai-agents/managed_agents_easy_notes.md">
+            <span class="art-dot"></span>
+            <span class="art-title">Managed Agents — Easy Notes</span>
+            <span class="art-tag">MD</span>
+          </a>
+          <a class="art-item" href="ai-agents/multi_agent_application_step_by_step_learning.md">
+            <span class="art-dot"></span>
+            <span class="art-title">Multi-Agent Application Step-by-Step Learning</span>
+            <span class="art-tag">MD</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Day 4 -->
+    <div class="day-card" data-day="4">
+      <div class="day-header" onclick="toggleDay(this)">
+        <div class="day-num d4">Wednesday</div>
+        <div class="day-meta">
+          <div class="day-title">AI System Design &amp; Economics</div>
+          <div class="day-note">
+            This is where your 16 years of engineering become your superpower. You're not learning AI here —
+            you're applying Days 1–3 to real-world architecture problems. Practice designing end-to-end systems.
+            Always ask: "Is this AI solution economically viable?"
+          </div>
+        </div>
+        <div class="day-right">
+          <div class="day-pills">
+            <span class="pill pill-topics">2 topics</span>
+            <span class="pill pill-articles">5 articles</span>
+          </div>
+          <div class="day-toggle">▼</div>
+        </div>
+      </div>
+      <div class="day-body">
+        <div class="day-col">
+          <div class="col-title">Study Topics</div>
+          <a class="topic-item d4" href="AI_system_design/overview.txt">
+            <span class="t-icon">🏗️</span>
+            <div class="t-text"><div class="t-name">AI System Design ⭐⭐⭐</div><div class="t-type">overview.txt</div></div>
+          </a>
+          <a class="topic-item d4" href="AI_economics/overview.txt">
+            <span class="t-icon">💰</span>
+            <div class="t-text"><div class="t-name">AI Economics ⭐⭐⭐</div><div class="t-type">overview.txt</div></div>
+          </a>
+        </div>
+        <div class="day-col">
+          <div class="col-title">Articles to Read</div>
+          <a class="art-item" href="ai-architecture/helium_architect_cto_questioning_muscle.md">
+            <span class="art-dot"></span>
+            <span class="art-title">Helium — Architect &amp; CTO Questioning Muscle</span>
+            <span class="art-tag">MD</span>
+          </a>
+          <a class="art-item" href="system-design/payment_reconciliation_system_8_minute_architecture.md">
+            <span class="art-dot"></span>
+            <span class="art-title">Payment Reconciliation System — Architecture Guide</span>
+            <span class="art-tag">MD</span>
+          </a>
+          <a class="art-item" href="system-design/nosql_architect_cto_questioning_muscle.md">
+            <span class="art-dot"></span>
+            <span class="art-title">NoSQL System Design — Architect &amp; CTO Questioning</span>
+            <span class="art-tag">MD</span>
+          </a>
+          <a class="art-item" href="system-design/101_load_balancing_questions.md">
+            <span class="art-dot"></span>
+            <span class="art-title">System Design: Question Before Choosing Technology</span>
+            <span class="art-tag">MD</span>
+          </a>
+          <a class="art-item" href="system-design/high_interest_credit_card_technical_debt_easy_notes.md">
+            <span class="art-dot"></span>
+            <span class="art-title">The High-Interest Credit Card of Technical Debt</span>
+            <span class="art-tag">MD</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Day 5 -->
+    <div class="day-card" data-day="5">
+      <div class="day-header" onclick="toggleDay(this)">
+        <div class="day-num d5">Thursday</div>
+        <div class="day-meta">
+          <div class="day-title">AI Infrastructure &amp; Cloud Architecture</div>
+          <div class="day-note">
+            How do you actually serve 10,000 users? GPU sizing, quantization, KV cache, autoscaling.
+            Make AWS your primary cloud — go deep on Bedrock and SageMaker.
+            Your distributed systems background is a direct advantage here.
+          </div>
+        </div>
+        <div class="day-right">
+          <div class="day-pills">
+            <span class="pill pill-topics">2 topics</span>
+            <span class="pill pill-articles">2 articles</span>
+          </div>
+          <div class="day-toggle">▼</div>
+        </div>
+      </div>
+      <div class="day-body">
+        <div class="day-col">
+          <div class="col-title">Study Topics</div>
+          <a class="topic-item d5" href="AI_infrastructure/overview.txt">
+            <span class="t-icon">🖥️</span>
+            <div class="t-text"><div class="t-name">AI Infrastructure ⭐⭐⭐</div><div class="t-type">overview.txt</div></div>
+          </a>
+          <a class="topic-item d5" href="Cloud_AI/overview.txt">
+            <span class="t-icon">☁️</span>
+            <div class="t-text"><div class="t-name">Cloud AI ⭐⭐⭐</div><div class="t-type">overview.txt</div></div>
+          </a>
+        </div>
+        <div class="day-col">
+          <div class="col-title">Articles to Read</div>
+          <a class="art-item" href="mlops/mrc-supercomputer-networking-6-min-read.md">
+            <span class="art-dot"></span>
+            <span class="art-title">MRC: How OpenAI Built a Network for 100,000+ GPUs</span>
+            <span class="art-tag">MD</span>
+          </a>
+          <a class="art-item" href="ai-agents/speeding-up-agentic-workflows-with-websockets-6-min-read.md">
+            <span class="art-dot"></span>
+            <span class="art-title">Speeding Up Agentic Workflows with WebSockets</span>
+            <span class="art-tag">MD</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Day 6 -->
+    <div class="day-card" data-day="6">
+      <div class="day-header" onclick="toggleDay(this)">
+        <div class="day-num d6">Friday</div>
+        <div class="day-meta">
+          <div class="day-title">Security, Governance &amp; Evaluation</div>
+          <div class="day-note">
+            In fintech, this is non-negotiable. Know OWASP Top 10 for LLMs cold.
+            Being strong on security and governance is a major differentiator at VP / Architect level.
+            Also answer: "How do you know your AI system actually works?" — that's evaluation.
+          </div>
+        </div>
+        <div class="day-right">
+          <div class="day-pills">
+            <span class="pill pill-topics">3 topics</span>
+            <span class="pill pill-articles">5 articles</span>
+          </div>
+          <div class="day-toggle">▼</div>
+        </div>
+      </div>
+      <div class="day-body">
+        <div class="day-col">
+          <div class="col-title">Study Topics</div>
+          <a class="topic-item d6" href="AI_security/overview.txt">
+            <span class="t-icon">🔐</span>
+            <div class="t-text"><div class="t-name">AI Security ⭐⭐⭐</div><div class="t-type">overview.txt</div></div>
+          </a>
+          <a class="topic-item d6" href="AI_governance/overview.txt">
+            <span class="t-icon">⚖️</span>
+            <div class="t-text"><div class="t-name">AI Governance</div><div class="t-type">overview.txt</div></div>
+          </a>
+          <a class="topic-item d6" href="AI_evaluation/overview.txt">
+            <span class="t-icon">📊</span>
+            <div class="t-text"><div class="t-name">AI Evaluation ⭐⭐⭐</div><div class="t-type">overview.txt</div></div>
+          </a>
+        </div>
+        <div class="day-col">
+          <div class="col-title">Articles to Read</div>
+          <a class="art-item" href="new articles/ai_agents_guardrails_architecture_sandboxing_notes.md">
+            <span class="art-dot"></span>
+            <span class="art-title">AI Agents — Guardrails Architecture &amp; Sandboxing</span>
+            <span class="art-tag">MD</span>
+          </a>
+          <a class="art-item" href="new articles/ai_agents_guardrails_schema_local_security_notes.md">
+            <span class="art-dot"></span>
+            <span class="art-title">Guardrails, Schema-Driven Generation &amp; Local Security</span>
+            <span class="art-tag">MD</span>
+          </a>
+          <a class="art-item" href="new articles/vhrn_ai_agent_security_notes.md">
+            <span class="art-dot"></span>
+            <span class="art-title">Securing AI Agents — Virtualized Harness Runtime (VHRN)</span>
+            <span class="art-tag">MD</span>
+          </a>
+          <a class="art-item" href="new articles/leviath_ai_agent_structure_notes.md">
+            <span class="art-dot"></span>
+            <span class="art-title">Leviath: Structure and Reliability in AI Agents</span>
+            <span class="art-tag">MD</span>
+          </a>
+          <a class="art-item" href="ai-agents/demystifying_evals_for_ai_agents_notes.md">
+            <span class="art-dot"></span>
+            <span class="art-title">Demystifying Evals for AI Agents</span>
+            <span class="art-tag">MD</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Day 7 -->
+    <div class="day-card" data-day="7">
+      <div class="day-header" onclick="toggleDay(this)">
+        <div class="day-num d7">Saturday</div>
+        <div class="day-meta">
+          <div class="day-title">LLMOps, Observability &amp; Final Drills</div>
+          <div class="day-note">
+            The final layer: how do you run AI in production reliably?
+            Monitoring, drift detection, canary deploys, harness design.
+            Finish with the interview drills — by now all the pieces connect.
+            Review everything, then practice designing a system end-to-end from scratch.
+          </div>
+        </div>
+        <div class="day-right">
+          <div class="day-pills">
+            <span class="pill pill-topics">1 topic</span>
+            <span class="pill pill-articles">4 articles</span>
+          </div>
+          <div class="day-toggle">▼</div>
+        </div>
+      </div>
+      <div class="day-body">
+        <div class="day-col">
+          <div class="col-title">Study Topics</div>
+          <a class="topic-item d7" href="LLMOps/overview.txt">
+            <span class="t-icon">⚙️</span>
+            <div class="t-text"><div class="t-name">LLMOps ⭐⭐⭐</div><div class="t-type">overview.txt</div></div>
+          </a>
+        </div>
+        <div class="day-col">
+          <div class="col-title">Articles to Read</div>
+          <a class="art-item" href="mlops/architect_level_ai_fine_tuning_interview_drill.md">
+            <span class="art-dot"></span>
+            <span class="art-title">Architect-Level AI Fine-Tuning Interview Drill</span>
+            <span class="art-tag">MD</span>
+          </a>
+          <a class="art-item" href="ai-agents/effective_harnesses_for_long_running_agents_easy_notes.md">
+            <span class="art-dot"></span>
+            <span class="art-title">Effective Harnesses for Long-Running Agents</span>
+            <span class="art-tag">MD</span>
+          </a>
+          <a class="art-item" href="ai-agents/harness_design_long_running_ai_apps_notes.md">
+            <span class="art-dot"></span>
+            <span class="art-title">Harness Design for Long-Running AI Apps</span>
+            <span class="art-tag">MD</span>
+          </a>
+          <a class="art-item" href="system-design/Disaster_Recovery_Interview_Notes.md">
+            <span class="art-dot"></span>
+            <span class="art-title">Disaster Recovery System Design — Interview Guide</span>
+            <span class="art-tag">MD</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /view-plan -->
+
+
+  <!-- ══════════════════════════════════════════
+       VIEW 2 — ALL ARTICLES
+  ══════════════════════════════════════════ -->
+  <div class="view" id="view-articles">
+
+    <div class="sec-hdr"><span class="sec-title">Article Notes &amp; Deep Dives</span><div class="sec-line"></div></div>
+
+    <div class="grid" id="articles-grid">
+
+      <div class="folder open" data-folder>
+        <div class="fhdr" onclick="toggleFolder(this)">
+          <div class="fl"><span class="fi">🤖</span><span class="fn">ai-agents</span></div>
+          <div class="fr"><span class="cnt">8</span><span class="chev">▼</span></div>
+        </div>
+        <div class="flist">
+          <a class="flink" href="ai-agents/building_effective_ai_agents_easy_notes.md" data-title="Building Effective AI Agents"><span class="fdot"></span><span class="ftitle">Building Effective AI Agents — Easy Notes</span><span class="ftag ftag-md">MD</span></a>
+          <a class="flink" href="ai-agents/anthropic_writing_better_tools_for_ai_agents_notes.md" data-title="Writing Better Tools for AI Agents"><span class="fdot"></span><span class="ftitle">Writing Better Tools for AI Agents</span><span class="ftag ftag-md">MD</span></a>
+          <a class="flink" href="ai-agents/demystifying_evals_for_ai_agents_notes.md" data-title="Demystifying Evals for AI Agents"><span class="fdot"></span><span class="ftitle">Demystifying Evals for AI Agents</span><span class="ftag ftag-md">MD</span></a>
+          <a class="flink" href="ai-agents/effective_harnesses_for_long_running_agents_easy_notes.md" data-title="Effective Harnesses for Long-Running Agents"><span class="fdot"></span><span class="ftitle">Effective Harnesses for Long-Running Agents</span><span class="ftag ftag-md">MD</span></a>
+          <a class="flink" href="ai-agents/harness_design_long_running_ai_apps_notes.md" data-title="Harness Design for Long-Running AI Apps"><span class="fdot"></span><span class="ftitle">Harness Design for Long-Running AI Apps</span><span class="ftag ftag-md">MD</span></a>
+          <a class="flink" href="ai-agents/managed_agents_easy_notes.md" data-title="Managed Agents Easy Notes"><span class="fdot"></span><span class="ftitle">Managed Agents — Easy Notes</span><span class="ftag ftag-md">MD</span></a>
+          <a class="flink" href="ai-agents/multi_agent_application_step_by_step_learning.md" data-title="Multi-Agent Application Step-by-Step Learning"><span class="fdot"></span><span class="ftitle">Multi-Agent Application Step-by-Step Learning</span><span class="ftag ftag-md">MD</span></a>
+          <a class="flink" href="ai-agents/speeding-up-agentic-workflows-with-websockets-6-min-read.md" data-title="Speeding Up Agentic Workflows with WebSockets"><span class="fdot"></span><span class="ftitle">Speeding Up Agentic Workflows with WebSockets</span><span class="ftag ftag-md">MD</span></a>
+        </div>
+      </div>
+
+      <div class="folder open" data-folder>
+        <div class="fhdr" onclick="toggleFolder(this)">
+          <div class="fl"><span class="fi">⚡</span><span class="fn">llm</span></div>
+          <div class="fr"><span class="cnt">5</span><span class="chev">▼</span></div>
+        </div>
+        <div class="flist">
+          <a class="flink" href="llm/attention_is_all_you_need_easy_notes.md" data-title="Attention Is All You Need"><span class="fdot"></span><span class="ftitle">Attention Is All You Need — Explained Simply</span><span class="ftag ftag-md">MD</span></a>
+          <a class="flink" href="llm/bitter_lesson_easy_notes.md" data-title="The Bitter Lesson"><span class="fdot"></span><span class="ftitle">The Bitter Lesson — Explained Simply</span><span class="ftag ftag-md">MD</span></a>
+          <a class="flink" href="llm/gpt-5-6-frontier-intelligence-efficiency-6-min-read.md" data-title="GPT-5.6 Frontier Intelligence Efficiency"><span class="fdot"></span><span class="ftitle">GPT-5.6: Smarter and Cheaper to Run</span><span class="ftag ftag-md">MD</span></a>
+          <a class="flink" href="llm/gpt_live_7_minute_architecture_notes.md" data-title="GPT Live Architecture Notes"><span class="fdot"></span><span class="ftitle">GPT-Live: Voice AI Architecture Notes</span><span class="ftag ftag-md">MD</span></a>
+          <a class="flink" href="llm/llm_engineering_easy_notes.md" data-title="LLM Engineering for Production"><span class="fdot"></span><span class="ftitle">Building LLM Applications for Production</span><span class="ftag ftag-md">MD</span></a>
+        </div>
+      </div>
+
+      <div class="folder open" data-folder>
+        <div class="fhdr" onclick="toggleFolder(this)">
+          <div class="fl"><span class="fi">✨</span><span class="fn">new articles</span></div>
+          <div class="fr"><span class="cnt">5</span><span class="chev">▼</span></div>
+        </div>
+        <div class="flist">
+          <a class="flink" href="new articles/ai_agents_guardrails_architecture_sandboxing_notes.md" data-title="AI Agents Guardrails Architecture Sandboxing"><span class="fdot"></span><span class="ftitle">AI Agents — Guardrails Architecture &amp; Sandboxing</span><span class="ftag ftag-md">MD</span></a>
+          <a class="flink" href="new articles/ai_agents_guardrails_schema_local_security_notes.md" data-title="AI Agents Guardrails Schema Local Security"><span class="fdot"></span><span class="ftitle">Guardrails, Schema-Driven Generation &amp; Local Security</span><span class="ftag ftag-md">MD</span></a>
+          <a class="flink" href="new articles/leviath_ai_agent_structure_notes.md" data-title="Leviath AI Agent Structure"><span class="fdot"></span><span class="ftitle">Leviath: Structure and Reliability in AI Agents</span><span class="ftag ftag-md">MD</span></a>
+          <a class="flink" href="new articles/streaming_llm_inference_notes.md" data-title="Streaming LLM Inference"><span class="fdot"></span><span class="ftitle">Streaming LLM Inference — Continuous &amp; Interruptible</span><span class="ftag ftag-md">MD</span></a>
+          <a class="flink" href="new articles/vhrn_ai_agent_security_notes.md" data-title="VHRN AI Agent Security"><span class="fdot"></span><span class="ftitle">Securing AI Agents — Virtualized Harness Runtime (VHRN)</span><span class="ftag ftag-md">MD</span></a>
+        </div>
+      </div>
+
+      <div class="folder open" data-folder>
+        <div class="fhdr" onclick="toggleFolder(this)">
+          <div class="fl"><span class="fi">🏗️</span><span class="fn">system-design</span></div>
+          <div class="fr"><span class="cnt">5</span><span class="chev">▼</span></div>
+        </div>
+        <div class="flist">
+          <a class="flink" href="system-design/101_load_balancing_questions.md" data-title="Load Balancing System Design"><span class="fdot"></span><span class="ftitle">System Design: Question Before Choosing Technology</span><span class="ftag ftag-md">MD</span></a>
+          <a class="flink" href="system-design/Disaster_Recovery_Interview_Notes.md" data-title="Disaster Recovery Interview Notes"><span class="fdot"></span><span class="ftitle">Disaster Recovery System Design — Interview Guide</span><span class="ftag ftag-md">MD</span></a>
+          <a class="flink" href="system-design/high_interest_credit_card_technical_debt_easy_notes.md" data-title="High Interest Credit Card Technical Debt"><span class="fdot"></span><span class="ftitle">The High-Interest Credit Card of Technical Debt</span><span class="ftag ftag-md">MD</span></a>
+          <a class="flink" href="system-design/nosql_architect_cto_questioning_muscle.md" data-title="NoSQL Architect CTO Questioning Muscle"><span class="fdot"></span><span class="ftitle">NoSQL System Design — Architect &amp; CTO Questioning</span><span class="ftag ftag-md">MD</span></a>
+          <a class="flink" href="system-design/payment_reconciliation_system_8_minute_architecture.md" data-title="Payment Reconciliation System Architecture"><span class="fdot"></span><span class="ftitle">Payment Reconciliation System — Architecture Guide</span><span class="ftag ftag-md">MD</span></a>
+        </div>
+      </div>
+
+      <div class="folder open" data-folder>
+        <div class="fhdr" onclick="toggleFolder(this)">
+          <div class="fl"><span class="fi">⚙️</span><span class="fn">mlops</span></div>
+          <div class="fr"><span class="cnt">2</span><span class="chev">▼</span></div>
+        </div>
+        <div class="flist">
+          <a class="flink" href="mlops/architect_level_ai_fine_tuning_interview_drill.md" data-title="AI Fine Tuning Interview Drill"><span class="fdot"></span><span class="ftitle">Architect-Level AI Fine-Tuning Interview Drill</span><span class="ftag ftag-md">MD</span></a>
+          <a class="flink" href="mlops/mrc-supercomputer-networking-6-min-read.md" data-title="MRC Supercomputer Networking"><span class="fdot"></span><span class="ftitle">MRC: How OpenAI Built a Network for 100,000+ GPUs</span><span class="ftag ftag-md">MD</span></a>
+        </div>
+      </div>
+
+      <div class="folder open" data-folder>
+        <div class="fhdr" onclick="toggleFolder(this)">
+          <div class="fl"><span class="fi">🎯</span><span class="fn">ai-architecture</span></div>
+          <div class="fr"><span class="cnt">1</span><span class="chev">▼</span></div>
+        </div>
+        <div class="flist">
+          <a class="flink" href="ai-architecture/helium_architect_cto_questioning_muscle.md" data-title="Helium Architect CTO Questioning Muscle"><span class="fdot"></span><span class="ftitle">Helium — Architect &amp; CTO Questioning Muscle Training</span><span class="ftag ftag-md">MD</span></a>
+        </div>
+      </div>
+
+      <div class="folder open" data-folder>
+        <div class="fhdr" onclick="toggleFolder(this)">
+          <div class="fl"><span class="fi">🔌</span><span class="fn">mcp</span></div>
+          <div class="fr"><span class="cnt">1</span><span class="chev">▼</span></div>
+        </div>
+        <div class="flist">
+          <a class="flink" href="mcp/notion-vector-search-easy-notes.md" data-title="Notion Vector Search"><span class="fdot"></span><span class="ftitle">Notion's Vector Search — 10× Scale, 1/10th Cost</span><span class="ftag ftag-md">MD</span></a>
+        </div>
+      </div>
+
+    </div><!-- /articles-grid -->
+  </div><!-- /view-articles -->
+
+
+  <!-- ══════════════════════════════════════════
+       VIEW 3 — STUDY TOPICS
+  ══════════════════════════════════════════ -->
+  <div class="view" id="view-topics">
+    <div class="sec-hdr"><span class="sec-title">Study Topic Overviews</span><div class="sec-line"></div></div>
+
+    <div class="ov-grid" id="topics-grid">
+      <a class="ov-card" href="AI_fundamentals/overview.txt" data-title="AI Fundamentals"><span class="ov-icon">📚</span><div><div class="ov-name">AI Fundamentals</div><div class="ov-sub">Day 1 · overview.txt</div></div></a>
+      <a class="ov-card" href="LLM_architecture/overview.txt" data-title="LLM Architecture"><span class="ov-icon">⚡</span><div><div class="ov-name">LLM Architecture</div><div class="ov-sub">Day 1 · ⭐ overview.txt</div></div></a>
+      <a class="ov-card" href="inference/overview.txt" data-title="Inference"><span class="ov-icon">🚀</span><div><div class="ov-name">Inference</div><div class="ov-sub">Day 1 · overview.txt</div></div></a>
+      <a class="ov-card" href="RAG/overview.txt" data-title="RAG Retrieval Augmented Generation"><span class="ov-icon">🔍</span><div><div class="ov-name">RAG</div><div class="ov-sub">Day 2 · ⭐⭐⭐ overview.txt</div></div></a>
+      <a class="ov-card" href="Data_architecture/overview.txt" data-title="Data Architecture"><span class="ov-icon">🗄️</span><div><div class="ov-name">Data Architecture</div><div class="ov-sub">Day 2 · ⭐⭐⭐ overview.txt</div></div></a>
+      <a class="ov-card" href="Agentic_AI/overview.txt" data-title="Agentic AI"><span class="ov-icon">🤖</span><div><div class="ov-name">Agentic AI</div><div class="ov-sub">Day 3 · ⭐⭐⭐ overview.txt</div></div></a>
+      <a class="ov-card" href="Multimodal/overview.txt" data-title="Multimodal AI"><span class="ov-icon">🎨</span><div><div class="ov-name">Multimodal</div><div class="ov-sub">Day 3 · overview.txt</div></div></a>
+      <a class="ov-card" href="AI_system_design/overview.txt" data-title="AI System Design"><span class="ov-icon">🏗️</span><div><div class="ov-name">AI System Design</div><div class="ov-sub">Day 4 · ⭐⭐⭐ overview.txt</div></div></a>
+      <a class="ov-card" href="AI_economics/overview.txt" data-title="AI Economics"><span class="ov-icon">💰</span><div><div class="ov-name">AI Economics</div><div class="ov-sub">Day 4 · ⭐⭐⭐ overview.txt</div></div></a>
+      <a class="ov-card" href="AI_infrastructure/overview.txt" data-title="AI Infrastructure"><span class="ov-icon">🖥️</span><div><div class="ov-name">AI Infrastructure</div><div class="ov-sub">Day 5 · ⭐⭐⭐ overview.txt</div></div></a>
+      <a class="ov-card" href="Cloud_AI/overview.txt" data-title="Cloud AI Architecture"><span class="ov-icon">☁️</span><div><div class="ov-name">Cloud AI</div><div class="ov-sub">Day 5 · ⭐⭐⭐ overview.txt</div></div></a>
+      <a class="ov-card" href="AI_security/overview.txt" data-title="AI Security"><span class="ov-icon">🔐</span><div><div class="ov-name">AI Security</div><div class="ov-sub">Day 6 · ⭐⭐⭐ overview.txt</div></div></a>
+      <a class="ov-card" href="AI_governance/overview.txt" data-title="AI Governance Responsible AI"><span class="ov-icon">⚖️</span><div><div class="ov-name">AI Governance</div><div class="ov-sub">Day 6 · overview.txt</div></div></a>
+      <a class="ov-card" href="AI_evaluation/overview.txt" data-title="AI Evaluation"><span class="ov-icon">📊</span><div><div class="ov-name">AI Evaluation</div><div class="ov-sub">Day 6 · ⭐⭐⭐ overview.txt</div></div></a>
+      <a class="ov-card" href="LLMOps/overview.txt" data-title="LLMOps MLOps Observability"><span class="ov-icon">⚙️</span><div><div class="ov-name">LLMOps</div><div class="ov-sub">Day 7 · ⭐⭐⭐ overview.txt</div></div></a>
+    </div>
+  </div><!-- /view-topics -->
+
+</main>
+
+<script>
+  /* ── Tabs ── */
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('view-' + tab.dataset.tab).classList.add('active');
+      document.getElementById('search').value = '';
+      resetSearch();
+    });
+  });
+
+  /* ── Toggle folder ── */
+  function toggleFolder(hdr) { hdr.closest('.folder').classList.toggle('open'); }
+
+  /* ── Toggle day card ── */
+  function toggleDay(hdr) { hdr.closest('.day-card').classList.toggle('open'); }
+
+  /* ── Search ── */
+  const searchInput = document.getElementById('search');
+  const noResults   = document.getElementById('no-results');
+
+  function activeTab() {
+    return document.querySelector('.tab.active').dataset.tab;
+  }
+
+  function resetSearch() {
+    document.querySelectorAll('[data-folder]').forEach(f => { f.style.display = ''; });
+    document.querySelectorAll('.flink').forEach(a => { a.style.display = ''; });
+    document.querySelectorAll('.ov-card').forEach(c => { c.style.display = ''; });
+    document.querySelectorAll('[data-day]').forEach(d => { d.style.display = ''; });
+    document.querySelectorAll('.art-item').forEach(a => { a.style.display = ''; });
+    noResults.style.display = 'none';
+  }
+
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.toLowerCase().trim();
+    if (!q) { resetSearch(); return; }
+
+    const tab = activeTab();
+    let any = false;
+
+    if (tab === 'plan') {
+      document.querySelectorAll('[data-day]').forEach(card => {
+        const dayTitle = card.querySelector('.day-title').textContent.toLowerCase();
+        const dayNote  = card.querySelector('.day-note').textContent.toLowerCase();
+        const items    = card.querySelectorAll('.art-item, .topic-item');
+        let dayHit = dayTitle.includes(q) || dayNote.includes(q);
+        let itemHit = false;
+        items.forEach(item => {
+          const t = item.querySelector('.t-name, .art-title, .ov-name');
+          const match = t && t.textContent.toLowerCase().includes(q);
+          item.style.display = (dayHit || match) ? '' : 'none';
+          if (match) itemHit = true;
+        });
+        const show = dayHit || itemHit;
+        card.style.display = show ? '' : 'none';
+        if (show) { card.classList.add('open'); any = true; }
+      });
+    }
+
+    if (tab === 'articles') {
+      document.querySelectorAll('[data-folder]').forEach(folder => {
+        const fn = folder.querySelector('.fn').textContent.toLowerCase();
+        const links = folder.querySelectorAll('.flink');
+        let folderHit = fn.includes(q);
+        let linkHit = false;
+        links.forEach(a => {
+          const t = (a.dataset.title || '').toLowerCase() + ' ' + a.querySelector('.ftitle').textContent.toLowerCase();
+          const show = folderHit || t.includes(q);
+          a.style.display = show ? '' : 'none';
+          if (show) linkHit = true;
+        });
+        const show = folderHit || linkHit;
+        folder.style.display = show ? '' : 'none';
+        if (show) { folder.classList.add('open'); any = true; }
+      });
+    }
+
+    if (tab === 'topics') {
+      document.querySelectorAll('.ov-card').forEach(c => {
+        const t = (c.dataset.title || '').toLowerCase() + ' ' + c.querySelector('.ov-name').textContent.toLowerCase();
+        const show = t.includes(q);
+        c.style.display = show ? '' : 'none';
+        if (show) any = true;
+      });
+    }
+
+    noResults.style.display = any ? 'none' : 'block';
+  });
+</script>
+
+</body>
+</html>
