@@ -186,7 +186,8 @@
 
   <script>
     const params  = new URLSearchParams(location.search);
-    const filePath = params.get('file');   // e.g. /marksdown-repos/AI/Saturday/file.md
+    // filePath may be absolute (/marksdown-repos/AI/...) or relative (AI/Saturday/...)
+    const filePath = params.get('file');
     const bar     = document.getElementById('bar');
 
     function progress(pct) { bar.style.width = pct + '%'; }
@@ -202,7 +203,8 @@
       progress(25);
 
       try {
-        // ?raw=1 bypasses the .htaccess rewrite so we get the raw markdown text
+        // Append ?raw=1 so Apache .htaccess (if present) skips the rewrite;
+        // on GitHub Pages query strings are ignored and the file is served as-is.
         const res = await fetch(filePath + '?raw=1');
         progress(65);
         if (!res.ok) throw new Error('HTTP ' + res.status + ' — ' + res.statusText);
