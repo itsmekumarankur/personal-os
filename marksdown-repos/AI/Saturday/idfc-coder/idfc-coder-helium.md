@@ -1,4 +1,4 @@
-# IDFC Coder — Architect Thinking Notes
+# IDFC Coder — Helium 2 Minute
 
 ---
 
