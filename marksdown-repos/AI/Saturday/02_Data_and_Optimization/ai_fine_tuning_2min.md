@@ -1,4 +1,30 @@
 # AI Fine-Tuning 
+
+
+Your team says:
+
+> **“Our AI needs to behave differently for our business, so let's fine-tune the model.”**
+
+You approve it without asking further questions.
+
+Three months later, you've spent significant GPU time, engineering effort, and money—only to discover that some of the requirements could have been solved with **prompting or retrieving current information**, rather than changing the model itself. Your notes specifically frame this as the key architectural decision: **knowledge vs. behavior**, and when fine-tuning is actually justified. ([GitHub][1])
+
+As an Engineering Manager, understanding fine-tuning helps you ask:
+
+> **“What problem are we actually trying to solve—and is changing the model really the right investment?”**
+
+### Why I am reading this
+
+**Because fine-tuning is an architecture and investment decision—not simply an ML implementation decision.**
+
+### Leadership question
+
+> **“Are we changing the model because we need to change its behavior, or because we don't know a better way to provide the right information?”**
+
+### One-line takeaway
+
+> **Don't fine-tune because the model isn't perfect—fine-tune when changing the model's behavior is actually the business requirement.**
+
 <img width="798" height="541" alt="Screenshot from 2026-09-27 06-52-35" src="https://github.com/user-attachments/assets/d9beb730-50e4-440c-ac73-c859518c5f40" />
 
 ## Interview Mode
