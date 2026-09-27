@@ -1,50 +1,41 @@
 # Decoding Strategies — 2-Minute
 ### The 1-minute leadership story
 
-Imagine your team launches an AI assistant for customers.
+### 1-minute leadership story
 
-The model is powerful, but the business starts complaining:
+Your team launches an AI assistant for customers.
 
-> **“Sometimes the AI gives a precise answer. Sometimes it gives a strange or overly creative answer to the exact same question.”**
+The model is good, but customers complain:
 
-Your team says, *“The model is good. Maybe we need a bigger model.”*
+> **“Sometimes the answers are too random. Sometimes they are repetitive. Sometimes the output doesn't follow the format our system needs.”**
 
-As the Engineering Manager, you ask one simple question:
+The team starts discussing changing the model.
 
-> **“Are we controlling how the AI chooses its answer?”**
+As the Engineering Manager, you ask:
 
-You discover that the same AI can be configured to behave **very differently**—highly predictable for a banking transaction, or more exploratory for creative use cases. Your team had been using one approach for everything. ([GitHub][1])
+> **“Before changing the model, can we control how the model generates its answer?”**
 
-You change the strategy based on the business need.
+You learn that **decoding strategies control the behavior of the model's output**—how deterministic, diverse, repetitive, or constrained it is. ([GitHub][1])
 
-For a **financial transaction**, you want predictable, structured output.
+Now the architecture decision becomes simple:
 
-For a **customer-facing assistant**, you may allow some flexibility.
+**Banking transaction → predictable + constrained**
+**Creative assistant → more diverse**
+**API/function call → structured output**
 
-For **creative content**, you want more diversity.
+### Why I am reading this
 
-Suddenly, the conversation changes from:
+**Because as a leader, I need to know whether an AI problem requires a better model—or simply better control over how the model generates its output.**
 
-> *“Which AI model should we buy?”*
+### Leadership question
 
-to:
+> **“Is this a model-quality problem, or an output-behavior problem?”**
 
-> **“What behavior do we need from AI for this business use case?”**
+### One-line takeaway
 
-That's the leadership value of understanding decoding strategies.
+> **Don't change the model before understanding how you're using it.**
 
-### 1. Why I am reading this
 
-**Because as a technology leader, I need to understand that choosing an AI model is only part of the decision; how we configure its behavior can directly affect reliability, customer experience, and business risk.**
-
-### 2. Leadership questions I should now be able to ask
-
-* **“For this use case, do we want creativity or predictability—and why?”**
-* **“Is the problem really the model, or are we controlling its behavior incorrectly?”**
-
-### 3. One-line takeaway
-
-> **A good AI leader doesn't just choose the model—they decide how the AI should behave for the business.**
 
 > **Goal:** Understand how an LLM turns probability distributions into actual tokens, and how greedy decoding, temperature, top-k, top-p, beam search, and related techniques change output behavior.
 
