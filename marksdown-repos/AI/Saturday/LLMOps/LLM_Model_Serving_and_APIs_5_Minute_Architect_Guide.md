@@ -843,3 +843,13 @@ A production-grade LLM platform must solve:
 ```
 
 For an AI Architect, the key skill is connecting **model characteristics → GPU requirements → serving strategy → API architecture → SLOs → cost**.
+
+## SET 7 — Asking Powerful Questions
+
+- **“What are we optimizing for?”**
+- **“What’s the biggest risk?”**
+- **“What happens if we do nothing?”**
+- **“What assumption are we making here?”**
+- **“What would have to be true for this to work?”**
+
+> **Practice Goal:** Ask questions that improve the quality of the discussion.
