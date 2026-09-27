@@ -1,4 +1,4 @@
-# Fine-Tuning — A 5-Minute AI Architect Guide
+# Fine-Tuning — 2-Minute
 
 > **Goal:** Understand what fine-tuning changes, when to use it instead of prompting or RAG, the major fine-tuning approaches, and the production architecture around training and model deployment.
 
