@@ -1,4 +1,31 @@
 # AI Monitoring — 2 Min
+### 1-minute leadership story
+
+Your company launches an AI assistant.
+For the first few weeks, everything looks fine.
+
+Then customers start saying:
+
+> **“The AI is slower, sometimes wrong, and the cost is increasing.”**
+
+The team says, **“The model is up and running.”**
+
+But as an Engineering Manager, you realize **“up” doesn't mean “healthy.”**
+
+You ask the team to monitor **cost, latency, tokens, quality, security, and drift**. Now you can see whether the problem is an oversized prompt, expensive agent loop, hallucination, model change, or changing customer data. ([GitHub][1])
+
+### Why I am reading this
+
+**Because an AI system cannot be managed by uptime alone — leaders need visibility into its cost, quality, security and behaviour in production.**
+
+### Leadership question
+
+> **“How will we know if our AI is becoming more expensive, slower, or less accurate after we launch it?”**
+
+### One-line takeaway
+
+> **If you can't measure AI behaviour, you can't reliably manage AI in production.**
+
 <img width="774" height="408" alt="Screenshot from 2026-09-27 06-22-51" src="https://github.com/user-attachments/assets/0752d747-8ed8-462f-be07-e1ffa7fc8286" />
 
 ## Monitoring Requirements
