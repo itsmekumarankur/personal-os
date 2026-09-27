@@ -1,7 +1,4 @@
 # Decoding Strategies — 2-Minute
-### The 1-minute leadership story
-
-### 1-minute leadership story
 
 Your team launches an AI assistant for customers.
 
