@@ -1,5 +1,30 @@
 # MLOps vs LLMOps — 2-Minute
 
+
+Your company has both **traditional ML** and **GenAI** in production.
+
+The team says, *“We already have MLOps, so our AI platform is covered.”*
+
+Then the GenAI assistant starts having issues: prompts change, RAG retrieves different documents, agent calls multiple tools, hallucinations appear, and inference costs increase.
+
+You realize the existing MLOps setup mainly tracks the **model lifecycle**. It doesn't give the team enough visibility into the **LLM application lifecycle**—prompt, context, RAG, tools, quality, safety and cost. ([GitHub][1])
+
+As an Engineering Manager, this distinction helps you ask for the **right production capabilities** instead of assuming one operational model fits every AI workload.
+
+### Why I am reading this
+
+**Because as AI adoption grows, I need to know what operational capabilities our GenAI applications require beyond traditional MLOps.**
+
+### Leadership question
+
+> **“Can we trace and measure the complete AI request—from prompt and retrieved context to model, tools, response, quality and cost?”**
+
+### One-line takeaway
+
+> **MLOps operates the model; LLMOps operates the AI application around the model.**
+
+
+
 > **Audience:** AI Architect / Engineering Architect
 > **Goal:** Understand MLOps and LLMOps in a simple, architecture-first way.
 
