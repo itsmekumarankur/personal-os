@@ -633,7 +633,14 @@ For an AI Architect, the real skill is knowing **which operational discipline ap
 
 ---
 
-# References
 
-- [Atlan — LLMOps vs MLOps](https://atlan.com/know/llmops-vs-mlops/)
-- [ZenML — MLOps vs LLMOps](https://www.zenml.io/blog/mlops-vs-llmops)
+## SET 8 — Architecture & Technical Discussions
+
+- **“Before we discuss the solution, let’s define the problem.”**
+- **“What problem does this architecture actually solve?”**
+- **“Where is the bottleneck?”**
+- **“What happens at ten times the current scale?”**
+- **“What’s our fallback if this fails?”**
+
+> **Practice Goal:** Move from **technology discussion → system thinking**.
+
