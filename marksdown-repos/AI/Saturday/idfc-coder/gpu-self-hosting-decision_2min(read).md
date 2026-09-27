@@ -1,4 +1,4 @@
-# GPU & Self-Hosting Cost Decision — Architect Notes
+# GPU & Self-Hosting Cost Decision — 2 Minunte
 
 > **Core lesson:** Don't start with *"Which GPU should I buy?"* Start with *"What workload am I trying to serve?"*
 
