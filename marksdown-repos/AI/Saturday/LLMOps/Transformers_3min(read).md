@@ -1,4 +1,4 @@
-# Transformers — A 5-Minute Architect's Guide
+# Transformers — 3-Minute
 
 > **Goal:** Understand what a Transformer is, why it changed AI, and how the major components fit together — without getting buried in mathematics.
 
