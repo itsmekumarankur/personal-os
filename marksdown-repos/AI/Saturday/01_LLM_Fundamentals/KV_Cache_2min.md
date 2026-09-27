@@ -1,5 +1,33 @@
 # KV Cache — 2-Minute
 
+Your company launches an AI assistant for **1,000 concurrent users**.
+
+The model fits comfortably on the GPU, so the team assumes capacity is fine.
+
+Then production traffic increases. Suddenly, **GPU memory runs out and throughput drops**.
+
+The problem isn't the model size. Each active user is also consuming GPU memory through the **KV cache**. Longer conversations and more concurrent users mean more KV-cache memory. ([GitHub][1])
+
+As the Engineering Manager, you now understand why the architecture team is discussing **context size, concurrency, batching and GPU capacity** together.
+
+You can make a better infrastructure decision instead of simply saying:
+
+> “Let's add more GPUs.”
+
+### Why I am reading this
+
+**Because KV Cache connects an LLM's context and traffic directly to GPU capacity, concurrency and infrastructure cost.**
+
+### Leadership question
+
+> **“At our expected context length and concurrency, how much KV-cache memory do we need per GPU?”**
+
+### One-line takeaway
+
+> **In production AI, GPU capacity isn't just about the model — it's also about the KV Cache created by every active user.**
+
+[1]: https://github.com/itsmekumarankur/personal-os/blob/master/marksdown-repos/AI/Saturday/01_LLM_Fundamentals/KV_Cache_2min.md "personal-os/marksdown-repos/AI/Saturday/01_LLM_Fundamentals/KV_Cache_2min.md at master · itsmekumarankur/personal-os · GitHub"
+
 <img width="792" height="379" alt="Screenshot from 2026-09-27 06-19-34" src="https://github.com/user-attachments/assets/3504e066-51a1-452d-a9cb-6d8c083f7ae6" />
 
 > **Goal:** Understand what the KV cache stores, why it is critical for LLM inference, how it affects GPU memory and concurrency, and why serving systems care about KV-cache management.
