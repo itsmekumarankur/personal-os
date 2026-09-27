@@ -1,4 +1,5 @@
 # GPU Basics for LLMs — 2-Minute
+
 <img width="762" height="490" alt="Screenshot from 2026-09-27 10-07-28" src="https://github.com/user-attachments/assets/6ecb5c81-4b0a-4e00-8143-4265a9a26f3c" />
 
 > **Goal:** Understand why LLMs need GPUs, what GPU memory and compute mean, and how GPU architecture affects model size, latency, throughput, and cost.
