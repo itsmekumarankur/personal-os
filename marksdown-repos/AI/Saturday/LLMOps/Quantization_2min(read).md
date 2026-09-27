@@ -1,4 +1,4 @@
-# Quantization — A 5-Minute AI Architect Guide
+# Quantization — A 2-Minute
 
 > **Goal:** Understand how quantization reduces LLM memory and serving cost, what FP16/BF16/INT8/INT4 mean, the quality trade-offs, and how quantization affects production architecture.
 
