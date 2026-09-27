@@ -1,4 +1,33 @@
 # Vector Databases — 2-Minute 
+
+
+
+Your company wants an AI assistant that can answer questions from **millions of internal documents**.
+
+The team says:
+
+> “Let's put everything into the LLM.”
+
+That quickly becomes expensive and slow. More importantly, the AI may retrieve the **wrong information**.
+
+You ask:
+
+> **“How will we find the right information before sending anything to the LLM?”**
+
+Now the team introduces a **Vector DB** for semantic retrieval, combined with metadata filters and, where needed, keyword search. The Vector DB becomes the retrieval layer—not the whole RAG system. ([GitHub][1])
+
+### Why I am reading this
+
+**Because a Vector DB is a key architectural decision behind how an AI system finds the right enterprise information at scale.**
+
+### Leadership question
+
+> **“How will we ensure the AI retrieves the right information—not just similar information?”**
+
+### One-line takeaway
+
+> **The quality of an AI answer often starts with the quality of what we retrieve for it.**
+
 <img width="780" height="354" alt="Screenshot from 2026-09-27 06-24-45" src="https://github.com/user-attachments/assets/aebc0f4c-4884-4cd3-ac6b-600b3d7929fa" />
 
 
