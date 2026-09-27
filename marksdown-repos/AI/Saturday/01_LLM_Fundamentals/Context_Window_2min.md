@@ -1,4 +1,61 @@
 # Context Window — 2-Minute 
+Yes — you need something much simpler: **a story that makes you feel why a leader should care**, not an explanation of the technology.
+
+### 2-minute leadership story
+
+Imagine you are an Engineering Manager in a bank.
+
+The business comes to you and says:
+
+> **“We want an AI assistant that can answer customer questions using all our customer and product information.”**
+
+Your team builds it. The AI works well.
+
+But after a few months, the business comes back:
+
+> **“Why is every AI interaction becoming so expensive? And why is the response getting slower?”**
+
+Your architect says:
+
+> “Because we are sending a huge amount of information to the AI every time. The model can handle it, so we are using it.”
+
+Now, as a leader, you have a decision to make.
+
+You could simply say:
+
+> “Okay, let's buy a bigger model.”
+
+Or you could ask:
+
+> **“Does the AI really need all this information to answer the question?”**
+
+You discover that for most questions, the AI needs only a **small, relevant portion** of the available information.
+
+So instead of giving the AI everything, your team gives it **only what it actually needs**.
+
+The result:
+
+**Lower cost → faster response → better focus → easier scaling.**
+
+### That's why you are learning Context Window.
+
+You are **not learning it to become an LLM engineer.**
+
+You are learning it because, as a future **Senior Engineering Manager / VP**, you need to understand:
+
+> **How much information should we give AI to solve a business problem — and what does that decision cost us?**
+
+A good technology leader doesn't ask:
+
+> *“How powerful is the AI?”*
+
+They ask:
+
+> **“How do we use the AI intelligently, efficiently and economically?”**
+
+**Context Window is one small concept that teaches you exactly that mindset.**
+
+
 <img width="772" height="467" alt="Screenshot from 2026-09-27 09-01-34" src="https://github.com/user-attachments/assets/60a7d2e8-9ea6-464d-b878-be5859999e29" />
 
 
