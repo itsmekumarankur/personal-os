@@ -852,3 +852,13 @@ Think in two pipelines:
 > **RAG is not simply "put documents into a vector database." It is an end-to-end retrieval architecture: ingestion, chunking, embeddings, retrieval, ranking, context construction, generation, security, and evaluation.**
 
 For an AI Architect, the most important skill is understanding how each stage affects **retrieval quality, hallucination risk, latency, token cost, security, and scalability**.
+
+## SET 10 — Closing & Executive Communication
+
+- **“So, here’s the decision.”**
+- **“Let’s agree on the next three actions.”**
+- **“Who owns what, and by when?”**
+- **“Let’s leave this meeting with clarity.”**
+- **“We know what needs to happen. Let’s make it happen.”**
+
+> **Practice Goal:** End conversations with **clarity + ownership + action**.
