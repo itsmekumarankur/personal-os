@@ -435,3 +435,14 @@ This can improve efficiency for repeated prefixes.
 ```
 
 > **KV cache is one of the most important bridges between Transformer theory and production LLM infrastructure. It improves generation efficiency, but turns context length and concurrency directly into GPU-memory concerns.**
+
+## SET 6 — Leadership
+
+- **“I’ll take ownership of it.”**
+- **“You focus on your part. I’ll handle the coordination.”**
+- **“If my team owns it, I own it.”**
+- **“I want accountability, not blame.”**
+- **“Let’s fix the process, not just the incident.”**
+
+> **Practice Goal:** Sound like a **leader**, not just a task manager.
+
