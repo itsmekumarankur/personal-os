@@ -1,4 +1,33 @@
 # Harness Design for Long-Running AI Apps - 3 Minute
+
+
+Your company asks an AI agent to **build a complete application**.
+
+The team gives the task to one powerful agent. After several hours, it produces something that **looks impressive—but important features are broken**.
+
+As the Engineering Manager, you realize the problem isn't simply the AI model.
+
+The real question is:
+
+> **“What system do we need around the AI so it can reliably complete a long-running task?”**
+
+You introduce a simple **harness**: **Plan → Build → QA → Feedback → Improve**.
+
+Now the AI doesn't just generate work—it **gets its work checked and corrected**. The article shows that this can produce much better outcomes, although the harness itself adds cost and complexity. ([GitHub][1])
+
+### Why I am reading this
+
+**Because as AI moves from answering questions to doing hours-long work, the architecture around the model becomes as important as the model itself.**
+
+### Leadership question
+
+> **“For this AI task, what do we need around the model to make the outcome reliable?”**
+
+### One-line takeaway
+
+> **Don't just build a smarter AI—build the right environment around it.**
+
+
 <img width="769" height="398" alt="Screenshot from 2026-09-27 06-26-37" src="https://github.com/user-attachments/assets/790db34e-2bb8-4080-bc2f-bc3428b57ebf" />
 
 
