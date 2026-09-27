@@ -1,4 +1,6 @@
 # Context Window — 2-Minute 
+<img width="772" height="467" alt="Screenshot from 2026-09-27 09-01-34" src="https://github.com/user-attachments/assets/60a7d2e8-9ea6-464d-b878-be5859999e29" />
+
 
 > **Goal:** Understand what an LLM context window is, what consumes it, why it matters for RAG and agents, and how context length affects memory, latency, quality, and cost.
 
