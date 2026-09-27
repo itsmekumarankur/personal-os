@@ -1,4 +1,5 @@
-# Architect-Level AI Fine-Tuning Interview Drill
+# AI Fine-Tuning 
+<img width="798" height="541" alt="Screenshot from 2026-09-27 06-52-35" src="https://github.com/user-attachments/assets/d9beb730-50e4-440c-ac73-c859518c5f40" />
 
 ## Interview Mode
 
