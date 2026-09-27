@@ -1,6 +1,7 @@
 # RAG — 2-Minute 
 
-![Uploading image.png…]()
+<img width="779" height="423" alt="image" src="https://github.com/user-attachments/assets/3b08b7ea-7ebc-48a2-86d9-ad4b51af08d0" />
+
 
 
 > **Goal:** Understand Retrieval-Augmented Generation (RAG), why it is used, how the complete pipeline works, and the architectural decisions that determine retrieval quality, latency, cost, and reliability.
