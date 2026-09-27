@@ -1,5 +1,32 @@
 # LLM Model Serving 2-Minute
 
+
+Your company has a working AI model and the business says:
+
+> **“Let's put it into production.”**
+
+The team deploys the model—but suddenly customers face slow responses during peak traffic, GPUs are expensive, and failures affect the application.
+
+As the Engineering Manager, you realize the problem isn't **the model**. It is **how the model is being served**.
+
+Now you ask the team:
+
+> **“What are our expected requests, latency targets, GPU capacity, scaling strategy and cost per request?”**
+
+That changes the conversation from *“Can we run this model?”* to **“Can we run it reliably and economically at business scale?”** Your notes frame model serving around latency, throughput, scalability, reliability and cost. ([GitHub][1])
+
+### Why I am reading this
+
+**Because an AI model is only useful to the business when we can serve it reliably, fast enough, and at an acceptable cost.**
+
+### Leadership question
+
+> **“Can this serving architecture meet our expected traffic and SLOs without making the AI economically unviable?”**
+
+### One-line takeaway
+
+> **A model is an experiment until you can serve it reliably at business scale.**
+
 > **Goal:** Understand how a trained LLM becomes a production API and how to architect model serving for latency, throughput, scalability, reliability, and cost.
 
 ---
