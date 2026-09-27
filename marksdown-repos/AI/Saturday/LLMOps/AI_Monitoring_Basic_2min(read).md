@@ -1,4 +1,6 @@
 # AI Monitoring — 2 Min
+<img width="774" height="408" alt="Screenshot from 2026-09-27 06-22-51" src="https://github.com/user-attachments/assets/0752d747-8ed8-462f-be07-e1ffa7fc8286" />
+
 ## Monitoring Requirements
 
 - Prompt monitoring — detect prompt drift and injection attempts
