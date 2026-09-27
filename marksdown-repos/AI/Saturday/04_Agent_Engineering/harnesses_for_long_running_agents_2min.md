@@ -1,4 +1,34 @@
 # Effective Harnesses for Long-Running Agents — 2 Min
+
+
+
+Your company asks an AI agent to build a large product feature over several days.
+
+The team says:
+
+> **“The agent is powerful enough. Just give it the whole project and let it work.”**
+
+After a few hours, the agent loses track of what it completed, repeats work, and eventually says **“Done”** while important features are still missing.
+
+As the Engineering Manager, you realize the problem isn't simply the AI model. **A long-running agent needs an engineering harness around it**—clear feature breakdown, progress tracking, tests, Git history, and clean handoffs between sessions. ([GitHub][1])
+
+Now you can ask your team:
+
+> **“How will the next agent know exactly what has been completed, what failed, and what it should do next?”**
+
+### Why I am reading this
+
+**Because reliable AI agents are not just about model intelligence—they need the right engineering system to work reliably over long-running tasks.**
+
+### Leadership question
+
+> **“If the agent stops today, can another agent continue the work tomorrow without losing context or repeating work?”**
+
+### One-line takeaway
+
+> **A powerful agent can start the work; a good harness makes sure it actually finishes it.**
+
+
 <img width="779" height="476" alt="Screenshot from 2026-09-27 06-29-33" src="https://github.com/user-attachments/assets/a5a07376-a89f-4569-ba60-4085ace05ed4" />
 
 **Source:** Anthropic — Effective Harnesses for Long-Running Agents
