@@ -1,5 +1,4 @@
 # AI Monitoring — 2 Min
-### 1-minute leadership story
 
 Your company launches an AI assistant.
 For the first few weeks, everything looks fine.
