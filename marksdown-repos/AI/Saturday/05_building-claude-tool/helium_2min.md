@@ -1,5 +1,32 @@
 # Helium 2 Minute
 
+
+Your company wants an AI coding assistant for **100 developers**.
+
+It works well in a small pilot. Then the team rolls it out broadly—and developers start getting **stale code suggestions**, because the codebase is changing constantly. Some teams also depend on other repositories that the assistant cannot see. ([GitHub][1])
+
+As the Engineering Manager, you realize the real question isn't:
+
+> **“Is the LLM good?”**
+
+It is:
+
+> **“Does our AI have the right, current knowledge of our engineering ecosystem?”**
+
+Now you start asking about **code history, index freshness, multi-repo knowledge, validation, and developer feedback**—the exact architectural concerns raised in the Helium note. ([GitHub][1])
+
+### Why I am reading this
+
+**Because an AI coding tool is only as useful as the quality, freshness, and completeness of the engineering knowledge it can access.**
+
+### Leadership question
+
+> **“How do we ensure the AI is using the current and complete context of our codebase?”**
+
+### One-line takeaway
+
+> **AI coding is not just about the model—it is about giving the model trustworthy engineering knowledge.**
+
 ---
 
 ## ADDENDUM 1: THE TEMPORAL DIMENSION
