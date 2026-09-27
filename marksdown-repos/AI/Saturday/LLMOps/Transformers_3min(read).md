@@ -1036,3 +1036,17 @@ The breakthrough was not simply "a better neural network."
 
 It was the architectural idea of making **attention the primary mechanism for modeling relationships in a sequence**, enabling highly parallel training and providing the foundation for today's large language models.
 
+# ⭐ 10 Statements to Practice Every Day
+
+- **“Let me be clear.”**
+- **“What exactly are we trying to solve?”**
+- **“The real problem is…”**
+- **“What are we optimizing for?”**
+- **“Let’s challenge that assumption.”**
+- **“Here’s what I recommend.”**
+- **“What’s the biggest risk?”**
+- **“I’ll take ownership of it.”**
+- **“So, here’s the decision.”**
+- **“Who owns what, and by when?”**
+
+> **Practice Goal:** Build the habit of communicating with **clarity, confidence, brevity, and ownership**.
