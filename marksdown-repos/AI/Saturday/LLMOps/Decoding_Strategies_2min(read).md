@@ -1,4 +1,4 @@
-# Decoding Strategies — A 5-Minute AI Architect Guide
+# Decoding Strategies — 2-Minute
 
 > **Goal:** Understand how an LLM turns probability distributions into actual tokens, and how greedy decoding, temperature, top-k, top-p, beam search, and related techniques change output behavior.
 
