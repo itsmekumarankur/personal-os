@@ -419,3 +419,13 @@ Therefore agent architectures often need:
 ```
 
 > **A large context window gives you more working space, but good AI architecture is about putting the right information into that space — not simply putting more information there.**
+
+## SET 2 — Getting to the Point
+
+- **“Let’s get to the point.”**
+- **“What exactly are we trying to solve?”**
+- **“Let’s focus on the real issue.”**
+- **“That’s not the problem. This is the problem.”**
+- **“Let’s not waste time solving the wrong problem.”**
+
+> **Practice Goal:** Reduce long explanations into one clear statement.
