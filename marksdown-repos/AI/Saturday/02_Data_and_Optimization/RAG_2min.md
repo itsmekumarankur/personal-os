@@ -1,5 +1,34 @@
 # RAG — 2-Minute 
 
+
+Your bank launches an AI assistant using internal policies and product documents.
+
+The LLM is powerful, but customers still get wrong answers.
+
+The team says:
+
+> “We need a better model.”
+
+As the Engineering Manager, you ask:
+
+> **“Are we giving the model the right information?”**
+
+You discover the real problem is **RAG retrieval**: the system is sometimes retrieving the wrong or too many documents. A powerful LLM cannot give a reliable answer if the evidence it receives is wrong. ([GitHub][1])
+
+Now your team focuses on **retrieval quality, permissions, relevance, latency and cost** instead of simply buying a bigger model.
+
+### Why I am reading this
+
+**Because in enterprise AI, the quality of the answer often depends as much on the information we retrieve as on the LLM itself.**
+
+### Leadership question
+
+> **“Are we measuring retrieval quality separately from LLM quality?”**
+
+### One-line takeaway
+
+> **A better model cannot fix bad information.**
+
 <img width="779" height="423" alt="image" src="https://github.com/user-attachments/assets/3b08b7ea-7ebc-48a2-86d9-ad4b51af08d0" />
 
 
