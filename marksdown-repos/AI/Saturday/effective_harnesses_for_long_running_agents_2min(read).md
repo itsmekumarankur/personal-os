@@ -1,4 +1,5 @@
 # Effective Harnesses for Long-Running Agents — 2 Min
+<img width="779" height="476" alt="Screenshot from 2026-09-27 06-29-33" src="https://github.com/user-attachments/assets/a5a07376-a89f-4569-ba60-4085ace05ed4" />
 
 **Source:** Anthropic — Effective Harnesses for Long-Running Agents
 
