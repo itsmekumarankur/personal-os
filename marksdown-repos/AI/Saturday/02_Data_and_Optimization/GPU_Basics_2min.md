@@ -1,5 +1,36 @@
 # GPU Basics for LLMs — 2-Minute
 
+
+Your company wants to deploy a large AI model.
+
+The team says:
+
+> **“We need an expensive high-end GPU.”**
+
+Before approving the infrastructure budget, you ask:
+
+> **“What exactly are we paying for?”**
+
+You discover that GPU choice is not simply about **having more compute**. The model must fit into GPU memory, and actual performance also depends on memory bandwidth, concurrency, latency and workload. ([GitHub][1])
+
+Now you can challenge the architecture:
+
+> **“Do we really need the most powerful GPU, or do we need the right GPU for our workload?”**
+
+That can change the infrastructure cost significantly without compromising the business requirement.
+
+### Why I am reading this
+
+**Because GPU choice is a business investment decision—not just a technical hardware decision.**
+
+### Leadership question
+
+> **“What workload are we sizing for, and what GPU capacity does that workload actually require?”**
+
+### One-line takeaway
+
+> **Don't buy the most powerful GPU; buy the right GPU for the workload.**
+
 <img width="762" height="490" alt="Screenshot from 2026-09-27 10-07-28" src="https://github.com/user-attachments/assets/6ecb5c81-4b0a-4e00-8143-4265a9a26f3c" />
 
 > **Goal:** Understand why LLMs need GPUs, what GPU memory and compute mean, and how GPU architecture affects model size, latency, throughput, and cost.
