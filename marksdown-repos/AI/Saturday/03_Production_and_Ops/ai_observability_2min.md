@@ -1,4 +1,30 @@
 # ai observability — 2 minute 
+### 1-minute leadership story
+
+Your AI assistant is live.
+
+One day, customers start getting **wrong answers**. But your normal dashboard is green:
+
+**HTTP 200. CPU normal. Latency normal. No errors.**
+
+Your team initially can't explain what happened.
+
+As the Engineering Manager, you realize the problem: **AI can be technically healthy but functionally wrong.** You need visibility into the entire AI journey—LLM calls, retrieval, tools, retries, tokens, latency and the final response. ([GitHub][1])
+
+Now your team can trace **where the problem happened**, instead of spending hours guessing.
+
+### Why I am reading this
+
+**Because AI production failures may not look like system failures—you need observability that tells you whether the AI is actually behaving correctly.**
+
+### Leadership question
+
+> **“If the AI gives a wrong answer but returns HTTP 200, how will we know—and where will we find the cause?”**
+
+### One-line takeaway
+
+> **For AI, “the system is up” doesn't mean “the system is working.”**
+
 <img width="773" height="681" alt="Screenshot from 2026-09-27 06-54-56" src="https://github.com/user-attachments/assets/1a010fc1-78a5-4726-9546-4e4ec2b4bb2a" />
 
 
