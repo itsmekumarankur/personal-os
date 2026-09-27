@@ -1,5 +1,5 @@
 # Context Window — 2-Minute 
-### 1-minute leadership story
+
 
 Your team builds an AI assistant and says:
 
