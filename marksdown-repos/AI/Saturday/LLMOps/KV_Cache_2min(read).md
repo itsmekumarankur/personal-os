@@ -1,4 +1,4 @@
-# KV Cache — A 5-Minute AI Architect Guide
+# KV Cache — 2-Minute
 
 > **Goal:** Understand what the KV cache stores, why it is critical for LLM inference, how it affects GPU memory and concurrency, and why serving systems care about KV-cache management.
 
