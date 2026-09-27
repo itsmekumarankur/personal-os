@@ -180,9 +180,12 @@ Identify root cause
 
 > **AI monitoring is not just "Is my model up?" — it is "Is my AI system reliable, affordable, secure, high-quality, and behaving consistently as data, models and user behaviour change?"**
 
-> **SET 1 — Confidence & Presence**
-“Let me be clear.”
-“I know what I’m doing.”
-“I’m not here to guess. I’m here to solve the problem.”
-“Here’s what I know.”
-“I’ll handle it.”
+## SET 1 — Confidence & Presence
+
+- **“Let me be clear.”**
+- **“I know what I’m doing.”**
+- **“I’m not here to guess. I’m here to solve the problem.”**
+- **“Here’s what I know.”**
+- **“I’ll handle it.”**
+
+> **Practice Goal:** Say these slowly and confidently, without unnecessary explanation.
