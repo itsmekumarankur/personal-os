@@ -1,5 +1,8 @@
 # Transformers — 3-Minute
 
+<img width="791" height="346" alt="Screenshot from 2026-09-27 10-39-13" src="https://github.com/user-attachments/assets/1cc7fd77-379b-4c99-9028-1ef4b7393b31" />
+
+
 > **Goal:** Understand what a Transformer is, why it changed AI, and how the major components fit together — without getting buried in mathematics.
 
 ---
