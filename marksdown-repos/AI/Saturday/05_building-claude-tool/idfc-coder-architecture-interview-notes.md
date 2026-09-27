@@ -1,32 +1,4 @@
 # IDFC Coder — 
-### 1-minute leadership story
-
-Your company wants to give **10,000 developers an internal AI coding assistant**.
-
-The first instinct is:
-
-> “Let's buy GPUs and deploy the model.”
-
-But as an Engineering Manager, you ask: **“What happens when 500 developers use it at the same time?”**
-
-Now the real architecture appears: requests need **authentication, rate limits, relevant code context, queuing, GPU scheduling, scaling and failure handling**. The note specifically treats the **Prompt Gateway and inference layer as key control points**, rather than simply putting an LLM behind an API. ([GitHub][1])
-
-Without understanding this, you could build something that works in a demo but **fails or becomes extremely expensive in production**.
-
-### Why I am reading this
-
-**Because AI adoption at enterprise scale is not just “adding an LLM” — it is designing the platform around workload, security, cost and reliability.**
-
-### Leadership question
-
-> **“What happens when adoption grows from 100 users to 10,000?”**
-
-> **“Where are our controls for cost, security, context and GPU capacity?”**
-
-### One-line takeaway
-
-> **A production AI product is a platform problem, not just a model problem.** ([GitHub][1])
-
 
 **Assumed workload:**
 - 10,000 registered developers
