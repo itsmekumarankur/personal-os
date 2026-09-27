@@ -1,4 +1,35 @@
-# IDFC Coder — System Design & Architect Thinking Notes
+# IDFC Coder —
+
+Your company wants to give thousands of developers an AI coding assistant.
+
+The easy decision is:
+
+> **“Let's buy an AI coding tool and give everyone access.”**
+
+But as the Engineering Manager, you realize the developers may send **source code, internal APIs, architecture and business logic** to a third-party AI service. At the same time, usage can grow rapidly and become a major recurring cost. Your note frames the decision around **cost, control, security, auditability and developer productivity**. ([GitHub][1])
+
+Now the question is no longer:
+
+> “Which AI coding tool is better?”
+
+It becomes:
+
+> **“Should AI coding be a commodity tool we consume, or a capability we need to control?”**
+
+That is the leadership decision behind IDFC Coder.
+
+### Why I am reading this
+
+**Because enterprise AI adoption is not just about choosing an AI tool—it is about deciding who controls the data, cost, security and developer experience.**
+
+### Leadership question
+
+> **“What should we own ourselves, and what should we safely consume from a vendor?”**
+
+### One-line takeaway
+
+> **AI adoption at enterprise scale is an architecture and business decision—not just a developer-tool decision.**
+
 
 > **Central architectural idea:** The LLM is only one component. The platform around the LLM is what makes it production-grade.
 
