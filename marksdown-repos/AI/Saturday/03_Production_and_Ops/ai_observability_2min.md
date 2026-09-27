@@ -1,5 +1,5 @@
 # ai observability — 2 minute 
-### 1-minute leadership story
+
 
 Your AI assistant is live.
 
