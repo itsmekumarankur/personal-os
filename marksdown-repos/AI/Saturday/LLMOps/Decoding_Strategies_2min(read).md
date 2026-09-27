@@ -525,3 +525,14 @@ may not solve the underlying problem.
 ```
 
 > **Decoding is the policy that turns the model's probability distribution into an actual sequence of tokens.**
+
+## SET 3 — Disagreement
+
+- **“I understand your point. I see it differently.”**
+- **“I disagree, and here’s why.”**
+- **“That’s one way to look at it. Here’s another.”**
+- **“I don’t think the data supports that conclusion.”**
+- **“Let’s challenge that assumption.”**
+
+> **Practice Goal:** Learn to disagree without sounding defensive.
+
