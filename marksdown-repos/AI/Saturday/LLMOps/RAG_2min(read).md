@@ -1,4 +1,4 @@
-# RAG — A 5-Minute AI Architect Guide
+# RAG — 2-Minute 
 
 > **Goal:** Understand Retrieval-Augmented Generation (RAG), why it is used, how the complete pipeline works, and the architectural decisions that determine retrieval quality, latency, cost, and reliability.
 
