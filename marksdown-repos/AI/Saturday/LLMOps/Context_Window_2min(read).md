@@ -1,4 +1,4 @@
-# Context Window — A 5-Minute AI Architect Guide
+# Context Window — 2-Minute 
 
 > **Goal:** Understand what an LLM context window is, what consumes it, why it matters for RAG and agents, and how context length affects memory, latency, quality, and cost.
 
