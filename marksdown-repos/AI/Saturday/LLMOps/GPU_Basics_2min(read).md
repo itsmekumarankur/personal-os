@@ -516,3 +516,13 @@ Benchmark
 ```
 
 > **Key takeaway:** For LLMs, GPU architecture is not just about "which GPU is fastest." It is about balancing **memory capacity, memory bandwidth, compute, concurrency, latency, throughput, and cost**.
+
+## SET 5 — Handling Pressure
+
+- **“I’ve got this.”**
+- **“Let’s deal with one problem at a time.”**
+- **“Pressure doesn’t change the facts.”**
+- **“We can solve this. Let’s focus on how.”**
+- **“Give me the facts, and I’ll make the call.”**
+
+> **Practice Goal:** Stay calm when everyone else is rushing.
