@@ -1,4 +1,5 @@
-# Harness Design for Long-Running AI Apps - 5 Minute
+# Harness Design for Long-Running AI Apps - 3 Minute
+<img width="769" height="398" alt="Screenshot from 2026-09-27 06-26-37" src="https://github.com/user-attachments/assets/790db34e-2bb8-4080-bc2f-bc3428b57ebf" />
 
 
 Original article: https://www.anthropic.com/engineering/harness-design-long-running-apps
