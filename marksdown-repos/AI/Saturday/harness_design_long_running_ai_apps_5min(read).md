@@ -1,5 +1,5 @@
-# Harness Design for Long-Running AI Apps
-### Easy 10-minute notes — based on Anthropic's engineering article
+# Harness Design for Long-Running AI Apps - 5 Minute
+
 
 Original article: https://www.anthropic.com/engineering/harness-design-long-running-apps
 
