@@ -1,4 +1,50 @@
 # Decoding Strategies — 2-Minute
+### The 1-minute leadership story
+
+Imagine your team launches an AI assistant for customers.
+
+The model is powerful, but the business starts complaining:
+
+> **“Sometimes the AI gives a precise answer. Sometimes it gives a strange or overly creative answer to the exact same question.”**
+
+Your team says, *“The model is good. Maybe we need a bigger model.”*
+
+As the Engineering Manager, you ask one simple question:
+
+> **“Are we controlling how the AI chooses its answer?”**
+
+You discover that the same AI can be configured to behave **very differently**—highly predictable for a banking transaction, or more exploratory for creative use cases. Your team had been using one approach for everything. ([GitHub][1])
+
+You change the strategy based on the business need.
+
+For a **financial transaction**, you want predictable, structured output.
+
+For a **customer-facing assistant**, you may allow some flexibility.
+
+For **creative content**, you want more diversity.
+
+Suddenly, the conversation changes from:
+
+> *“Which AI model should we buy?”*
+
+to:
+
+> **“What behavior do we need from AI for this business use case?”**
+
+That's the leadership value of understanding decoding strategies.
+
+### 1. Why I am reading this
+
+**Because as a technology leader, I need to understand that choosing an AI model is only part of the decision; how we configure its behavior can directly affect reliability, customer experience, and business risk.**
+
+### 2. Leadership questions I should now be able to ask
+
+* **“For this use case, do we want creativity or predictability—and why?”**
+* **“Is the problem really the model, or are we controlling its behavior incorrectly?”**
+
+### 3. One-line takeaway
+
+> **A good AI leader doesn't just choose the model—they decide how the AI should behave for the business.**
 
 > **Goal:** Understand how an LLM turns probability distributions into actual tokens, and how greedy decoding, temperature, top-k, top-p, beam search, and related techniques change output behavior.
 
