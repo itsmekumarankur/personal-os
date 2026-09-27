@@ -1,5 +1,4 @@
-# AI Monitoring — Architect's Reference Notes
-
+# AI Monitoring — 2 Min
 ## Monitoring Requirements
 
 - Prompt monitoring — detect prompt drift and injection attempts
