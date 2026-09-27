@@ -1,4 +1,4 @@
-# Effective Harnesses for Long-Running Agents — Easy Notes
+# Effective Harnesses for Long-Running Agents — 2 Min
 
 **Source:** Anthropic — Effective Harnesses for Long-Running Agents
 
