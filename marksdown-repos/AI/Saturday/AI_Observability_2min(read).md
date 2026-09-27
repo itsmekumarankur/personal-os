@@ -1,4 +1,6 @@
-# AI Observability — Architect's Notes
+# AI Observability — 2 minute 
+<img width="773" height="681" alt="Screenshot from 2026-09-27 06-54-56" src="https://github.com/user-attachments/assets/1a010fc1-78a5-4726-9546-4e4ec2b4bb2a" />
+
 
 > **Audience:** AI Architect / Engineering Architect  
 > **Goal:** Understand AI/LLM observability from an enterprise architecture perspective in a ~7-minute read.
