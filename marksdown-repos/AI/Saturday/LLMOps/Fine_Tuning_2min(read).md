@@ -534,3 +534,14 @@ RAG is usually the more direct architectural mechanism.
 > **Fine-tuning changes the model; RAG changes the information available to the model at inference time.**
 
 That distinction is fundamental for AI architecture.
+
+## SET 4 — Executive Decision-Making
+
+- **“Here’s what I recommend.”**
+- **“We have two options. Let’s make the trade-off explicit.”**
+- **“If we choose this, we need to accept that.”**
+- **“We need to make a decision.”**
+- **“I’m comfortable making that call.”**
+
+> **Practice Goal:** Move from **discussion → decision**.
+
