@@ -1,6 +1,7 @@
 # KV Cache — 2-Minute
 
 > **Goal:** Understand what the KV cache stores, why it is critical for LLM inference, how it affects GPU memory and concurrency, and why serving systems care about KV-cache management.
+<img width="792" height="379" alt="Screenshot from 2026-09-27 06-19-34" src="https://github.com/user-attachments/assets/3504e066-51a1-452d-a9cb-6d8c083f7ae6" />
 
 ---
 
