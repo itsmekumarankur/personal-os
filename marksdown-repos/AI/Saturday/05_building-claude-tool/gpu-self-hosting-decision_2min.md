@@ -1,39 +1,6 @@
 # GPU & Self-Hosting Cost Decision — 2 Minunte
 
 
-Your team says:
-
-> **“We can save ₹33 lakh by self-hosting the AI instead of using SaaS.”**
-
-It sounds like an easy decision.
-
-But as the Engineering Manager, you ask:
-
-> **“What does that ₹33 lakh saving really cost us?”**
-
-You discover that self-hosting also needs **GPU infrastructure, engineers, monitoring, security, operations and ongoing maintenance**. More importantly, those engineers could be building customer-facing features instead. ([GitHub][1])
-
-Now the decision is no longer:
-
-> **“GPU is cheaper than SaaS.”**
-
-It becomes:
-
-> **“Does self-hosting create enough business value to justify the total cost and engineering complexity?”**
-
-That is the leadership decision this topic teaches.
-
-### Why I am reading this
-
-**Because AI infrastructure is a business investment decision—not simply a GPU price comparison.**
-
-### Leadership question
-
-> **“What is the total cost of ownership, including engineering and opportunity cost?”**
-
-### One-line takeaway
-
-> **Don't compare GPU cost with SaaS price—compare the total business cost of both choices.** ([GitHub][1])
 
 
 > **Core lesson:** Don't start with *"Which GPU should I buy?"* Start with *"What workload am I trying to serve?"*
