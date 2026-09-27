@@ -1,5 +1,33 @@
 # Fine-Tuning — 2-Minute
 
+
+Your team wants to build a banking AI assistant.
+
+Someone says:
+
+> **“The model doesn't understand our banking terminology. Let's fine-tune it.”**
+
+You approve the investment.
+
+Later you discover the real problem was that the model **didn't have today's product policies and regulatory information**. Fine-tuning the model didn't solve that; RAG would have been the better choice. ([GitHub][1])
+
+As an Engineering Manager, understanding fine-tuning helps you stop an expensive architectural mistake:
+
+> **“Are we trying to change the model's behavior, or are we simply trying to give it better/current information?”**
+
+### Why I am reading this
+
+**Because fine-tuning vs RAG vs prompting is an important architecture and investment decision—not every AI problem needs model training.**
+
+### Leadership question
+
+> **“What problem are we actually solving: model behavior or missing knowledge?”**
+
+### One-line takeaway
+
+> **Fine-tune when you need to change behavior; use RAG when you need to change what the model knows.** ([GitHub][1])
+
+
 > **Goal:** Understand what fine-tuning changes, when to use it instead of prompting or RAG, the major fine-tuning approaches, and the production architecture around training and model deployment.
 
 ---
