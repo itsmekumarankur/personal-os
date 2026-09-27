@@ -1,4 +1,6 @@
-# Vector Databases — A 5-Minute AI Architect Guide
+# Vector Databases — 2-Minute 
+<img width="780" height="354" alt="Screenshot from 2026-09-27 06-24-45" src="https://github.com/user-attachments/assets/aebc0f4c-4884-4cd3-ac6b-600b3d7929fa" />
+
 
 > **Goal:** Understand what a vector database is, why LLM applications need one, how embeddings and similarity search work, and how to architect vector search for production AI systems.
 
