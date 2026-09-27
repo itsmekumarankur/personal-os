@@ -1174,24 +1174,3 @@ L4
       ↓
       WINNER
 ```
-
----
-
-## Quick Reference — Key Principles
-
-| Principle | Statement |
-|---|---|
-| Start point | "What workload am I serving?" not "Which GPU?" |
-| TCO | GPU invoice is tip of the iceberg |
-| Breakeven | Not fixed — function of assumptions |
-| Risk adjustment | Raw savings ≠ actual savings |
-| Fit vs speed | "You can't compute what you can't load" |
-| VRAM rule | Weights + KV cache + activations + runtime + headroom |
-| KV cache | Grows with context length & concurrency |
-| Quantization | Hardware-selection decision in disguise |
-| Quality SLA | Cheapest precision that meets SLA, not cheapest precision |
-| Headroom | "When you're at 80%, you're at 100%" |
-| Fit is binary | Performance is continuous |
-| Infinite cost | ₹50 GPU serving 0 requests = ∞ cost/request |
-| Winner | Cheapest GPU that works, not cheapest GPU |
-| Selection | Filter-then-optimize, not popularity contest |
