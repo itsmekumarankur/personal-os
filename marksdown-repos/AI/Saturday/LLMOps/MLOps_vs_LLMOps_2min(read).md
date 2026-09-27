@@ -1,4 +1,4 @@
-# MLOps vs LLMOps — An AI Architect's 5-Minute Guide
+# MLOps vs LLMOps — 2-Minute
 
 > **Audience:** AI Architect / Engineering Architect
 > **Goal:** Understand MLOps and LLMOps in a simple, architecture-first way.
