@@ -545,3 +545,13 @@ Instead:
 ```
 
 > **Quantization is fundamentally a memory–compute–quality trade-off. The architect's job is to find the lowest-cost precision that still satisfies the application's quality, latency, and reliability requirements.**
+
+## SET 9 — Handling Excuses
+
+- **“I understand the constraint. What’s the solution?”**
+- **“That explains the problem. It doesn’t solve it.”**
+- **“What can we control?”**
+- **“Let’s focus on what we can change.”**
+- **“I’m looking for options, not reasons.”**
+
+> **Practice Goal:** Stay constructive without accepting excuses.
