@@ -1,4 +1,4 @@
-# LLM Model Serving & APIs — A 5-Minute AI Architect Guide
+# LLM Model Serving 2-Minute
 
 > **Goal:** Understand how a trained LLM becomes a production API and how to architect model serving for latency, throughput, scalability, reliability, and cost.
 
