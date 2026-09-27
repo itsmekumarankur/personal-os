@@ -1,4 +1,4 @@
-# GPU Basics for LLMs — A 5-Minute AI Architect Guide
+# GPU Basics for LLMs — 2-Minute
 
 > **Goal:** Understand why LLMs need GPUs, what GPU memory and compute mean, and how GPU architecture affects model size, latency, throughput, and cost.
 
