@@ -1,4 +1,4 @@
-# IDFC Coder — Helium 2 Minute
+# Helium 2 Minute
 
 ---
 
