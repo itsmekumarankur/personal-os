@@ -1,5 +1,34 @@
 # Quantization — A 2-Minute
 
+Your team wants to deploy a large AI model, but it needs **4 GPUs**. The infrastructure cost is high, and deployment is complex.
+
+An architect suggests **quantizing the model** so it uses less memory. Suddenly, the model can potentially fit on **2 GPUs instead of 4**. ([GitHub][1])
+
+But there is a catch: lower precision can reduce model quality.
+
+As the Engineering Manager, your decision isn't:
+
+> **“Can we use INT4?”**
+
+It's:
+
+> **“Can we reduce infrastructure cost while still meeting our accuracy and latency SLOs?”**
+
+So the team benchmarks **quality + latency + throughput + cost** before choosing the precision. ([GitHub][1])
+
+### Why I am reading this
+
+**Because quantization can turn directly into a business decision: how much AI capability do we need to buy, and what is the lowest infrastructure cost that still meets our quality requirements?**
+
+### Leadership question
+
+> **“What quality are we sacrificing, and how much infrastructure cost are we actually saving?”**
+
+### One-line takeaway
+
+> **Don't use the cheapest AI configuration—use the cheapest configuration that still meets the business SLO.**
+
+
 > **Goal:** Understand how quantization reduces LLM memory and serving cost, what FP16/BF16/INT8/INT4 mean, the quality trade-offs, and how quantization affects production architecture.
 
 ---
