@@ -1,5 +1,41 @@
 # Transformers — 3-Minute
 
+
+Your company decides to build its own AI platform.
+
+Your team says:
+
+> **“We just need an LLM API.”**
+
+But you need to make bigger decisions: **which models to use, what infrastructure they need, why some models are faster or more expensive, and where performance bottlenecks come from.**
+
+You understand that the **Transformer is the core architecture behind modern LLMs** and that attention is what allows the model to understand relationships across the input. ([GitHub][1])
+
+Now, when the team says:
+
+> “This model needs more GPU capacity.”
+
+you can ask:
+
+> **“Is that because of the model size, context, attention workload, or serving pattern?”**
+
+You don't need to implement the Transformer.
+
+You need enough understanding to **make the right architecture and investment decisions.**
+
+### Why I am reading this
+
+**Because Transformer is the foundation behind modern LLMs; understanding it helps me reason about model capability, performance and infrastructure decisions.**
+
+### Leadership question
+
+> **“What part of our LLM workload is driving the performance and infrastructure cost?”**
+
+### One-line takeaway
+
+> **Understand the engine before deciding how much infrastructure to build around it.**
+
+
 <img width="791" height="346" alt="Screenshot from 2026-09-27 10-39-13" src="https://github.com/user-attachments/assets/1cc7fd77-379b-4c99-9028-1ef4b7393b31" />
 
 
