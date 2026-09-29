@@ -1,6 +1,5 @@
 https://www.anthropic.com/engineering/building-effective-agents
 
-Here’s a **3-minute architect-level summary** of Anthropic’s *Building Effective Agents*. The central message is: **don’t start by building an autonomous agent—start with the simplest LLM system that solves the problem, then add agentic complexity only when it creates measurable value.** ([Anthropic][1])
 
 ## 🧠 3-Minute Summary — Building Effective Agents
 
