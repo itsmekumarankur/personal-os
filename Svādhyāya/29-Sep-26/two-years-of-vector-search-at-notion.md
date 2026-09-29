@@ -1,0 +1,1 @@
+https://www.notion.com/blog/two-years-of-vector-search-at-notion
