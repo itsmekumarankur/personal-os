@@ -1,17 +1,10 @@
 # Payment Reconciliation System — 8-Minute Architecture Guide
 
 > **Goal:** Design a payment reconciliation platform that can ingest financial records from many systems, match them accurately, identify exceptions, and provide a complete audit trail.
-
-The easiest way to understand this system is to **think like an architect asking questions in sequence**.
-
 ---
 
 # 1. First Question: What problem are we actually solving?
 
-### What this teaches
-This establishes the **business problem before jumping into Kafka, databases, or microservices**.
-
-### Why needed
 Reconciliation is fundamentally about answering:
 
 > **“Do all systems agree about the money?”**
@@ -82,10 +75,6 @@ So reconciliation is essentially a **financial consistency engine across indepen
 
 # 2. Question: What does the high-level architecture look like?
 
-### What this teaches
-You learn how to divide a large reconciliation system into **independent scalable components**.
-
-### Why needed
 Different sources have different:
 
 - formats
@@ -153,10 +142,6 @@ Therefore we should **normalize everything into a common financial transaction m
 
 # 3. Question: How do we ingest data from completely different systems?
 
-### What this teaches
-You learn the **Source → Adapter → Canonical Model** pattern.
-
-### Why needed
 One gateway may send:
 
 ```json
