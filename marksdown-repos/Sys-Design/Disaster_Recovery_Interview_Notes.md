@@ -17,53 +17,9 @@ Start by asking:
 ### What this teaches
 It separates **DR from normal high availability (HA)**.
 
-### Why needed
-Many candidates immediately say:
-
-> “We'll deploy the application in two regions.”
-
-That's not enough.
-
-DR asks:
 
 > **“If our entire primary environment becomes unavailable, how do we continue business and recover data?”**
 
-Think:
-
-```text
-             NORMAL WORLD
-
-        PRIMARY REGION
-       +---------------+
-       | Application   |
-       | Database      |
-       | Kafka         |
-       | Cache         |
-       +---------------+
-              |
-              v
-           Customers
-```
-
-Now imagine:
-
-```text
-       PRIMARY REGION
-       XXXXXXXXXXXXXXX
-       X  REGION DOWN X
-       XXXXXXXXXXXXXXX
-
-              |
-              | Disaster
-              v
-
-       SECONDARY REGION
-       +---------------+
-       | Application   |
-       | Database      |
-       | Kafka         |
-       +---------------+
-```
 
 DR is the capability to:
 
@@ -87,11 +43,6 @@ Resume normal operations
 
 # 2. Question: HA and DR — aren't they the same?
 
-### What this teaches
-This is one of the **first follow-up questions an architect may ask**.
-
-### Why needed
-You need to demonstrate that you understand different failure domains.
 
 ### High Availability
 
@@ -103,19 +54,6 @@ Server failure
 Another server takes over
 ```
 
-Example:
-
-```text
-             Load Balancer
-                  |
-          +-------+-------+
-          |               |
-       Server A         Server B
-          X
-          |
-          v
-       Server B
-```
 
 ### Disaster Recovery
 
@@ -627,8 +565,6 @@ Dashboard:
 ### What this teaches
 You learn that **DR is not just a database problem**.
 
-### Why needed
-Modern architectures often depend heavily on event streams.
 
 ```text
 Primary Kafka
@@ -653,24 +589,6 @@ Duplicates
 
 Potential failure:
 
-```text
-Producer
-   |
-   v
-Kafka Primary
-   |
-   X
-Consumer hasn't processed event
-```
-
-After failover:
-
-```text
-DR Kafka
-   |
-   v
-Consumer
-```
 
 The event may be processed again.
 
@@ -868,18 +786,6 @@ Even if DR is perfectly healthy, users won't reach it unless routing changes.
       Primary           DR
 ```
 
-During disaster:
-
-```text
-Region A
-   X
-   |
-   v
-Traffic Manager
-   |
-   v
-Region B
-```
 
 Possible mechanisms:
 
@@ -887,17 +793,9 @@ Possible mechanisms:
 DNS failover
 Global load balancer
 Anycast
-Cloud traffic manager
 Application-level routing
 ```
 
-But remember:
-
-> **DNS failover has TTL/cache implications.**
-
-Don't claim:
-
-> "DNS switches instantly."
 
 ---
 
