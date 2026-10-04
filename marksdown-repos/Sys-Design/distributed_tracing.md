@@ -45,16 +45,9 @@ Service C → span C
 
 # 3. Local Agent
 
-```text
-Your Services
-      ↓
-Local Agent
-```
-
 The agent:
 
 - batches spans
-- retries
 - has a bounded queue
 
 The business request should continue even if the tracing system is slow.
