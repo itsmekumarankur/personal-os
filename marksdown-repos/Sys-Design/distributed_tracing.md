@@ -97,31 +97,9 @@ The gateway is:
 
 > **Stateless, many copies behind a load balancer.**
 
-Its job is:
-
-```text
-Authenticate
-    ↓
-Validate
-    ↓
-Rate-limit
-    ↓
-Deduplicate
-```
-
-The gateway is basically the **front door of the tracing platform**.
+The gateway is - **front door of the tracing platform**.
 
 If too much traffic arrives:
-
-```text
-Overloaded?
-     ↓
-429 / 503
-     ↓
-Agent backs off
-```
-
-Again:
 
 > Don't allow tracing overload to hurt the application.
 
