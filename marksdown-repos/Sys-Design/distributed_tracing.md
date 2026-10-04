@@ -1,4 +1,4 @@
-# Distributed Tracing System Design — Easy Architect Notes
+# Distributed Tracing
 
 ## 1. The Big Picture
 
