@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-platform
+  labels: { app: agent-platform }
+spec:
+  replicas: 1                 # SQLite has one writer. Raise this only after replacing store.py with Postgres/DynamoDB.
+  strategy:
+    type: Recreate            # stop the old pod before starting the new one: never two writers on one volume
+  selector:
+    matchLabels: { app: agent-platform }
+  template:
+    metadata:
+      labels: { app: agent-platform }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001        # the volume is writable by the app user
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: agent
+          image: ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/agentic-platform:IMAGE_TAG   # set with: kustomize edit set image
+          ports:
+            - containerPort: 8000
+          env:
+            - { name: DB_PATH, value: /data/platform.db }
+            - { name: LOG_LEVEL, value: INFO }
+            - name: MODEL
+              value: claude-sonnet-4-5
+          envFrom:
+            - secretRef: { name: agent-platform-secrets }     # ANTHROPIC_API_KEY and API_KEYS_JSON
+          startupProbe:
+            httpGet: { path: /health, port: 8000 }
+            periodSeconds: 3
+            failureThreshold: 20
+          readinessProbe:                                      # "can I take traffic?" includes the database
+            httpGet: { path: /ready, port: 8000 }
+            periodSeconds: 10
+          livenessProbe:                                       # "should I be restarted?" has no dependencies
+            httpGet: { path: /health, port: 8000 }
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests: { cpu: 250m, memory: 256Mi }
+            limits: { memory: 512Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          volumeMounts:
+            - { name: data, mountPath: /data }
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: agent-platform-data }
+        - name: tmp
+          emptyDir: {}

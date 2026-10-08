@@ -1,0 +1,91 @@
+name: Deploy
+
+# Runs when you push a tag like v1.2.0, or by hand (Actions tab -> Deploy -> Run workflow).
+# To roll back: run it by hand and give an older tag or commit in "ref".
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git tag or commit to deploy (default: the selected branch)"
+        required: false
+
+permissions:
+  id-token: write      # lets the job ask AWS for short-lived credentials (OIDC); no stored AWS keys
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ap-south-1
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: ci
+    runs-on: ubuntu-latest
+    # In GitHub: Settings -> Environments -> production -> "Required reviewers".
+    # The job waits here until a person approves. That is the human gate for production.
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - id: version
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+
+      - name: Terraform init (remote state)
+        working-directory: infra
+        run: |
+          cp backend.tf.example backend.tf
+          terraform init \
+            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
+            -backend-config="key=agent-platform/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="dynamodb_table=${{ vars.TF_LOCK_TABLE }}"
+
+      - name: Make sure the image repository exists
+        working-directory: infra
+        run: terraform apply -auto-approve -target=aws_ecr_repository.this -var image_tag=bootstrap
+
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push the image (tag = commit id; tags cannot be overwritten)
+        run: |
+          IMAGE="${{ steps.ecr.outputs.registry }}/agentic-platform:${{ steps.version.outputs.sha }}"
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+
+      - name: Terraform plan
+        working-directory: infra
+        run: terraform plan -input=false -out=tfplan -var image_tag=${{ steps.version.outputs.sha }}
+
+      - name: Terraform apply (ECS rolls back by itself if the new version never becomes healthy)
+        working-directory: infra
+        run: terraform apply -input=false tfplan
+
+      - name: Smoke test
+        working-directory: infra
+        run: |
+          URL="$(terraform output -raw app_url)"
+          for i in $(seq 1 30); do
+            if curl -fsS "$URL/health"; then echo; echo "healthy"; exit 0; fi
+            sleep 10
+          done
+          echo "service did not become healthy"; exit 1
