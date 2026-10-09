@@ -919,3 +919,170 @@ Build one system in stages: (1) one agent plus read-only tools, (2) add a verifi
 ---
 
 *Note: These are architecture patterns, not regulatory advice. The bank's compliance, legal, risk, and security teams must define the actual requirements for data residency, retention, consent, model-risk governance, fair lending, and operational controls. Numbers such as six tool calls, 200 rows, or a 24-month date range are examples to tune using evidence.*
+
+---
+
+# PART 8 — Agent Execution Model: 10 Concurrent Users on AWS
+
+Assume **3 logical agents** (Coordinator, Transaction, Verifier) are deployed as one application on **2 EC2 instances**.
+
+```text
+                    10 Concurrent Requests
+                             |
+                             v
+                     AWS ALB (Layer 7)
+                             |
+                 +-----------+-----------+
+                 |                       |
+                 v                       v
+           EC2 Instance 1          EC2 Instance 2
+          (Agent Runtime)          (Agent Runtime)
+                 |                       |
+          +------+------+         +------+------+
+          |      |      |         |      |      |
+         R1     R2     R3        R6     R7     R8 ...
+          |      |      |         |      |
+          v      v      v         v      v
+       Workflow Executions (Async Tasks)
+          |      |      |         |      |
+          +------+------+---------+------+
+                         |
+                  LLM API / vLLM
+                         |
+                  Shared State Store
+```
+
+## 1. Agent definition vs. agent execution
+
+```text
+Agent Definitions (Reusable Code)
+    CoordinatorAgent
+    TransactionAgent
+    VerifierAgent
+
+                  |
+                  v
+          Agent Runtime (EC2)
+                  |
+          +-------+-------+
+          |               |
+       Request A       Request B
+          |               |
+        Run A             Run B
+          |               |
+       State A           State B
+```
+
+There are **3 agent definitions, 10 concurrent workflow executions, and 2 EC2 instances** in this example.
+
+- **Agent definition:** Reusable code that describes an agent's role and behaviour.
+- **Run/execution:** One live workflow for one incoming request.
+- **Execution state:** The data and progress belonging to that specific run.
+
+Agent definitions are reusable. Execution state must be isolated per request.
+
+## 2. How concurrency actually works
+
+Within one EC2 instance:
+
+```text
+                 Python ASGI Server
+                        |
+                   Event Loop
+                        |
+           +------------+------------+
+           |            |            |
+         Task A       Task B       Task C
+           |            |            |
+       Coordinator  Coordinator  Coordinator
+           |            |            |
+       Await LLM     Await DB      Await LLM
+           |            |            |
+           +------------+------------+
+                        |
+              Non-blocking I/O
+```
+
+- `asyncio` can manage concurrent I/O-bound workflows.
+- Threads or processes can handle blocking or CPU-bound operations when appropriate.
+- Each workflow may invoke multiple agents sequentially or in parallel.
+- LLM inference happens on the model-serving infrastructure, not inside the application event loop.
+
+**Simple way to think about it:** while Task A is waiting for an LLM response, the event loop can let Task B wait for a database response and Task C make another request. This is concurrency; it does not mean one Python task executes all work at the exact same instant.
+
+## 3. State isolation
+
+```text
+Request A                       Request B
+tenant_id = T1                  tenant_id = T1
+user_id   = U101                user_id   = U102
+run_id    = R001                run_id    = R002
+state     = S001                state     = S002
+    |                                |
+    +---------------+----------------+
+                    |
+                    v
+             Redis / PostgreSQL
+                    |
+          +---------+---------+
+          |                   |
+      State R001          State R002
+      User U101           User U102
+```
+
+The runtime loads state using the **authenticated execution context**. A `run_id` alone is not sufficient authorization; access must also be scoped to the authenticated tenant and user.
+
+Important points:
+
+- Conversation state may persist across requests when the product requires it.
+- Each individual run still needs its own execution context.
+- State reads and writes must enforce tenant/user access controls; one user's run must not read or overwrite another user's state.
+
+## 4. How the three agents communicate
+
+```text
+                 Workflow Run R001
+                        |
+                        v
+                Coordinator Agent
+                        |
+                 Shared Run State
+                        |
+                        v
+                Transaction Agent
+                        |
+                  Tool Result
+                        |
+                        v
+                 Verifier Agent
+                        |
+                        v
+                    Response
+```
+
+Agents communicate through the orchestrator and structured workflow state. They do **not** require dedicated network connections or independent microservices simply because they are separate logical agents.
+
+For example:
+
+1. The **Coordinator Agent** receives the request, creates the run context, and decides which step comes next.
+2. The **Transaction Agent** performs an authorised lookup and returns structured transaction details.
+3. The **Verifier Agent** checks whether the result is complete and consistent with the request.
+4. The coordinator returns the approved result, or asks for another step / human review if verification fails.
+
+A structured hand-off could contain fields such as `run_id`, `task`, `evidence`, `tool_result`, `status`, and `next_action`. Pass only the information the next agent needs, and validate tool outputs before acting on them.
+
+## 5. The central production design decision
+
+> **Agent = logical capability; Run = execution instance; State = isolated context; Worker = compute capacity.**
+
+Scale workers based on concurrency, latency, queue depth, and resource utilisation—not the number of agent definitions alone.
+
+### AI Architect learning points
+
+- **Separate logic from runtime:** Define an agent once and reuse it across many runs.
+- **Separate runs from each other:** Never keep user-specific state in shared mutable global variables.
+- **Use asynchronous I/O carefully:** It helps serve many requests while waiting on databases or LLM APIs, but blocking code can stall the event loop.
+- **Treat the model server as a separate capacity limit:** Application workers can accept requests faster than the model infrastructure can process them, so use bounded queues, timeouts, concurrency limits, and back-pressure.
+- **Make state secure and durable:** Scope state by authenticated identity, persist only what is needed, and define retention and recovery behaviour.
+- **Design for failure:** Add retries with limits, idempotency for actions that change data, observability by `run_id`, and safe handling when an agent or tool fails.
+- **Scale from measurements:** Two EC2 instances and ten users are an illustrative setup, not a capacity guarantee. Load-test using realistic prompts, tool latency, token usage, model throughput, and failure scenarios before sizing production.
