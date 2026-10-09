@@ -1,0 +1,34 @@
+# docker compose up --build        (needs a .env file: see .env.example)
+# Inside the compose network the services reach each other by NAME, so the URLs below are also the token AUDIENCES.
+# Run exactly ONE replica of each service: the auth server makes its signing key in memory at start-up and keeps tasks in memory.
+x-common: &common
+  build: .
+  environment: &env
+    ISSUER: http://auth:8001
+    MCP_URL: http://mcp:8002/mcp
+    A2A_BASE: http://a2a:8003
+    ORCH_SECRET: ${ORCH_SECRET:?set ORCH_SECRET in .env (24+ random characters)}
+    ADVISOR_SECRET: ${ADVISOR_SECRET:?set ADVISOR_SECRET in .env}
+    READONLY_SECRET: ${READONLY_SECRET:?set READONLY_SECRET in .env}
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+
+services:
+  auth:
+    <<: *common
+    command: ["auth"]
+    ports: ["127.0.0.1:8001:8001"]
+  mcp:
+    <<: *common
+    command: ["mcp"]
+    environment:
+      <<: *env
+      ALLOWED_HOSTS: "mcp:*,localhost:*,127.0.0.1:*"      # DNS-rebinding protection: only these Host headers are served
+    ports: ["127.0.0.1:8002:8002"]
+    depends_on: [auth]
+  a2a:
+    <<: *common
+    command: ["a2a"]
+    ports: ["127.0.0.1:8003:8003"]
+    depends_on: [auth, mcp]
