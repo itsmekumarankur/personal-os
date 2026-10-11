@@ -1,24 +1,49 @@
-"""Orchestrator-workers: a lead model decides the subtasks, workers do them, a last call merges.
+import re
+import time
 
-Pattern from Anthropic's claude-cookbooks (patterns/agents/orchestrator_workers.ipynb),
-class FlexibleOrchestrator, and from "Building Effective Agents":
-  1. the orchestrator reads the task and writes <analysis> and a <tasks> list,
-  2. each task goes to a worker call,
-  3. the results are combined.
+import llm
+from parallel import parallel_map
 
-What is different from Project 5 (parallelization): there the parts were fixed in
-advance (five reviewers). Here the model decides the parts at run time, so the
-number and kind of subtasks change with every request. That freedom needs guard rails.
 
-Added here (not in the cookbook):
-  - the plan is untrusted model output: it is parsed with a regex, capped at
-    max_tasks, and falls back to one task if it is empty,
-  - workers run in parallel (parallel_map from Project 5) and one failure does not
-    lose the others,
-  - a worker sees the goal, its own task, and only the TITLES of the other tasks,
-  - a final synthesis call writes one answer and lists gaps for failed parts,
-  - timing for each stage.
-"""
+# ============================================================
+# OVERALL FLOW: ORCHESTRATOR-WORKERS
+# ============================================================
+#
+#                     USER GOAL
+#                         |
+#                         v
+#                 +----------------+
+#                 | ORCHESTRATOR   |
+#                 | Creates a plan |
+#                 +----------------+
+#                         |
+#                  Dynamic task list
+#                  decided by the model
+#                         |
+#             +-----------+-----------+
+#             |           |           |
+#             v           v           v
+#         +--------+  +--------+  +--------+
+#         |Worker 1|  |Worker 2|  |Worker N|
+#         +--------+  +--------+  +--------+
+#             |           |           |
+#             +-----------+-----------+
+#                         |
+#                         v
+#                 +----------------+
+#                 |   SYNTHESIS     |
+#                 | Combines results|
+#                 +----------------+
+#                         |
+#                         v
+#                   FINAL ANSWER
+#
+# Key idea:
+# The model decides how to divide the goal at runtime.
+# Workers execute their tasks in parallel.
+# One final model call combines the results.
+# ============================================================
+
 import re
 import time
 

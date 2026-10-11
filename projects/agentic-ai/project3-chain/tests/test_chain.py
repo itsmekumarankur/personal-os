@@ -1,6 +1,7 @@
 """Tests run without an API key: the model is replaced by a scripted fake."""
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -12,8 +13,8 @@ def make_fake(verdict="revise", calls=None):
     """Return a fake llm that answers according to which step the prompt asks for."""
     calls = calls if calls is not None else []
 
-    def fake(prompt, system_prompt="", model=None, temperature=0.1):
-        calls.append({"prompt": prompt, "temperature": temperature})
+    def fake(prompt, system_prompt="", model=None):
+        calls.append({"prompt": prompt})
         if "first draft" in prompt:
             return "<draft>DRAFT TEXT</draft>"
         if "demanding editor" in prompt:
@@ -52,7 +53,7 @@ def test_gate_skips_polish_when_verdict_is_pass():
 
 
 def test_missing_tags_fall_back_to_raw_text():
-    def fake(prompt, system_prompt="", model=None, temperature=0.1):
+    def fake(prompt, system_prompt="", model=None):
         return "plain text without tags"
 
     result = run_pipeline("anything", llm=fake)
@@ -61,10 +62,44 @@ def test_missing_tags_fall_back_to_raw_text():
     assert result["verdict"] == "revise"
 
 
-def test_per_step_temperatures():
-    calls = []
-    run_pipeline("x", llm=make_fake("revise", calls))
-    assert [c["temperature"] for c in calls] == [0.7, 0.2, 0.3]
+def test_llm_call_omits_unsupported_temperature(monkeypatch):
+    request = {}
+
+    class FakeMessages:
+        def create(self, **kwargs):
+            request.update(kwargs)
+            return SimpleNamespace(
+                content=[
+                    SimpleNamespace(type="thinking", text=None),
+                    SimpleNamespace(type="text", text="reply"),
+                ],
+                stop_reason="end_turn",
+            )
+
+    monkeypatch.setattr(chain, "_get_client", lambda: SimpleNamespace(messages=FakeMessages()))
+
+    assert chain.llm_call("prompt") == "reply"
+    assert request["model"] == chain.MODEL
+    assert "temperature" not in request
+
+
+def test_llm_call_reports_response_without_text_blocks(monkeypatch):
+    class FakeMessages:
+        def create(self, **kwargs):
+            return SimpleNamespace(
+                content=[SimpleNamespace(type="thinking", text=None)],
+                stop_reason="max_tokens",
+            )
+
+    monkeypatch.setattr(chain, "_get_client", lambda: SimpleNamespace(messages=FakeMessages()))
+
+    try:
+        chain.llm_call("prompt")
+    except RuntimeError as exc:
+        assert "stop_reason='max_tokens'" in str(exc)
+        assert "block_types=['thinking']" in str(exc)
+    else:
+        raise AssertionError("expected an error for a response without text")
 
 
 def test_api_endpoint(monkeypatch):

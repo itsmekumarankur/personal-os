@@ -16,13 +16,13 @@ Anthropic's claude-cookbooks, folder `patterns/agents`:
 https://github.com/anthropics/claude-cookbooks/tree/main/patterns/agents
 
 - `util.py`: `llm_call()` and `extract_xml()` are adapted from here
-  (changes: client created on first use so tests need no API key; temperature is a parameter).
+  (changes: client created on first use so tests need no API key).
 - `basic_workflows.ipynb`: the prompt-chaining pattern, where each step's output feeds the next.
 - Background reading: https://www.anthropic.com/engineering/building-effective-agents
   (prompt chaining, and the programmatic "gate" between steps).
 
 Written for this project (not from the cookbook): the three prompts, the context
-that carries the request plus earlier outputs, per-step temperature, the gate,
+that carries the request plus earlier outputs, the gate,
 the FastAPI service, the tests, and the Terraform.
 
 ## Files
@@ -38,15 +38,16 @@ the FastAPI service, the tests, and the Terraform.
 ## 1. Run the tests (no API key)
 
 ```
-pip install -r requirements-dev.txt
+python -m pip install -r requirements-dev.txt
 python -m pytest -q
 ```
 
 ## 2. Run locally
 
 ```
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 export ANTHROPIC_API_KEY=your_anthropic_key
+export MODEL=claude-sonnet-5-5
 
 python cli.py "Explain what a load balancer does" --audience "new engineers" --max-words 150
 
@@ -59,7 +60,12 @@ curl -X POST http://localhost:8000/write \
 The response has `draft`, `critique`, `verdict`, `final` and `steps_run`
 (3 normally, 2 when the critic says "pass").
 
-Optional: set `MODEL` to use a different Claude model (default `claude-sonnet-4-5`).
+`MODEL` selects the Claude model (default `claude-sonnet-5-5`). If your API key
+does not have access to that model, set `MODEL` to a model ID available to your
+Anthropic account.
+
+The Anthropic SDK version used by this project requires `httpx==0.27.2`;
+installing `requirements.txt` keeps these versions compatible.
 
 ## 3. Docker
 
