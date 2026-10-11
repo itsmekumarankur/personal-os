@@ -307,8 +307,6 @@ A cache leak is a security incident: similar questions must not cause one user's
 
 ## 6. Observability and Day-2 Operations
 
-## 6. Observability and Day-2 Operations
-
 ### 6.1 Why normal monitoring is not enough
 
 An AI request can succeed technically but still give a wrong or unsafe answer.
