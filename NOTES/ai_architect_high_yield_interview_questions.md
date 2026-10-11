@@ -1,102 +1,20 @@
 # AI Architect Interview Playbook: High-Yield System Design Questions
 
-> **Purpose:** Practice architect-level answers to production AI system design questions.  
-> **How to use this file:** For each question, lead with requirements, describe the architecture, explain key trade-offs, identify failure modes, and define how you would validate the design. Treat the suggested answers as structured starting points—not scripts to memorize.
+> **Purpose:** Practice architect-level answers to production AI system design questions.
+> **How to use this file:** For each question, lead with requirements, describe the architecture, explain key trade-offs, identify failure modes, and define how you would validate the design.
 
 ---
 
 ## 1. A Repeatable Framework for Architect-Level Answers
 
-Avoid jumping straight to a framework or cloud service. Start by establishing the problem and constraints.
+**Short answer:**
+Requirements → Architecture → Trade-offs → Failure modes → Validation.
 
-### Step 1: Clarify functional requirements
-
-Ask:
-- Who are the users and what tasks must the system support?
-- Is the assistant read-only, or can it perform actions?
-- Which data sources and APIs must it access?
-- Does it need multi-turn conversation, citations, workflow state or human approval?
-- What constitutes a successful answer or task?
-
-### Step 2: Clarify non-functional requirements
-
-Establish measurable targets for:
-
-| Dimension | Questions to ask |
-|---|---|
-| Traffic | Average and peak QPS? Bursts? Request-size distribution? |
-| Latency | Is the target for first token or complete response? What are p95/p99 SLOs? |
-| Availability | Required uptime, recovery time and graceful-degradation behavior? |
-| Cost | Budget per request/task? Monthly inference and infrastructure budget? |
-| Quality | Accuracy, retrieval recall, citation quality and tool success targets? |
-| Security | Tenant isolation, PII, data residency, retention and audit requirements? |
-| Consistency | How fresh must enterprise data be? Can responses be cached? |
-| Operations | Who owns incidents, model upgrades, evaluation and rollback? |
-
-### Step 3: Present a component-level architecture
-
-A reusable starting point is:
-
-```text
-Client
-  |
-API Gateway: authentication, quotas, request-size limits
-  |
-Trusted policy context + input validation
-  |
-PII handling where required
-  |
-Exact cache / eligible semantic cache
-  |
-Request router and budget/deadline manager
-  |
-Orchestration graph
-  |
-  +----------------------+----------------------+
-  |                                             |
-  v                                             v
-RAG retrieval                              Controlled tool gateway
-Dense + lexical search                     Auth + schema + policy
-Reranking + ACL enforcement                Idempotency + audit
-  |                                             |
-  +----------------------+----------------------+
-                         |
-                    LLM Gateway
-        Routing, provider quotas, deadlines, fallbacks
-                         |
-                  Output validation
-          Grounding, schema, safety, disclosure policy
-                         |
-                      Response
-
-Cross-cutting: durable state, secrets, observability, evaluations,
-tenant isolation, cost controls, audit and incident response.
-```
-
-This is a logical architecture, not a requirement to deploy each box as a separate service. Keep the design as simple as possible while meeting the requirements.
-
-### Step 4: Explain the important trade-offs
-
-Explicitly compare:
-- Latency versus reasoning depth.
-- Cost versus task quality.
-- Cache hit rate versus stale or incorrect responses.
-- Logical versus physical tenant isolation.
-- Managed APIs versus self-hosted models.
-- Agent autonomy versus determinism and control.
-- Stronger validation versus additional latency.
-- High throughput versus tail-latency SLOs.
-
-### Step 5: Explain failure handling and validation
-
-For every critical dependency, answer:
-- What if it times out?
-- What if it returns malformed or incomplete data?
-- What if a request is retried?
-- What if the worker crashes?
-- How is the failure observed?
-- What is the safe fallback?
-- How will you test the behavior before release?
+1. **Functional requirements:** Users, tasks, read-only vs actions, data sources, multi-turn, success criteria.
+2. **Non-functional requirements:** Traffic, latency (p95/p99), availability, cost, quality, security, freshness, ownership.
+3. **Architecture:** Gateway → policy/validation → PII → cache → router/budget → orchestration → RAG + tools → LLM gateway → output validation → response. Keep it logical, not necessarily microservices.
+4. **Trade-offs:** Latency vs depth, cost vs quality, cache hit vs staleness, isolation vs efficiency, managed vs self-hosted, autonomy vs control.
+5. **Failure & validation:** Timeouts, malformed data, retries, crashes, observability, safe fallback, pre-release tests.
 
 ---
 
@@ -104,256 +22,60 @@ For every critical dependency, answer:
 
 ## Question 1: Design an enterprise assistant handling 10,000 queries per minute
 
-**Interviewer prompt:** Design a customer-facing AI agent handling 10,000 queries per minute that queries internal databases and CRM APIs. How do you design caching, rate limiting and queueing to protect downstream APIs and the LLM budget?
+**Short answer:**
+10,000/min ≈ 167 req/s. Use Little's Law: L = λW. At 2s average, ~334 in flight. But peaks, prompt sizes, and tool calls matter more.
 
-### A. Clarify the load before sizing infrastructure
+**Protect each scarce resource separately:**
+- **Ingress:** Per-tenant request + token quotas, concurrency limits, payload caps.
+- **Queues:** Bounded, deadline-aware, backpressure, controlled overload, jittered retries.
+- **Downstream APIs:** Per-dependency concurrency, timeouts, bulkheads, circuit breakers, request coalescing, no blind retries on non-idempotent calls.
+- **LLM budget:** Per-request token/time/cost budgets, cheap-model routing, bounded context/output, cache stable answers, detect runaway loops.
 
-10,000 queries/minute is approximately:
+**Caching:** Exact cache first. Semantic only for stable, non-personalized, non-time-sensitive intents. Cache key must include tenant, auth scope, model/prompt version, locale, data version.
 
-\[
-\frac{10,000}{60} \approx 167 \text{ requests/second}
-\]
+**Scaling:** Scale inference and app services independently. Load test with realistic prompt/output/tool/burst profiles. Track p50/p95/p99, TTFT, queue wait, rejections, cost per task, CRM errors, cache hit rate, stale incidents.
 
-That is an average rate if the stated figure represents a uniform minute. It does not reveal burst rate, active concurrency, prompt size, output length or how many tool calls each request triggers.
-
-Ask:
-- Is 10,000/minute an average or peak?
-- What is the burst profile?
-- What percentage of requests require RAG or CRM calls?
-- How many model calls and tool calls occur per user task?
-- What are the p95/p99 latency and availability targets?
-- What are the per-tenant quotas and budget limits?
-
-Estimate concurrency using Little's Law:
-
-\[
-L=\lambda W
-\]
-
-At 167 requests/second and 2 seconds average time in the system, about 334 requests are in flight on average. This is a starting estimate, not a capacity guarantee.
-
-### B. Reference design
-
-```text
-Clients
-   |
-API Gateway
-   |-- Authentication and tenant identity
-   |-- Per-tenant request/token quotas
-   |-- Payload limits and abuse protection
-   |
-Admission control + bounded queue
-   |
-Exact cache
-   |
-Semantic cache for approved stable intents
-   |
-Request router / budget manager
-   |
-Orchestrator
-   |-------------------------|
-   |                         |
-   v                         v
-RAG retrieval             Tool gateway
-   |                         |
-Vector + BM25             Per-API bulkhead,
-ACLs + reranker           concurrency limit and timeout
-   |                         |
-   |                      CRM / internal APIs
-   |                         |
-   |-------------------------|
-               |
-           LLM gateway
-     Model routing, deadlines,
-     provider quotas and fallback
-               |
-       Output validation
-               |
-            Response
-```
-
-### C. Protect each scarce resource separately
-
-**Ingress and tenant quotas**
-- Limit requests per tenant and overall traffic.
-- Use token quotas as well as request quotas because request sizes vary.
-- Apply concurrency limits to prevent one tenant from consuming all capacity.
-- Reject oversized or clearly abusive requests early.
-
-**Bounded queues and backpressure**
-- Use a bounded queue, not an unlimited backlog.
-- Enforce deadlines so expired requests do not consume expensive resources.
-- Prioritize traffic only when business requirements justify it.
-- Return a controlled overload response when capacity is exhausted.
-- Avoid retry storms; retries must be bounded and jittered.
-
-**Downstream API protection**
-- Give each dependency its own concurrency limit and timeout.
-- Use bulkheads so a slow CRM API does not exhaust all worker capacity.
-- Apply circuit breakers and respect rate-limit responses.
-- Cache only data that is safe to cache and has an acceptable freshness policy.
-- Use request coalescing for identical concurrent reads where appropriate.
-- Avoid automatic retries for non-idempotent operations.
-
-**LLM budget protection**
-- Set per-request model-call, token, time and monetary budgets.
-- Route simple tasks to cheaper models or deterministic logic.
-- Bound context and output lengths.
-- Cache eligible stable responses.
-- Detect runaway agent loops.
-- Track cost per successful user task and per tenant.
-
-### D. Caching strategy
-
-Use an exact cache first when the normalized request and relevant context match. Semantic caching can help for stable FAQs, but must not be used blindly for account balances, personalized records or time-sensitive facts.
-
-A cache key or eligibility check may need to account for tenant, authorization scope, prompt/model version, locale, source-data version and freshness requirements. Do not let cache reuse bypass authorization.
-
-### E. How to scale and validate
-
-Scale inference and application services independently. Use realistic load tests with varied prompt lengths, output lengths, cache hit rates, tool latency and burst patterns.
-
-Measure:
-- p50/p95/p99 end-to-end latency and TTFT.
-- Requests and tokens per second.
-- Queue wait and rejection rate.
-- LLM calls per task and cost per task.
-- CRM concurrency, latency, timeout and error rates.
-- Cache hit rate and stale-result incidents.
-- Success rate under dependency failure.
-
-**Strong interview conclusion:** I would not size GPUs from the user count alone. I would estimate peak request and token demand, benchmark the target model and workload, then enforce admission control and independent quotas at each expensive dependency.
+**Architect close:** Never size GPUs from user count. Estimate peak token demand, benchmark, then enforce admission control and independent quotas.
 
 ---
 
 ## Question 2: Design multi-tenant RAG for thousands of corporate tenants
 
-**Interviewer prompt:** Users must retrieve only documents authorized by their ACL/RBAC roles. Do you filter before or after vector similarity search, and why?
+**Short answer:**
+**Security invariant: unauthorized documents must never enter model context.**
 
-### A. State the security invariant
+**Filter placement:** Prefer pre-filtering or authorization-constrained retrieval. Post-search checks are defense-in-depth, not the primary control. If backend can't enforce filters reliably, use separate indexes/collections or a trusted retrieval service. Never trust model-generated filters or client-supplied tenant IDs.
 
-**Unauthorized documents must never enter the model's context.** A final answer filter is too late if confidential content has already been sent to the model.
+**Isolation options:**
+1. Separate DB/deployment for high-sensitivity tenants.
+2. Separate collections/indexes.
+3. Shared index + mandatory trusted filtering.
 
-### B. Architecture
+Physical separation = smaller blast radius, higher cost. Shared = efficient, needs strong enforcement.
 
-```text
-Authenticated request
-       |
-Trusted identity / authorization service
-       |
-Resolve tenant, principal, roles and allowed scopes
-       |
-Dense + lexical candidate retrieval
-       |  Mandatory tenant/ACL filtering
-       v
-Authorized candidate set only
-       |
-Reranking
-       |
-Revalidate source access / freshness
-       |
-Build bounded context
-       |
-LLM generation with source references
-       |
-Output validation and authorized citations
-```
+**Hidden failures:** Cross-tenant cache reuse, permission changes mid-workflow, deleted docs still indexed, parent-child chunk leaks, citations to inaccessible docs, traces capturing sensitive passages, reranker seeing unauthorized candidates.
 
-### C. Filter placement: the nuanced answer
+**Test:** Adversarial cross-tenant queries, mixed ACLs, revoked docs. Verify unauthorized text never enters context, cache, or traces.
 
-Prefer **pre-filtering or authorization-constrained retrieval** when the vector engine supports it reliably. This reduces the risk of unauthorized candidates being exposed to downstream components and avoids wasting reranker and context capacity on inaccessible documents.
-
-However, implementation details matter:
-- Some systems apply metadata filters within approximate-nearest-neighbor search; filtering behavior can affect recall and performance.
-- A post-search authorization check can be a useful defense-in-depth step, but must happen before candidate content reaches the model.
-- If a backend cannot enforce filters reliably, use a safer isolation strategy such as separate indexes/collections or a trusted retrieval service.
-- Do not rely on model-generated filters or client-supplied tenant IDs.
-
-### D. RBAC, ABAC and isolation options
-
-RBAC grants permissions through roles. ABAC evaluates attributes such as tenant, classification, region, purpose and clearance. Enterprise systems often need both.
-
-Possible isolation levels:
-1. Separate databases or deployments for high-sensitivity tenants.
-2. Separate collections/indexes with independent access controls.
-3. Shared indexes with mandatory trusted tenant/ACL filtering.
-
-Physical separation reduces blast radius but costs more to operate. Shared infrastructure can be efficient but needs strong enforcement, isolation tests and operational controls.
-
-### E. Hidden failure modes to mention
-
-- Cache entries reused across tenants.
-- A user's permissions change while an agent is paused.
-- Deleted or revoked documents remain indexed.
-- Parent-child chunk expansion pulls in unauthorized content.
-- Citations link to documents the user cannot open.
-- Traces capture sensitive retrieved passages.
-- A reranker sees unauthorized candidates before they are removed.
-
-### F. How to test it
-
-Create adversarial tests with cross-tenant identifiers, mixed ACLs, revoked documents and similar queries from different users. Verify that unauthorized text never enters model context, cache responses or traces accessible to the wrong principal.
-
-**Strong interview conclusion:** Tenant authorization is a data-access invariant, not a prompt instruction. Enforce it in trusted retrieval and data-access layers, then add defense-in-depth checks before context assembly and output.
+**Architect close:** Tenant authorization is a data-access invariant, not a prompt instruction.
 
 ---
 
 ## Question 3: Fine-tune an open-weight model with LoRA/QLoRA, or use RAG plus prompting?
 
-**Interviewer prompt:** When do you advocate fine-tuning an open-weight model such as Llama 3 via LoRA/QLoRA versus RAG and prompt engineering on a closed-source frontier API?
+**Short answer:**
+- **RAG:** For changing, private, source-grounded knowledge.
+- **Fine-tuning:** For behavior — format, style, classification, specialized transformations.
+- **Prompting:** First choice when instructions + examples suffice.
+- **Combine:** Fine-tuning doesn't replace RAG for changing facts.
 
-### A. Separate the problem types
+**LoRA:** Trains small low-rank adapters. **QLoRA:** Quantized frozen base + trainable adapters. Neither guarantees better quality.
 
-Use **RAG** when the main problem is access to changing, private or source-grounded knowledge.
+**Decision process:** Define measurable failure → baseline with prompting/RAG → diagnose (knowledge vs retrieval vs reasoning vs consistency vs policy) → improve data/prompts/retrieval/controls → fine-tune only if behavior gap remains → compare on held-out sets → compare full lifecycle cost → canary + rollback.
 
-Use **fine-tuning** when the main problem is model behavior: consistent task format, domain-specific patterns, style, classification or a specialized transformation that examples can teach.
+**Traps:** Fine-tuning to memorize facts, bad data, unvalidated synthetic data, cherry-picked prompts, ignoring throughput/license/cost, assuming fine-tuning replaces authorization/safety.
 
-Use **prompt engineering** first when instructions and examples can achieve the required quality without a model-training pipeline.
-
-These approaches can be combined. Fine-tuning does not eliminate the need for RAG when facts change frequently.
-
-### B. Decision matrix
-
-| Factor | RAG + prompting / hosted frontier API | Open-weight fine-tuning with LoRA/QLoRA |
-|---|---|---|
-| Private or changing knowledge | Strong fit when retrieval is reliable | Weights are a poor substitute for an updated source of truth |
-| Specialized output behavior | Prompting may be enough; fine-tuning can be added | Strong candidate when representative training examples exist |
-| Time to first production version | Often faster | Requires data preparation, training and evaluation |
-| Data residency | Depends on provider and contract | Can offer more deployment control if self-hosted |
-| Operational burden | Provider dependency and API governance | GPU serving, upgrades, security and model operations |
-| Cost profile | Usage-based API cost | Training and serving infrastructure plus operations |
-| Quality | Often strong general reasoning | Depends on base model, data and task |
-| Vendor flexibility | Provider-specific interfaces and behavior | More control over weights, subject to model license |
-
-### C. What LoRA and QLoRA change
-
-**LoRA** trains small low-rank adapter matrices rather than updating all model parameters. This reduces trainable parameter count and can reduce training resource requirements.
-
-**QLoRA** combines a quantized frozen base model with trainable adapters, reducing memory needs during fine-tuning.
-
-Neither technique guarantees better task quality. Training data quality, evaluation, serving efficiency and model limitations still matter.
-
-### D. Decision process
-
-1. Define a measurable failure in the current system.
-2. Establish a baseline using prompting and retrieval.
-3. Check whether the failure is missing knowledge, retrieval quality, reasoning, output consistency or policy enforcement.
-4. Improve data, prompts, retrieval and deterministic controls where appropriate.
-5. Fine-tune only if a repeatable behavior gap remains and suitable examples exist.
-6. Compare against the baseline on held-out task, safety and regression sets.
-7. Compare full lifecycle cost, including serving and maintenance.
-8. Deploy with canary and rollback controls.
-
-### E. Common traps
-
-- Fine-tuning to memorize rapidly changing facts.
-- Fine-tuning on low-quality or unrepresentative examples.
-- Using synthetic training data without validation.
-- Comparing models only on a few hand-picked prompts.
-- Ignoring inference throughput, license terms and operating costs.
-- Assuming fine-tuning can replace authorization or safety controls.
-
-**Strong interview conclusion:** Choose the intervention that matches the failure. RAG supplies current evidence; fine-tuning changes learned behavior; prompting configures a model at inference time. Prove the benefit with evaluation and total-cost analysis.
+**Architect close:** RAG supplies evidence; fine-tuning changes behavior; prompting configures at inference. Prove benefit with evaluation + total cost.
 
 ---
 
@@ -361,211 +83,61 @@ Neither technique guarantees better task quality. Training data quality, evaluat
 
 ## Question 4: Prevent loops, invalid tool calls and cascading failures in a stateful agent
 
-**Interviewer prompt:** In a stateful multi-agent system such as LangGraph, how do you prevent non-deterministic loops, hallucinated function calls and cascading failures when a downstream tool times out or returns malformed JSON?
+**Short answer:**
+**Design around explicit state transitions — not unbounded model loops.**
 
-### A. Design around explicit state transitions
+**Loop prevention:** Max steps, per-node retries, overall deadline + token/money budget, explicit terminal states, repeated-state detection, require new evidence to repeat, controlled response on budget exhaustion. Model saying "done" isn't enough — validate postconditions.
 
-Do not let the model control an unbounded execution loop. Define an explicit graph with typed state, allowed transitions, terminal states and bounded retries.
+**Tool safety:** Allowlist names, strict schema validation, authorization outside model, timeouts/concurrency/payload limits, least privilege, validate results. Schema-valid ≠ authorized.
 
-```text
-Model proposes action
-        |
-        v
-Validate tool name and schema
-        |
-        v
-Authorize action and validate policy
-        |
-        v
-Execute with deadline
-        |
-        v
-Validate result
-   |             |
-Valid          Invalid/error
-   |             |
-Continue      Bounded retry if transient
-or finish     or controlled failure state
-```
+**Failure classification:**
+- Timeout + uncertain side effect → reconcile, don't blind retry.
+- Rate limit → respect guidance + bounded backoff.
+- Safe read network failure → bounded retry.
+- Malformed response → validate, record, retry if safe.
+- Auth denial → fail closed.
+- Business rejection → controlled failure.
+- Repeated loop → stop on guard.
 
-### B. Prevent non-deterministic loops
+**Cascading prevention:** Bulkheads, circuit breakers, bounded queues, retry budgets, backpressure, safe fallbacks, observability.
 
-- Maximum graph steps and model calls.
-- Per-node retry limits.
-- Overall deadline and token/money budget.
-- Explicit terminal states.
-- Detect repeated state/action combinations where useful.
-- Require new evidence or a meaningful state change before repeating a step.
-- Return a controlled response when the budget is exhausted.
+**Test:** Timeouts, malformed JSON, repeated calls, rate limits, crashes, partial side effects. Assert termination, budget compliance, no duplicate unsafe actions.
 
-A model-generated statement that it is “done” is not sufficient. The orchestrator should validate whether required steps and postconditions are satisfied.
-
-### C. Handle tool calls safely
-
-- Validate tool name against an allowlist.
-- Validate arguments against a strict schema.
-- Enforce authorization and business rules outside the model.
-- Apply timeouts, concurrency limits and payload limits.
-- Use least-privilege credentials.
-- Validate tool results before passing them back to the model.
-- Never execute malformed JSON or silently coerce dangerous arguments.
-
-A schema-valid request can still be unauthorized; validation and authorization are different checks.
-
-### D. Classify failures before retrying
-
-| Failure | Typical response |
-|---|---|
-| Timeout with uncertain side-effect outcome | Reconcile operation state; do not blindly retry |
-| Transient rate limit | Respect retry guidance and use bounded backoff |
-| Network failure on a safe read | Bounded retry may be appropriate |
-| Malformed tool response | Validate, record failure, optionally retry if safe |
-| Authentication/authorization denial | Fail closed; do not retry with broader privileges |
-| Permanent business-rule rejection | Return controlled failure or ask for corrected input |
-| Repeated model/tool loop | Stop on budget/loop guard and surface the reason |
-
-### E. Prevent cascading failures
-
-- Per-dependency bulkheads and concurrency limits.
-- Circuit breakers for failing services.
-- Bounded queues and deadlines.
-- Retry budgets and jitter.
-- Backpressure.
-- Fallback only when semantics and security remain valid.
-- Observability for graph transitions, tool errors and retry counts.
-
-### F. Test scenarios
-
-Simulate timeouts, malformed JSON, repeated tool calls, provider rate limits, worker crashes and partial side effects. Assert that the workflow terminates, does not exceed budgets and does not duplicate unsafe actions.
-
-**Strong interview conclusion:** Reliability comes from deterministic orchestration around probabilistic decisions. The model can propose the next action; the graph, policy layer and tool gateway control what actually executes.
+**Architect close:** The model proposes; the graph, policy layer, and tool gateway control what executes.
 
 ---
 
 ## Question 5: Handle multi-day human approvals without losing state or tying up workers
 
-**Interviewer prompt:** How do you handle asynchronous human-in-the-loop approvals across multi-day lifecycles without losing state or tying up worker threads?
+**Short answer:**
+**Don't hold workers or HTTP requests. Persist state and suspend the workflow.**
 
-### A. Use a durable workflow, not a sleeping request handler
+**Flow:** Prepare → validate → persist pending action + checkpoint → emit approval task → suspend & release worker → human decides later → authenticate approver → reload → revalidate permissions/expiry/state → execute/reject/cancel → persist + audit.
 
-Do not keep an HTTP request or worker thread alive while waiting days for approval. Persist the workflow, record a pending approval and release execution capacity.
+**Persist:** Workflow/tenant IDs, pending action + immutable params/version, state/checkpoint, approval status/approver/timestamp, expiry/cancellation, idempotency key, workflow version, audit refs.
 
-```text
-Prepare action
-     |
-Validate policy and arguments
-     |
-Persist pending action + workflow checkpoint
-     |
-Emit approval task / notification
-     |
-Suspend workflow; release worker
-     |
-Human decision arrives later
-     |
-Authenticate approver and validate decision
-     |
-Reload workflow and pending action
-     |
-Revalidate permissions, expiry and state
-     |
-Execute / reject / cancel
-     |
-Persist result and audit event
-```
+**Races:** Verify approval matches exact action + args, not expired/revoked, recheck authorization/policy, confirm expected state, prevent duplicate execution. Use optimistic concurrency/version checks.
 
-### B. Persist the right state
+**Ops:** Durable queues, notification retries, reconciliation for stuck approvals, clear reject/cancel/timeout states, auditable transitions, idempotent resumption.
 
-Store:
-- Workflow and tenant identifiers.
-- Pending action and immutable parameter/version reference.
-- Current workflow state and checkpoint.
-- Approval status, approver identity and timestamp.
-- Expiry and cancellation state.
-- Correlation/idempotency key.
-- Workflow version and audit references.
-
-Store sensitive data minimally and protect it with access controls and retention policies.
-
-### C. Handle races and stale approvals
-
-An approval can arrive after the action expires, the user's permissions change or the underlying business data changes.
-
-Before execution:
-- Verify the approval applies to the exact action and arguments.
-- Confirm it has not expired or been revoked.
-- Recheck current authorization and business policy.
-- Ensure the workflow is still in the expected state.
-- Prevent duplicate approval events from executing the action twice.
-
-Use optimistic concurrency, version checks or transactional state transitions where appropriate.
-
-### D. Operational concerns
-
-- Durable queues/events for approval callbacks.
-- Notification retries independent of workflow execution.
-- A reconciliation job for stuck or expired approvals.
-- Clear reject, cancel and timeout states.
-- Auditable transitions and idempotent resumption.
-- No reliance on in-memory state held by one worker.
-
-**Strong interview conclusion:** Persist state and suspend the workflow. Approval is an asynchronous event that resumes a durable process, not a reason to hold a worker thread or trust stale in-memory state.
+**Architect close:** Approval is an async event resuming a durable process — not a reason to hold a thread or trust stale memory.
 
 ---
 
 ## Question 6: Sandbox arbitrary Python and dynamic SQL generated by an agent
 
-**Interviewer prompt:** If an agent can execute arbitrary Python scripts or generate dynamic SQL against a replica database, how do you prevent data exfiltration or injection?
+**Short answer:**
+**Avoid arbitrary execution if a narrower tool API works. Otherwise, enforce isolation outside the model.**
 
-### A. Start with least privilege and capability reduction
+**Python sandbox:** Ephemeral containers/microVMs, non-root, read-only FS, CPU/memory/time/output limits, no host FS or runtime socket, restricted egress, no inherited credentials, controlled I/O artifacts, process isolation + cleanup. Language-level restrictions alone are insufficient.
 
-The safest design is to avoid arbitrary code execution if a narrower tool API can solve the task. Give the agent specific capabilities rather than a general-purpose shell or database credential.
+**SQL controls:** Read-only identity, parameterized values, parser/allowlist for statements + tables, deny DDL/DML/admin, row/column security, tenant scoping, timeouts, result-size/cost limits, network only to intended DB, audit every query, mask sensitive columns. Parameterization ≠ safe arbitrary SQL structure.
 
-### B. Python execution sandbox
+**Replica is still sensitive:** Read-only prevents writes, not bulk extraction, unauthorized joins, or exfiltration.
 
-If arbitrary code is genuinely required, run it in a hardened, isolated execution environment with:
-- Ephemeral containers or microVMs.
-- Non-root user and read-only base filesystem.
-- CPU, memory, execution-time and output limits.
-- No host filesystem or container-runtime socket access.
-- Restricted or disabled network egress.
-- No inherited cloud credentials or production secrets.
-- Controlled input/output artifact access.
-- Process isolation and cleanup after execution.
+**Output/egress:** Limit rows/bytes/time, inspect outputs, restrict egress, avoid raw results to external models, log metadata not PII, require approval for high-risk access.
 
-A Python language-level restriction alone is not a sufficient security sandbox. Isolation must be enforced by the execution environment.
-
-### C. Dynamic SQL controls
-
-Prefer a constrained query service or approved stored procedures over unrestricted SQL generation.
-
-Controls:
-- Read-only database identity.
-- Parameterized queries for values.
-- SQL parser/allowlist for permitted statements and tables.
-- Deny DDL, DML and administrative operations unless explicitly required.
-- Row-level/column-level security and tenant scoping.
-- Statement timeouts, result-size limits and query-cost controls.
-- Network access only to the intended database.
-- Audit every query and its principal.
-- Mask sensitive columns where possible.
-
-Parameterization prevents value injection; it does not by itself make arbitrary SQL structure safe. Validate identifiers and permitted operations separately.
-
-### D. Treat a replica as sensitive
-
-A read replica may still contain regulated or confidential production data. “Read-only” prevents writes but does not prevent bulk extraction, unauthorized joins or exfiltration.
-
-### E. Control outputs and egress
-
-- Limit rows, bytes and execution time.
-- Inspect outputs for sensitive fields.
-- Restrict external network egress.
-- Avoid sending raw database results to an external model unnecessarily.
-- Log metadata and query outcomes without indiscriminately logging PII.
-- Require approval for high-risk data access or export.
-
-**Strong interview conclusion:** Never rely on the LLM to sandbox itself. Enforce least privilege, isolation, query constraints, resource limits and egress controls outside the model.
+**Architect close:** Never rely on the LLM to sandbox itself. Enforce least privilege, isolation, query constraints, limits, and egress controls externally.
 
 ---
 
@@ -573,86 +145,39 @@ A read replica may still contain regulated or confidential production data. “R
 
 ## Question 7: A LangGraph workflow takes 14 seconds. Reduce it below 3 seconds.
 
-**Interviewer prompt:** Executives complain that the workflow takes 14 seconds. How do you isolate bottlenecks and decide which architectural levers to use?
-My approach: Measure → Identify → Optimize → Validate.
-1. Measure: Trace every graph node, LLM call, retrieval step, and API. Identify where the 14 seconds are spent.
-2. Optimize the bottleneck:
-   - Too many LLM calls → Remove unnecessary steps or combine calls.
-   - Slow APIs → Parallelize independent calls.
-   - Large prompts → Reduce unnecessary context.
-   - Slow retrieval → Optimize search and reranking.
-   - Repeated requests → Use caching where safe.
-3. Validate: Compare latency, answer quality, failure rate, and cost before and after changes.
-4. Deploy safely: Use a canary rollout and keep rollback ready.
-Key principle: Don't optimize blindly. Fix the slowest part of the critical path first, while preserving answer quality and security.
-Strong interview closing: “I would use traces to identify the bottleneck, optimize the critical path, and validate whether sub-3-second latency is achievable without compromising quality or reliability.”
+**Short answer:**
+**Measure → Identify → Optimize → Validate.**
+
+1. **Measure:** Trace every node, LLM call, retrieval step, API. Find where 14s goes.
+2. **Optimize bottleneck:**
+   - Too many LLM calls → remove/combine.
+   - Slow APIs → parallelize independent calls.
+   - Large prompts → trim context.
+   - Slow retrieval → optimize search/reranking.
+   - Repeated requests → cache safely.
+3. **Validate:** Compare latency, quality, failure rate, cost.
+4. **Deploy:** Canary + rollback.
+
+**Principle:** Don't optimize blindly. Fix the slowest critical-path part first while preserving quality and security.
+
+**Architect close:** Use traces to find the bottleneck, optimize the critical path, validate sub-3s without compromising quality or reliability.
 
 ---
 
 ## Question 8: Implement semantic caching and invalidate it when enterprise data changes
 
-**Interviewer prompt:** How do you choose the similarity threshold and handle cache invalidation when underlying data changes?
+**Short answer:**
+**Eligibility before threshold tuning.** Semantic caching only for safe-to-reuse request classes. Avoid: balances, personalized recs, auth-sensitive info, fast-changing policies/prices, state-dependent answers.
 
-### A. Cache eligibility comes before threshold tuning
+**Lookup:** Auth → exact cache → semantic candidate search → check similarity + intent + context + version + freshness → return authorized result or call model/retrieval → validate → cache if eligible.
 
-Use semantic caching only for request classes where answer reuse is safe. Do not treat all natural-language queries as cacheable.
+**Threshold:** Empirical, risk-specific. Build paraphrases + hard negatives. Measure false-hit rate, hit rate, correctness, latency/cost savings. Combine similarity with intent, tenant scope, authorization, model/prompt version, freshness.
 
-Usually poor candidates include:
-- Account balances and transactions.
-- Personalized recommendations.
-- Authorization-sensitive information.
-- Rapidly changing policies or prices.
-- Requests whose answer depends on current state.
+**Invalidation:** TTL, versioned keys, event-driven invalidation, explicit invalidation on deletion/revocation, bypass for volatile data, shorter TTLs for volatile content. Versioning prevents stale reuse; event-driven needs reconciliation.
 
-### B. Lookup flow
+**Isolation:** Semantic cache can leak across tenants. Enforce tenant + auth scope before reuse. Exclude sensitive personalized answers from shared caching unless isolation is proven.
 
-```text
-Request
-  |
-Authenticate and resolve tenant/authorization
-  |
-Exact cache lookup
-  |
-Semantic candidate search for eligible intent
-  |
-Check similarity + intent + context + version + freshness
-  |                          |
-  | pass                     | fail
-  v                          v
-Return authorized result   Call model/retrieval
-                             |
-                       Validate answer
-                             |
-                       Cache if eligible
-```
-
-### C. Choose a threshold empirically
-
-A similarity threshold balances:
-- **False hits:** reuse an answer that is not actually appropriate.
-- **Misses:** fail to reuse an answer that would have been safe.
-
-Build an evaluation set with paraphrases and hard negatives—questions that look similar but require different answers. Measure false-hit rate, hit rate, task correctness, latency savings and cost savings. Select thresholds by risk class, not from a universal cosine-similarity number.
-
-Similarity should be combined with other checks such as intent/category, tenant scope, authorization, model/prompt version and freshness.
-
-### D. Invalidation and freshness
-
-Possible strategies:
-- TTL for content with bounded staleness.
-- Versioned cache keys based on knowledge-base or policy version.
-- Event-driven invalidation when source records change.
-- Explicit invalidation on document deletion or access revocation.
-- Bypass caching for high-volatility data.
-- Shorter TTLs for more volatile content.
-
-Versioning provides a clear way to prevent old entries from being reused after an update. Event-driven invalidation can reduce stale windows but must be reliable; missed events need reconciliation.
-
-### E. Protect isolation
-
-A semantic cache can leak customer information if a similar question retrieves another user's answer. Enforce tenant and authorization scope before reuse, and exclude sensitive personalized answers from shared semantic caching unless the design can prove safe isolation.
-
-**Strong interview conclusion:** Thresholds are empirical, risk-specific controls. Correctness, authorization and freshness are hard eligibility gates; similarity alone is never enough.
+**Architect close:** Thresholds are empirical, risk-specific controls. Correctness, authorization, and freshness are hard gates — similarity alone is never enough.
 
 ---
 
@@ -660,28 +185,33 @@ A semantic cache can leak customer information if a similar question retrieves a
 
 ## Question 9: Regression-test a new embedding model or LLM version before production
 
-**Interviewer prompt:** How do you automate regression testing before swapping an embedding model or upgrading an LLM?
+**Short answer:**
+**Threat:** Upgrade may reduce accuracy, retrieval, safety, or performance despite demos.
 
-Threat: A model upgrade may reduce answer accuracy, retrieval quality, safety, or performance even if the new model looks better in demos.
-My approach is to establish measurable release gates:
-1. Version everything: Track model, embeddings, vector index, prompts, reranker, tool schemas, and evaluation datasets to reproduce regressions.
-2. Embedding migration: Build a separate index, re-embed the corpus consistently, and compare Recall@k, MRR, nDCG, latency, and cost. Never mix incompatible embedding configurations.
-3. LLM evaluation: Run a versioned gold dataset covering accuracy, groundedness, citations, tool calls, structured outputs, security, and edge cases. Use automated metrics plus human review for high-risk scenarios.
-4. Release gates: Require acceptable quality, zero critical security regressions, valid tool outputs, and latency and cost within agreed budgets.
-5. Progressive rollout: Run offline tests → shadow traffic → canary → production monitoring. Preserve the previous model and index for safe rollback.
-Key design principle: A model upgrade is a production code change. Compare the candidate against the baseline on the same test cases, use measurable acceptance criteria, and roll back if quality or operational SLOs regress.
+**Release gates:**
+1. **Version everything:** Model, embeddings, index, prompts, reranker, tool schemas, eval datasets.
+2. **Embedding migration:** Separate index, re-embed consistently, compare Recall@k, MRR, nDCG, latency, cost. Never mix incompatible configs.
+3. **LLM evaluation:** Versioned gold dataset — accuracy, groundedness, citations, tool calls, structured outputs, security, edge cases. Automated metrics + human review for high-risk.
+4. **Gates:** Acceptable quality, zero critical security regressions, valid tool outputs, latency/cost within budget.
+5. **Rollout:** Offline → shadow → canary → production monitoring. Keep previous model + index for rollback.
+
+**Architect close:** A model upgrade is a production code change. Compare candidate vs baseline on same test cases, use measurable criteria, roll back on regression.
+
 ---
 
 ## Question 10: Defend against indirect prompt injection in an ingested customer document
 
-**Interviewer prompt:** A malicious actor embeds hidden instructions inside a document ingested by RAG. How do you detect and neutralize the injection before an agent executes unauthorized actions?
+**Short answer:**
+**Threat:** Malicious document contains hidden instructions; RAG retrieves it; LLM follows them → unauthorized actions or data exposure.
 
-Threat: A malicious customer document contains hidden instructions. When RAG retrieves it, the LLM may follow those instructions and make unauthorized tool calls or expose sensitive data.
-My defense is layered:
-1. Ingestion: Track document provenance and trust level, scan suspicious content, and quarantine high-risk documents.
-2. Context construction: Treat retrieved documents as untrusted evidence, not instructions. Include only relevant, authorized content.
-3. Tool execution: Allowlist tools, validate arguments, enforce independent authorization, use least-privilege credentials, and require human approval for high-impact actions.
-4. Monitoring: Log retrieval sources and tool decisions, detect denied actions, test adversarial documents, and support rapid document quarantine and index removal.
-Key design principle: Never rely solely on prompts or injection classifiers. Even if the LLM is manipulated, independent authorization and execution controls must prevent unauthorized actions.
+**Layered defense:**
+1. **Ingestion:** Track provenance + trust level, scan suspicious content, quarantine high-risk docs.
+2. **Context:** Treat retrieved docs as untrusted evidence, not instructions. Include only relevant, authorized content.
+3. **Tool execution:** Allowlist tools, validate args, enforce independent authorization, least-privilege credentials, human approval for high-impact actions.
+4. **Monitoring:** Log retrieval sources + tool decisions, detect denied actions, test adversarial docs, support rapid quarantine + index removal.
 
-**Core message:** An architect-level answer demonstrates control over the entire system: workload, data access, probabilistic model behavior, deterministic execution, failure recovery, evaluation and operational cost.
+**Architect close:** Never rely solely on prompts or injection classifiers. Even if the LLM is manipulated, independent authorization and execution controls must prevent unauthorized actions.
+
+---
+
+**Core message:** An architect-level answer demonstrates control over the entire system — workload, data access, probabilistic model behavior, deterministic execution, failure recovery, evaluation, and operational cost.
