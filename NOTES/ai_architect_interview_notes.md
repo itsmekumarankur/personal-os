@@ -151,85 +151,29 @@ Embeddings represent text as vectors so semantically related text can be retriev
 
 ## 4. Agentic Scalability and State Management
 
-### 4.1 Treat an agent as a stateful workflow
+## 4. Agentic Scalability and State Management
 
-A tool-using agent may classify a request, retrieve evidence, call APIs, validate results, request approval and resume later. It is a workflow with probabilistic decisions—not merely one LLM call.
+### 4.1 Agent as a Workflow
+An agent is a sequence of steps: understand request → call tools → validate results → respond.
 
-Use an explicit graph or state machine with:
-- Defined nodes and transitions.
-- Validated state updates.
-- Deadlines and bounded retries.
-- Authorization checks before tools.
-- Terminal success, failure, rejection and cancellation states.
-- Auditable execution records.
+**Use a simple, controlled workflow instead of unnecessary multiple agents.**
 
-Use the simplest workflow that solves the task. A deterministic sequence of API calls may be more reliable than a multi-agent swarm.
+### 4.2 Checkpointing and Recovery
+Save workflow progress so the agent can resume after a crash without repeating completed work unnecessarily.
 
-### 4.2 Checkpointing and recovery
+### 4.3 Bound Agent Execution
+Set limits on steps, retries, time, tokens and cost to prevent infinite loops and unexpected expenses.
 
-A checkpoint persists enough validated workflow state to resume after a worker crash or interruption. State may include the current node, completed steps, safe tool-result references, retry counts, approval status and workflow version.
+### 4.4 Human Approval
+Require human approval before sensitive actions, such as making payments or modifying important records.
 
-**Recovery pattern**
-1. Execute a node.
-2. Validate its output.
-3. Persist the state transition.
-4. Continue to the next node.
-5. After failure, reload the latest valid checkpoint.
-6. Resume without repeating unsafe side effects.
+### 4.5 Idempotent Tool Execution
+Prevent duplicate actions when a request is retried. For example, a payment should not happen twice because the first response timed out.
 
-PostgreSQL is often useful for durable workflow and business state; Redis can support low-latency caching and coordination, depending on persistence and recovery configuration. Neither technology automatically makes a workflow correct—transaction boundaries, durability, concurrency and recovery behavior must be designed.
+### 4.6 Modular Workflows
+Break complex workflows into smaller, independent steps that are easier to test, debug and maintain.
 
-Checkpointing does **not** guarantee exactly-once execution of external side effects.
-
-### 4.3 Bound agent execution
-
-An agent can loop, repeatedly call tools or exhaust its budget. Set independent limits for:
-- Graph steps.
-- Model calls.
-- Tool calls.
-- Retries per node.
-- Wall-clock duration.
-- Token budget.
-- Monetary budget.
-
-Stop or request clarification when required information is missing, evidence is insufficient, a permanent error occurs, policy denies the action or the budget is exhausted. Return a controlled terminal state and record the reason.
-
-### 4.4 Human-in-the-loop approval
-
-For high-impact actions, persist the proposed action and pause the workflow for human review.
-
-A safe approval process:
-1. Validate the proposed arguments and policy.
-2. Persist a pending action and checkpoint.
-3. Show the exact action and parameters to the approver.
-4. Record approval or rejection with identity and timestamp.
-5. Bind approval to the exact action/version.
-6. At execution time, revalidate authority, expiry and arguments.
-7. Execute and verify the result.
-8. Record an audit event.
-
-Approval is not permission to alter the approved parameters. A model asking itself whether an action is safe is not equivalent to human authorization.
-
-### 4.5 Idempotent tool execution
-
-A timeout does not prove that a downstream operation failed. A payment service may complete a transaction while its response is lost; blindly retrying can create a duplicate.
-
-For side-effecting operations:
-- Generate a stable idempotency key for the logical operation.
-- Persist intent and operation status.
-- Have the downstream service deduplicate requests where possible.
-- Use states such as `PENDING`, `SUCCEEDED`, `FAILED` and `UNKNOWN`.
-- Reconcile uncertain outcomes before retrying.
-- Prevent a second logical operation while the first is unresolved.
-
-Idempotency makes retries safer; it does not magically guarantee exactly-once execution across distributed systems.
-
-### 4.6 Subgraphs versus monolithic agent swarms
-
-Modular subgraphs provide explicit interfaces, state ownership and fault boundaries. A monolithic swarm can be quick to prototype but may become difficult to debug, test and govern as agents and tools multiply.
-
-Use modular workflows when responsibilities can be separated—for example, intent classification, knowledge retrieval, eligibility checking, approval and response validation. Avoid adding agents simply because the framework supports them.
-
+**Interview takeaway:** Build agents with controlled workflows, saved state, execution limits, proper authorization and safe retries.
 ---
 
 ## 5. Enterprise Security, Privacy and Data Isolation
