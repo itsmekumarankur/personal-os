@@ -38,21 +38,14 @@ If a service receives 20 requests/second and average time in the system is 2 sec
 **Architectural response:** Use bounded queues, backpressure, load shedding 
 
 ### 1.3 Continuous batching
+Continuous batching = Keep the GPU busy by continuously replacing finished requests with new ones.
 
-Traditional static batching can leave GPU capacity unused when requests in the same batch finish at different times. **Continuous batching** lets the scheduler reconsider the active batch between generation iterations: completed requests leave and new requests can enter when capacity permits.
+Imagine a bus carrying 10 passengers. When some passengers get off, new passengers can board immediately instead of waiting for everyone to get off.
 
-**Benefits**
-- Better GPU utilization and aggregate token throughput.
-- Less idle time from variable output lengths.
-- Better support for concurrent streaming requests.
+- Benefit: Better GPU usage and faster processing of multiple AI requests.
+- Challenge: Must ensure some users don't wait too long.
 
-**Trade-offs**
-- Scheduling is more complex.
-- Long prompts can compete with ongoing decode work.
-- Poor admission policies can increase tail latency.
-- Fairness between tenants and request priorities needs explicit design.
-
-**Interview insight:** Optimize against the workload's SLOs, not maximum tokens/second alone. A throughput improvement that worsens p99 latency beyond the agreed SLO is not a successful optimization.
+Remember: The goal is to serve more users efficiently without making anyone wait too long.
 
 ### 1.4 KV cache and PagedAttention
 
@@ -83,27 +76,18 @@ When does it help? When the guesses are usually correct and checking them is eff
 
 Quantization lowers the numerical precision used for weights, activations or cache values to reduce memory use and potentially improve speed.
 
-| Format | Approximate raw storage/value | Main consideration |
-|---|---:|---|
-| BF16 | 2 bytes | Strong baseline with broad dynamic range; more memory |
-| FP8 | 1 byte | Can improve memory bandwidth and throughput on supported hardware |
-| INT4 | 0.5 byte | Very compact weights, but quality and kernel efficiency require validation |
+| Format | Approximate raw storage/value | 
+|---|---:|
+| BF16 | 2 bytes |
+| FP8 | 1 byte | 
+| INT4 | 0.5 byte | 
 
 These are raw representation sizes, not full deployment footprints. Metadata, scales, unquantized layers, runtime buffers and KV cache add overhead.
 
 For a hypothetical 70-billion-parameter model, raw weight storage is roughly 140 GB in BF16, 70 GB in FP8, or 35 GB at 4 bits per parameter, using decimal units. Actual memory needs are higher.
 
-**Decision principle:** Choose the lowest-cost configuration that meets quality, latency and reliability SLOs. Benchmark with representative prompts, output lengths, concurrency and task-specific evaluations. A smaller format is not automatically faster; hardware and kernel support matter.
+**Decision principle:** Choose the lowest-cost configuration that meets quality, latency and reliability SLOs.
 
-### 1.7 A disciplined inference optimization process
-
-1. Establish a baseline with realistic traffic.
-2. Measure TTFT, ITL, output-token throughput, p95/p99 latency and GPU memory.
-3. Separate queueing, prefill, decode and application overhead.
-4. Tune batching and admission control.
-5. Evaluate quantization and speculative decoding where appropriate.
-6. Re-run quality, safety and load tests.
-7. Compare cost per successful task—not just raw throughput.
 
 ---
 
