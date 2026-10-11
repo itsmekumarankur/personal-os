@@ -1,23 +1,5 @@
 # AI Architect Interview Playbook: High-Yield System Design Questions
 
-> **Purpose:** Practice architect-level answers to production AI system design questions.
-> **How to use this file:** For each question, lead with requirements, describe the architecture, explain key trade-offs, identify failure modes, and define how you would validate the design.
-
----
-
-## 1. A Repeatable Framework for Architect-Level Answers
-
-**Short answer:**
-Requirements → Architecture → Trade-offs → Failure modes → Validation.
-
-1. **Functional requirements:** Users, tasks, read-only vs actions, data sources, multi-turn, success criteria.
-2. **Non-functional requirements:** Traffic, latency (p95/p99), availability, cost, quality, security, freshness, ownership.
-3. **Architecture:** Gateway → policy/validation → PII → cache → router/budget → orchestration → RAG + tools → LLM gateway → output validation → response. Keep it logical, not necessarily microservices.
-4. **Trade-offs:** Latency vs depth, cost vs quality, cache hit vs staleness, isolation vs efficiency, managed vs self-hosted, autonomy vs control.
-5. **Failure & validation:** Timeouts, malformed data, retries, crashes, observability, safe fallback, pre-release tests.
-
----
-
 # 2. System Design and Scalability
 
 ## Question 1: Design an enterprise assistant handling 10,000 queries per minute
