@@ -23,37 +23,19 @@ This distinction matters because a request can be slow to start, slow to stream,
 | **End-to-end latency** | Time until the complete answer is available | |
 | **Throughput** | measure requests/sec and tokens/sec  | poor batching,  compute limits |
 
-A useful approximation for a streaming response is:
-
-\[
-T_{\text{total}} \approx TTFT + (N-1)\times ITL
-\]
-
-where \(N\) is the number of output tokens and ITL is the average interval between tokens. The exact measurement boundary must be defined consistently.
-
 **Interview insight:** If TTFT is high but ITL is healthy, investigate queueing, prompt length, retrieval and prefill before optimizing decode. If TTFT is low but completion is slow, investigate output length, decode throughput and memory bandwidth.
 
-Measure **p50, p95 and p99**, not only averages. A system can have a good average and still provide a poor experience for a meaningful fraction of users.
+Measure **p50, p95 and p99**, not only averages. 
 
 ### 1.2 Throughput, concurrency and queueing
 
-Throughput and latency are related, but they are not interchangeable. A service may handle many short requests per second while struggling with fewer requests that have long prompts and long outputs.
-
-Little's Law gives a useful queueing relationship:
-
-\[
-L = \lambda W
-\]
-
-- \(L\): average number of requests in the system
-- \(\lambda\): average arrival rate
-- \(W\): average time in the system
+A service may handle many short requests per second while struggling with fewer requests that have long prompts and long outputs.
 
 If a service receives 20 requests/second and average time in the system is 2 seconds, approximately 40 requests are in flight on average. This is not a safe concurrency limit; memory, GPU capacity and workload distribution still determine the practical limit.
 
-**Failure pattern:** Excess traffic grows the queue, increases TTFT, causes client timeouts, triggers retries and can create a retry storm.
+**Failure pattern:** Excess traffic grows the queue, increases TTFT, causes client timeouts, triggers retries.
 
-**Architectural response:** Use bounded queues, admission control, backpressure, deadlines, load shedding and capacity planning. A longer queue alone does not fix insufficient serving capacity.
+**Architectural response:** Use bounded queues, backpressure, load shedding 
 
 ### 1.3 Continuous batching
 
