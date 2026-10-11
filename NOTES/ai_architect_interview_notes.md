@@ -111,106 +111,41 @@ Use a small, cheaper model for simple tasks and a powerful, expensive model for 
 
 ### 3.1 RAG is a pipeline, not a vector database
 
-Retrieval-Augmented Generation (RAG) retrieves external evidence and supplies it to a model for answer generation. It is useful for enterprise knowledge, frequently updated content and traceable sources. It does **not** guarantee correctness: retrieval may miss evidence, find misleading passages or expose unauthorized data, and the model may still misinterpret retrieved content.
+RAG = Search for relevant information + Give it to AI + Generate an answer.
 
-Separate the system into two pipelines.
+Example: AI searches your company documents, finds the relevant information, and answers your question using it.
 
-**Ingestion**
-1. Connect to approved sources.
-2. Parse text, tables, headings and page structure.
-3. Normalize and deduplicate.
-4. Preserve provenance and access-control metadata.
-5. Chunk documents.
-6. Generate embeddings.
-7. Index dense vectors and lexical text.
-8. Validate and publish a versioned index.
+Basic steps:
 
-**Online query**
-1. Authenticate and resolve trusted authorization scope.
-2. Normalize the query.
-3. Retrieve candidates using dense and/or lexical search.
-4. Merge candidate lists.
-5. Rerank candidates.
-6. Validate authorization, freshness and relevance.
-7. Construct a bounded context.
-8. Generate, validate and cite the answer.
+1. Store documents and prepare them for search.
+2. Search for relevant information when a question comes.
+3. Give that information to AI.
+4. AI generates an answer based on it.
 
-Index publication should avoid exposing partially updated or inconsistent data. Deletions and access revocations must propagate to the index.
+Remember: A vector database is only one part of RAG. RAG can still give wrong answers if the search finds the wrong information.
 
 ### 3.2 Chunking strategies
 
-| Strategy | Benefit | Risk |
-|---|---|---|
-| Fixed-size chunks | Simple and predictable | May split concepts, tables or definitions |
-| Semantic chunks | Aligns with topic boundaries | More complex; variable sizes |
-| Parent-child chunks | Small chunks support retrieval while parent context restores meaning | Context expansion increases token cost |
-| Hierarchical chunks | Supports document → chapter → section → paragraph retrieval | More complex indexing and retrieval logic |
+Chunking = Breaking large documents into smaller pieces so AI can search them easily.
 
-Chunk size and overlap are workload-specific; there is no universal best value. Evaluate with representative questions and retrieval metrics.
+- Fixed-size: Break into equal-sized pieces.
+- Semantic: Break according to meaning.
+- Parent-child: Find a small piece, then retrieve its larger section for context.
+- Hierarchical: Search from document → chapter → section → paragraph.
 
-Preserve document ID, chunk ID, parent/section ID, tenant and ACL metadata, version, content hash, source location and embedding version.
+Remember: Good chunking helps AI find the right information.
+
+### 3.3 Embeddings and embedding-model migrations
+
+Embeddings = Converting text into numbers that represent its meaning.
+
+Example: “How do I reset my password?” and “I forgot my password” have similar meanings, so their embeddings may be close together.
+
+Embedding-model migration means switching to a new model that converts text into these numbers. Usually, you must regenerate the document embeddings so searches remain compatible.
 
 ### 3.3 Embeddings and embedding-model migrations
 
 Embeddings represent text as vectors so semantically related text can be retrieved. Query and document vectors must be compatible.
-
-Distinguish:
-- **Data drift:** the documents or queries change.
-- **Embedding-model change:** the vector representation changes.
-- **Index inconsistency:** query and document vectors use incompatible configurations.
-
-A safe migration:
-1. Build a representative retrieval evaluation set.
-2. Record baseline Recall@k, MRR, nDCG and downstream answer quality.
-3. Build a separate index with the new embedding model.
-4. Re-embed the corpus consistently.
-5. Compare quality, latency, cost and memory.
-6. Shadow or canary the new index.
-7. Switch traffic and retain rollback capability.
-
-Do not change the query embedding model while leaving an incompatible document index in place.
-
-### 3.4 Dense search, BM25 and hybrid retrieval
-
-**Dense retrieval** uses vector similarity. It can handle paraphrases and semantic relationships but may miss exact identifiers or retrieve related-but-wrong content.
-
-**BM25** is a lexical ranking method that scores documents using query-term matching, term frequency and inverse document frequency. It is useful for product codes, error messages, policy identifiers and exact terminology, but may miss relevant passages with different wording.
-
-**Hybrid search** combines both candidate sets. Reciprocal Rank Fusion (RRF) is one way to combine rankings:
-
-\[
-RRF(d)=\sum_{r\in R}\frac{1}{k+\operatorname{rank}_r(d)}
-\]
-
-where \(R\) is the set of rankings and \(k\) is a smoothing constant. RRF combines ranks without assuming dense and sparse raw scores are on the same scale.
-
-### 3.5 Cross-encoder reranking
-
-A bi-encoder embeds queries and documents separately, making large-scale candidate retrieval efficient. A cross-encoder scores a query-document pair jointly and is typically used to rerank a smaller candidate set.
-
-A common pattern is:
-1. Retrieve dozens or hundreds of candidates.
-2. Score candidates with a reranker.
-3. Keep the most relevant evidence that fits the context budget.
-
-Reranking can improve ordering, but it cannot recover a relevant document that the first-stage retriever never retrieved. Evaluate end-to-end answer quality, not reranker scores alone.
-
-### 3.6 Enterprise tenancy and RBAC
-
-A vector search result is not automatically authorized for the current user. Tenant and document permissions must be derived from trusted identity and policy services—not from model-generated filters.
-
-**Secure retrieval pattern**
-1. Authenticate the principal.
-2. Resolve tenant, role and allowed scopes using trusted services.
-3. Apply ACL/tenant filters during candidate retrieval.
-4. Validate authorization before context assembly.
-5. Recheck permissions before sensitive tool execution.
-6. Scope caches, checkpoints, logs and object storage access.
-7. Test adversarial cross-tenant requests and access revocation.
-
-RBAC grants permissions through roles. ABAC evaluates attributes such as tenant, classification, region, purpose and clearance. Some systems need both.
-
-Physical tenant separation can reduce blast radius but costs more to operate. Shared indexes can be economical but demand strict enforcement and testing. A post-generation filter is insufficient because unauthorized data may already have reached the model.
 
 ---
 
