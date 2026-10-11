@@ -56,29 +56,18 @@ Traditional static batching can leave GPU capacity unused when requests in the s
 
 ### 1.4 KV cache and PagedAttention
 
-The **KV cache** stores attention keys and values for prior tokens. It avoids repeatedly recomputing historical attention representations during autoregressive generation. The cache improves decode efficiency but consumes memory.
+KV Cache = AI’s short-term memory of the conversation.
 
-A useful approximate KV-cache memory formula for a conventional decoder-only transformer is:
+Imagine you are reading a book. Every time you read a new sentence, you don't reread the entire book to understand it. You remember what you have already read.
 
-\[
-M_{\text{KV}} \approx 2 \times L \times S \times H_{KV} \times D_H \times B
-\]
+- Without KV Cache: AI repeatedly recalculates information from previous words. This wastes time.
+- With KV Cache: AI saves useful information from previous words and reuses it to generate the next word faster.
 
-Where:
-- \(L\): number of transformer layers
-- \(S\): cached sequence length
-- \(H_{KV}\): number of key/value heads
-- \(D_H\): dimension per head
-- \(B\): bytes per cache element
-- Factor 2: keys and values
+Why is it useful?
 
-This is an estimate; architecture, cache precision, parallelism and implementation details change actual usage.
-
-**Key distinction:** Model-weight memory and KV-cache memory are separate budgets. A model can fit on a GPU but still run out of memory at the desired context length and concurrency.
-
-**PagedAttention**, associated with vLLM, manages KV cache in blocks rather than requiring each sequence's cache to occupy one large contiguous allocation. This can reduce fragmentation and improve memory utilization, particularly for variable-length concurrent requests. It does not eliminate finite memory limits or long-context compute costs.
-
-**Serving-engine choice:** Evaluate the target model, GPU, context distribution, concurrency, streaming behavior, operational support and SLOs. Do not choose an engine from a single benchmark.
+- ⚡ Faster responses.
+- 🔄 Less repeated computation.
+- 🧠 But it consumes GPU memory, especially for long conversations and many users.
 
 ### 1.5 Speculative decoding
 
