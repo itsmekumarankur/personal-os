@@ -234,74 +234,27 @@ Use modular workflows when responsibilities can be separated—for example, inte
 
 ## 5. Enterprise Security, Privacy and Data Isolation
 
-### 5.1 Direct and indirect prompt injection
+### 5.1 Prompt Injection
+- **Direct:** User tricks AI into ignoring instructions.
+- **Indirect:** Malicious instructions are hidden in documents or web pages.
 
-**Direct injection:** the user tells the model to ignore instructions or reveal protected information.
+**Defense:** Treat external content as untrusted, restrict tools, and require approval for sensitive actions.
 
-**Indirect injection:** malicious instructions are placed in retrieved documents, web pages, emails or tool outputs. A user may ask a normal question, but retrieved content tries to redirect the model or trigger an unsafe action.
+### 5.2 Secure Tool Calling
+AI can suggest an action, but the application must verify **permissions and business rules** before executing it.
 
-Prompt wording alone cannot reliably eliminate this risk.
+### 5.3 PII Protection
+**Redaction:** Hide sensitive data, such as account numbers.
 
-**Defense in depth**
-1. Treat user input, retrieved documents and tool outputs as untrusted data.
-2. Separate trusted instructions from untrusted content.
-3. Limit tools to the minimum needed.
-4. Validate tool schemas and arguments.
-5. Enforce authorization and business policy outside the model.
-6. Restrict outbound network access.
-7. Require approval for sensitive actions.
-8. Test adversarial retrieval and tool-use scenarios.
-9. Monitor suspicious behavior and contain incidents.
+**Tokenization:** Replace sensitive data with controlled tokens.
 
-### 5.2 Secure tool calling
+Never send sensitive data to unapproved AI services or expose it in logs.
 
-The model should **propose** an action; the application decides whether it may execute.
+### 5.4 Secrets and Tenant Isolation
+- **Secrets:** Store API keys securely; never expose them to AI.
+- **Tenant isolation:** Ensure one customer's data is never accessible to another customer across databases, RAG, caches, tools and logs.
 
-A secure tool path includes:
-1. Schema validation.
-2. Tool allowlist checks.
-3. Identity and authorization checks.
-4. Business-rule validation.
-5. Argument constraints and rate limits.
-6. Least-privilege credentials.
-7. Result validation and audit logging.
-
-Valid JSON is not proof of authorization. For example, a syntactically valid request for a customer's balance must still be checked against the authenticated principal's permissions.
-
-### 5.3 PII redaction and tokenization
-
-- **Redaction:** removes or replaces sensitive values with placeholders.
-- **Tokenization:** replaces sensitive values with controlled tokens whose mapping is stored separately.
-
-A pre-egress pipeline can classify data, detect PII, apply policy, redact/tokenize, call an approved model, inspect output and rehydrate values only through an authorized component when required.
-
-Important limitations:
-- Detectors can miss sensitive data, including unusual formats and multilingual text.
-- Excessive redaction can destroy information needed for the task.
-- Stable tokens can reveal linkability.
-- Prompts, outputs, embeddings, caches and traces may all contain sensitive information.
-
-Treat tokenization as a privacy control, not proof of anonymization. Minimize retention and restrict access to mapping services and logs.
-
-### 5.4 Secrets and tenant isolation
-
-Never put API keys, database passwords or privileged credentials in prompts, model-visible state or ordinary logs. Use a secret manager, workload identity, scoped credentials, rotation and restricted outbound access.
-
-Tenant isolation must cover the entire data path:
-
-| Component | Key control |
-|---|---|
-| API gateway | Authenticate principal and tenant |
-| Orchestrator | Carry trusted tenant context |
-| Vector/lexical search | Enforce tenant and document ACLs |
-| Database and object storage | Enforce data permissions |
-| Cache | Scope keys and validate reuse context |
-| Agent checkpoints | Prevent cross-tenant thread access |
-| Tools | Authorize each operation |
-| Observability | Restrict sensitive trace access |
-| Secrets | Least-privilege workload credentials |
-
-A cache leak is a security incident: similar questions must not cause one user's account data to be returned to another. Revoked permissions and deleted documents must be reflected in indexes, caches and persisted workflows.
+**Interview takeaway:** Never rely on AI alone for security. Enforce authorization, data protection and access controls in the application itself.
 
 ---
 
