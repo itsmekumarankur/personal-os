@@ -1,28 +1,27 @@
 # AI Architect Interview Notes: Production LLM Systems
 
-> **Purpose:** Interview-focused notes on the engineering decisions, failure modes, trade-offs, and design principles that matter when building production AI systems.  
+
 > **Scope:** Inference engineering, cost engineering, RAG, agent state, security, and observability.  
-> **Approach:** Prioritize explanations that demonstrate architectural judgment over lists of tools or definitions.
 
 ---
 
-## 1. Inference Engineering: Serving, Throughput, and Latency
+## 1. Inference Engineering:
 
 ### 1.1 Understand the inference lifecycle
 
-Autoregressive LLM inference has two broad phases:
+LLM inference has two broad phases:
 
-- **Prefill:** Processes the input prompt and builds the initial key-value (KV) cache. It can parallelize computation across prompt tokens.
-- **Decode:** Generates output tokens sequentially. Each step uses the existing context and extends the KV cache.
+- **Prefill:** Processes the input prompt and builds the initial key-value (KV) cache. 
+- **Decode:** Generates output tokens sequentially. 
 
 This distinction matters because a request can be slow to start, slow to stream, or both.
 
 | Metric | Meaning | Typical causes of degradation |
 |---|---|---|
-| **Time to First Token (TTFT)** | Time from request submission to the first generated token | Queueing, long prompts, retrieval/tool delays, slow prefill |
-| **Inter-Token Latency (ITL)** | Time between successive generated tokens | Decode bottlenecks, memory bandwidth, GPU contention |
-| **End-to-end latency** | Time until the complete answer is available | LLM latency plus retrieval, tools, orchestration and post-processing |
-| **Throughput** | Work completed per unit time; measure requests/sec and tokens/sec separately | Insufficient capacity, poor batching, memory or compute limits |
+| **Time to First Token (TTFT)** | Time from request submission to the first generated token | Queueing, long prompts |
+| **Inter-Token Latency (ITL)** | Time between successive generated tokens | Decode bottlenecks, memory bandwidth|
+| **End-to-end latency** | Time until the complete answer is available | |
+| **Throughput** | measure requests/sec and tokens/sec  | poor batching,  compute limits |
 
 A useful approximation for a streaming response is:
 
