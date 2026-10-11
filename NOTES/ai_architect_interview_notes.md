@@ -93,88 +93,17 @@ For a hypothetical 70-billion-parameter model, raw weight storage is roughly 140
 
 ## 2. Cost Engineering and Token Economics
 
-### 2.1 Measure cost per task, not just per model call
-
-A basic token-priced inference estimate is:
-
-\[
-C_{\text{request}} =
-\frac{T_{\text{in}}P_{\text{in}}+T_{\text{out}}P_{\text{out}}}{10^6}
-\]
-
-where token counts are multiplied by the relevant price per million tokens. Use the provider's actual pricing, including any separate cached-input or reasoning-token rates.
-
-The visible user question may be a small part of the total input. System instructions, conversation history, retrieved documents, tool outputs and agent planning calls can dominate token usage.
-
-**Measure:**
-- Cost per model call.
-- Cost per completed user task.
-- Input/output tokens by workflow and tenant.
-- Retry and agent-loop overhead.
-- Cache savings.
-- Cost by model and feature.
-
-A multi-step agent can make several LLM calls for one user request. Cost controls should therefore include per-request model-call, token, step, time and monetary budgets.
-
-### 2.2 Exact cache versus semantic cache
-
-**Exact caching** reuses a response when a normalized key and all relevant context match. It is predictable when keys include the required model, prompt, tenant, authorization and data-version context.
-
-**Semantic caching** finds prior queries with similar meanings, often through embeddings. It can improve hit rates for paraphrased questions, but can return an answer that is similar in wording yet wrong for the current question.
-
-Example:
-- “What is the maximum withdrawal limit?”
-- “What is the minimum withdrawal limit?”
-
-These are semantically related but require different answers.
-
-**Safe design**
-1. Check an exact cache first.
-2. Use semantic caching only for eligible, stable answer classes.
-3. Apply tenant, identity, authorization and freshness checks before reuse.
-4. Use a validated similarity threshold and consider ambiguity.
-5. Version entries when prompts, policies, models or knowledge sources change.
-6. Avoid shared semantic caching for personalized or sensitive answers unless isolation and correctness can be guaranteed.
-
-A vector similarity score is not proof that two questions are factually equivalent. For changing financial data, retrieve from the source of truth.
-
-### 2.3 Model routing and cascades
-
-A model router chooses a model based on task complexity, quality requirements, latency, cost and availability.
-
-Good candidates for smaller models or deterministic logic include intent classification, language detection, fixed-schema extraction and bounded summarization. Complex synthesis may need a stronger model. Sensitive operations require authorization and business logic regardless of model size.
-
-**Routing approaches**
-- **Rules:** predictable and auditable; less flexible.
-- **Classifier/SLM:** handles varied language; classification errors can misroute work.
-- **Cascade:** try a cheaper path and escalate if validation fails; adds latency and relies on useful escalation criteria.
-
-Track routing accuracy, task success by model, escalation rate, cost per successful task, latency and safety outcomes. Do not optimize only for the percentage of requests sent to the smallest model.
-
-### 2.4 Rate limits, circuit breakers and fallbacks
-
-Rate-limit at the appropriate boundaries using requests, tokens, concurrency and spend:
-- API gateway for ingress protection.
-- Tenant quota layer for fairness.
-- Orchestrator for agent budgets.
-- Inference service for GPU capacity.
-- Provider adapter for vendor quotas.
-
-A **circuit breaker** stops repeatedly calling a failing dependency:
-- **Closed:** calls proceed.
-- **Open:** calls are rejected or redirected.
-- **Half-open:** limited test calls determine whether recovery has occurred.
-
-A fallback hierarchy may include a primary deployment, an alternate region/provider, a smaller model for supported tasks, or a deterministic graceful-degradation response.
-
-**Critical safeguards**
-- Use end-to-end deadlines.
-- Apply bounded retries with exponential backoff and jitter.
-- Respect provider retry guidance.
-- Avoid retrying non-idempotent side effects blindly.
-- Prevent fallback storms.
-- Preserve the same security and safety policy across providers.
-- Do not bypass a safety refusal merely by switching to a less restrictive model.
+### 1. Measure cost per task
+Don't measure only the cost of one AI call. Measure the total cost to complete one user's task, including retries and multiple AI calls.
+### 2. Exact cache vs Semantic cache
+- Exact cache: Same question → reuse the saved answer.
+- Semantic cache: Similar question → try to reuse an answer, but verify it's correct.
+### 3. Model routing
+Use a small, cheaper model for simple tasks and a powerful, expensive model for complex tasks.
+### 4. Rate limits, Circuit breakers and Fallbacks
+- Rate limit: Restrict how many requests users can make.
+- Circuit breaker: Stop calling a service that is repeatedly failing.
+- Fallback: If the main AI fails, switch to an alternative.
 
 ---
 
