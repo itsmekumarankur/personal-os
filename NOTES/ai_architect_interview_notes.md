@@ -82,17 +82,13 @@ This is an estimate; architecture, cache precision, parallelism and implementati
 
 ### 1.5 Speculative decoding
 
-Speculative decoding uses a smaller **draft model** to propose multiple tokens, then a larger **target model** verifies them. With a suitable verification algorithm, the method can preserve the target model's intended output distribution while reducing the number of sequential target-model decoding steps.
-
-It works best when:
-- The draft model is cheap.
-- Proposed tokens have a high acceptance rate.
-- Target-model verification is efficient.
-- Decode is the actual bottleneck.
-
-It may provide little benefit when proposals are frequently rejected or the workload is dominated by queueing or prefill.
-
-**Do not confuse it with model routing:** routing chooses a model for a request; speculative decoding uses draft-and-verify within generation.
+Speculative decoding = Guess first, verify later.
+Imagine a fast junior employee drafts 5 words in advance. A senior employee quickly checks whether those words are correct.
+- Draft model: Quickly guesses the next few words.
+- Target model: Checks those guesses.
+- Benefit: If most guesses are correct, the AI generates answers faster.
+When does it help? When the guesses are usually correct and checking them is efficient.
+- Speculative decoding: One AI model guesses; another verifies.
 
 ### 1.6 Quantization: BF16, FP8 and INT4
 
