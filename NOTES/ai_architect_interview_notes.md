@@ -396,53 +396,17 @@ Try to answer each question by explaining the diagnostic process, trade-offs and
 1. **TTFT is high but ITL is healthy. What do you investigate first?**  
    Separate queueing, retrieval/tool latency, prompt size and prefill before optimizing decode.
 
-2. **How would you estimate capacity for 10,000 registered users?**  
-   Estimate peak request rate, active concurrency, prompt/output distributions and SLOs. Load-test the model and GPU configuration; registered users are not equivalent to concurrent requests.
-
-3. **Why can a model fit on a GPU but fail at production concurrency?**  
+2. **Why can a model fit on a GPU but fail at production concurrency?**  
    KV cache, runtime buffers and temporary memory are additional to weights; context length and active sequences affect capacity.
 
-4. **When is semantic caching unsafe?**  
-   Personalized, sensitive, time-varying or subtly different questions require strict scope, freshness and correctness checks—or should bypass semantic reuse.
-
-5. **Why is a vector database not a complete RAG solution?**  
-   Retrieval alone does not provide ingestion quality, lexical matching, reranking, authorization, freshness, provenance or grounded generation.
-
-6. **How do you prevent cross-tenant RAG leakage?**  
-   Derive scope from authenticated identity, filter during retrieval, validate before context assembly, scope caches/checkpoints and test revocation and adversarial cases.
-
-7. **How do you recover an agent after a worker crash?**  
+3. **How do you recover an agent after a worker crash?**  
    Persist validated state transitions, resume from a checkpoint and make side effects idempotent or reconcilable.
 
-8. **How do you avoid duplicate payments after a timeout?**  
-   Use stable idempotency keys, durable operation status, downstream deduplication and reconciliation before retrying uncertain outcomes.
-
-9. **How do you defend against indirect prompt injection?**  
-   Treat retrieved content as untrusted, restrict tools, independently authorize actions, validate arguments, limit egress and require approval for sensitive operations.
-
-10. **How do you know a new model or prompt is better?**  
+4. **How do you know a new model or prompt is better?**  
     Use a versioned gold set, compare quality and safety by task, test retrieval/tool behavior, then shadow or canary with rollback criteria.
 
-11. **LLM spans are fast, but end-to-end latency is high. What next?**  
+5. **LLM spans are fast, but end-to-end latency is high. What next?**  
     Inspect retrieval, queueing, tools, retries, serialization, networking and post-processing; verify trace boundaries.
-
-12. **A cost optimization improves latency but reduces answer quality. How do you decide?**  
-    Compare against explicit quality and safety gates, evaluate by task/risk class and choose only configurations that satisfy required SLOs.
 
 ---
 
-## 9. Final Principles to Remember
-
-- Optimize the actual bottleneck, not the most visible component.
-- Measure p95/p99 and cost per successful task, not only averages and tokens per second.
-- Separate model weights from KV-cache capacity when planning inference.
-- Treat semantic similarity as a retrieval signal, not proof of answer equivalence.
-- Build RAG as a versioned data pipeline with provenance, access controls and evaluation.
-- Enforce authorization in deterministic application code, never by trusting model intent.
-- Checkpointing enables recovery but does not guarantee exactly-once side effects.
-- Bound agent steps, time, retries, tokens and money.
-- Treat prompts, retrieved content, tool arguments and model outputs as untrusted.
-- Combine offline quality gates with online monitoring and safe rollouts.
-- Design for failure, recovery, auditability and controlled degradation from the start.
-
-**Core interview message:** A production AI Architect engineers a reliable system around probabilistic inference. The goal is not simply to choose a powerful model; it is to deliver measurable quality with bounded latency and cost, enforceable security, recoverable workflows and observable behavior.
