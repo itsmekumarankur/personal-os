@@ -574,61 +574,18 @@ A read replica may still contain regulated or confidential production data. “R
 ## Question 7: A LangGraph workflow takes 14 seconds. Reduce it below 3 seconds.
 
 **Interviewer prompt:** Executives complain that the workflow takes 14 seconds. How do you isolate bottlenecks and decide which architectural levers to use?
-
-### A. First clarify what “3 seconds” means
-
-Is the target:
-- Time to first token?
-- Complete response time?
-- p95 or average latency?
-- A read-only answer or a workflow with external side effects?
-
-A 3-second p95 full response is very different from a 3-second first token.
-
-### B. Trace before optimizing
-
-Instrument every graph node and dependency. Decompose the 14 seconds into:
-- Gateway and queue wait.
-- Retrieval and reranking.
-- Each LLM call's TTFT and completion time.
-- Tool/API latency.
-- Sequential versus parallel work.
-- Retry and backoff time.
-- Serialization and post-processing.
-
-Build a latency budget for the critical path. Parallel branches should be analyzed by the slowest branch, not by summing all branch durations.
-
-### C. Apply levers based on evidence
-
-| Observed bottleneck | Possible lever | Trade-off |
-|---|---|---|
-| Too many sequential model calls | Combine steps or remove unnecessary reflection | May reduce reasoning depth |
-| Long prompts | Trim history, reduce redundant instructions, retrieve fewer/better chunks | May lose useful context |
-| Slow retrieval | Improve indexes, filtering and candidate selection | Index/recall trade-offs |
-| Expensive reranking | Reduce candidate set or use a faster reranker | May reduce relevance |
-| Slow tools | Parallelize independent reads, add deadlines, optimize APIs | Must preserve dependencies and rate limits |
-| Provider latency | Use a suitable faster model/deployment or routing | Quality and provider trade-offs |
-| Queueing | Admission control, more capacity, improved batching | Cost versus tail latency |
-| Excess retries | Fix root cause and bound retries | Some transient failures may fail faster |
-| Repeated stable requests | Safe exact/semantic caching | Freshness and false-hit risk |
-
-### D. Do not parallelize everything
-
-Parallelize independent retrievals or read-only API calls when safe. Do not parallelize steps that depend on prior results, violate downstream concurrency limits or perform conflicting side effects.
-
-### E. Set a measurable optimization loop
-
-1. Capture baseline traces and workload distribution.
-2. Identify the dominant critical-path spans.
-3. Form a specific hypothesis.
-4. Change one major factor at a time.
-5. Re-run representative load and quality tests.
-6. Compare p50/p95/p99, task quality, failure rate and cost.
-7. Roll out gradually with rollback thresholds.
-
-A 14-second workflow may not reach a 3-second full-response target without reducing scope, changing the model, removing steps or relaxing quality requirements. State this rather than promising an arbitrary latency target.
-
-**Strong interview conclusion:** Optimize the measured critical path. Latency reduction is a constrained optimization problem: meet the target while preserving required quality, safety and reliability.
+My approach: Measure → Identify → Optimize → Validate.
+1. Measure: Trace every graph node, LLM call, retrieval step, and API. Identify where the 14 seconds are spent.
+2. Optimize the bottleneck:
+   - Too many LLM calls → Remove unnecessary steps or combine calls.
+   - Slow APIs → Parallelize independent calls.
+   - Large prompts → Reduce unnecessary context.
+   - Slow retrieval → Optimize search and reranking.
+   - Repeated requests → Use caching where safe.
+3. Validate: Compare latency, answer quality, failure rate, and cost before and after changes.
+4. Deploy safely: Use a canary rollout and keep rollback ready.
+Key principle: Don't optimize blindly. Fix the slowest part of the critical path first, while preserving answer quality and security.
+Strong interview closing: “I would use traces to identify the bottleneck, optimize the critical path, and validate whether sub-3-second latency is achievable without compromising quality or reliability.”
 
 ---
 
@@ -705,174 +662,26 @@ A semantic cache can leak customer information if a similar question retrieves a
 
 **Interviewer prompt:** How do you automate regression testing before swapping an embedding model or upgrading an LLM?
 
-### A. Version every change
-
-Track versions of:
-- Base model and quantization.
-- Embedding model and vector index.
-- Prompt templates.
-- Reranker.
-- Tool schemas and graph definition.
-- Retrieval configuration.
-- Evaluation datasets and evaluator versions.
-
-Without versioning, a quality regression is difficult to reproduce or attribute.
-
-### B. Embedding model migration
-
-Do not mix query vectors and document vectors from incompatible embedding configurations.
-
-1. Preserve the current production index.
-2. Build a separate index with the candidate embedding model.
-3. Re-embed the corpus consistently.
-4. Evaluate retrieval against a versioned query set.
-5. Compare Recall@k, MRR, nDCG, retrieval latency and index cost.
-6. Evaluate downstream answer quality and citation correctness.
-7. Shadow or canary traffic.
-8. Switch traffic only after acceptance criteria pass.
-9. Keep rollback capability.
-
-### C. LLM/model upgrade evaluation
-
-Use a gold set that covers:
-- Common tasks and long-tail cases.
-- Ambiguous and adversarial prompts.
-- Tool selection and argument correctness.
-- Structured-output validity.
-- Groundedness and citations.
-- Refusal and safety behavior.
-- Multilingual and long-context cases if relevant.
-- Latency, tokens and cost.
-
-Use deterministic assertions where possible, reference-based metrics where appropriate, model-based graders with calibration, and human review for high-risk samples.
-
-### D. Example release gates
-
-Define thresholds based on the application rather than adopting arbitrary universal numbers:
-- No critical security or authorization regression.
-- Task success and factual correctness remain within agreed tolerances.
-- Retrieval quality meets minimum recall/relevance requirements.
-- Structured output and tool schemas remain valid.
-- p95/p99 latency and cost remain within budgets.
-- Rollback can be executed safely.
-
-### E. Deployment progression
-
-```text
-Candidate change
-    |
-Offline unit + regression + security tests
-    |
-Shadow evaluation
-    |
-Canary rollout
-    |
-Online quality, latency, cost and error monitoring
-    |
-Accept or rollback
-```
-
-For a model upgrade, compare the candidate and baseline on the same examples and, where possible, the same workload distribution. Be alert to nondeterminism and evaluator bias.
-
-**Strong interview conclusion:** A model upgrade is a production code change. Version it, evaluate it against measurable gates, canary it, monitor it and preserve rollback.
-
+Threat: A model upgrade may reduce answer accuracy, retrieval quality, safety, or performance even if the new model looks better in demos.
+My approach is to establish measurable release gates:
+1. Version everything: Track model, embeddings, vector index, prompts, reranker, tool schemas, and evaluation datasets to reproduce regressions.
+2. Embedding migration: Build a separate index, re-embed the corpus consistently, and compare Recall@k, MRR, nDCG, latency, and cost. Never mix incompatible embedding configurations.
+3. LLM evaluation: Run a versioned gold dataset covering accuracy, groundedness, citations, tool calls, structured outputs, security, and edge cases. Use automated metrics plus human review for high-risk scenarios.
+4. Release gates: Require acceptable quality, zero critical security regressions, valid tool outputs, and latency and cost within agreed budgets.
+5. Progressive rollout: Run offline tests → shadow traffic → canary → production monitoring. Preserve the previous model and index for safe rollback.
+Key design principle: A model upgrade is a production code change. Compare the candidate against the baseline on the same test cases, use measurable acceptance criteria, and roll back if quality or operational SLOs regress.
 ---
 
 ## Question 10: Defend against indirect prompt injection in an ingested customer document
 
 **Interviewer prompt:** A malicious actor embeds hidden instructions inside a document ingested by RAG. How do you detect and neutralize the injection before an agent executes unauthorized actions?
 
-### A. Threat model
-
-The attack path is:
-
-```text
-Malicious document
-       |
-Ingestion and indexing
-       |
-User asks a normal question
-       |
-Document retrieved into context
-       |
-Model interprets embedded instructions
-       |
-Potential unauthorized tool call or data disclosure
-```
-
-The attack can be visible text, hidden text, misleading formatting or instructions embedded in tool output. Ingestion scanning can help, but cannot guarantee detection.
-
-### B. Defense at multiple layers
-
-**Ingestion**
-- Track source and trust level.
-- Extract text and relevant document structure.
-- Scan/classify suspicious instructions where useful.
-- Preserve provenance and access metadata.
-- Quarantine or review high-risk sources according to policy.
-
-**Prompt and context construction**
-- Clearly separate trusted instructions from retrieved content.
-- Treat retrieved content as evidence, not authority.
-- Include only relevant, authorized passages.
-- Avoid giving retrieved content control over tool policy.
-
-**Tool execution**
-- Use an allowlist of tools.
-- Validate arguments and schemas.
-- Enforce authorization and business policy independently.
-- Apply least-privilege credentials and egress restrictions.
-- Require human approval for high-impact actions.
-
-**Monitoring and response**
-- Test adversarial documents and tool-use scenarios.
-- Trace the retrieved source and proposed action.
-- Detect policy-denied tool calls and unusual egress.
-- Support rapid source quarantine and index removal.
-- Preserve audit evidence without unnecessarily retaining sensitive content.
-
-### C. What not to claim
-
-Do not claim that a prompt instruction or injection classifier can guarantee prevention. The robust control is to make unauthorized actions impossible or tightly constrained even if the model is manipulated.
-
-**Strong interview conclusion:** Detection is useful, but prevention depends on capability restriction, independent authorization, least privilege, output validation and safe execution boundaries.
-
----
-
-# 6. A Concise Interview Answer Structure
-
-For any of these questions, structure the spoken answer in this order:
-
-1. **Requirements:** State the critical functional requirements, workload assumptions and SLOs.
-2. **Architecture:** Walk through the main components and request/data flow.
-3. **Key decisions:** Explain why you chose each major component.
-4. **Failure modes:** Address timeouts, malformed data, retries, overload and partial side effects.
-5. **Security:** Explain identity, authorization, tenant isolation, secrets and data handling.
-6. **Observability:** Name the metrics, traces and quality signals you need.
-7. **Validation:** Explain load tests, regression tests, adversarial tests and rollout/rollback.
-8. **Trade-offs:** State what your design optimizes and what it deliberately sacrifices.
-
-A useful sentence pattern is:
-
-> “I would first establish the workload and SLOs. Then I would design the request path around the main resource constraints. For each dependency, I would define a timeout, concurrency limit, failure policy and observable SLO. Finally, I would validate the design using representative load, quality and security tests before a gradual rollout.”
-
-Use this as a structure, not a script. Interviewers usually learn more from how you reason about constraints and failure modes than from how many technologies you name.
-
----
-
-# 7. Final Principles
-
-- Registered users are not concurrent users; derive capacity from peak traffic and workload distribution.
-- Protect each dependency with its own quota, timeout and concurrency budget.
-- Enforce tenant authorization before data enters model context.
-- Use RAG for changing knowledge and fine-tuning for repeatable behavior gaps.
-- Bound every agent loop and treat tool outputs as untrusted.
-- Durable checkpoints support recovery, but side effects still require idempotency and reconciliation.
-- Never rely on a language model to sandbox its own code or authorize its own actions.
-- Optimize latency from traces and the critical path, not intuition.
-- Semantic cache thresholds require evaluation with hard negatives and risk-specific policies.
-- Model and embedding changes need versioned regression gates, canary rollout and rollback.
-- Prompt-injection detection is not a substitute for constrained tools and independent authorization.
-- Explain trade-offs explicitly and connect design decisions to measurable requirements.
+Threat: A malicious customer document contains hidden instructions. When RAG retrieves it, the LLM may follow those instructions and make unauthorized tool calls or expose sensitive data.
+My defense is layered:
+1. Ingestion: Track document provenance and trust level, scan suspicious content, and quarantine high-risk documents.
+2. Context construction: Treat retrieved documents as untrusted evidence, not instructions. Include only relevant, authorized content.
+3. Tool execution: Allowlist tools, validate arguments, enforce independent authorization, use least-privilege credentials, and require human approval for high-impact actions.
+4. Monitoring: Log retrieval sources and tool decisions, detect denied actions, test adversarial documents, and support rapid document quarantine and index removal.
+Key design principle: Never rely solely on prompts or injection classifiers. Even if the LLM is manipulated, independent authorization and execution controls must prevent unauthorized actions.
 
 **Core message:** An architect-level answer demonstrates control over the entire system: workload, data access, probabilistic model behavior, deterministic execution, failure recovery, evaluation and operational cost.
