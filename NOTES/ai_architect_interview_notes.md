@@ -307,86 +307,47 @@ A cache leak is a security incident: similar questions must not cause one user's
 
 ## 6. Observability and Day-2 Operations
 
-### 6.1 Why ordinary application monitoring is insufficient
+## 6. Observability and Day-2 Operations
 
-An HTTP 200 response can still be incorrect, unsupported, unsafe or unauthorized. LLM observability must cover infrastructure performance and AI behavior.
+### 6.1 Why normal monitoring is not enough
 
-A useful trace should connect:
-- API request and authentication.
-- Cache lookup.
-- Embedding and retrieval.
-- Reranking.
-- LLM calls and model versions.
-- Tool execution and retries.
-- Checkpoint writes and approval pauses.
-- Output validation.
-- Final result.
+An AI request can succeed technically but still give a wrong or unsafe answer.
 
-Capture timings, status, model/tool identifiers, token counts and safe metadata. Avoid indiscriminate storage of raw prompts, completions and tool results; traces can contain sensitive data and incur significant cost.
+**Monitor both:**
+- **System:** Speed, errors, memory and cost.
+- **AI:** Answer correctness, safety, retrieval quality and tool usage.
+
+Trace the complete journey: request → search → AI → tools → final answer.
+
+**Remember:** Don't store sensitive user data unnecessarily in logs.
 
 ### 6.2 OpenTelemetry, Langfuse and Arize Phoenix
 
-- **OpenTelemetry:** vendor-neutral instrumentation and context propagation for traces, metrics and logs across application services and infrastructure.
-- **Langfuse:** LLM-focused tracing, prompt/version workflows, token/cost visibility and evaluation capabilities, depending on deployment and version.
-- **Arize Phoenix:** AI observability with tracing, retrieval inspection and evaluation workflows, depending on version.
-
-These tools overlap but are not identical. OpenTelemetry can provide cross-service instrumentation, while an LLM-focused platform can provide specialized inspection and evaluation. Avoid collecting the same high-volume sensitive payloads into several systems without a clear reason.
+- **OpenTelemetry:** Tracks requests across different services.
+- **Langfuse:** Helps track AI calls, prompts, tokens and cost.
+- **Arize Phoenix:** Helps inspect AI behavior, search results and answer quality.
 
 ### 6.3 Production metrics
 
-**Performance**
-- Request rate and error rate.
-- TTFT and ITL p50/p95/p99.
-- End-to-end latency.
-- Queue depth and wait time.
-- Input/output tokens per second.
-- GPU utilization and memory pressure.
-- Provider timeout and rate-limit rates.
+- **Performance:** Response time, errors and GPU usage.
+- **Cost:** Cost per task, token usage and cache savings.
+- **RAG quality:** Whether the right information was retrieved and answers are supported by sources.
+- **Agent quality:** Whether the task completed and tools worked correctly.
+- **Security:** Unauthorized access, data leaks and policy violations.
 
-**Cost**
-- Tokens and cost per task.
-- Cost by model, tenant and feature.
-- Retry and agent-loop overhead.
-- Cache hit rate and savings.
+### 6.4 Offline evaluation vs Online monitoring
 
-**RAG quality**
-- Recall@k, MRR and nDCG@k.
-- Citation correctness.
-- Context relevance and answer groundedness.
-- Empty/low-confidence retrieval rate.
+- **Offline evaluation:** Test AI using prepared questions before releasing changes.
+- **Online monitoring:** Watch real users' requests to detect problems after release.
 
-**Agent quality**
-- Task completion rate.
-- Correct tool selection and argument validity.
-- Tool success rate.
-- Steps per task and escalation rate.
-- Recovery success and duplicate-side-effect attempts.
+**Safe release process:**
+1. Test the new version.
+2. Check quality and security.
+3. Release to a small group first (canary).
+4. Monitor performance and answers.
+5. Roll back if problems occur.
 
-**Security**
-- Unauthorized retrieval/tool attempts.
-- Cross-tenant isolation test failures.
-- Policy violations and sensitive-data exposure.
-- Secret leakage in logs or traces.
-
-Define every metric's measurement boundary, aggregation window and alert threshold. Avoid high-cardinality labels such as raw prompts or arbitrary tool arguments.
-
-### 6.4 Offline gold-set evaluation versus online monitoring
-
-**Offline evaluation** uses a curated, versioned set of questions, evidence and expected behavior. It is repeatable and useful as a release gate.
-
-**Online monitoring** observes actual production traffic and detects new patterns, latency changes, retrieval failures, tool failures, routing shifts and cost increases. Ground truth may not be available immediately.
-
-A robust release process is:
-
-1. Evaluate candidate model, prompt and index versions offline.
-2. Run security, quality and regression checks.
-3. Shadow traffic where feasible.
-4. Canary the candidate.
-5. Monitor SLOs and reviewed quality samples.
-6. Roll back if quality, safety or reliability regresses.
-
-Evaluate factual correctness, faithfulness, completeness, citation accuracy, safety, tool correctness and instruction following separately. Model-based judges can help scale evaluations but can also be wrong; calibrate them against human-reviewed examples and deterministic checks.
-
+**Remember:** An AI release is successful only when quality, safety and reliability remain good.
 ---
 
 ## 8. Interview Questions Worth Practicing
