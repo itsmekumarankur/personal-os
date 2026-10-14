@@ -68,8 +68,16 @@
 ## LoRA in one glance
 
 - **Full fine-tuning:** update most/all model parameters; flexible, but costly in compute, memory, and storage.
-- **PEFT:** train only a small subset of parameters.
-- **LoRA (Low-Rank Adaptation):** keep the base model mostly frozen and train small adapter matrices.
+
+Think of an AI model as a student who already knows many things.
+
+1. PEFT — The overall approach
+Instead of retraining the entire AI model, train only a small part of it. This saves time, money, and computing power.
+
+2. LoRA — One specific method of doing PEFT
+Instead of changing the student's original textbook, you give them a small set of extra notes to learn the new topic.
+
+Remember: PEFT is the strategy; LoRA is one way to implement that strategy.
 - **Benefit:** smaller training footprint; multiple task-specific adapters can share one base model.
 
 ## Banking example
@@ -77,23 +85,5 @@
 - Fine-tuning teaches: tone, response structure, complaint classification, domain-specific task patterns.
 - RAG supplies: current product terms, internal documents, latest policies, regulatory information.
 - Don't fine-tune a model just because it lacks today's policy—the policy may change tomorrow.
-
-## Architect / Engineering Manager checklist
-
-1. **Diagnose first:** behavior problem or missing-knowledge problem?
-2. **Start with the simplest option:** prompting before training when it is sufficient.
-3. **Protect data:** clean, deduplicate, quality-filter, and prevent sensitive-data leakage.
-4. **Prove improvement:** compare against the base model on real tasks and general capabilities.
-5. **Release safely:** evaluation → safety checks → canary → production; monitor regressions.
-6. **Account for total cost:** training, GPU serving, evaluation, maintenance, and model updates.
-
-## Quick recall
-
-- **Fine-tuning changes:** model parameters / learned behavior.
-- **RAG changes:** information supplied at inference time.
-- **Pre-training:** broad patterns from huge datasets.
-- **Instruction tuning:** examples of instructions and desired responses.
-- **Model registry:** stores and versions model artifacts.
-- **Overfitting:** learns training examples too specifically.
 
 > **Leadership question:** “Are we solving a behavior problem or a knowledge problem?”
