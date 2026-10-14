@@ -1,4 +1,4 @@
-# GPU Basics for LLMs — 1 min
+# GPU Basics — 1 min
 
 > **Core rule:** Choose the GPU for the workload—not simply the most powerful or expensive one.
 
