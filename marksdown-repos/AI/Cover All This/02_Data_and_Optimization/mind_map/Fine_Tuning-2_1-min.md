@@ -71,21 +71,4 @@ A 7B model with FP16 weights uses roughly 14 GB for weights alone. Full training
 
 **Define target → Prepare data → Train → Evaluate → Safety/regression tests → Register/version → Canary deploy → Monitor → Roll back or iterate**
 
-Measure:
-- Task quality and failure rates
-- Safety and unwanted behavior
-- General capability regressions
-- Training and serving cost
-- Latency and throughput
-- Maintenance burden as requirements change
-
-## Architect / VP-level questions
-
-1. What business metric should improve?
-2. Why won't prompting or RAG solve the problem?
-3. Is the training data representative, lawful to use, and free of leakage?
-4. What is the baseline, and what result justifies the cost?
-5. What capabilities could regress?
-6. Who owns model updates, monitoring, and rollback?
-
 > **Remember:** RAG changes what the model can see. Prompting tells it what to do now. Fine-tuning changes learned behavior.
