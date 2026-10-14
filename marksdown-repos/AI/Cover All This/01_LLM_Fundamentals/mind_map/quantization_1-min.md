@@ -1,4 +1,4 @@
-# 🧠 Quantization — Mind Map
+# 🧠 Quantization — Mind Map - 1 min
 
 > **Mental Model:** `Fewer bits → Less memory → Lower infrastructure cost → Possible quality loss`
 
