@@ -1,4 +1,4 @@
-# 🧠 Decoding Strategies — Mind Map
+# 🧠 Decoding Strategies — Mind Map - 1 Min
 
 > **Mental Model:** `LLM → Logits → Probabilities → Decoding → Next Token`
 
