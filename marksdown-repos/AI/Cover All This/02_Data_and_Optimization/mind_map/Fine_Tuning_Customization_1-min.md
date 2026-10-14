@@ -1,4 +1,4 @@
-# Fine-Tuning & Customization — Architect Quick Revision Mind Map
+# Fine-Tuning Customization — 1 Min
 
 > **Architect principle:** Diagnose first, choose the least complex solution that meets the business requirement, and prove the improvement with evidence.
 
