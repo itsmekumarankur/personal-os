@@ -61,13 +61,5 @@
 
 They often work **together**: SQL stores business records; the Vector DB retrieves semantically relevant content.
 
-## Architect checklist
-
-- Is semantic search actually required?
-- Are embeddings generated with the right model?
-- Are exact terms better handled with hybrid keyword + vector search?
-- Are permissions enforced—not merely stored as metadata?
-- Is recall acceptable at the required latency and cost?
-- How are changed or deleted source documents reflected in the index?
 
 > **Leadership question:** “How will we ensure the AI retrieves the right information—not just information that looks similar?”
