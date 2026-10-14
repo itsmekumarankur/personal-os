@@ -45,33 +45,5 @@
   Hybrid search   Citations      Latency/cost  Data leakage
 ```
 
-## RAG in one example
-
-Question: “What is the current process for redeeming a mutual fund?”
-
-1. Find the latest authorized policy chunks.
-2. Filter out documents the user cannot access.
-3. Rank the most relevant evidence.
-4. Send only useful context to the LLM.
-5. Generate an answer with source references.
-6. Evaluate whether the answer is supported by the sources.
-
-## Key trade-offs
-
-- **Top-K too low:** may miss required evidence.
-- **Top-K too high:** adds noise, tokens, latency, and cost.
-- **Vector search:** finds semantic similarity.
-- **Keyword search:** helps with exact policy numbers, IDs, and codes.
-- **Hybrid retrieval:** combines both.
-- **Reranking:** improves the ordering of retrieved candidates, at extra cost/latency.
-- **RAG reduces hallucination risk; it does not guarantee truth.**
-
-## Architect checklist
-
-- Are source documents current and correctly chunked?
-- Are metadata and access permissions applied before context reaches the model?
-- Do retrieval metrics and answer metrics have separate tests?
-- Can the answer cite its source?
-- What happens when evidence is missing or conflicting?
 
 > **Leadership question:** “Are we measuring retrieval quality separately from LLM quality?”
