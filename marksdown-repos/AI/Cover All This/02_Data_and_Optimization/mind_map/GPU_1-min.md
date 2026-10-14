@@ -1,4 +1,4 @@
-# GPU Basics for LLMs — Quick Revision Mind Map
+# GPU Basics for LLMs — 1 min
 
 > **Core rule:** Choose the GPU for the workload—not simply the most powerful or expensive one.
 
@@ -59,23 +59,13 @@ For a **7B-parameter model**, approximate weight storage only:
 
 These figures exclude KV cache, activations, runtime overhead, and other allocations.
 
-## Must-know distinctions
+## Must-know
 
 - **GPU memory capacity:** Can the model and active requests fit?
-- **Memory bandwidth:** How quickly can data move to compute units?
-- **Compute:** How quickly can operations execute?
 - **TTFT:** Time to first token.
 - **TPOT:** Time per output token.
 - **KV cache:** Reuses attention keys/values, but consumes memory per request.
 - **Quantization:** Reduces numerical precision and memory; validate quality after quantizing.
 
-## Architect checklist
-
-1. Model size and precision?
-2. Expected context length and concurrent users?
-3. Required TTFT, token speed, and throughput?
-4. Memory capacity and bandwidth?
-5. One GPU or multi-GPU?
-6. Benchmark cost per successful request—not hardware specs alone.
 
 > **Leadership question:** “What workload are we sizing for, and what GPU capacity does it actually require?”
