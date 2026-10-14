@@ -1,4 +1,4 @@
-# 🧠 KV Cache — Mind Map
+# 🧠 KV Cache — Mind Map - 1 min
 
 > **Mental Model:** `Compute K/V once → Cache → Reuse during decoding`
 
