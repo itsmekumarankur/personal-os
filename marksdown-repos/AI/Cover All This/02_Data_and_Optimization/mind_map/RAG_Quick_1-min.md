@@ -1,4 +1,4 @@
-# RAG — Quick Revision Mind Map
+# RAG — 1 min
 
 > **Core rule:** A better LLM cannot fix bad information. Measure retrieval quality separately from answer quality.
 
