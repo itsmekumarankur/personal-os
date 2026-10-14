@@ -17,17 +17,15 @@ Choose highest probability
 
 ## 2. Temperature
 
-```text
-Temperature ↓ → Sharper distribution → More deterministic
-
-Temperature ↑ → Flatter distribution → More diverse/random
-```
-
-Concept:
-
-```text
-softmax(logits / T)
-```
+Temperature controls the randomness of LLM token selection.
+- Low temperature (0–0.3): More predictable, consistent answers.
+- Medium temperature (0.5–0.7): Balanced creativity and consistency.
+- High temperature (0.8–1.0+): More random and creative answers.
+Example: Prompt: “Suggest a name for an AI company.”
+- Temperature 0.1: AI Solutions
+- Temperature 0.7: NeuralSpark
+- Temperature 1.0: QuantumDream Labs
+Architect’s takeaway: Temperature affects token selection randomness, while decoding strategies like greedy decoding, sampling, and beam search determine how tokens are selected.
 
 > Temperature changes **sampling behavior**, not model knowledge.
 
