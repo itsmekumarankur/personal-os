@@ -27,6 +27,8 @@ Example: Prompt: “Suggest a name for an AI company.”
 - Temperature 0.1: AI Solutions
 - Temperature 0.7: NeuralSpark
 - Temperature 1.0: QuantumDream Labs
+
+
 Architect’s takeaway: Temperature affects token selection randomness, while decoding strategies like greedy decoding, sampling, and beam search determine how tokens are selected.
 
 > Temperature changes **sampling behavior**, not model knowledge.
