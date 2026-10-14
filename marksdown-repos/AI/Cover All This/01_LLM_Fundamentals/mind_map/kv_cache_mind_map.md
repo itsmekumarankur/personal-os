@@ -26,14 +26,29 @@ Current token   → Q
 
 ## 2. What Is Cached?
 
-```text
-Input
- ├── Query (Q)
- ├── Key   (K) ──→ CACHE
- └── Value (V) ──→ CACHE
-```
+Think of an LLM reading a sentence and deciding the next word.
+- Q — Query: What information am I looking for right now?
+- K — Key: What information does each previous token contain?
+- V — Value: What actual information should I retrieve from that token?
 
-Previous K/V are reused during autoregressive generation.
+Example: “The cat drank milk because it was thirsty.”
+
+When processing “thirsty”:
+- Q: Find what “it” refers to.
+- K: Compare tokens like cat, milk, and thirsty to find relevant information.
+- V: Retrieve the useful information associated with the relevant token, such as cat.
+
+Remember: Q = Ask, K = Match, V = Information.
+
+Why KV Cache? 
+It stores previously computed K and V so the model doesn't need to calculate them again for every new token.
+
+Example: “Ankur eats an apple because he is hungry.”
+
+When the LLM processes “hungry”:
+- Q (Query): Who is hungry?
+- K (Key): Check which word matches the question — Ankur or apple.
+- V (Value): Retrieve the information associated with Ankur.
 
 ## 3. Cache Grows
 
