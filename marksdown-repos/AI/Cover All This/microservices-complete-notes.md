@@ -1706,126 +1706,53 @@ If you can only monitor four things, monitor these.
 
 # PART 10: THE 30 INTERVIEW SCENARIOS
 
-## Scenario 1: Product wants 99.99% for "place order." The flow has 6 synchronous hops, each at 99.9%. What do you do?
+## Scenario 1: Order placement must be 99.99% reliable. Six services are involved. What do you do?
 
-The math: 0.999^6 = 99.4% = ~52 hours downtime/year. Target is ~52 minutes/year.
+Question in simple words: If six services must all work to place an order, how do you make order placement more reliable?
 
-Answer:
+Answer: Don't make the customer wait for all six services. Save the order safely in the database and immediately confirm that it was accepted. Let pricing, risk checks, payment, and ledger processing happen in the background where possible.
 
-- Classify each hop: required to accept the order vs. required to complete it.
-- Redesign the accept path:
+Example: Like booking a ticket: first confirm that your request is received, then complete the remaining processing.
 
-```text
- BEFORE (sync):
- User → GW → Order → Pricing → Risk → Payment → Ledger → response
-        (6 things must be up)
+## Scenario 2: A service was down for 90 seconds, but your system stayed down for 25 minutes. Why?
 
- AFTER (accept fast, complete async):
- User → GW → Order → [save to DB + outbox] → 202 Accepted
-                         │
-                         │ events
-                         v
-              Pricing    Risk    Payment    Ledger
-              (async, can be down, catches up)
-```
+Question in simple words: Why didn't our system recover when the failed service recovered?
 
-- Cache the price snapshot (versioned) instead of a live Pricing call.
-- Risk limits locally (updated via events), or a single reservation service for hard invariants.
-- Define SLO on acceptance (99.99%) and a separate SLO on completion time.
-- Add criticality tiers and bulkheads for anything left synchronous.
+Answer: Because retries created too many extra requests. Queues filled up, workers became busy, and the system couldn't recover.
 
-The trap: answering "retries and circuit breakers." They don't fix multiplicative availability.
+Example: A shop reopens after a short closure, but a huge waiting crowd prevents it from serving customers normally.
 
-## Scenario 2: A dependency was down for 90 seconds. It recovered, but your system stayed down for 25 minutes. Why?
+Fix: Limit retries, control queues, and reject excess traffic quickly.
 
-This is metastable failure. The system's own recovery behaviour keeps it down.
+## Scenario 3: A bank payment timed out after two seconds. Was the customer debited?
 
-```text
- 90s of slowness
-   → timeouts + retries (3 layers) → 27x load
-   → queues full of requests whose callers gave up
-   → workers burn time on dead work
-   → pools exhausted, caches cold, pods restarting
-   → THE LOAD SUSTAINS THE FAILURE
-```
+Question in simple words: If we don't receive a response from the bank, how do we know whether the money was deducted?
 
-Fixes:
+Answer: We don't know yet. The bank might have deducted the money but failed to send the response.
 
-- Retry at one layer with a budget, jitter, and deadline awareness.
-- Drop expired requests on dequeue. Bounded queues, LIFO under overload.
-- Load shedding at saturation (503 fast).
-- Circuit breakers with slow-call detection.
-- Slow-start for restarted pods.
-- Liveness must not depend on the dependency.
-- Kill switch to disable retries or shed a traffic class.
-- Game day: inject slowness (not just outage), verify recovery after removal.
+Example: You paid at a shop, but the payment screen froze. You shouldn't pay again blindly.
 
-The trap: "Add more pods." Under metastable load, cold pods make it worse.
+Fix: Mark the payment as `UNKNOWN`, check its status with the bank using the same transaction reference, and update it once confirmed.
 
-## Scenario 3: Payment calls a bank. The call times out after 2 seconds. Did the customer get debited?
+## Scenario 4: Payment was deducted, but the purchase failed. Meanwhile, an EMI auto-debit bounced. What went wrong?
 
-A timeout is neither success nor failure. It is UNKNOWN.
+Question in simple words: Why can a failed purchase and delayed refund cause another payment to fail?
 
-```text
- Three states: SUCCESS | FAILED | UNKNOWN
+Answer: We deducted the money before confirming that the purchase could succeed. The refund took time, so the customer temporarily had less available money.
 
- 1. Persist intent first:
-    INSERT INTO payments (id, bankRef=UNIQUE, status='INITIATED')
+Example: You pay for a ticket before checking whether a seat is available. The booking fails, but your refund arrives later.
 
- 2. Call bank with bankRef (bank deduplicates on it):
-    ok       → SUCCESS
-    declined → FAILED (definitive)
-    timeout  → UNKNOWN (do NOT fail, do NOT blindly retry)
+Fix: Reserve the item first, validate everything, and deduct money as late as practical. If a refund is necessary, process it reliably and handle any resulting customer penalty fairly.
 
- 3. UNKNOWN resolution:
-    - status-inquiry API with backoff (same bankRef)
-    - fallback: end-of-day reconciliation file from the bank
-    - until resolved: funds shown as pending/held, customer told "processing"
+## Scenario 5: A risk service processed a debit before an earlier credit and raised a false alert. How do you fix it?
 
- 4. Resolve to SUCCESS or FAILED → continue saga or compensate.
-```
+Question in simple words: Why did the system calculate the wrong balance when events arrived in the wrong order?
 
-Never:
+Answer: The system received the transactions out of order. It processed the debit before the credit that should have come first.
 
-- Retry with a new reference ID (double debit).
-- Mark it failed (customer charged, order cancelled).
-- Auto-refund an UNKNOWN (it may have debited).
+Example: Your account has ₹100. You receive ₹500, then spend ₹300. If the system processes the spending first, it may incorrectly think you don't have enough money.
 
-## Scenario 4: A purchase saga debits the customer, then allotment fails and the refund is queued. Meanwhile the customer's loan auto-debit bounced. How should the saga have been designed?
-
-The saga exposed intermediate state (a dirty read of a debit that would later be reversed).
-
-```text
- BEFORE:
- debit → allot units → confirm
- (allot fails → refund; damage done in between)
-
- AFTER:
- 1. Reserve units (cheap undo, can fail)    ← do first
- 2. Validate everything else
- 3. Debit (PIVOT — hard to undo)            ← do late
- 4. Confirm allotment + notify (retry)      ← only retryable steps after pivot
-```
-
-Additional points:
-
-- Represent the debit as a hold/authorisation (semantic lock) if it must precede.
-- Make downstream consumers (EMI engine) aware of "available vs ledger balance."
-- Compensations must be idempotent and retried until success, with priority and SLA.
-- Include a customer-impact policy (waive the bounce penalty automatically).
-- Record saga state and expose status so support can see "pending refund."
-
-## Scenario 5: A Risk service consumes account events. After you added retry topics, it raised a false limit breach because a debit was processed before the credit that preceded it. Fix it.
-
-Cause: retry topics break per-key ordering. Multiple relay instances or partitions can also reorder.
-
-Options (in increasing robustness):
-
-- Key by accountId, single-threaded per key, use blocking retry on the key (park the key, continue others) with bounded attempts, then DLQ.
-- Per-aggregate sequence number in each event. Consumer applies only lastApplied + 1; buffers or parks out-of-order events.
-- State-based consumer: events carry the full resulting state/version. Apply if version > current, ignore otherwise (commutative, idempotent).
-- Producer side: outbox relay must preserve order per key (no concurrent relays for the same key).
-- Risk breach logic should be computed from authoritative state (balance and limit versions), not from a sequence of deltas that can arrive in any order.
+Fix: Process each account's events in the correct order, attach sequence numbers to events, and verify the latest authoritative balance before raising a risk alert.
 
 ## Scenario 6: Security mandates mTLS everywhere and default-deny authorization across 80 live services in one quarter, with no outage. How do you roll it out?
 
