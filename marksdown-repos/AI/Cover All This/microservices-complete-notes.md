@@ -2153,70 +2153,142 @@ Key principles:
 
 ### S — Single Responsibility
 
-Misreading: "a class does one thing" → hundreds of one-method classes.
 
-Correct reading: one reason to change, meaning one actor (stakeholder group). Group things that change for the same reason; separate things that change for different reasons.
+```text
 
-```java
-// Violation: three actors in one class
-class Statement {
-    BigDecimal computeFees() {...}   // Finance changes this
-    String renderPdf() {...}         // Compliance/Marketing changes this
-    void saveToDb() {...}            // Platform/DBA changes this
-}
+Simple meaning: One class should have only one job and only one reason to change.
+
+Real-life example:
+
+Think of a restaurant:
+
+- 👨‍🍳 Chef → Cooks food.
+- 🧾 Cashier → Handles payments.
+- 🧹 Cleaner → Cleans the restaurant.
+
+If the chef has to cook, clean, and handle payments, things become difficult to manage.
+
+In software:
+
+❌ Wrong: `Employee` class calculates salary, saves employee data, and sends emails.
+
+✅ Correct:
+
+- `SalaryCalculator` → Calculates salary.
+- `EmployeeRepository` → Saves employee data.
+- `EmailService` → Sends emails.
+
+Remember: One class = One responsibility = Easier to maintain.
 ```
 
-Architecture level: this is the service boundary rule. A service that changes for two teams' reasons violates SRP. The 30% change-coupling test is SRP measured empirically.
 
 ### O — Open/Closed
 
 Add behaviour by adding code, not by editing tested code.
 
 ```java
-// Violation: every new payment mode edits this method
-BigDecimal fee(Payment p) {
-    if (p.mode == UPI) ...
-    else if (p.mode == NEFT) ...
-}
 
-// Open/Closed: new mode = new class, existing code untouched
-interface FeePolicy { boolean supports(Mode m); BigDecimal fee(Payment p); }
-class UpiFee implements FeePolicy {...}
-class NeftFee implements FeePolicy {...}
-// Spring injects List<FeePolicy>; caller selects the one that supports(mode)
+Meaning: A class should be open for extension but closed for modification.
+
+In very easy words:
+
+- Open for extension: You can add new features.
+- Closed for modification: You don't need to change existing, working code.
+
+Example: Payment system
+
+Initially, you support Credit Card payments.
+
+Later, you want to add UPI payments.
+
+❌ Bad approach: Keep modifying the existing payment class every time you add a new payment method.
+
+✅ Good approach: Create a common `Payment` interface and implement separate classes for Credit Card and UPI.
+
 ```
 
-Architecture level: additive API and event evolution; new consumers subscribe without changing the producer.
+
 
 ### L — Liskov Substitution
 
-Code written against the base type must work with any subtype without knowing the difference. This is about behavioural contracts, not just signatures.
+### SOLID: Liskov Substitution Principle (LSP)
 
-Rules: a subtype must not strengthen preconditions, must not weaken postconditions, must preserve invariants, must not throw unexpected exceptions.
+Meaning: A child class should be usable wherever its parent class is expected, without breaking the program.
 
-```java
-interface Wallet { void debit(BigDecimal amt); }  // contract: debits, or throws InsufficientFunds
+In very easy words:
 
-class ReadOnlyWallet implements Wallet {
-    public void debit(BigDecimal amt) { throw new UnsupportedOperationException(); }  // LSP violation
-}
+- A child class must behave as the parent promises.
+- It should not break the expected functionality.
+
+Example: Birds
+
+❌ Bad approach:
+
+```
+Bird
+  |
+  |-- Sparrow (can fly)
+  |
+  |-- Penguin (cannot fly)
 ```
 
-Architecture level: contract compatibility. A new service version or an alternate implementation must honour the old semantics: same error behaviour, same idempotency guarantees, same ordering. Consumer-driven contract tests are LSP checks across services.
+If the `Bird` class has a `fly()` method, a Penguin cannot fulfill that behavior.
 
-### I — Interface Segregation
+✅ Better approach:
 
-```java
-// Fat interface
-interface AccountService { open(); close(); debit(); credit(); statement(); kycUpdate(); adminFreeze(); }
+```
+Bird
+  |
+  |-- Sparrow
+  |
+  |-- Penguin
 
-// Segregated by client role
-interface AccountReader { Balance balance(AccountId id); }
-interface AccountWriter { void debit(...); void credit(...); }
-interface AccountAdmin  { void freeze(...); }
+FlyingBird
+  |
+  |-- Sparrow
 ```
 
-Architecture level: consumer-specific APIs (BFF per client type), separate gRPC services per consumer group, CQRS read vs write APIs, consumer-driven contracts.
+Now, only birds that can fly implement `FlyingBird`.
+
+Remember: A child class should never break the behavior expected from its parent.
+
+### I — Interface Segregation Principle (ISP)
+
+```java
+
+
+Meaning: Don't force a class to implement methods it doesn't need.
+
+### Example: Employee System
+
+❌ Bad approach
+
+One interface forces every employee to do everything.
+
+```
+Employee Interface
+   ├── code()
+   ├── test()
+   └── deploy()
+```
+
+But a tester may not deploy code, and a manager may not code.
+
+✅ Good approach
+
+Split the interface into smaller, specific interfaces.
+
+```
+Developer → code()
+Tester    → test()
+DevOps    → deploy()
+```
+
+Each role implements only what it needs.
+
+Remember: Keep interfaces small and specific. Don't force classes to implement unnecessary methods.
+```
+
 
 ### D — Dependency Inversion
 
@@ -2225,35 +2297,32 @@ High-level policy must not depend on low-level detail; both depend on abstractio
 Abstractions must not depend on details; details depend on abstractions.
 
 ```text
- WITHOUT                                   WITH (inverted)
+Meaning: High-level code should depend on an interface, not on a specific implementation.
+Example: Notification System
+❌ Bad approach
 
- +-----------------+                       +-----------------+
- | PaymentService  |  (domain)             | PaymentService  |  (domain)
- +--------+--------+                       +--------+--------+
-          | depends on                              | depends on
-          v                                         v
- +-----------------+                  <<interface>> PaymentGateway   (OWNED BY THE DOMAIN)
- | HdfcBankClient  |  (detail)                      ^ implements
- +-----------------+                       +-----------------+
-                                           | HdfcBankAdapter |  (detail)
-                                           +-----------------+
+Your application directly depends on Gmail.
+Application → Gmail
+
+
+If you want to switch to SMS, you must change the application code.
+
+✅ Good approach
+
+Create a common Notification interface.
+             Application
+                  |
+                  ↓
+        Notification Interface
+             /          \
+          Gmail          SMS
+
+
+Now, the application depends on the interface, not directly on Gmail or SMS. You can switch implementations without changing the application's core logic.
+
+Remember: Depend on an abstraction (interface), not on a concrete class.
 ```
 
-The key point is who owns the interface. If it lives beside the bank client, you only added a layer. It belongs to the domain side, shaped by what the domain needs.
-
-DIP is not dependency injection. DI is a wiring mechanism; DIP is a rule about dependency direction and interface ownership. You can use DI and still violate DIP.
-
-Architecture level: hexagonal (ports and adapters), clean architecture, anti-corruption layer (ACL) toward partners and legacy systems.
-
-### SOLID mapped to service design
-
-| Principle | Service-level equivalent |
-|---|---|
-| SRP | Service boundary = one actor / one reason to change |
-| OCP | Additive API and event evolution; extend by adding consumers |
-| LSP | Backward-compatible versions and alternate implementations honour the same behavioural contract |
-| ISP | BFF, CQRS, consumer-driven contracts, no fat shared SDK |
-| DIP | Domain owns its ports; ACL isolates partners and legacy systems |
 
 ## 32. Adapter Pattern
 
