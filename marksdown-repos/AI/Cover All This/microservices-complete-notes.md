@@ -2525,3 +2525,389 @@ GatewayFactory selects the adapter by provider/region/health (Factory, OCP).
 Payment outcome is published as PaymentCompleted through an outbox to Kafka, and Notification, Ledger, and Audit subscribe independently (Observer / pub-sub).
 
 The scheduler for reconciliation runs once per cluster using a lease (Singleton, cluster-aware).
+
+
+## 3. Distributed Transactions (Microservices)
+
+### Q1. Why can't we use a normal database transaction across microservices?
+
+**One-line answer:** Each microservice owns its own database, and a normal ACID transaction works only inside one database.
+
+Think of an order flow: Order service, Payment service, Inventory service. Each has its own DB. If payment succeeds but inventory fails, there is no single `ROLLBACK` that can undo both. So we need patterns like 2PC or Saga to keep data consistent.
+
+### Q2. What is Two-Phase Commit (2PC)?
+
+**One-line answer:** A coordinator asks all services "can you commit?" and only if everyone says yes, it tells everyone to commit.
+
+- **Phase 1 (Prepare):** Coordinator asks every participant to get ready. Each one locks its data and replies Yes or No.
+- **Phase 2 (Commit or Rollback):** If all said Yes, coordinator sends Commit. If anyone said No, it sends Rollback.
+
+Analogy: a wedding. The priest asks both sides "do you agree?" and only when both say yes does he pronounce them married.
+
+**Problems (interviewers love this):**
+- Blocking: locks are held while waiting, so it is slow.
+- Coordinator is a single point of failure. If it crashes after Prepare, participants stay stuck.
+- Does not scale well and many systems (REST APIs, Kafka, most NoSQL) do not support it.
+
+### Q3. What is the Saga pattern?
+
+**One-line answer:** A saga breaks one big transaction into a chain of small local transactions, and if one step fails, we run compensating actions to undo the earlier steps.
+
+Example:
+1. Order service creates order (status PENDING)
+2. Payment service charges the card
+3. Inventory service reserves stock, but it fails
+4. Compensation: Payment service refunds, Order service marks order CANCELLED
+
+Key point: compensation is not a database rollback. It is a new business action that reverses the effect (refund, cancel, release stock). Data is eventually consistent, not instantly consistent.
+
+### Q4. Choreography vs Orchestration in Saga?
+
+**One-line answer:** Choreography means services react to each other's events with no boss. Orchestration means one central orchestrator tells each service what to do.
+
+| | Choreography | Orchestration |
+|---|---|---|
+| Control | Decentralised, via events | Central orchestrator |
+| Easy to follow? | Gets messy with many services | Flow is in one place |
+| Coupling | Low | Services depend on orchestrator |
+| Good for | Small flows (2 to 4 steps) | Complex flows, many steps |
+
+### Q5. What is the Outbox Pattern and what problem does it solve?
+
+**One-line answer:** It solves the dual write problem by saving the event in an outbox table in the same DB transaction as the business data, and a separate process publishes it to Kafka.
+
+The problem: your service must update its database and also publish an event to Kafka. If DB commit succeeds but the Kafka publish fails (or the reverse), the system is inconsistent.
+
+The fix:
+1. In one local transaction, save the order **and** insert an event row into the `outbox` table.
+2. A relay process (a poller, or CDC tool like Debezium) reads the outbox table and publishes to Kafka.
+3. Mark the row as sent.
+
+Because the relay can retry, delivery is at-least-once, so consumers must be idempotent.
+
+### Q6. What if a compensating action itself fails?
+
+**One-line answer:** Retry it with idempotency, and if it still fails, send it to a dead-letter queue and alert a human.
+
+Compensations must be idempotent and retryable (refunding twice must not refund twice). Use an idempotency key, retry with backoff, and keep a record of saga state so you know where it got stuck.
+
+### Q7. Sagas have no isolation. What does that mean and how do you handle it?
+
+**One-line answer:** Other requests can see the in-between state of a saga, so we mark records with a status like PENDING.
+
+While a saga is running, the order exists but payment is not done yet. Others might read that half-finished data. Handle it with statuses (PENDING, CONFIRMED, CANCELLED), "semantic locks" (do not allow another action on a PENDING record), and by showing users only confirmed data.
+
+### Q8. When would you pick 2PC and when Saga?
+
+**One-line answer:** 2PC when you need strict consistency and everything sits in one trusted infrastructure. Saga for most microservices because it scales and does not block.
+
+In fintech, money movement is usually done with Saga plus a ledger, because each step is recorded, can be reversed by a new entry, and can be audited.
+
+---
+
+## 4. HTTP Methods and Resource Management (REST API Design)
+
+### Q1. What is the difference between PUT and POST?
+
+**One-line answer:** POST creates a new resource and the server picks the ID. PUT replaces a resource at a URL the client already knows, and calling it again gives the same result.
+
+| | POST | PUT |
+|---|---|---|
+| URL | `/users` (collection) | `/users/42` (specific resource) |
+| Who decides ID | Server | Client (already in the URL) |
+| Idempotent | No (two calls create two records) | Yes (two calls leave the same state) |
+| Typical use | Create, or run an action | Replace the whole resource |
+
+### Q2. What do "safe" and "idempotent" mean?
+
+**One-line answer:** Safe means it does not change data. Idempotent means calling it many times has the same effect as calling it once.
+
+| Method | Purpose | Safe | Idempotent | Usual success code |
+|---|---|---|---|---|
+| GET | Read | Yes | Yes | 200 |
+| POST | Create / action | No | No | 201 (or 200 / 202) |
+| PUT | Replace whole | No | Yes | 200 or 204 (201 if created) |
+| PATCH | Partial update | No | Not guaranteed | 200 or 204 |
+| DELETE | Remove | No | Yes | 204 |
+
+### Q3. PUT vs PATCH?
+
+**One-line answer:** PUT sends the whole resource and replaces it. PATCH sends only the fields that changed.
+
+If a user has name, email, phone and you want to change only the phone:
+- PUT: send all three fields. If you forget email, it may be wiped out.
+- PATCH: send just `{ "phone": "9999999999" }`.
+
+PATCH is not always idempotent, for example `"increment balance by 10"` changes every time.
+
+### Q4. How do you decide between PUT, POST, PATCH and DELETE?
+
+**One-line answer:** Creating with server ID is POST. Replacing everything is PUT. Changing a few fields is PATCH. Removing is DELETE.
+
+Quick decision:
+1. Do I want a new record and the server picks the ID? Use POST.
+2. Do I know the exact URL and want to replace the full thing? Use PUT.
+3. Do I want to change only some fields? Use PATCH.
+4. Do I want to remove it? Use DELETE.
+
+### Q5. Is DELETE idempotent? What do you return on the second call?
+
+**One-line answer:** Yes, because after the first call the resource is gone and stays gone. The second call can return 404 or 204, and both are fine.
+
+Idempotent is about server state, not about the response code. In fintech, do a **soft delete** (mark as inactive) because financial records usually must be kept for audit.
+
+### Q6. Which HTTP status codes do you return for each method?
+
+**One-line answer:** 201 with a `Location` header for create, 200 or 204 for update, 204 for delete, 404 if not found, 409 for conflict.
+
+- POST create: `201 Created` plus `Location: /users/42`
+- Accepted but processed later: `202 Accepted`
+- Validation error: `400` or `422`
+- Not found: `404`
+- Conflict (duplicate, version mismatch): `409`
+
+### Q7. How do you make a POST (like a payment) safe to retry?
+
+**One-line answer:** Use an Idempotency-Key header. The server stores the key and returns the same result if it sees the same key again.
+
+If the network times out and the client retries a payment POST, without a key you may charge twice. With `Idempotency-Key: abc-123`, the server checks "have I seen abc-123?" and returns the saved response instead of charging again.
+
+### Q8. When is it fine to use POST for something that is not a create?
+
+**One-line answer:** When the action does not fit the create/read/update/delete model, like refund, cancel or approve.
+
+Example: `POST /payments/123/refund`. Also used for complex searches that need a request body.
+
+---
+
+## 5. Database Isolation Levels (Database Fundamentals)
+
+### Q1. What is isolation?
+
+**One-line answer:** Isolation is the "I" in ACID. It decides how much one running transaction can see of another transaction's work.
+
+Higher isolation means fewer surprises but less concurrency and slower performance. Lower isolation means faster but more weird reads.
+
+### Q2. Explain Dirty Read, Non-Repeatable Read and Phantom Read.
+
+**One-line answer:** Dirty read reads uncommitted data. Non-repeatable read gets a different value for the same row on a second read. Phantom read gets new or missing rows on a second query.
+
+- **Dirty read:** Transaction A changes balance from 100 to 50 but has not committed. Transaction B reads 50. A then rolls back. B saw a value that never existed.
+- **Non-repeatable read:** B reads balance = 100. A updates it to 50 and commits. B reads again and now gets 50. Same row, different value in one transaction.
+- **Phantom read:** B runs `SELECT * WHERE amount > 1000` and gets 5 rows. A inserts a new row with amount 2000 and commits. B runs the same query and gets 6 rows. A new "phantom" row appeared.
+
+Easy memory trick: dirty = uncommitted data, non-repeatable = a row changed, phantom = a row appeared or disappeared.
+
+### Q3. Which isolation level prevents which problem?
+
+**One-line answer:** Each level up prevents one more problem, and Serializable prevents all of them.
+
+| Isolation level | Dirty read | Non-repeatable read | Phantom read |
+|---|---|---|---|
+| Read Uncommitted | Possible | Possible | Possible |
+| Read Committed | Prevented | Possible | Possible |
+| Repeatable Read | Prevented | Prevented | Possible (per SQL standard) |
+| Serializable | Prevented | Prevented | Prevented |
+
+Note: in practice MySQL InnoDB and PostgreSQL Repeatable Read also block most phantoms. Mention this to show depth.
+
+### Q4. What is the default isolation level?
+
+**One-line answer:** PostgreSQL, Oracle and SQL Server default to Read Committed. MySQL InnoDB defaults to Repeatable Read.
+
+### Q5. How do databases implement isolation?
+
+**One-line answer:** Either with locks or with MVCC (multi-version concurrency control).
+
+- **Locks:** readers and writers block each other. Simple, but slower.
+- **MVCC:** the database keeps multiple versions of a row. Readers see a snapshot and do not block writers. Used by PostgreSQL, MySQL InnoDB and Oracle.
+
+### Q6. Which isolation level would you use for a money transfer?
+
+**One-line answer:** Usually Read Committed or Repeatable Read combined with explicit locking or a version check, and Serializable only for very critical flows.
+
+Serializable is safest but slowest and can cause transaction failures that you must retry. Most teams choose a lower level and protect critical rows using `SELECT ... FOR UPDATE` or optimistic locking.
+
+### Q7. What is a lost update and which level stops it?
+
+**One-line answer:** Two transactions read the same value, both change it, and one overwrites the other. Read Committed does not stop it, so use locking or a version column.
+
+Both read balance = 100. One writes 100 - 30 = 70, the other writes 100 - 20 = 80. Final is 80 but should be 50. Fix with an atomic update (`SET balance = balance - 30`), `FOR UPDATE`, or a version column. Some databases (PostgreSQL Repeatable Read) detect it and throw an error.
+
+### Q8. What is write skew? (bonus)
+
+**One-line answer:** Two transactions read the same data, each updates a different row, and together they break a rule that neither broke alone. Only Serializable fully prevents it.
+
+Example: a hospital needs at least one doctor on call. Two doctors both check "2 are on call", both go off call, and now 0 are on call.
+
+---
+
+## 6. Concurrent Update Synchronization Across Nodes (System Design)
+
+### Q1. What is the problem?
+
+**One-line answer:** When the service runs on many nodes, two requests can update the same record at the same time and one update can silently overwrite the other.
+
+Example: Node A and Node B both read balance = 100. A subtracts 30, B subtracts 20. Both write. One update is lost. A Java `synchronized` block does not help because it only works inside one JVM, not across nodes.
+
+### Q2. What is the simplest fix?
+
+**One-line answer:** Do the change in a single atomic SQL statement.
+
+```sql
+UPDATE account SET balance = balance - 30
+WHERE id = 1 AND balance >= 30;
+```
+
+The database handles the safety. If rows affected = 0, the balance was not enough. Always consider this first.
+
+### Q3. What is Optimistic Locking?
+
+**One-line answer:** Assume conflicts are rare. Keep a version number, and update only if the version is unchanged. If it changed, someone else won, so retry.
+
+```sql
+UPDATE account
+SET balance = 70, version = version + 1
+WHERE id = 1 AND version = 5;
+```
+
+If rows affected = 0, another request changed it first, so reload and retry (or return 409). In JPA this is the `@Version` annotation.
+
+- Good when conflicts are rare, and nothing is locked while you work.
+- Bad when conflicts are frequent, because you keep retrying.
+
+### Q4. What is Pessimistic Locking?
+
+**One-line answer:** Assume conflicts will happen. Lock the row first so others must wait.
+
+```sql
+BEGIN;
+SELECT * FROM account WHERE id = 1 FOR UPDATE;
+-- change the row
+COMMIT;
+```
+
+- Good when many requests fight for the same row.
+- Risks: waiting, deadlocks, long locks eat connections. Keep the transaction short and always lock rows in the same order to avoid deadlocks.
+
+### Q5. How does a Redis distributed lock work?
+
+**One-line answer:** A node sets a key in Redis only if it does not exist. Whoever sets it holds the lock, and the key expires automatically.
+
+```
+SET lock:account:1 <unique-token> NX PX 10000
+```
+
+- `NX` means set only if absent. `PX 10000` means expire after 10 seconds.
+- To release, check the token matches (using a small Lua script) and then delete, so you never delete someone else's lock.
+
+**Pitfalls to mention:**
+- If the work takes longer than the expiry, the lock expires and a second node enters. Use a longer TTL, a renewal (watchdog), and a **fencing token** so the database rejects stale writers.
+- Redis failover can lose a lock. The Redlock algorithm tries to fix this but is debated.
+- Best used for coordinating work across services or resources outside one database. The database's own locking is often simpler.
+
+### Q6. How can Kafka partitioning solve this?
+
+**One-line answer:** If all updates for one record go to the same partition (using the record ID as the key), only one consumer handles them, one at a time, so no locks are needed.
+
+Kafka guarantees that one partition is read by only one consumer in a group, in order. So send all events for `account-1` with key `account-1`. They land in one partition and are processed one after another.
+
+Things to remember: ordering is per partition only; during a rebalance a partition can move to another consumer, so still make the handler idempotent.
+
+### Q7. How do you choose?
+
+| Approach | Best when | Watch out for |
+|---|---|---|
+| Atomic SQL update | Simple counters and balances | Only works for simple changes |
+| Optimistic locking | Conflicts are rare | Retries under heavy contention |
+| Pessimistic locking | High contention on the same row | Deadlocks, waiting, long locks |
+| Redis distributed lock | Cross-service or non-DB resources | Expiry, failover, needs fencing |
+| Kafka partitioning by key | Event-driven, per-entity ordering | Rebalances, hot keys |
+
+**Interview line:** "I start with an atomic update or optimistic locking, move to pessimistic locking for hot rows, and use a Redis lock or Kafka key-based partitioning when coordination goes beyond a single database."
+
+### Q8. What is a hot key problem?
+
+**One-line answer:** One record gets so many updates that its partition or its lock becomes the bottleneck.
+
+Example: one very popular stock or one merchant account getting thousands of updates per second. Fixes include batching updates, splitting into sub-counters, or queueing work for that key.
+
+---
+
+## 7. Kafka Consumer Group and Partition Management (Messaging)
+
+### Q1. What is a consumer group?
+
+**One-line answer:** A consumer group is a team of consumers that share the work of reading a topic, so each message is processed by only one member of the team.
+
+Different groups each get their own full copy of all messages. So an Orders topic can be read by an "email-service" group and a separate "analytics" group, and both receive every message.
+
+### Q2. What is the main rule between partitions and consumers?
+
+**One-line answer:** Inside one group, a partition is assigned to at most one consumer, but one consumer can read many partitions.
+
+This is how Kafka keeps order inside a partition. If two consumers read the same partition, ordering would break.
+
+### Q3. 3 partitions and 5 consumers in one group. What happens?
+
+**One-line answer:** Only 3 consumers are active, one per partition, and the other 2 sit idle as standby.
+
+| Consumer | Partition |
+|---|---|
+| C1 | P0 |
+| C2 | P1 |
+| C3 | P2 |
+| C4 | idle (standby) |
+| C5 | idle (standby) |
+
+If C2 crashes, Kafka does a rebalance and gives P1 to one of the idle consumers, so the idle ones are useful for failover. But adding more consumers than partitions does **not** increase speed.
+
+### Q4. What if there are more partitions than consumers?
+
+**One-line answer:** Some consumers will read more than one partition.
+
+| Partitions | Consumers | Result |
+|---|---|---|
+| 3 | 1 | One consumer reads all 3 |
+| 3 | 3 | One partition each |
+| 3 | 5 | 3 active, 2 idle |
+| 6 | 4 | 2, 2, 1, 1 |
+
+### Q5. How do you scale consumption?
+
+**One-line answer:** Add consumers up to the number of partitions. To go beyond, add partitions.
+
+The number of partitions is the maximum parallelism of a group. Note that you can increase partitions but not decrease them, and increasing them changes the key-to-partition mapping, so ordering for existing keys may change. Plan partition count early.
+
+### Q6. What is a rebalance?
+
+**One-line answer:** Kafka redistributing partitions among the consumers in a group.
+
+It is triggered when a consumer joins, leaves or crashes, or when partitions change. During an old-style rebalance, consumers pause (stop-the-world), so processing stalls for a bit. Reduce the impact with cooperative sticky assignor and static group membership.
+
+### Q7. What is an offset and how does committing work?
+
+**One-line answer:** An offset is the position of a message in a partition. A consumer commits the offset to say "I have processed up to here".
+
+If a consumer crashes after processing but before committing, the next consumer re-reads those messages, so you get **at-least-once** delivery. Make your consumer idempotent to handle duplicates.
+
+### Q8. Does Kafka guarantee ordering?
+
+**One-line answer:** Only within a single partition, not across a whole topic.
+
+To keep related messages in order (all events for one account), use the same key. Same key goes to the same partition, so order is preserved.
+
+### Q9. What is consumer lag?
+
+**One-line answer:** The difference between the latest message in a partition and the last offset the consumer committed.
+
+High lag means consumers are slower than producers. Fix by adding consumers (up to partition count), speeding up processing, or adding partitions.
+
+### Q10. Two services both need every message from a topic. How?
+
+**One-line answer:** Put each service in its own consumer group.
+
+Same group means they split the messages. Different groups means each gets all messages.
+
+---
+
