@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  labels: {app: payment-service}
+spec:
+  replicas: 3
+  selector:
+    matchLabels: {app: payment-service}
+  strategy:
+    type: RollingUpdate               # replace pods gradually: zero downtime
+    rollingUpdate:
+      maxUnavailable: 0               # never drop below desired capacity
+      maxSurge: 1                     # add one new pod at a time
+  template:
+    metadata:
+      labels: {app: payment-service, version: v1}
+    spec:
+      terminationGracePeriodSeconds: 30     # time for graceful shutdown after SIGTERM
+      containers:
+        - name: app
+          image: registry.example.com/payment-service:1.0.0   # immutable tag, never :latest
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef: {name: payment-config}     # config injected as env vars
+            - secretRef: {name: payment-secrets}       # secrets injected as env vars
+          resources:
+            requests: {cpu: "250m", memory: "512Mi"}   # what the scheduler reserves
+            limits:   {cpu: "1",    memory: "768Mi"}   # hard ceiling
+          startupProbe:                                # gives slow JVM start time before other probes begin
+            httpGet: {path: /actuator/health/liveness, port: 8080}
+            failureThreshold: 30
+            periodSeconds: 2
+          livenessProbe:                               # failing => restart the pod
+            httpGet: {path: /actuator/health/liveness, port: 8080}
+            periodSeconds: 10
+          readinessProbe:                              # failing => remove from Service, no traffic
+            httpGet: {path: /actuator/health/readiness, port: 8080}
+            periodSeconds: 5
+          lifecycle:
+            preStop:
+              exec: {command: ["sleep", "5"]}          # let load balancers drain before SIGTERM

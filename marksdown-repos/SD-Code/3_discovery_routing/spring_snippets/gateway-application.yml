@@ -1,0 +1,58 @@
+# Topic 26: Spring Cloud Gateway routes. NOT run in the sandbox it was written in.
+# Dependency: org.springframework.cloud:spring-cloud-starter-gateway
+#             (+ spring-cloud-starter-netflix-eureka-client and spring-cloud-starter-loadbalancer for lb:// URIs)
+# Runnable concept demo: ApiGatewayDemo.java
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        # /api/orders/**  ->  orders-service   (lb:// = ask the registry for instances and load balance)
+        - id: orders
+          uri: lb://orders-service
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - StripPrefix=1                      # /api/orders/1 becomes /orders/1 for the service
+            - name: Retry                        # retry only safe (GET) requests
+              args:
+                retries: 2
+                methods: GET
+                backoff:
+                  firstBackoff: 100ms
+                  maxBackoff: 500ms
+                  factor: 2
+            - name: CircuitBreaker               # needs spring-cloud-starter-circuitbreaker-reactor-resilience4j
+              args:
+                name: ordersCb
+                fallbackUri: forward:/fallback/orders
+
+        # /api/payments/**  ->  payments-service
+        - id: payments
+          uri: lb://payments-service
+          predicates:
+            - Path=/api/payments/**
+            - Method=GET,POST
+          filters:
+            - StripPrefix=1
+            - AddRequestHeader=X-Gateway, spring-cloud-gateway
+            - name: RequestRateLimiter           # token bucket (needs Redis: spring-boot-starter-data-redis-reactive)
+              args:
+                redis-rate-limiter.replenishRate: 10     # tokens added per second
+                redis-rate-limiter.burstCapacity: 20     # bucket size
+                key-resolver: "#{@userKeyResolver}"      # bean that says "limit per user"
+
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+      httpclient:
+        connect-timeout: 1000                    # ms to open a connection
+        response-timeout: 3s                     # whole response time limit (the gateway's timeout)
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka

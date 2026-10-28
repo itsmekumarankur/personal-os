@@ -1,0 +1,28 @@
+// Topic 5: the gRPC CONTRACT. Both server and client code are generated from this one file.
+// NOT compiled in the sandbox it was written in.
+syntax = "proto3";
+
+package pricing.v1;                      // versioned package name: v1 now, v2 later
+
+option java_multiple_files = true;
+option java_package = "com.example.pricing.grpc";
+
+service PriceService {
+  // 1) Unary: one request, one response (like a normal REST call)
+  rpc GetPrice (PriceRequest) returns (PriceReply);
+
+  // 2) Server streaming: one request, a stream of responses (live price ticks)
+  rpc StreamPrices (PriceRequest) returns (stream PriceReply);
+}
+
+message PriceRequest {
+  string symbol = 1;                     // numbers (1, 2, 3...) identify fields on the wire, NOT names
+}
+
+message PriceReply {
+  string symbol = 1;
+  double price = 2;
+  int64 epoch_millis = 3;
+  // Safe evolution: you may ADD new fields with NEW numbers (e.g. string currency = 4).
+  // Never reuse or renumber an existing field. If you delete one, `reserved` its number.
+}

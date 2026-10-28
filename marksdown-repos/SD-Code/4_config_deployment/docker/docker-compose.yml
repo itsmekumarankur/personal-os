@@ -1,0 +1,48 @@
+# 35. DOCKER COMPOSE: run the whole system on a laptop with one command:  docker compose up --build
+# NOT run by the author. Validated only as YAML syntax.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: payments
+      POSTGRES_USER: payments
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-localdev}      # from your shell or a .env file, never committed
+    volumes:
+      - pgdata:/var/lib/postgresql/data                # data survives container restarts
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payments"]
+      interval: 5s
+      retries: 10
+
+  kafka:
+    image: apache/kafka:3.8.0
+    ports: ["9092:9092"]
+
+  payment-service:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports: ["8080:8080"]
+    environment:                                       # 12-factor: config via environment
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/payments   # service name = DNS name
+      SPRING_DATASOURCE_USERNAME: payments
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-localdev}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    depends_on:
+      postgres:
+        condition: service_healthy                     # wait until DB is ready, not merely started
+      kafka:
+        condition: service_started
+    restart: unless-stopped
+
+  order-service:
+    build:
+      context: ../order-service
+    ports: ["8081:8080"]
+    environment:
+      PAYMENT_SERVICE_URL: http://payment-service:8080   # other service reached by name
+    depends_on: [payment-service]
+
+volumes:
+  pgdata:

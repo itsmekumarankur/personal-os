@@ -99,4 +99,7 @@ if __name__ == "__main__":
        LAYER 2: MODEL-BASED
        CHECK (SG-03)
        For less obvious attacks
+
+In simple words: You are learning how to detect attempts to trick an AI into ignoring its rules, revealing hidden instructions, or bypassing safety restrictions. The program first looks for known attack phrases using regex, then checks for suspicious message structures such as unusually long encoded text. It assigns a risk level based on what it finds.
+Key takeaway: This is a first-line prompt-injection filter. It is fast and inexpensive, but it cannot recognize every attack. A harmless message may trigger a warning, and a cleverly worded attack may slip through. The risk label is only a heuristic signal, not proof that a message is safe or malicious. In production, combine this with stronger checks and explicit policies for deciding whether to allow, review, or block a request.
 """

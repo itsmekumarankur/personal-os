@@ -1,0 +1,39 @@
+# 31. Spring Boot: shared defaults + per-profile overrides in ONE file (--- separates documents)
+# NOT run by the author.
+server:
+  port: 8080
+  shutdown: graceful                       # 12-factor: disposability
+spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  application:
+    name: payment-service
+app:
+  fee-rate: 0.02
+  gateway-url: http://localhost:9000
+  db:
+    password: ${APP_DB_PASSWORD:}          # no secret in the file; comes from the environment, empty default
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true                      # exposes /actuator/health/liveness and /readiness for Kubernetes
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+app:
+  gateway-url: http://sandbox.gateway.local
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+server:
+  port: 8443
+app:
+  fee-rate: 0.025
+  gateway-url: https://pay.example.com
