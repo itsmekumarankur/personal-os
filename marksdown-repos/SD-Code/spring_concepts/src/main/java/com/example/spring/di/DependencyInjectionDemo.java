@@ -6,6 +6,12 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 /**
+ The code teaches IoC and Dependency Injection. 
+ You never create collaborators with new. 
+ The Spring container creates them and hands them to you through the constructor. 
+ When several beans share a type, @Primary picks the default and @Qualifier picks one by name.
+
+
  * ================================================================
  * IoC + DEPENDENCY INJECTION - THE BIG IDEA
  * ================================================================
