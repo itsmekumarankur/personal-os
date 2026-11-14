@@ -1,15 +1,5 @@
 """
 09 MONITORING GUARDRAILS  -  "watch the fleet, notice trouble, and stop it automatically"
-
-Guardrails 01-08 act per request. Monitoring looks at the SYSTEM over time:
-  - METRICS       requests, guardrail blocks, tool errors, cost per minute
-  - RULES         block-rate above 30%  -> someone is probing us (WARN)
-  - ANOMALY       traffic far above its own baseline (mean + 3 standard deviations)  -> CRITICAL
-  - KILL SWITCH   trips automatically after 2 consecutive CRITICAL minutes: agent stops acting,
-                  pages a human, and stays OFF until a person resets it
-  - DASHBOARD     a few numbers a human can read in 10 seconds
-
-Time is simulated (one loop = one minute) so the demo is instant and deterministic.
 Run: python 09_monitoring_guardrails.py
 """
 import random
@@ -82,3 +72,111 @@ if __name__ == "__main__":
         print(f"{minute:>3} {reqs:>5} {blocked:>7} {block_rate:>7.0%} {cost:>6.2f}  {state:<10} {'; '.join(alerts)}")
     print("\nWhat to monitor in real agent fleets: block rate by guardrail, tool error rate, steps per task, "
           "tokens per task, approval wait time, fallback rate, and user thumbs-down.")
+
+
+"""
+HENGLISH SUMMARY:
+Imagine ek bank ne apna AI Wealth Assistant deploy kiya hai, jo thousands of customers ki portfolio queries aur investment requests handle karta hai. Ab tak ke guardrails (01–08) har individual request ko secure kar rahe the, lekin bank ko ye bhi dekhna hai ki poora AI system time ke saath healthy aur secure chal raha hai ya nahi. Iske liye MONITORING guardrail kaam karta hai. Sabse pehle METRICS collect hote hain, jaise kitne requests aaye, kitne block hue, tool errors kitne aaye aur har minute AI par kitna paisa spend ho raha hai. Phir RULES check karte hain ki agar 30% se zyada requests block ho rahi hain, toh ho sakta hai koi attacker system ko probe kar raha ho, isliye WARN alert generate hota hai. Uske baad ANOMALY DETECTION normal traffic ka baseline banata hai aur agar traffic average se 3 standard deviations zyada ho jata hai, toh CRITICAL alert generate karta hai. Maan lo normally 20 requests per minute aati hain, lekin suddenly 120 requests aane lagti hain, toh system ise suspicious traffic burst samajh sakta hai. Agar lagatar 2 minutes tak CRITICAL anomaly detect hoti hai, toh KILL SWITCH automatically AI agent ko OFF kar deta hai, naye requests refuse karta hai aur human on-call engineer ko alert bhejta hai. Agent tab tak OFF rehta hai jab tak human engineer manually reset nahi karta. Finally, DASHBOARD ye saare important numbers ek jagah dikhata hai, taaki engineer 10 seconds mein samajh sake ki system healthy hai, warning mein hai ya completely stopped hai. Is demo mein har loop ek minute represent karta hai aur minute 9 ke baad attack traffic simulate hota hai. Simple baat: Monitoring guardrail AI ke individual actions ko nahi, balki poore AI system ki health, security, traffic aur cost ko continuously monitor karta hai; aur problem serious hone par automatically agent ko stop kar deta hai.
+"""
+
+
+"""
+                 AI WEALTH ASSISTANT
+                         |
+                         v
+              +----------------------+
+              |  MONITORING LAYER    |
+              |  Watch entire system |
+              +----------------------+
+                         |
+        +----------------+----------------+
+        |                |                |
+        v                v                v
+   1. METRICS         2. RULES         3. ANOMALY
+   Collect data       Fixed limits     Detect unusual
+        |                |             traffic
+        |                |                |
+        v                v                v
+   - Requests         Block > 30%      Baseline traffic
+   - Blocked          = WARN           (Mean + 3 SD)
+   - Tool errors                         |
+   - Cost/minute                         v
+   - Cost/request                    CRITICAL ALERT
+        |                                |
+        +----------------+---------------+
+                         |
+                         v
+                 4. KILL SWITCH
+                         |
+                 2 consecutive
+                 CRITICAL minutes
+                         |
+                         v
+                +------------------+
+                |   AGENT OFF      |
+                |   STOP ACTIONS   |
+                +------------------+
+                         |
+              +----------+----------+
+              |                     |
+              v                     v
+        REFUSE REQUESTS       PAGE HUMAN
+                                    |
+                                    v
+                            HUMAN MANUAL RESET
+                                    |
+                                    v
+                              AGENT ON
+                                |
+                                v
+                        5. DASHBOARD
+                                |
+                                v
+                        Human sees status
+                        within 10 seconds
+                                |
+                    +-----------+-----------+
+                    |           |           |
+                    v           v           v
+                GREEN       YELLOW       RED
+                    OK          WARN       KILLED
+
+
+
+Attack scenario — How it works::
+==================================
+
+       NORMAL TRAFFIC                ATTACK TRAFFIC
+       (Minute 1–8)                  (Minute 9 onwards)
+             |                             |
+             v                             v
+       18–24 requests                 110–140 requests
+             |                             |
+             v                             v
+       Normal baseline              Traffic spike
+                                           |
+                                           v
+                                    Mean + 3 SD crossed?
+                                           |
+                                           v
+                                    CRITICAL ALERT
+                                           |
+                                  +--------+--------+
+                                  |                 |
+                               Minute 1          Minute 2
+                               CRITICAL          CRITICAL
+                                  |                 |
+                                  +--------+--------+
+                                           |
+                                           v
+                                     KILL SWITCH
+                                           |
+                                           v
+                                      AGENT OFF
+                                           |
+                                           v
+                                   Human is paged
+                                           |
+                                           v
+                                  Manual reset only
+"""

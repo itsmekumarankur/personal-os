@@ -1,7 +1,10 @@
 """
 05 OUTPUT GUARDRAILS  -  "what is allowed to LEAVE the agent?"
 
-The model's answer is a draft until it passes checks. Typical checks for a finance assistant:
+The model's answer is a draft until it passes checks. 
+
+Typical checks for a finance assistant:
+
   1. STRUCTURE   must be valid JSON with required fields (downstream code depends on it)
   2. SECRETS     no API keys / credentials leaked from prompt, tools or memory
   3. PII LEAK    no card numbers or PAN that the user was not meant to see
@@ -12,6 +15,7 @@ The model's answer is a draft until it passes checks. Typical checks for a finan
                  then fall back to a safe canned answer. Never ship a failed draft.
 
 The "model" below is scripted so the demo is deterministic.
+
 Run: python 05_output_guardrails.py
 """
 import json

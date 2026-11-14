@@ -33,11 +33,7 @@ for item in GOLDEN:
     print(f"{item['id']:3} {r1:>10} {r2:>10}  {final}")
 
 print("\nresult:", wins)
-print("""
-Why swap positions: judges often favour whichever answer is shown FIRST (position bias). If the verdict flips
-when you swap the order, the judge was reacting to position, not quality, so that comparison is thrown out.
-A high 'inconsistent' count means the judge is unreliable for this task: improve the prompt or use a stronger judge.
-Pairwise judging is ideal for A/B-testing two prompts or two models, because comparing is easier than scoring.""")
+
 
 
 """
@@ -88,6 +84,16 @@ Pairwise judging is ideal for A/B-testing two prompts or two models, because com
                          (Possible position
                               bias)
 
-In simple words: You are learning how to compare two AI systems by asking an LLM judge, “Which answer is better?” The judge compares both answers against the correct reference answer. Then your code swaps their positions and asks again. If System A wins both times, the result is consistent; if the winner changes when the order changes, the result is marked inconsistent because the judge may be biased toward whichever answer appears first.
-Key takeaway: Pairwise judging is useful when comparing two models or prompts. Swapping answer positions helps detect position bias, and the final report tells you how often System A wins, System B wins, there is a tie, or the judge gives inconsistent results.
+In simple words:
+================
+You are learning how to compare two AI systems by asking an LLM judge, 
+“Which answer is better?” The judge compares both answers against the correct reference answer. 
+Then your code swaps their positions and asks again. If System A wins both times, the result is consistent; 
+if the winner changes when the order changes, the result is marked inconsistent because the judge may be biased toward whichever answer appears first.
+
+Key takeaway: 
+===============
+Pairwise judging is useful when comparing two models or prompts. 
+Swapping answer positions helps detect position bias, and the final report tells you how often System A wins, System B wins, there is a tie,
+ or the judge gives inconsistent results.
 """

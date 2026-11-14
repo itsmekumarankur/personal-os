@@ -100,3 +100,67 @@ if __name__ == "__main__":
     for p in (Principal("C1", "customer"), Principal("C2", "customer"), Principal("S9", "support"), Principal("RM1", "rm")):
         print(f"* {p.role} {p.user_id}: {retrieve_docs(p)}")
     print("\nTakeaway: the model never sees data the user could not see, so no prompt trick can leak it.")
+
+"""
+Data Guardrail ka simple meaning hai ki AI Agent ko kabhi bhi user ki permission se zyada data access nahi milna chahiye. Maan lo bank ka Wealth Assistant ek powerful service account use karta hai, toh koi clever prompt dekar customer A ka data customer B ko dikhane ki koshish kar sakta hai. Isliye security sirf AI prompt mein nahi, balki backend code mein enforce hoti hai. Row-Level Security ensure karta hai ki customer sirf apna data aur RM sirf apne assigned customers ka data dekh sake. Column Masking PAN aur email jaise sensitive details ko hide karta hai, jab tak user ka role aur purpose full access allow na kare. Purpose Control ke through compliance team bhi complete customer data sirf `purpose='audit'` hone par access kar sakti hai, aur iska audit log maintain hota hai. RAG ACL ensure karta hai ki AI ko prompt mein bhejne se pehle documents ki permissions check ho jaayein, yani jis document ko user read nahi kar sakta, woh AI ko bhi nahi diya jaata. Finally, Data Minimisation ka matlab hai AI ko sirf utna hi data dena jitna uske current question ka answer dene ke liye zaroori hai. Simple words mein, AI ko wahi data dikhna chahiye jo requesting user khud dekhne ke liye authorised hai; prompt injection ya clever questions se bhi doosre customer ka data leak nahi hona chahiye.
+"""
+
+"""
+                 🏦 BANK WEALTH AI AGENT
+                          |
+                 Customer asks for data
+                          |
+                          ▼
+              ┌────────────────────────┐
+              │     DATA GUARDRAIL     │
+              │  Who can access what?  │
+              └────────────────────────┘
+                          |
+                 Check END USER identity
+                 (Not just AI service account)
+                          |
+          ┌───────────────┼────────────────┐
+          ▼               ▼                ▼
+     1. ROW-LEVEL    2. COLUMN MASKING   3. PURPOSE
+      SECURITY          (Hide PII)       (Why access?)
+          |               |                |
+     Customer sees    PAN / Email       Compliance gets
+     own rows only    masked by default  full data ONLY
+          |           unless permitted   for purpose=audit
+     RM sees only          |                |
+     assigned          Role + Purpose     Audit log
+     customers             |              records access
+          |               |                |
+          └───────────────┼────────────────┘
+                          |
+                          ▼
+                  4. RAG ACL
+               (Document permission)
+                          |
+                Check permission BEFORE
+                  sending to AI prompt
+                          |
+                ┌─────────┴─────────┐
+                ▼                   ▼
+           ALLOWED              NOT ALLOWED
+                |                   |
+          Give document        Block document
+            to AI                 from AI
+                |                   |
+                └─────────┬─────────┘
+                          |
+                          ▼
+                  5. MINIMISATION
+                    (Need-to-know)
+                          |
+                Give AI ONLY required
+                   fields for query
+                          |
+                          ▼
+                    AI GENERATES
+                    FINAL ANSWER
+                          |
+                          ▼
+                  🔒 DATA PROTECTED
+              No unauthorised data leakage
+"""

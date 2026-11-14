@@ -162,3 +162,112 @@ if __name__ == "__main__":
     print("\nMONITOR counters:", dict(METRICS))
     ok = all(AUDIT[i]["prev"] == (AUDIT[i - 1]["hash"] if i else "GENESIS") for i in range(len(AUDIT)))
     print(f"AUDIT: {len(AUDIT)} entries, chain intact = {ok}")
+
+
+
+"""
+HENGLISH - SUMMARY
+
+Imagine ek bank ne ek Wealth Assistant AI Agent banaya hai jo customers ke portfolio details bata sakta hai aur unke behalf par shares buy bhi kar sakta hai. Ab bank nahi chahta ki AI kisi customer ka data doosre customer ko dikha de, galat order place kare, ya kisi ke kehne par apne security rules tod de. Isliye jab customer message bhejta hai, sabse pehle INPUT guardrail check karta hai ki message mein prompt injection, PAN jaise sensitive data ya out-of-scope request toh nahi hai. Uske baad AI agent kaam shuru karta hai, lekin LOOP guardrail ensure karta hai ki agent maximum 4 steps se zyada execute na kare. Agar agent koi tool call karna chahta hai, toh TOOL guardrail check karta hai ki tool allowed hai, user ke role ke liye valid hai aur arguments sahi hain. Phir DATA guardrail verify karta hai ki agent sirf usi customer ka data access kar raha hai jisne request bheji hai. Agar customer shares buy karna chahta hai, toh ACTION guardrail order ki value calculate karta hai: ₹20,000 tak automatically allow, ₹20,000 se ₹2 lakh tak human approval zaroori, aur ₹2 lakh se upar direct block. Medium-risk order mein HUMAN guardrail ek human approver se permission leta hai. Jab AI final answer banata hai, OUTPUT guardrail check karta hai ki answer mein diye gaye numbers actual available data se match karte hain ya nahi. Aur poore process mein AUDIT har activity ka tamper-evident hash-chained record maintain karta hai, jabki MONITOR blocked requests aur system activities ke counters track karta hai. Matlab simple si baat: AI ko sirf intelligent nahi, balki controlled, secure, accountable aur monitored banana hi All Guardrails Together ka main purpose hai.
+
+"""
+
+"""
+                 🏦 BANK WEALTH AI AGENT
+                          |
+                 Customer sends request
+                          |
+                          ▼
+              ┌──────────────────────┐
+              │   1. INPUT GUARDRAIL │
+              │   What is coming in? │
+              └──────────────────────┘
+                          |
+              Injection? PII? Out-of-scope?
+                          |
+                          ▼
+              ┌──────────────────────┐
+              │   2. LOOP GUARDRAIL  │
+              │   How long can it run?│
+              └──────────────────────┘
+                          |
+                  Maximum 4 steps
+                          |
+                          ▼
+              ┌──────────────────────┐
+              │   3. TOOL GUARDRAIL  │
+              │   Which tool to use? │
+              └──────────────────────┘
+                          |
+              Allowed? Role? Valid arguments?
+                          |
+                          ▼
+              ┌──────────────────────┐
+              │   4. DATA GUARDRAIL  │
+              │   Whose data to access?│
+              └──────────────────────┘
+                          |
+                Only requesting customer's
+                         data
+                          |
+                          ▼
+              ┌──────────────────────┐
+              │  5. ACTION GUARDRAIL │
+              │   Can order execute? │
+              └──────────────────────┘
+                          |
+               Calculate order value
+                          |
+              ┌───────────┼────────────┐
+              ▼           ▼            ▼
+          ≤ ₹20K      ₹20K–₹2L      > ₹2L
+          AUTO ALLOW  HUMAN APPROVAL  BLOCK
+                          |
+                          ▼
+              ┌──────────────────────┐
+              │  6. HUMAN GUARDRAIL  │
+              │  Human permission    │
+              └──────────────────────┘
+                          |
+                    Approved?
+                          |
+                          ▼
+              ┌──────────────────────┐
+              │  Execute the action  │
+              │   (Buy shares)       │
+              └──────────────────────┘
+                          |
+                          ▼
+              ┌──────────────────────┐
+              │  7. OUTPUT GUARDRAIL │
+              │  Is answer accurate? │
+              └──────────────────────┘
+                          |
+                 Numbers match actual
+                     available data?
+                          |
+                          ▼
+                    Final Response
+
+
+                    
+       ┌────────────────────────────────────────┐
+       │          8. AUDIT GUARDRAIL            │
+       │                                        │
+       │  Every activity → Hash → Next Hash     │
+       │                                        │
+       │  Tamper-evident activity record        │
+       └────────────────────────────────────────┘
+                         +
+       ┌────────────────────────────────────────┐
+       │         9. MONITOR GUARDRAIL           │
+       │                                        │
+       │  Blocked requests → Counters            │
+       │  System activities → Metrics            │
+       │  Suspicious activity → Visibility       │
+       └────────────────────────────────────────┘
+
+       IN → LOOP → TOOL → DATA → ACTION → HUMAN → OUTPUT
+
+AUDIT + MONITOR = ALWAYS ON
+"""

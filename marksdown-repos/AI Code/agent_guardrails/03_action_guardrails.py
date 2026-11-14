@@ -10,6 +10,67 @@ Tool guardrails check the call is well-formed. Action guardrails check the CONSE
   - compensation    every executed action records how to UNDO it
 
 Run: python 03_action_guardrails.py
+
+                 AI AGENT
+                    |
+                    |  Wants to BUY shares
+                    v
+             +---------------+
+             |  ACTION GATE  |
+             +---------------+
+                    |
+                    v
+          1. CHECK MARKET HOURS
+                    |
+             +------+------+
+             |             |
+          OPEN           CLOSED
+             |             |
+             v             v
+          Continue       BLOCK
+             |
+             v
+          2. CHECK ORDER VALUE
+             |
+       +-----+------+----------------+
+       |            |                |
+    <= 20K       20K - 200K        > 200K
+       |            |                |
+       v            v                v
+   AUTO-EXECUTE  HUMAN APPROVAL    BLOCK
+       |
+       v
+   3. CHECK DAILY LIMIT
+       |
+       +---- Would exceed 2.5 lakh?
+       |              |
+       | YES          |  
+       v              v
+      BLOCK         Continue
+                       |
+                       v
+                4. CHECK DUPLICATE
+                       |
+                Same request key?
+                   /       \
+                 YES        NO
+                  |          |
+                  v          v
+               IGNORE     Continue
+                             |
+                             v
+                      5. DRY RUN?
+                         /     \
+                       YES      NO
+                        |        |
+                        v        v
+                   SHOW WHAT   EXECUTE
+                   WOULD HAPPEN   |
+                                  v
+                           6. SAVE UNDO
+                                  |
+                                  v
+                            UNDO LOG
 """
 from enum import Enum
 

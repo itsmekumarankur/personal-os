@@ -1,14 +1,27 @@
 """
+Learning: 
+ -  Don't give an AI agent unlimited power. 
+ -  Control which tools it can use and what actions it can perform.
+
+Imagine an AI banking assistant:
+ -  It can check your mutual fund holdings, place orders and send emails. 
+ -  But should every AI agent be allowed to do everything? 
+    No!
+
 02 TOOL GUARDRAILS  -  "which tools may the agent touch, with what arguments?"
 
-An agent is only as dangerous as its tools. Rules (principle of least privilege):
+An agent is only as dangerous as its tools. 
+
+Rules (principle of least privilege):
   1. ALLOW-LIST  the agent can only call registered tools; unknown names are rejected
   2. PER-ROLE    each agent gets only the tools its job needs (support bot cannot trade)
   3. SCHEMA      argument names, types and value rules are validated BEFORE running
   4. RATE LIMIT  max calls per tool per run (stops loops hammering an API)
   5. OUTPUT SAFETY  tool results are truncated and scanned - a tool can return an attack (indirect injection)
 
-The model proposes; this layer disposes. Never let model output call functions directly.
+The model proposes -> this layer disposes. 
+- Never let model output call functions directly.
+
 Run: python 02_tool_guardrails.py
 """
 import re
@@ -18,7 +31,8 @@ MAX_OUTPUT = 160
 
 
 class Tool:
-    def __init__(self, name, fn, roles, schema, max_calls=3):
+    """is a constructor in Python. It is automatically called when you create an object from a class."""
+    def __init__(self, name, fn, roles, schema, max_calls=3): 
         self.name, self.fn, self.roles, self.schema, self.max_calls = name, fn, set(roles), schema, max_calls
 
 
@@ -28,6 +42,63 @@ class Toolbox:
 
     def register(self, tool):
         self.tools[tool.name] = tool
+
+"""
+             AGENT REQUEST
+                   |
+                   v
+       call(role, name, args)
+                   |
+                   v
+       +-----------------------+
+       | 1. TOOL ALLOW-LIST    |
+       | Does tool exist?      |
+       +-----------------------+
+             |           |
+            NO          YES
+             |           |
+             v           v
+          REJECT     +-----------------------+
+                     | 2. ROLE CHECK         |
+                     | Is role authorized?   |
+                     +-----------------------+
+                           |           |
+                          NO          YES
+                           |           |
+                           v           v
+                        REJECT    +-----------------------+
+                                  | 3. SCHEMA CHECK       |
+                                  | Exact arguments?      |
+                                  | Correct types?        |
+                                  | Valid values?         |
+                                  +-----------------------+
+                                        |           |
+                                       NO          YES
+                                        |           |
+                                        v           v
+                                     REJECT    +------------------+
+                                               | 4. RATE LIMIT    |
+                                               | Calls exceeded?  |
+                                               +------------------+
+                                                     |       |
+                                                    YES     NO
+                                                     |       |
+                                                     v       v
+                                                  REJECT  +----------------+
+                                                          | 5. EXECUTE     |
+                                                          | tool.fn(**args)|
+                                                          +----------------+
+                                                                  |
+                                                                  v
+                                                          +----------------+
+                                                          | 6. SANITIZE    |
+                                                          | Clean result   |
+                                                          +----------------+
+                                                                  |
+                                                                  v
+                                                            SUCCESS
+                                                          {"ok": True}
+"""
 
     def call(self, role, name, args):
         tool = self.tools.get(name)

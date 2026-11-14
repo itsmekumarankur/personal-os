@@ -67,7 +67,20 @@ public class AsyncExecutorDemo {
         try { return m.invoke(target, a); } catch (InvocationTargetException e) { throw e.getCause(); }
     }
 
-    /** The @Async proxy. */
+    /** The @Async proxy. 
+     * 
+     * Ye code **Spring ke `@Async` mechanism ko manually simulate** kar raha hai using a **Proxy**. 
+     * Simple words mein, jab koi method call hota hai, Proxy pehle check karta hai ki method par `@Async` annotation hai ya nahi.
+     * Agar nahi hai, toh method normally same thread mein execute hota hai. 
+     * Agar `@Async` hai, toh Proxy current user ka context (`CURRENT_USER`) capture karta hai aur, agar required ho, 
+     * us context ko new worker thread mein copy karta hai—ye `TaskDecorator` jaisa kaam karta hai. 
+     * Phir actual method ko direct run karne ke bajaye **Thread Pool** mein submit kar deta hai, isliye caller ko wait nahi karna padta. 
+     * Agar method `CompletableFuture` return karta hai, toh Proxy future ke through success ya error caller tak bhej deta hai. 
+     * Lekin agar method `void` return karta hai, toh caller ko koi result ya exception directly nahi milta; error ko sirf configured exception 
+     * handler handle karta hai. **Main lesson: Proxy `@Async` method calls ko intercept karke unhe background thread mein bhejta hai, 
+     * context copy karta hai, aur method ke return type ke hisaab se result ya exception handle karta hai.**
+     * 
+    */
     @SuppressWarnings("unchecked")
     static Notifier asyncProxy(Notifier target, ExecutorService pool, boolean copyContext, Consumer<Throwable> uncaughtHandler) {
         return (Notifier) Proxy.newProxyInstance(Notifier.class.getClassLoader(), new Class<?>[]{Notifier.class}, (p, m, a) -> {
@@ -155,3 +168,296 @@ public class AsyncExecutorDemo {
                 + "\nname the threads, expose pool metrics, and on Java 21+ consider virtual threads for blocking I/O.");
     }
 }
+
+
+/**
+ * 
+ * HENGLISH SUMMARY:
+ This code is teaching how Spring's `@Async` works internally and what four problems can happen when we execute methods asynchronously using a separate thread pool. Normally, jab hum kisi method ko call karte hain, toh caller wait karta hai jab tak method complete nahi hota. Lekin `@Async` lagane par Spring Proxy method ko ek separate thread par execute karne ke liye TaskExecutor (Thread Pool) ko de deta hai, aur caller apna next work immediately continue kar sakta hai. Lekin ismein 4 important traps hain: (1) Context Loss: Main thread mein logged-in user, SecurityContext, transaction ya Trace ID stored hai, toh woh automatically worker thread mein transfer nahi hota; iske liye `TaskDecorator` use karte hain. (2) Lost Exceptions: Agar `void @Async` method fail ho jaata hai, toh caller ko exception directly pata nahi chalta; isliye `CompletableFuture` ya `AsyncUncaughtExceptionHandler` use karna chahiye. (3) Pool Exhaustion: Agar saare threads busy hain aur queue bhi full ho gayi, toh naye tasks reject ho sakte hain; iske liye `AbortPolicy` task ko reject karta hai, jabki `CallerRunsPolicy` caller se hi task execute karwata hai, jisse back-pressure create hota hai. (4) Thread Pool Sizing: Production mein unlimited threads ya unbounded queue nahi rakhni chahiye, warna server memory exhaustion ka shikaar ho sakta hai. Code ka main purpose ye samjhana hai ki `@Async` sirf method ko background mein run karne ka feature nahi hai; production mein context propagation, exception handling, thread pool capacity aur back-pressure ko properly manage karna bhi zaroori hai.
+ * 
+*/
+
+
+/**
+                          JAVA / SPRING @Async
+                                  |
+                                  v
+                    Caller calls an @Async method
+                                  |
+                                  v
+                       +-------------------+
+                       |  SPRING PROXY     |
+                       | intercepts call   |
+                       +-------------------+
+                                  |
+                  Caller returns immediately
+                  and continues other work
+                                  |
+                    Task submitted to
+                                  v
+                       +-------------------+
+                       |   THREAD POOL     |
+                       | TaskExecutor      |
+                       +-------------------+
+                                  |
+                    +-------------+-------------+
+                    |                           |
+                    v                           v
+              WORKER THREAD               CALLER THREAD
+              (task-1/task-2)             continues work
+                    |
+                    v
+              Execute @Async Method
+                    |
+     +--------------+---------------+----------------+
+     |              |               |                |
+     v              v               v                v
+
+  A) WORKS      B) CONTEXT       C) EXCEPTIONS    D) POOL LIMIT
+                 LOSS
+     |              |               |                |
+     v              v               v                v
+ Method runs     ThreadLocal      void method      Threads busy?
+ elsewhere       data does NOT    exception may         |
+                 automatically    be lost/logged       v
+ Caller is       move to new          |            Queue full?
+ FREE!           thread               |                |
+                    |           +-----+-----+     +----+-----+
+                    v           |           |     |          |
+              TaskDecorator   void       Future   SPACE     FULL
+              copies:          |           |       |          |
+              - User           v           v       v          v
+              - Security     Handler   Completable  QUEUE    REJECT /
+              - Trace ID     logs it     Future              BACK-PRESSURE
+              - Transaction               |
+                                          v
+                                   Caller knows
+                                   SUCCESS / ERROR
+
+
+                  WHEN THREAD POOL IS FULL
+                  ========================
+
+                       +------------------+
+                       |  NEW TASK ARRIVES |
+                       +--------+---------+
+                                |
+                         +------+------+
+                         |             |
+                         v             v
+                    AbortPolicy   CallerRunsPolicy
+                         |             |
+                         v             v
+                    REJECT TASK    Caller executes
+                    Fail Fast       the task itself
+                                       |
+                                       v
+                                  Slows caller
+                                  = BACK-PRESSURE
+
+
+                    GOLDEN RULE FOR @Async
+                    ======================
+
+        +------------------------------------------------+
+        |  @Async is NOT just "run in background"        |
+        |                                                |
+        |  ✓ Copy important context                      |
+        |  ✓ Handle exceptions properly                  |
+        |  ✓ Use bounded thread pool + queue             |
+        |  ✓ Define rejection/back-pressure policy       |
+        |  ✓ Monitor thread pool metrics                 |
+        +------------------------------------------------+
+
+     MEMORY TRICK:
+     --------------------------------------------------
+     @Async → PROXY → THREAD POOL → 4 TRAPS
+                                  |
+                 CONTEXT • EXCEPTION • CAPACITY • REJECTION
+ * 
+*/
+
+
+/**
+┌─────────────────────────────────────────────────────────────────────┐
+│                         main() STARTS                               │
+└─────────────────────────────────────────────────────────────────────┘
+                                |
+                                v
+                    Set Thread Name = "main"
+                    Set CURRENT_USER = "ankur"
+                                |
+                                v
+                  Create NotifierImpl service
+                                |
+        ┌───────────────────────┼────────────────────────┐
+        │                       │                        │
+        v                       v                        v
+
+
+╔══════════════════════════════════════════════════════════════════════╗
+║ A) @ASYNC – CALLER DOES NOT WAIT                                     ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+        main thread
+            |
+            v
+   Create Pool: 2 Threads + Queue(10)
+            |
+            v
+   Create @Async Proxy
+            |
+            v
+   main → sendSms()
+            |
+            v
+       ┌───────────────┐
+       │ ASYNC PROXY   │
+       └───────┬───────┘
+               |
+               | Submit task
+               v
+        THREAD POOL                     MAIN THREAD
+       ┌────────────┐                 ┌───────────────┐
+       │  task-1    │                 │ Returns NOW!  │
+       │ Send SMS   │                 │ Other work... │
+       └────────────┘                 └───────────────┘
+               |
+               v
+          Pool Shutdown
+
+
+╔══════════════════════════════════════════════════════════════════════╗
+║ B) CONTEXT LOSS – ThreadLocal DOES NOT MOVE AUTOMATICALLY           ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+   MAIN THREAD                         WORKER THREAD
+   ------------                        -------------
+   CURRENT_USER="ankur"
+          |
+          | Submit @Async Task
+          v
+   ┌──────────────────────────────────────────────────┐
+   │ WITHOUT TaskDecorator                            │
+   └──────────────────────────────────────────────────┘
+                          |
+                          v
+                CURRENT_USER = null ❌
+
+
+   ┌──────────────────────────────────────────────────┐
+   │ WITH TaskDecorator                               │
+   └──────────────────────────────────────────────────┘
+                          |
+              Copy "ankur" before task starts
+                          |
+                          v
+                CURRENT_USER = "ankur" ✅
+
+   Same problem can happen with:
+   SecurityContext + MDC Trace ID + Transaction Context
+
+
+╔══════════════════════════════════════════════════════════════════════╗
+║ C) LOST EXCEPTIONS – How does caller know about failure?            ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+   1. VOID @Async METHOD
+   --------------------
+
+   main → failingJob()
+              |
+              v
+        Worker Thread
+              |
+              v
+        Exception happens 💥
+              |
+              v
+       Exception Handler logs it
+              |
+              v
+   MAIN DOES NOT GET EXCEPTION ❌
+   "Caller thinks everything is fine"
+
+
+   2. CompletableFuture METHOD
+   --------------------------
+
+   main → sendEmail("bad@@address")
+              |
+              v
+        Worker Thread
+              |
+              v
+        Exception happens 💥
+              |
+              v
+   CompletableFuture gets ERROR
+              |
+              v
+      whenComplete() callback
+              |
+              v
+       CALLER KNOWS FAILURE ✅
+
+
+╔══════════════════════════════════════════════════════════════════════╗
+║ D) POOL EXHAUSTION – 7 tasks arrive together                        ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+             THREAD POOL CONFIGURATION
+             -------------------------
+             Core Threads = 2
+             Max Threads  = 3
+             Queue Size   = 2
+
+                      7 TASKS ARRIVE
+                            |
+             ┌──────────────┴──────────────┐
+             v                             v
+
+        AbortPolicy                   CallerRunsPolicy
+        -----------                   ----------------
+
+     Pool + Queue FULL              Pool + Queue FULL
+            |                             |
+            v                             v
+       REJECT TASK ❌               MAIN THREAD RUNS TASK
+       Fail Fast                   |
+                                  v
+                           Caller becomes slower
+                                  |
+                                  v
+                            BACK-PRESSURE ✅
+
+
+   HOW TASKS FILL THE POOL
+   ======================
+
+   Task 1 ──> Core Thread 1 ──> Running
+   Task 2 ──> Core Thread 2 ──> Running
+   Task 3 ──> Queue ──────────> Waiting
+   Task 4 ──> Queue ──────────> Waiting
+   Task 5 ──> Queue FULL → Create Thread 3
+   Task 6 ──> Everything FULL → Reject / Caller Runs
+   Task 7 ──> Everything FULL → Reject / Caller Runs
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                           FINAL LESSON                              │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  @Async → Proxy → Thread Pool → Background Work                     │
+│                                                                     │
+│  But always handle:                                                 │
+│                                                                     │
+│  1. CONTEXT    → Copy ThreadLocal/Security context                  │
+│  2. EXCEPTIONS → Use CompletableFuture or Exception Handler         │
+│  3. CAPACITY   → Use bounded threads and queue                      │
+│  4. REJECTION  → Fail fast OR apply back-pressure                   │
+│                                                                     │
+│  MEMORY: CONTEXT → ERROR → POOL → BACK-PRESSURE                     │
+└─────────────────────────────────────────────────────────────────────┘
+ * 
+*/

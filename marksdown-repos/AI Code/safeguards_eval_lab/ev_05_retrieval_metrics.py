@@ -1,4 +1,9 @@
-"""EV-05  Evaluate the RETRIEVER on its own: Hit@k, Recall@k, Precision@k, MRR.  No LLM.  Run: python ev_05_retrieval_metrics.py"""
+"""EV-05  
+Evaluate the RETRIEVER on its own: Hit@k, Recall@k, Precision@k, MRR.  
+
+No LLM.  
+
+Run: python ev_05_retrieval_metrics.py"""
 from eval_data import GOLDEN, CORPUS, retrieve
 
 # Add questions phrased with different words than the documents (where keyword search struggles)
@@ -34,14 +39,6 @@ print(f"Hit@{K}       = {hitk / n:.2f}   (was the right doc anywhere in the top 
 print(f"Recall@{K}    = {recall_sum / n:.2f}   (fraction of relevant docs found)")
 print(f"Precision@{K} = {prec_sum / n:.2f}   (fraction of retrieved docs that were relevant)")
 print(f"MRR         = {rr_sum / n:.2f}   (mean of 1/rank: rewards ranking the right doc higher)")
-
-print("""
-How to read this:
-  * Evaluate retrieval SEPARATELY from generation. If the right chunk never reaches the model, no prompt can fix it.
-  * x1 and x2 are paraphrases. Keyword matching cannot connect 'vacation' to 'leave' or 'remote working' to
-    'work from home', so x1 ranks the right doc low and x2 misses it entirely. Embeddings (LC-14) or hybrid
-    search fix exactly this. Re-run after swapping in the vector retriever and compare MRR.
-  * Precision@3 is naturally low here (only 1 relevant doc per question out of 3 slots). Watch the trend, not the absolute.""")
 
 
 """
@@ -90,21 +87,25 @@ How to read this:
         | well enough?         |
         +----------------------+
 
-In simple words: You are learning how to test whether your search system finds the right documents for a question. 
+How to test whether your search system finds the right documents for a question?
 For example:
  - a user asks about “vacation days,” but the policy document says “leave days.” 
- - Your retriever searches for relevant documents and returns the top three results. 
-- The program compares those results with the documents that should have been found and calculates scores to measure how well the search is working.
+
+Your retriever searches for relevant documents and returns the top 3 results. 
+The program compares those results with the documents that should have been found and calculates scores to measure how well the search is working.
 
 
 Key takeaway: 
-Before testing whether an LLM generates a good answer, test whether it receives the right information in the first place. 
-If retrieval fails to find the correct document, even a well-written prompt may not produce the correct answer.
-What the four metrics mean
+- Before testing whether an LLM generates a good answer, test whether it receives the right information in the first place. 
+- If retrieval fails to find the correct document, even a well-written prompt may not produce the correct answer.
+
+What the four metrics mean:
 - Hit@k: Did the correct document appear anywhere in the top k results?
 - Recall@k: How many of all relevant documents did the search find?
 - Precision@k: How many of the retrieved documents were actually relevant?
 - MRR (Mean Reciprocal Rank): How highly ranked was the first relevant document? A result at rank 1 scores more than one at rank 3.
 
-The example uses keyword-based retrieval to show why different wording, such as “remote working” versus “work from home,” can cause search failures. Embedding-based or hybrid retrieval can help match documents by meaning rather than relying only on shared words.
+The example uses:
+- keyword-based retrieval to show why different wording, such as “remote working” versus “work from home,” can cause search failures. 
+- Embedding-based or hybrid retrieval can help match documents by meaning rather than relying only on shared words.
 """

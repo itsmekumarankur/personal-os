@@ -1,4 +1,6 @@
-"""EV-01  Evaluation starts here: a golden set + deterministic metrics.  No LLM.  Run: python ev_01_golden_set_deterministic.py"""
+"""EV-01  Evaluation starts here: a golden set + deterministic metrics.  No LLM.  
+
+Run: python ev_01_golden_set_deterministic.py"""
 import re
 from eval_data import GOLDEN, SYSTEM_A, SYSTEM_B
 
@@ -15,6 +17,22 @@ def contains(pred: str, expected: str) -> bool:
     # pad with spaces so "2" does NOT match inside "24" (a classic evaluation bug: substring false positives)
     return f" {norm(expected)} " in f" {norm(pred)} "
 
+"""
+SYSTEM ANSWERS
+      |
+      v
+Compare with GOLDEN answers
+      |
+      +---- Exact Match? ----> Count
+      |
+      +---- Contains Answer? -> Count
+      |
+      v
+Calculate Accuracy %
+      |
+      v
+Return Contains Accuracy
+"""
 
 def evaluate(system: dict, name: str):
     print(f"\n=== {name} ===")
@@ -31,15 +49,6 @@ def evaluate(system: dict, name: str):
 
 a, b = evaluate(SYSTEM_A, "System A"), evaluate(SYSTEM_B, "System B")
 print(f"\nSystem A {a:.0%} vs System B {b:.0%}  -> A wins.")
-
-print("""
-What to notice:
-  * Exact match is harsh: A says '24 paid leave days...' (correct) but exact-match scores it as wrong.
-  * 'Contains' is fairer, but still blind to meaning: 'Not 24 days' would pass. Deterministic metrics are
-    cheap, fast, reproducible - use them wherever the answer is a number, ID, label or short string.
-  * For free-text answers you need a judge (EV-03). For retrieval you need rank metrics (EV-05).
-  * The dataset matters more than the metric: 6 questions is a demo, real golden sets start at 50-200 and grow
-    every time production finds a failure.""")
 
 
 """

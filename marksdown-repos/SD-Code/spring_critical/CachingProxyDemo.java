@@ -172,3 +172,178 @@ public class CachingProxyDemo {
                 + "\nnever cache per-user data under a shared key, and give every cache a TTL and a size limit.");
     }
 }
+
+/**
+ This code is teaching **how Spring Caching works behind the scenes and what common problems can happen in production**. Simple words mein, `@Cacheable` ek **sticky note** ki tarah hai—jab user pehli baar `INFY` ka price poochta hai, Spring Proxy real method ko call karke slow database/API se data laata hai aur cache mein save kar deta hai (**Cache Miss**); next time same request aaye toh Proxy cache se directly answer deta hai (**Cache Hit**), isliye backend call nahi hoti. **TTL** ensure karta hai ki purana data forever cache mein na rahe, aur **`@CacheEvict`** data update hone ke baad old cache ko delete karta hai taaki stale data na mile. Code ek important **Self-Invocation Trap** bhi dikhata hai: agar same class ke andar `this.getPrice()` call hota hai, toh Spring Proxy bypass ho jaata hai aur caching apply nahi hoti. Phir **Cache Stampede** ka problem hai—agar cache empty hai aur 8 users ek saath same data maangte hain, toh normally 8 backend calls ho sakti hain; `sync=true` ensure karta hai ki ek thread data load kare aur baaki wait karein. Finally, **Mutable Value Trap** batata hai ki agar cache mein stored List ko koi user modify kar de, toh shared cached data corrupt ho sakta hai, isliye immutable objects ya copies use karni chahiye. **Main lesson ye hai ki caching sirf performance improve karne ka feature nahi hai; TTL, eviction, correct keys, concurrency control aur immutable data ko properly handle karna zaroori hai, warna cache stale data, extra backend load ya data corruption create kar sakta hai.**
+ * 
+*/
+
+/**
+                     🚀 APPLICATION REQUEST
+                            |
+                            v
+                 getPrice("INFY") called
+                            |
+                            v
+                  +--------------------+
+                  |   SPRING PROXY     |
+                  |  checks annotation |
+                  +---------+----------+
+                            |
+                            v
+                     CHECK CACHE KEY
+                     prices:[INFY]
+                            |
+                   +--------+--------+
+                   |                 |
+                 CACHE HIT        CACHE MISS
+                   |                 |
+                   v                 v
+             Return cached      Call REAL METHOD
+                answer               |
+                   |                 v
+                   |          DATABASE / API
+                   |            (slow work)
+                   |                 |
+                   |                 v
+                   |          Save in CACHE
+                   |          + TTL expiry
+                   |                 |
+                   +--------+--------+
+                            |
+                            v
+                       RETURN ANSWER
+
+
+   ================================================================
+                    ⚠️ 6 IMPORTANT CACHING CONCEPTS
+   ================================================================
+
+   1. CACHE HIT / MISS
+   -------------------
+       Same request
+            |
+       +----+----+
+       |         |
+      HIT       MISS
+       |         |
+    FAST ⚡   Backend call 🐢
+
+
+   2. TTL (TIME TO LIVE)
+   ---------------------
+       Cache Data
+           |
+           v
+      Is TTL expired?
+       |           |
+      NO          YES
+       |           |
+       v           v
+    Use data    Delete old data
+                   |
+                   v
+              Load fresh data
+
+
+   3. @CacheEvict (UPDATE DATA)
+   ----------------------------
+
+      Update Price
+           |
+           v
+      @CacheEvict
+           |
+           v
+      Remove OLD cache
+           |
+           v
+      Next request gets
+      FRESH data
+
+
+   4. SELF-INVOCATION TRAP
+   -----------------------
+
+      External Call                 Internal Call
+           |                             |
+           v                             v
+        PROXY ✅                    this.method()
+           |                             |
+           v                             v
+      @Cacheable works             PROXY BYPASSED ❌
+                                         |
+                                         v
+                                  No caching applied
+
+      FIX → Move cached method to another Bean
+            OR call through the Spring Proxy
+
+
+   5. CACHE STAMPEDE
+   -----------------
+
+      Cache is EMPTY
+           |
+      8 users arrive together
+           |
+       +---+---+---+---+
+       |   |   |   |   |
+       v   v   v   v   v
+      DB  DB  DB  DB  DB  ...  ❌ 8 Backend Calls
+
+
+      WITH sync=true
+           |
+           v
+      +----------------+
+      | ONE thread     |
+      | loads data     |
+      +-------+--------+
+              |
+              v
+         Save in Cache
+              |
+      Other threads wait
+              |
+              v
+         CACHE HIT ✅
+
+
+   6. MUTABLE VALUE TRAP
+   ---------------------
+
+       CACHE stores List
+             |
+             v
+       User gets SAME List
+             |
+             v
+       User modifies it ❌
+             |
+             v
+       CACHE DATA CORRUPTED
+             |
+             v
+       Other users see bad data
+
+       FIX → Immutable objects / List.copyOf()
+             OR return a copy
+
+
+   ================================================================
+                         GOLDEN RULE
+   ================================================================
+
+       @Cacheable = CHECK → REUSE → SAVE
+
+       BUT ALWAYS MANAGE:
+
+       TTL + EVICTION + CORRECT KEY
+       + CONCURRENCY + IMMUTABLE DATA
+
+   💡 MEMORY TRICK:
+
+      HIT → TTL → EVICT → SELF → STAMPEDE → MUTABLE
+ * 
+*/

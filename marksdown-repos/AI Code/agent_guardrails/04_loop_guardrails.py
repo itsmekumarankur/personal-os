@@ -1,24 +1,67 @@
 """
 04 LOOP GUARDRAILS  -  "an agent is a while-loop; make sure it ends"
 
-Agents think -> act -> observe -> repeat. Without limits that loop can run forever and burn money.
-Five brakes (all independent, any one stops the run):
-  1. MAX STEPS         hard ceiling on iterations
-  2. TOKEN/COST BUDGET stop when the spend limit is reached
-  3. WALL-CLOCK        deadline for the whole task
-  4. REPEAT DETECTION  same tool + same arguments again and again = stuck
-  5. NO-PROGRESS       different calls but the same observation = going nowhere
+1. Agents think -> act -> observe -> repeat. 
+2. Without limits that loop can run forever and burn money.
+3. Five brakes (all independent, any one stops the run):
 
-When a brake fires, the agent must stop SAFELY: return a partial answer + reason, never crash silently.
-Time is simulated (virtual clock) so this demo runs instantly.
-Run: python 04_loop_guardrails.py
+    1. MAX STEPS         hard ceiling on iterations
+    2. TOKEN/COST BUDGET stop when the spend limit is reached
+    3. WALL-CLOCK        deadline for the whole task
+    4. REPEAT DETECTION  same tool + same arguments again and again = stuck
+    5. NO-PROGRESS       different calls but the same observation = going nowhere
+
 """
 from collections import Counter
 
 MAX_STEPS, TOKEN_BUDGET, DEADLINE_S = 8, 3000, 10.0
 MAX_REPEAT, MAX_SAME_OBSERVATION = 2, 3
 
-
+"""
+                 ┌──────────────────────────────────────┐
+                 │         AI AGENT LOOP                │
+                 │       LOOP GUARDRAILS                │
+                 └──────────────────┬───────────────────┘
+                                    │
+                         THINK → ACT → OBSERVE
+                                    │
+                                    ▼
+                              REPEAT LOOP
+                                    │
+                         ┌──────────┴──────────┐
+                         │   5 SAFETY BRAKES   │
+                         └──────────┬──────────┘
+                                    │
+          ┌─────────────────────────┼─────────────────────────┐
+          │             │           │           │             │
+          ▼             ▼           ▼           ▼             ▼
+     1. MAX STEPS  2. TOKEN/     3. WALL     4. REPEAT    5. NO
+                    COST BUDGET    CLOCK      DETECTION   PROGRESS
+          │             │           │           │             │
+          ▼             ▼           ▼           ▼             ▼
+       Maximum       Spending     Time       Same tool +   Different
+       iterations    limit        limit      same args     calls
+          │             │           │           │             │
+       8 steps       3000 tokens  10 sec     > 2 repeats   Same result
+          │             │           │           │           3 times
+          └─────────────┴───────────┴───────────┴─────────────┘
+                                    │
+                                    ▼
+                          ANY ONE BRAKE FIRES
+                                    │
+                                    ▼
+                              STOP AGENT
+                                    │
+                                    ▼
+                      ┌─────────────────────────┐
+                      │      SAFE STOP          │
+                      │                         │
+                      │  1. Return partial      │
+                      │     answer              │
+                      │  2. Explain stop reason │
+                      │  3. Never crash silently│
+                      └─────────────────────────┘
+"""
 def run_agent(name, script):
     """script(step_no) -> dict(tool,args,obs,tokens,secs,done) : a fake model+tool pair"""
     tokens = elapsed = 0.0
@@ -47,6 +90,7 @@ def run_agent(name, script):
 
 def step(tool, args, obs, tokens=300, secs=1.0, done=False):
     return dict(tool=tool, args=args, obs=obs, tokens=tokens, secs=secs, done=done)
+
 
 
 SCENARIOS = {

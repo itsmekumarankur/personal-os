@@ -1,17 +1,6 @@
 """
 06 HUMAN GUARDRAILS (human-in-the-loop)  -  "some decisions must not be made by an agent alone"
 
-When to bring a human in:
-  - IMPACT      value above a threshold, irreversible, legal or customer-visible actions
-  - UNCERTAINTY the agent's own confidence is low, or its checks disagree
-  - POLICY      first-time beneficiary, unusual pattern, regulated action
-How to do it safely:
-  - REQUIRED LEVEL   bigger risk -> more senior approver
-  - FOUR-EYES        high risk needs TWO distinct approvers
-  - NO SELF-APPROVAL the person (or agent owner) who asked cannot approve
-  - FAIL CLOSED      no answer before the timeout = DENIED, never "auto-approve because nobody replied"
-  - SHOW CONTEXT     the approver sees action, reason, risk and the agent's evidence
-
 Run: python 06_human_guardrails.py
 """
 from dataclasses import dataclass
@@ -88,3 +77,79 @@ if __name__ == "__main__":
     for label, req, responses in cases:
         print(f"\n>> {label}: {req.action} {req.amount:,.0f} (confidence {req.confidence})")
         print(f"   RESULT: {decide(req, responses)}")
+
+
+"""
+HENGLISH SUMMARY:
+Human Guardrail ka simple meaning hai ki AI Agent ko har decision khud lene ki permission nahi hoti. Agar AI koi high-value transaction kar raha hai, koi irreversible action hai, customer ko directly impact karne wala decision hai, ya AI khud confused hai (confidence 70% se kam), toh system human approval maangta hai. Risk jitna bada hoga, approval dene wala person utna senior hona chahiye. Jaise ₹20,000 se upar ke transaction ke liye ek officer ki approval chahiye, aur ₹2 lakh se upar ke transaction ke liye do different senior managers ki approval zaroori hai (Four-Eyes Principle). Jo person ya agent transaction request karta hai, woh khud usko approve nahi kar sakta (No Self-Approval). Approver ko complete context dikhaya jaata hai ki AI kya action lena chahta hai, kyun lena chahta hai aur uske paas kya evidence hai. Agar approver reject kar deta hai, toh AI action execute nahi karega. Aur agar approval ke liye koi reply hi nahi aata ya required approvals nahi milti, toh request automatically DENIED hogi, kabhi bhi default mein approve nahi hogi (Fail Closed). Simple words mein: AI ka kaam decision suggest karna hai, lekin risky decisions mein final permission authorised human hi dega.
+
+
+"""
+
+
+"""
+             🤖 AI AGENT WANTS TO PERFORM ACTION
+                          |
+                          ▼
+                SHOULD HUMAN APPROVE?
+                          |
+          ┌───────────────┼────────────────┐
+          ▼               ▼                ▼
+       IMPACT          UNCERTAINTY        POLICY
+     High value       Confidence < 70%   First beneficiary
+     Irreversible     Checks disagree   Unusual pattern
+     Legal action     Agent unsure      Regulated action
+          |               |                |
+          └───────────────┼────────────────┘
+                          |
+                          ▼
+                 HUMAN APPROVAL FLOW
+                          |
+          ┌───────────────┼────────────────┐
+          ▼               ▼                ▼
+    REQUIRED LEVEL    FOUR-EYES       NO SELF-APPROVAL
+    More risk =       High risk =     Requester cannot
+    Senior approver   2 approvers     approve own request
+          |               |                |
+          └───────────────┼────────────────┘
+                          |
+                          ▼
+                    SHOW CONTEXT
+             Action + Reason + Risk + Evidence
+                          |
+                          ▼
+                  WAIT FOR APPROVAL
+                          |
+          ┌───────────────┼────────────────┐
+          ▼               ▼                ▼
+       APPROVED         REJECTED         NO REPLY /
+       All required     Any rejection    INSUFFICIENT
+       approvals        = STOP           APPROVALS
+          |               |                |
+          ▼               ▼                ▼
+       EXECUTE           DENIED           DENIED
+                          |
+                  FAIL CLOSED
+             Never auto-approve on timeout
+
+
+       💰 APPROVAL POLICY (EXAMPLE CODE)
+       --------------------------------
+       Amount ≤ ₹20,000  → AUTO-APPROVE*
+       ₹20K – ₹2 Lakh    → 1 Officer (Level 1)
+       Amount > ₹2 Lakh  → 2 Senior Managers (Level 2)
+
+       *Only if confidence ≥ 70%; otherwise human approval.
+
+
+
+Quick Memory Trick:
+
+WHEN → WHO → HOW MANY → CONTEXT → DECISION
+- WHEN: Impact, Uncertainty, Policy
+- WHO: Required Level
+- HOW MANY: Four-Eyes
+- SECURITY: No Self-Approval
+- CONTEXT: Show Evidence
+- DECISION: Fail Closed (No approval = Denied)
+"""

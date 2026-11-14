@@ -86,8 +86,17 @@ if __name__ == "__main__":
        SEND CLEANED TEXT TO LLM
        OR STORE IN LOGS
 
+
 In simple words: 
-    You are learning how to protect sensitive information before sending a user's message to an AI model or saving it in logs. The program uses regular expressions (regex) to detect patterns such as email addresses, mobile numbers, card numbers, Aadhaar numbers, IFSC codes, and AWS access keys. It then replaces detected values with labels such as [EMAIL_REDACTED], so the original values are not passed downstream.
+    - You are learning how to protect sensitive information before sending a user's message to an AI model 
+    or saving it in logs. 
+    - The program uses regular expressions (regex) to detect patterns such as email, mobile numbers,
+    card numbers, Aadhaar numbers, IFSC codes, and AWS access keys. 
+    - It then replaces detected values with labels such as [EMAIL_REDACTED], so the original values are not passed downstream.
+
 Key takeaway: 
-    This is a fast, inexpensive first layer of AI safety called PII detection and redaction. However, regex only catches patterns it recognizes. For example, a phone number written with unusual spacing or an email written as “ankur dot k at example dot com” may escape detection. Production systems need additional safeguards and testing; this demo's patterns are not comprehensive validators of the underlying identifiers.
+    This is a fast, inexpensive first layer of AI safety called PII detection and redaction. 
+    However, regex only catches patterns it recognizes. 
+    For example, a phone number written with unusual spacing or an email written as “ankur dot k at example dot com” may escape detection. 
+    Production systems need additional safeguards and testing; this demo's patterns are not comprehensive validators of the underlying identifiers.
 """

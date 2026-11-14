@@ -98,3 +98,111 @@ public class AutoConfigurationConditionalDemo {
         System.out.println("\nTo see the REAL report in Spring Boot: run with --debug (or debug=true) and read the CONDITIONS EVALUATION REPORT.");
     }
 }
+
+/**
+ This code is teaching **how Spring Boot Auto-Configuration works behind the scenes**—yaani sirf ek dependency (jar/starter) add karne se Spring Boot automatically beans kaise create kar deta hai. Simple language mein, Spring Boot pehle check karta hai ki application mein kaunse jars available hain, kaunsi properties set hain, aur developer ne koi apna bean already create kiya hai ya nahi. Phir har Auto-Configuration ke saath kuch conditions check hoti hain: **`@ConditionalOnClass`** dekhta hai required jar/class available hai ya nahi; **`@ConditionalOnProperty`** dekhta hai koi feature property ke through enabled hai ya disabled; aur **`@ConditionalOnMissingBean`** ensure karta hai ki agar developer ne apna bean bana diya hai, toh Spring Boot automatically same bean create nahi karega—matlab **your configuration wins**. For example, H2 database jar available hai toh Boot automatically `DataSource` bana sakta hai, lekin agar aapne apna PostgreSQL `DataSource` bean define kiya hai, toh Boot back off kar deta hai. Isi tarah Caffeine jar add karte hi cache configuration automatically activate ho sakti hai. **Main lesson ye hai ki Spring Boot magic nahi karta; woh classpath + properties + existing beans ko check karke conditional rules ke basis par automatically configuration aur beans create karta hai.**
+ * 
+*/
+
+/**
+                     🚀 SPRING BOOT APPLICATION
+                              |
+                              v
+                  Developer adds a STARTER / JAR
+                              |
+                              v
+              +-----------------------------------+
+              |  JARS ADDED TO CLASSPATH          |
+              |                                   |
+              |  H2? Jackson? Caffeine?           |
+              +-----------------+-----------------+
+                                |
+                                v
+              +-----------------------------------+
+              | SPRING BOOT READS                 |
+              | AutoConfiguration.imports         |
+              +-----------------+-----------------+
+                                |
+                                v
+                    CHECK EACH AUTO-CONFIG
+                                |
+          +---------------------+----------------------+
+          |                     |                      |
+          v                     v                      v
+   @ConditionalOnClass   @ConditionalOnProperty  @ConditionalOnMissingBean
+          |                     |                      |
+   Is required jar         Is feature/property     Did developer already
+   available?              enabled?                create this bean?
+          |                     |                      |
+       YES / NO              YES / NO                YES / NO
+          |                     |                      |
+          +----------+----------+----------+----------+
+                     |
+                     v
+              ALL CONDITIONS PASS?
+                     |
+              +------+------+
+              |             |
+             YES            NO
+              |             |
+              v             v
+      +---------------+   AUTO-CONFIG
+      | CREATE BEAN   |   BACKS OFF
+      | automatically |   ❌
+      +-------+-------+
+              |
+              v
+        FINAL SPRING CONTEXT
+              |
+      +-------+--------+---------+
+      |                |         |
+      v                v         v
+   DataSource      ObjectMapper  CacheManager
+   (Auto-created)  (Auto-created) (If jar exists)
+
+
+      EXAMPLE: YOUR BEAN ALWAYS WINS
+      =================================
+
+       Spring Boot wants to create:
+                |
+                v
+           DataSource
+                |
+         Is there already one?
+                |
+           +----+----+
+           |         |
+          YES        NO
+           |         |
+           v         v
+      YOUR BEAN     BOOT CREATES
+      WINS ✅        DEFAULT BEAN ⚙️
+
+
+      MEMORY FORMULA
+      =================================
+
+      STARTER/JAR
+          |
+          v
+      CLASSPATH + PROPERTIES + YOUR BEANS
+          |
+          v
+      CONDITIONAL CHECKS
+          |
+          v
+      CONDITIONS PASS?
+       /          \
+     YES          NO
+      |            |
+      v            v
+   CREATE       BACK OFF
+    BEAN
+
+   💡 KEY IDEA:
+   Spring Boot is not doing MAGIC!
+   It uses CONDITIONAL RULES to automatically
+   configure only what your application needs.
+ * 
+*/
