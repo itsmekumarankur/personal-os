@@ -199,3 +199,58 @@ models, with an approach designed to create useful sentence embeddings.
 
 The central idea is to search by **meaning**, not just by matching exact
 words.
+
+
+------------------------------------------------------------------------
+
+## Q8. What are the different types of Transformers?
+
+Transformers can be categorized by **their architecture** or by **the type of data/task they are designed for**.
+
+### A. Main Transformer architectures
+
+| Type | What does it do? | When do we use it? | Examples |
+|---|---|---|---|
+| **Encoder-only** | Reads and understands text. | Text classification, sentiment analysis, and named entity recognition. | BERT |
+| **Decoder-only** | Generates text one token at a time. | Chatbots, content generation, and coding assistants. | GPT, Llama |
+| **Encoder-Decoder** | Reads input text and generates output text. | Translation and summarization. | T5, BART |
+
+### B. Transformers designed for specific data or tasks
+
+| Type | What does it do? | When do we use it? | Example |
+|---|---|---|---|
+| **Sentence Transformer** | Converts sentences into numerical vectors (embeddings). | Semantic search, similarity matching, and RAG retrieval. | `all-MiniLM-L6-v2` |
+| **Vision Transformer (ViT)** | Processes images. | Image classification and image recognition. | ViT |
+| **Speech Transformer** | Processes or generates speech/audio. | Speech recognition and audio processing. | Whisper |
+| **Time-Series Transformer** | Learns patterns in data over time. | Forecasting demand, sales, or other time-based values. | Time Series Transformer |
+| **Multimodal Transformer** | Works with more than one type of data, such as text and images. | Image question-answering and combined text-image understanding. | GPT-4o |
+
+### C. The important distinction
+
+These categories are **not all at the same level**:
+
+- **Encoder-only, Decoder-only, Encoder-Decoder** describe the model architecture.
+- **Sentence Transformer** describes a model design and training approach for producing sentence embeddings.
+- **Vision, Speech, Time-Series, Multimodal** describe the data types or tasks a model handles.
+
+For example, a Sentence Transformer can use a BERT-based encoder.
+
+### D. What should I remember first?
+
+Start with these five:
+
+1. **BERT** — understands and classifies text.
+2. **GPT** — generates text.
+3. **T5** — transforms input text into output text.
+4. **Sentence Transformer** — creates embeddings for semantic search and RAG.
+5. **Vision Transformer** — processes images.
+
+**Memory shortcut:**
+
+- Encoder-only → Understand text.
+- Decoder-only → Generate text.
+- Encoder-Decoder → Read input, generate output.
+- Sentence Transformer → Create sentence embeddings.
+- Vision Transformer → Process images.
+
+**Architect's takeaway:** Choose the Transformer based on the job: understanding, generation, text-to-text conversion, similarity search, image processing, speech, time-series forecasting, or multimodal understanding.

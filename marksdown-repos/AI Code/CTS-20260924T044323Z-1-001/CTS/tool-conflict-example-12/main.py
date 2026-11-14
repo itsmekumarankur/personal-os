@@ -1,0 +1,6 @@
+def main():
+    print("Hello from tool-conflict-example-12!")
+
+
+if __name__ == "__main__":
+    main()
