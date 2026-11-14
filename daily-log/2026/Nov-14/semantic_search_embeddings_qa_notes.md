@@ -169,23 +169,15 @@ semantic similarity.
 
 ------------------------------------------------------------------------
 
-## Q7. What is the difference between a Sequence Transformer and a Sentence Transformer?
 
-  -----------------------------------------------------------------------
-  Sequence Transformer                Sentence Transformer
-  ----------------------------------- -----------------------------------
-  Processes a sequence of tokens and  Uses a Transformer-based model
-  models relationships between them.  designed to produce sentence or
-                                      text embeddings.
+## **Q7.  Sequence Transformer Vs Sentence Transformer?**
 
-  Produces contextual representations Produces a fixed-size vector for a
-  of tokens or sequences.             sentence or text passage.
-
-  Examples include BERT and GPT       Example: `all-MiniLM-L6-v2`.
-  architectures/models.               
-
-  Used in many language-understanding Commonly used for semantic search,
-  and language-generation tasks.      similarity, and RAG retrieval.
+| Sequence Transformer                                                  | Sentence Transformer                                                            |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Processes a sequence of tokens and models relationships between them. | Uses a Transformer-based model designed to produce sentence or text embeddings. |
+| Produces contextual representations of tokens or sequences.           | Produces a fixed-size vector for a sentence or text passage.                    |
+| Examples: BERT and GPT.                                               | Example: `all-MiniLM-L6-v2`.                                                    |
+| Used in language understanding and language generation tasks.         | Commonly used for semantic search, similarity, and RAG retrieval.               |
   -----------------------------------------------------------------------
 
 ### In simple words
