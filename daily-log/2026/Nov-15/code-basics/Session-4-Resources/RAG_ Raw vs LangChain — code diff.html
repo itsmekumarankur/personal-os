@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAG: Raw vs LangChain — code diff</title>
+<style>
+body{font:15px/1.5 system-ui,sans-serif;margin:0;padding:24px;max-width:1280px;margin-inline:auto;color:#1f2328;background:#fff}
+h1{font-size:22px;margin:0 0 4px} .sub{color:#57606a;margin:0 0 18px}
+.cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.card{border:1px solid #d0d7de;border-radius:8px;padding:10px 16px;min-width:150px}
+.card b{font-size:24px;display:block} .card span{color:#57606a;font-size:13px}
+table{border-collapse:collapse;width:100%;margin-bottom:22px}
+th,td{border-bottom:1px solid #eaeef2;padding:6px 8px;text-align:left} th{background:#f6f8fa;font-size:13px}
+td.n{text-align:right;font-variant-numeric:tabular-nums;width:70px}
+.bar{height:7px;background:#f0f2f4;margin:2px 0;border-radius:3px} .bar i{display:block;height:100%;border-radius:3px}
+.bar .r{background:#8c959f} .bar .l{background:#2da44e}
+.key{font-size:13px;color:#57606a;margin:-12px 0 18px} .key i{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 10px}
+details{border:1px solid #d0d7de;border-radius:8px;margin-bottom:10px}
+summary{cursor:pointer;padding:10px 14px;background:#f6f8fa;border-radius:8px}
+details[open]>summary{border-bottom:1px solid #d0d7de;border-radius:8px 8px 0 0}
+.pill{font-size:12px;border-radius:10px;padding:2px 9px;margin-left:8px}
+.pill.down{background:#dafbe1;color:#116329} .pill.up{background:#ffebe9;color:#a40e26} .pill.same{background:#eaeef2;color:#57606a}
+.note{margin:10px 14px;color:#57606a}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 14px 14px}
+@media(max-width:900px){.cols{grid-template-columns:1fr}}
+h4{margin:0 0 6px;font-size:13px;color:#57606a}
+pre{margin:0;background:#f6f8fa;border:1px solid #eaeef2;border-radius:6px;padding:10px;overflow:auto;font-size:12.5px;line-height:1.45;min-height:40px}
+.caveat{border-left:3px solid #d4a72c;background:#fff8c5;padding:8px 14px;margin:18px 0;font-size:14px}
+</style></head><body>
+<h1>RAG pipeline: raw code vs LangChain</h1>
+<p class="sub">Same HR-policy chatbot (Qdrant + all-MiniLM-L6-v2 + Groq), built twice. Line counts exclude blank lines, comments, docstrings and debug prints.</p>
+<div class="cards">
+<div class="card"><b>101 → 48</b><span>pipeline code lines (stages 3–11)</span></div>
+<div class="card"><b>-52%</b><span>change in pipeline code</span></div>
+<div class="card"><b>106 → 54</b><span>all code incl. install &amp; API key</span></div>
+</div>
+<table><tr><th>Stage</th><th>Raw</th><th>LangChain</th><th>Δ</th><th>Raw <span style="color:#8c959f">▬</span> / LangChain <span style="color:#2da44e">▬</span></th></tr><tr><td>1. Install dependencies</td><td class="n">1</td><td class="n">2</td><td class="n">+1</td><td><div class="bar"><i class="r" style="width:3%"></i></div><div class="bar"><i class="l" style="width:7%"></i></div></td></tr><tr><td>2. API key setup</td><td class="n">4</td><td class="n">4</td><td class="n">0</td><td><div class="bar"><i class="r" style="width:13%"></i></div><div class="bar"><i class="l" style="width:13%"></i></div></td></tr><tr><td>3. Load document</td><td class="n">8</td><td class="n">6</td><td class="n">-2</td><td><div class="bar"><i class="r" style="width:27%"></i></div><div class="bar"><i class="l" style="width:20%"></i></div></td></tr><tr><td>4. Chunking</td><td class="n">18</td><td class="n">6</td><td class="n">-12</td><td><div class="bar"><i class="r" style="width:60%"></i></div><div class="bar"><i class="l" style="width:20%"></i></div></td></tr><tr><td>5. Embedding model</td><td class="n">5</td><td class="n">3</td><td class="n">-2</td><td><div class="bar"><i class="r" style="width:17%"></i></div><div class="bar"><i class="l" style="width:10%"></i></div></td></tr><tr><td>6. Indexing into Qdrant</td><td class="n">30</td><td class="n">7</td><td class="n">-23</td><td><div class="bar"><i class="r" style="width:100%"></i></div><div class="bar"><i class="l" style="width:23%"></i></div></td></tr><tr><td>7. Retriever</td><td class="n">12</td><td class="n">1</td><td class="n">-11</td><td><div class="bar"><i class="r" style="width:40%"></i></div><div class="bar"><i class="l" style="width:3%"></i></div></td></tr><tr><td>8. Prompt</td><td class="n">4</td><td class="n">5</td><td class="n">+1</td><td><div class="bar"><i class="r" style="width:13%"></i></div><div class="bar"><i class="l" style="width:17%"></i></div></td></tr><tr><td>9. Context formatting</td><td class="n">5</td><td class="n">6</td><td class="n">+1</td><td><div class="bar"><i class="r" style="width:17%"></i></div><div class="bar"><i class="l" style="width:20%"></i></div></td></tr><tr><td>10. LLM client</td><td class="n">3</td><td class="n">8</td><td class="n">+5</td><td><div class="bar"><i class="r" style="width:10%"></i></div><div class="bar"><i class="l" style="width:27%"></i></div></td></tr><tr><td>11. RAG pipeline function</td><td class="n">16</td><td class="n">6</td><td class="n">-10</td><td><div class="bar"><i class="r" style="width:53%"></i></div><div class="bar"><i class="l" style="width:20%"></i></div></td></tr>
+<tr><td><b>Total</b></td><td class="n"><b>106</b></td><td class="n"><b>54</b></td><td class="n"><b>-52</b></td><td></td></tr></table>
+<div class="caveat"><b>Read the numbers fairly.</b> LangChain isn't doing identical work: the raw version has an empty-result guard, returns the sources alongside the answer, and uses a fixed 50-word chunker, while the LangChain version drops the guard/sources and uses a token-based splitter. The raw notebook also uses gpt-oss-20b only; LangChain defines 120b first, then 20b. Savings come mainly from indexing, retrieval and the chunker; prompt, context formatting and API-key setup stay the same.</div>
+<details open><summary><b>1. Install dependencies</b> <span class="pill up">1 → 2 lines (+100%)</span></summary><p class="note">LangChain needs more packages (one wrapper per integration), so this stage grows slightly.</p><div class="cols"><div><h4>Raw (Qdrant + SentenceTransformers + Groq SDK)</h4><pre>!pip install -q qdrant-client sentence-transformers requests groq</pre></div><div><h4>LangChain</h4><pre>!pip install -qU langchain langchain-huggingface langchain-qdrant langchain-groq langchain-text-splitters
+!pip install -q sentence-transformers qdrant-client</pre></div></div></details><details open><summary><b>2. API key setup</b> <span class="pill same">4 → 4 lines (+0%)</span></summary><p class="note">Identical.</p><div class="cols"><div><h4>Raw (Qdrant + SentenceTransformers + Groq SDK)</h4><pre>import getpass
+import os
+
+if &quot;GROQ_API_KEY&quot; not in os.environ:
+    os.environ[&quot;GROQ_API_KEY&quot;] = getpass.getpass(&quot;Enter your Groq API key: &quot;)</pre></div><div><h4>LangChain</h4><pre>import getpass
+import os
+
+if &quot;GROQ_API_KEY&quot; not in os.environ:
+    os.environ[&quot;GROQ_API_KEY&quot;] = getpass.getpass(&quot;Enter your Groq API key: &quot;)</pre></div></div></details><details open><summary><b>3. Load document</b> <span class="pill down">8 → 6 lines (-25%)</span></summary><p class="note">Same requests.get; LangChain wraps the text in a Document object (page_content + metadata). Debug prints removed from both for a fair count.</p><div class="cols"><div><h4>Raw (Qdrant + SentenceTransformers + Groq SDK)</h4><pre># Loading the Document
+import os
+import requests
+
+GITHUB_RAW_URL = &quot;https://raw.githubusercontent.com/tnahddisttud/sample-doc/refs/heads/main/atliqai_hr_policies.txt&quot;
+
+def load_document(url: str) -&gt; str:
+    &quot;&quot;&quot;Fetch a plain-text file from a raw GitHub URL.&quot;&quot;&quot;
+    response = requests.get(url, timeout=10)
+    response.raise_for_status()
+    return response.text
+
+raw_text = load_document(GITHUB_RAW_URL)
+</pre></div><div><h4>LangChain</h4><pre>import requests
+from langchain_core.documents import Document
+
+WEB_URL = &quot;https://raw.githubusercontent.com/tnahddisttud/sample-doc/refs/heads/main/atliqai_hr_policies.txt&quot;
+
+response = requests.get(WEB_URL)
+response.raise_for_status()
+
+docs = [Document(page_content=response.text, metadata={&quot;source&quot;: WEB_URL})]
+</pre></div></div></details><details open><summary><b>4. Chunking</b> <span class="pill down">18 → 6 lines (-67%)</span></summary><p class="note">Hand-written word chunker + helper  →  one library splitter. Note the behaviour differs: raw = fixed 50 words, LangChain = ~100 tiktoken tokens split on separators.</p><div class="cols"><div><h4>Raw (Qdrant + SentenceTransformers + Groq SDK)</h4><pre>CHUNK_SIZE = 50
+
+def parse_word_chunks(text: str, chunk_size: int = CHUNK_SIZE) -&gt; list[dict]:
+    # Strip markdown heading symbols and blank lines
+    clean_lines = []
+    for line in text.splitlines():
+        line = line.strip().lstrip(&quot;#&quot;).strip()
+        if line:
+            clean_lines.append(line)
+
+    # Join everything into one word list and slice
+    words = &quot; &quot;.join(clean_lines).split()
+
+    chunks = []
+    for i in range(0, len(words), chunk_size):
+        content = &quot; &quot;.join(words[i : i + chunk_size])
+        chunks.append({
+            &quot;chunk_index&quot;: len(chunks),
+            &quot;content&quot;: content,
+        })
+
+    return chunks
+
+def build_chunk_text(chunk: dict) -&gt; str:
+    return chunk[&quot;content&quot;]</pre></div><div><h4>LangChain</h4><pre>from langchain_text_splitters import CharacterTextSplitter
+
+text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
+    encoding_name=&quot;cl100k_base&quot;, chunk_size=100, chunk_overlap=0
+)
+documents = text_splitter.split_documents(docs)
+len(documents)</pre></div></div></details><details open><summary><b>5. Embedding model</b> <span class="pill down">5 → 3 lines (-40%)</span></summary><p class="note">Raw code embeds chunks explicitly in a separate step. In LangChain the embedder is only configured here; embedding happens inside the vector-store call in the next stage.</p><div class="cols"><div><h4>Raw (Qdrant + SentenceTransformers + Groq SDK)</h4><pre>from sentence_transformers import SentenceTransformer
+
+EMBEDDING_MODEL = &quot;all-MiniLM-L6-v2&quot;
+embedder = SentenceTransformer(EMBEDDING_MODEL)
+
+# Extract Chunk Texts
+chunk_texts = [build_chunk_text(c) for c in chunks]
+
+embeddings = embedder.encode(chunk_texts, show_progress_bar=True)
+</pre></div><div><h4>LangChain</h4><pre>from langchain_huggingface import HuggingFaceEmbeddings
+
+EMBED_MODEL_ID = &quot;sentence-transformers/all-MiniLM-L6-v2&quot;
+
+embedder = HuggingFaceEmbeddings(model_name=EMBED_MODEL_ID)</pre></div></div></details><details open><summary><b>6. Indexing into Qdrant</b> <span class="pill down">30 → 7 lines (-77%)</span></summary><p class="note">Biggest saving. Create-collection, vector size, distance metric, PointStruct building, upsert — all collapse into one from_documents() call.</p><div class="cols"><div><h4>Raw (Qdrant + SentenceTransformers + Groq SDK)</h4><pre>from qdrant_client import QdrantClient
+from qdrant_client.models import (
+    Distance, VectorParams, PointStruct,
+    Filter, FieldCondition, MatchValue,
+)
+
+# &quot;path&quot; = no server needed for demos
+# Production use: QdrantClient(url=&quot;http://localhost:6333&quot;)
+client = QdrantClient(path=&quot;/tmp/langchain_qdrant&quot;)
+
+COLLECTION_NAME = &quot;docs&quot;
+DIM = embedder.get_sentence_embedding_dimension()
+
+client.recreate_collection(
+    collection_name=COLLECTION_NAME,
+    vectors_config=VectorParams(
+        size=DIM,
+        distance=Distance.COSINE,
+    ),
+)
+
+
+# Creating Points
+
+points = [
+    PointStruct(
+        id=idx,
+        vector=embedding.tolist(),
+        payload={
+            &quot;content&quot;: chunk[&quot;content&quot;],
+        },
+    )
+    for idx, (chunk, embedding) in enumerate(zip(chunks, embeddings))
+]
+
+result = client.upsert(
+    collection_name=COLLECTION_NAME,
+    points=points,
+    wait=True,   # Block until indexing completes before returning
+)
+</pre></div><div><h4>LangChain</h4><pre>from langchain_qdrant import QdrantVectorStore
+
+vectorstore = QdrantVectorStore.from_documents(
+    documents=documents,
+    embedding=embedder,
+    path=&quot;/tmp/my_lang_vs&quot;,
+    collection_name=&quot;hr_docs&quot;,
+)</pre></div></div></details><details open><summary><b>7. Retriever</b> <span class="pill down">12 → 1 lines (-92%)</span></summary><p class="note">A 20-line function (embed query + query_points + score formatting) becomes one line returning a standard Retriever.</p><div class="cols"><div><h4>Raw (Qdrant + SentenceTransformers + Groq SDK)</h4><pre>def retrieve(
+    query: str,
+    top_k: int = 5
+) -&gt; list[dict]:
+    &quot;&quot;&quot;
+    Embed the query and return the top-k most similar chunks.
+
+    Args:
+        query          : User&#x27;s question.
+        top_k          : Number of chunks to return.
+        section_filter : Optional H2 heading to restrict the search scope.
+    &quot;&quot;&quot;
+    query_vector = embedder.encode(query).tolist()
+
+    hits = client.query_points(
+        collection_name=COLLECTION_NAME,
+        query=query_vector,
+        limit=top_k,
+        with_payload=True,
+    )
+
+    return [{**hit.payload, &quot;score&quot;: round(hit.score, 4)} for hit in hits.points]</pre></div><div><h4>LangChain</h4><pre>retriever = vectorstore.as_retriever(search_kwargs={&quot;k&quot;: 5})</pre></div></div></details><details open><summary><b>8. Prompt</b> <span class="pill up">4 → 5 lines (+25%)</span></summary><p class="note">Prompt as a reusable ChatPromptTemplate with named variables instead of manual string/dict assembly later.</p><div class="cols"><div><h4>Raw (Qdrant + SentenceTransformers + Groq SDK)</h4><pre>SYSTEM_PROMPT = &quot;&quot;&quot;You are a helpful HR assistant.
+Answer the user&#x27;s question using ONLY the context provided below.
+If the context does not contain enough information, say so — do not make things up.
+Always cite the section name when referencing specific information.&quot;&quot;&quot;</pre></div><div><h4>LangChain</h4><pre>from langchain_core.prompts import ChatPromptTemplate
+
+RAG_PROMPT = ChatPromptTemplate.from_messages([
+    (&quot;system&quot;, &quot;Answer using ONLY the context below. Cite section names. Say &#x27;I don&#x27;t know&#x27; if unsure.&quot;),
+    (&quot;human&quot;, &quot;Context:\n{context}\n\nQuestion: {question}&quot;)
+])</pre></div></div></details><details open><summary><b>9. Context formatting</b> <span class="pill up">5 → 6 lines (+20%)</span></summary><p class="note">Same helper in both — LangChain doesn&#x27;t remove this (the unused dl_meta line in the LangChain version is dead code).</p><div class="cols"><div><h4>Raw (Qdrant + SentenceTransformers + Groq SDK)</h4><pre>def build_context(retrieved_chunks: list[dict]) -&gt; str:
+    parts = []
+    for i, chunk in enumerate(retrieved_chunks, 1):
+        parts.append(f&quot;[Source {i}]\n{chunk[&#x27;content&#x27;]}&quot;)
+    return &quot;\n\n---\n\n&quot;.join(parts)</pre></div><div><h4>LangChain</h4><pre>def format_docs(docs):
+    parts = []
+    for i, doc in enumerate(docs, 1):
+        dl_meta  = doc.metadata.get(&quot;dl_meta&quot;, {})
+        parts.append(f&quot;[{i}]: \n{doc.page_content}&quot;)
+    return &quot;\n\n---\n\n&quot;.join(parts)</pre></div></div></details><details open><summary><b>10. LLM client</b> <span class="pill up">3 → 8 lines (+167%)</span></summary><p class="note">No saving here: ChatGroq spells out its settings one per line, so it is longer. The wrapper&#x27;s benefit is that the same llm object plugs into prompts and chains and can be swapped for another provider.</p><div class="cols"><div><h4>Raw (Qdrant + SentenceTransformers + Groq SDK)</h4><pre>from groq import Groq
+
+groq_client = Groq()   # Reads GROQ_API_KEY from environment automatically
+GROQ_MODEL  = &quot;openai/gpt-oss-20b&quot;</pre></div><div><h4>LangChain</h4><pre>llm = ChatGroq(
+    model=&quot;openai/gpt-oss-20b&quot;,
+    temperature=0,
+    max_tokens=None,
+    reasoning_format=&quot;parsed&quot;,
+    timeout=None,
+    max_retries=2,
+)</pre></div></div></details><details open><summary><b>11. RAG pipeline function</b> <span class="pill down">16 → 6 lines (-62%)</span></summary><p class="note">Raw: retrieve, guard for empty, build context, build messages, call API, unpack response. LangChain: four lines, one per step.</p><div class="cols"><div><h4>Raw (Qdrant + SentenceTransformers + Groq SDK)</h4><pre>def rag(query: str, top_k: int = 5):
+    &quot;&quot;&quot;
+    End-to-end RAG pipeline:
+      1. Retrieve relevant chunks from Qdrant
+      2. Format them as a context block
+      3. Send context + query to Groq and return the answer
+    &quot;&quot;&quot;
+    # Step 1 — Retrieve
+    chunks = retrieve(query, top_k=top_k)
+    if not chunks:
+        return &quot;No relevant content found in the document.&quot;
+
+    # Step 2 — Build context
+    context = build_context(chunks)
+
+    # Step 3 — Generate
+    user_message = f&quot;Context:\n{context}\n\nQuestion: {query}&quot;
+
+    print(f&quot;{SYSTEM_PROMPT}\n{user_message}&quot;)
+    response = groq_client.chat.completions.create(
+        model=GROQ_MODEL,
+        messages=[
+            {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: SYSTEM_PROMPT},
+            {&quot;role&quot;: &quot;user&quot;,   &quot;content&quot;: user_message},
+        ],
+        temperature=0.2,   # Low = factual;  High = creative
+    )
+    return response.choices[0].message.content, context</pre></div><div><h4>LangChain</h4><pre>def rag(query: str) -&gt; str:
+    docs         = retriever.invoke(query)
+    context      = format_docs(docs)
+    prompt_value = RAG_PROMPT.invoke({&quot;context&quot;: context, &quot;question&quot;: query})
+    response     = llm.invoke(prompt_value)
+    return response.content</pre></div></div></details>
+</body></html>
